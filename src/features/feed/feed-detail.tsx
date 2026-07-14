@@ -12,7 +12,6 @@ import {
   Button,
   Chip,
   PressableFeedback,
-  Separator,
   Surface,
   Typography,
   useToast,
@@ -212,8 +211,6 @@ export function FeedDetail({
             </View>
           </View>
 
-          <Separator />
-
           {item.seller ? (
             <Surface variant="secondary" className="flex-row items-center gap-3 rounded-2xl p-3">
               <Avatar size="md" alt={item.seller.name}>
@@ -256,18 +253,17 @@ export function FeedDetail({
             isFavorite={item.isFavorite}
             onSave={handleFavorite}
             onDelete={() => mockAction("Delete")}
+            onShare={() => mockAction("Share")}
           />
 
-          <Separator />
-
-          <View className="gap-2">
+          <Surface variant="tertiary" className="gap-2 rounded-2xl p-3.5">
             <Typography type="body-sm" weight="semibold" className="text-foreground">
               Description
             </Typography>
             <Typography
               type="body-sm"
               className="text-muted"
-              numberOfLines={descExpanded || !longDesc ? undefined : 4}
+              numberOfLines={descExpanded || !longDesc ? undefined : 5}
             >
               {description}
             </Typography>
@@ -282,7 +278,7 @@ export function FeedDetail({
                 </Typography>
               </PressableFeedback>
             ) : null}
-          </View>
+          </Surface>
         </View>
       </Animated.ScrollView>
 

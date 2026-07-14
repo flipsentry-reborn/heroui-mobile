@@ -1,7 +1,7 @@
 import type { JSX } from "react";
-import { View } from "react-native";
 
-/** Empty Home tab — UI placeholder for FlipSentry port. */
-export default function HomeScreen(): JSX.Element {
-  return <View className="flex-1 bg-background" />;
+import { HomeScreen } from "@/features/home/home-screen";
+
+export default function HomeTab(): JSX.Element {
+  return <HomeScreen />;
 }

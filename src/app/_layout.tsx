@@ -24,6 +24,14 @@ export default function RootLayout(): JSX.Element {
               gestureEnabled: true,
             }}
           />
+          <Stack.Screen
+            name="settings"
+            options={{
+              headerShown: false,
+              animation: "slide_from_right",
+              gestureEnabled: true,
+            }}
+          />
         </Stack>
         <StatusBar style="light" />
       </HeroUINativeProvider>

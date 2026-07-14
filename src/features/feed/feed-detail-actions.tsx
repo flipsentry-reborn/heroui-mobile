@@ -7,13 +7,15 @@ interface FeedDetailActionsProps {
   isFavorite: boolean;
   onSave: () => void;
   onDelete: () => void;
+  onShare: () => void;
 }
 
-/** Frameless Saved / Delete actions — icon + label only. */
+/** Frameless Saved / Share / Delete — icon + label only. */
 export function FeedDetailActions({
   isFavorite,
   onSave,
   onDelete,
+  onShare,
 }: FeedDetailActionsProps): JSX.Element {
   return (
     <View style={styles.row}>
@@ -34,6 +36,16 @@ export function FeedDetailActions({
       </PressableFeedback>
 
       <PressableFeedback
+        onPress={onShare}
+        accessibilityLabel="Share"
+        animation={{ scale: { value: 0.96 } }}
+        style={styles.action}
+      >
+        <Ionicons name="share-outline" size={18} color="#E8E8E8" />
+        <Text style={[styles.label, { color: "#E8E8E8" }]}>Share</Text>
+      </PressableFeedback>
+
+      <PressableFeedback
         onPress={onDelete}
         accessibilityLabel="Delete"
         animation={{ scale: { value: 0.96 } }}
@@ -51,7 +63,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 48,
+    gap: 36,
     paddingVertical: 8,
   },
   action: {

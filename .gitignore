@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# MCP tokens (contain personal credentials)
+.cursor/mcp.json
+.vscode/mcp.json
+
+# Expo / native
+.expo/
+dist/
+web-build/
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+*.log
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# Expo
+expo-env.d.ts
+# Uniwind (generated on first `expo start`)
+uniwind-types.d.ts
+# Native
+.kotlin/
+*.orig.*
+*.key
+# Metro
+.metro-health-check*
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+# macOS
+*.pem
+# Local env files
+.env*.local
+# TypeScript
+*.tsbuildinfo
+# Generated native folders
+/ios
+/android

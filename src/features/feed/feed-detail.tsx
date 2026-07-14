@@ -295,6 +295,10 @@ export function FeedDetail({
             <FeedDetailScoreVariants
               buySignal={item.valuation.buySignal}
               profit={item.valuation.profit}
+              fairPrice={item.valuation.fairPrice}
+              askPrice={item.price}
+              compCount={item.valuation.compCount}
+              percentileRank={item.valuation.percentileRank}
               currencySymbol={item.currencySymbol}
             />
           ) : null}

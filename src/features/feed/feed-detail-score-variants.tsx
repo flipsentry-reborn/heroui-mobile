@@ -2,7 +2,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
 import { StyleSheet, View } from "react-native";
 import { Chip, Separator, Surface, Typography } from "heroui-native";
-import { ProgressBar, ProgressCircle, TrendChip } from "heroui-native-pro";
+import { NumberValue, ProgressBar, TrendChip } from "heroui-native-pro";
+import Svg, { Circle } from "react-native-svg";
 
 import { getValuationTier, type ValuationTier } from "@/models/feed";
 
@@ -27,11 +28,23 @@ const TIER_HEX: Record<ValuationTier, string> = {
   overpriced: "#f87171",
 };
 
+/** Arc bands match getValuationTier thresholds (0–25 / 25–50 / 50–75 / 75–100). */
+const SCORE_SEGMENTS: { start: number; end: number; color: string }[] = [
+  { start: 0, end: 25, color: TIER_HEX.overpriced },
+  { start: 25, end: 50, color: TIER_HEX.fairPrice },
+  { start: 50, end: 75, color: TIER_HEX.goodValue },
+  { start: 75, end: 100, color: TIER_HEX.greatDeal },
+];
+
 const EQ_TIERS: ValuationTier[] = ["overpriced", "fairPrice", "goodValue", "greatDeal"];
 
 interface FeedDetailScoreVariantsProps {
   buySignal: number;
   profit?: number;
+  fairPrice?: number;
+  askPrice?: number;
+  compCount?: number;
+  percentileRank?: number;
   currencySymbol?: string;
 }
 
@@ -52,10 +65,104 @@ function VariantCard({
   );
 }
 
+function ScoreCircle({
+  pct,
+  hex,
+  label,
+  size = 96,
+}: {
+  pct: number;
+  color?: "success" | "accent" | "warning" | "danger";
+  hex: string;
+  label: string;
+  size?: number;
+}): JSX.Element {
+  const strokeWidth = 7;
+  const clamped = Math.max(0, Math.min(100, pct));
+  const r = (size - strokeWidth) / 2;
+  const c = 2 * Math.PI * r;
+  const cx = size / 2;
+  const cy = size / 2;
+
+  return (
+    <View
+      style={{ width: size, height: size }}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(clamped) }}
+      accessibilityLabel="Deal score"
+    >
+      <Svg width={size} height={size}>
+        <Circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          stroke="#1a1a1a"
+          strokeWidth={strokeWidth}
+          fill="none"
+        />
+        {SCORE_SEGMENTS.map((seg) => {
+          const filledEnd = Math.min(clamped, seg.end);
+          if (filledEnd <= seg.start) return null;
+          const length = ((filledEnd - seg.start) / 100) * c;
+          const offset = (seg.start / 100) * c;
+          return (
+            <Circle
+              key={seg.start}
+              cx={cx}
+              cy={cy}
+              r={r}
+              stroke={seg.color}
+              strokeWidth={strokeWidth}
+              fill="none"
+              strokeDasharray={`${length} ${c - length}`}
+              strokeDashoffset={-offset}
+              rotation={-90}
+              origin={`${cx}, ${cy}`}
+              strokeLinecap="butt"
+            />
+          );
+        })}
+      </Svg>
+      <View style={styles.circleLabel} pointerEvents="none">
+        <Typography type="h5" weight="bold" className="text-foreground">
+          {Math.round(clamped)}
+        </Typography>
+        <Typography type="body-xs" style={{ color: hex, fontSize: 10 }}>
+          {label}
+        </Typography>
+      </View>
+    </View>
+  );
+}
+
+/** Left circle + right rounded panel. */
+function SplitRow({
+  left,
+  right,
+}: {
+  left: React.ReactNode;
+  right: React.ReactNode;
+}): JSX.Element {
+  return (
+    <View className="flex-row gap-2.5">
+      <Surface variant="tertiary" className="items-center justify-center rounded-3xl p-3" style={styles.splitLeft}>
+        {left}
+      </Surface>
+      <Surface variant="tertiary" className="min-w-0 flex-1 justify-center rounded-3xl p-3.5" style={styles.splitRight}>
+        {right}
+      </Surface>
+    </View>
+  );
+}
+
 /** Temporary A/B section — pick one, then delete this file. */
 export function FeedDetailScoreVariants({
   buySignal,
   profit,
+  fairPrice,
+  askPrice,
+  compCount,
+  percentileRank,
   currencySymbol = "$",
 }: FeedDetailScoreVariantsProps): JSX.Element {
   const pct = Math.max(0, Math.min(100, buySignal));
@@ -70,9 +177,14 @@ export function FeedDetailScoreVariants({
       : tier === "fairPrice"
         ? "neutral"
         : "down";
+  const profitAbs = profit != null ? Math.abs(Math.round(profit)) : null;
   const profitText =
     profit != null
-      ? `${profit >= 0 ? "+" : "-"}${currencySymbol}${Math.abs(Math.round(profit)).toLocaleString()}`
+      ? `${profit >= 0 ? "+" : "-"}${currencySymbol}${profitAbs!.toLocaleString()}`
+      : null;
+  const deltaPct =
+    fairPrice != null && askPrice != null && fairPrice > 0
+      ? Math.round(((fairPrice - askPrice) / fairPrice) * 100)
       : null;
 
   return (
@@ -82,10 +194,10 @@ export function FeedDetailScoreVariants({
         Score UI tests (temporary)
       </Typography>
       <Typography type="body-xs" className="text-muted">
-        Scroll & compare — tell me which # you want, then we remove the rest.
+        1–5 = older ideas · 6–10 = horizontal 2-panel (circle + right). Pick a #.
       </Typography>
 
-      {/* 1 — Spotify ProgressBar */}
+      {/* —— Existing 1–5 —— */}
       <VariantCard title="1 · ProgressBar + big score">
         <View className="flex-row items-end justify-between">
           <Typography type="h3" weight="bold" style={{ color: hex }}>
@@ -108,33 +220,13 @@ export function FeedDetailScoreVariants({
         </ProgressBar>
       </VariantCard>
 
-      {/* 2 — ProgressCircle */}
-      <VariantCard title="2 · ProgressCircle ring">
-        <View className="items-center gap-2 py-1">
-          <ProgressCircle
-            value={pct}
-            color={color}
-            size={112}
-            formatOptions={{ style: "decimal", maximumFractionDigits: 0 }}
-            accessibilityLabel="Deal score"
-          >
-            <ProgressCircle.Indicator strokeWidth={8} trackColor="#282828" fillColor={hex} />
-            <ProgressCircle.ValueLabel>
-              <View className="items-center">
-                <Typography type="h4" weight="bold" className="text-foreground">
-                  {Math.round(pct)}
-                </Typography>
-                <Typography type="body-xs" style={{ color: hex }}>
-                  {label}
-                </Typography>
-              </View>
-            </ProgressCircle.ValueLabel>
-          </ProgressCircle>
+      <VariantCard title="2 · Segmented circle alone">
+        <View className="items-center py-1">
+          <ScoreCircle pct={pct} hex={hex} label={label} size={112} />
         </View>
       </VariantCard>
 
-      {/* 3 — Chip only */}
-      <VariantCard title="3 · Tier chip only (no bar)">
+      <VariantCard title="3 · Tier chip only">
         <View className="flex-row flex-wrap items-center gap-2">
           <Chip size="md" variant="primary" color={color}>
             <Chip.Label>{label} deal</Chip.Label>
@@ -145,16 +237,11 @@ export function FeedDetailScoreVariants({
               <TrendChip.Value>{profitText}</TrendChip.Value>
               <TrendChip.Suffix>vs fair</TrendChip.Suffix>
             </TrendChip>
-          ) : (
-            <Typography type="body-sm" className="text-muted">
-              Score {Math.round(pct)}/100
-            </Typography>
-          )}
+          ) : null}
         </View>
       </VariantCard>
 
-      {/* 4 — EQ bars */}
-      <VariantCard title="4 · EQ bars (Spotify vibe)">
+      <VariantCard title="4 · EQ bars">
         <View className="flex-row items-end justify-between gap-2 px-2 pt-1">
           {EQ_TIERS.map((t, i) => {
             const active = i === activeEq;
@@ -182,13 +269,9 @@ export function FeedDetailScoreVariants({
             );
           })}
         </View>
-        <Typography type="body-xs" className="text-center text-muted">
-          Active: {label} · {Math.round(pct)}
-        </Typography>
       </VariantCard>
 
-      {/* 5 — Gradient + glow marker */}
-      <VariantCard title="5 · Gradient strip + glow marker">
+      <VariantCard title="5 · Gradient + glow marker">
         <View style={styles.gradientWrap}>
           <LinearGradient
             colors={["#f87171", "#fbbf24", "#4ade80", "#1DB954"]}
@@ -201,17 +284,169 @@ export function FeedDetailScoreVariants({
             <View style={[styles.markerDot, { borderColor: hex }]} />
           </View>
         </View>
-        <View className="flex-row items-center justify-between">
-          <Typography type="body-xs" className="text-muted">
-            Pass
-          </Typography>
-          <Typography type="body-sm" weight="semibold" style={{ color: hex }}>
-            {label} · {Math.round(pct)}
-          </Typography>
-          <Typography type="body-xs" className="text-muted">
-            Great
-          </Typography>
-        </View>
+      </VariantCard>
+
+      {/* —— New horizontal 2-panel variants —— */}
+      <Typography type="body-sm" weight="semibold" className="mt-2 text-foreground">
+        Horizontal 2-panel
+      </Typography>
+
+      <VariantCard title="6 · Circle + Profit (recommended)">
+        <SplitRow
+          left={<ScoreCircle pct={pct} color={color} hex={hex} label={label} />}
+          right={
+            <View className="gap-1">
+              <Typography type="body-xs" className="text-muted">
+                Est. profit
+              </Typography>
+              {profit != null ? (
+                <NumberValue
+                  value={profit}
+                  signDisplay="always"
+                  maximumFractionDigits={0}
+                >
+                  <NumberValue.Prefix className="text-xl font-bold" style={{ color: hex }}>
+                    {currencySymbol}
+                  </NumberValue.Prefix>
+                  <NumberValue.Value className="text-xl font-bold" style={{ color: hex }} />
+                </NumberValue>
+              ) : (
+                <Typography type="h5" weight="bold" className="text-foreground">
+                  —
+                </Typography>
+              )}
+              <Typography type="body-xs" className="text-muted">
+                vs fair price
+              </Typography>
+            </View>
+          }
+        />
+      </VariantCard>
+
+      <VariantCard title="7 · Circle + Fair price">
+        <SplitRow
+          left={<ScoreCircle pct={pct} color={color} hex={hex} label={label} />}
+          right={
+            <View className="gap-1.5">
+              <Typography type="body-xs" className="text-muted">
+                Fair market
+              </Typography>
+              {fairPrice != null ? (
+                <NumberValue
+                  value={fairPrice}
+                  maximumFractionDigits={0}
+                >
+                  <NumberValue.Prefix className="text-lg font-bold text-foreground">
+                    {currencySymbol}
+                  </NumberValue.Prefix>
+                  <NumberValue.Value className="text-lg font-bold text-foreground" />
+                </NumberValue>
+              ) : null}
+              {askPrice != null ? (
+                <Typography type="body-xs" className="text-muted">
+                  Ask {currencySymbol}
+                  {Math.round(askPrice).toLocaleString()}
+                  {deltaPct != null ? ` · ${deltaPct > 0 ? "−" : "+"}${Math.abs(deltaPct)}%` : ""}
+                </Typography>
+              ) : null}
+              <Chip size="sm" variant="soft" color={color} className="self-start">
+                <Chip.Label>{label}</Chip.Label>
+              </Chip>
+            </View>
+          }
+        />
+      </VariantCard>
+
+      <VariantCard title="8 · Circle + mini ProgressBar">
+        <SplitRow
+          left={<ScoreCircle pct={pct} color={color} hex={hex} label={label} />}
+          right={
+            <View className="gap-2">
+              <View className="flex-row items-center justify-between">
+                <Typography type="body-xs" className="text-muted">
+                  Deal strength
+                </Typography>
+                <Typography type="body-sm" weight="semibold" style={{ color: hex }}>
+                  {label}
+                </Typography>
+              </View>
+              <ProgressBar value={pct} color={color} size="sm" accessibilityLabel="Deal strength">
+                <ProgressBar.Track>
+                  <ProgressBar.Fill />
+                </ProgressBar.Track>
+              </ProgressBar>
+              {profitText ? (
+                <TrendChip trend={trend} variant="soft" size="sm">
+                  <TrendChip.Indicator />
+                  <TrendChip.Value>{profitText}</TrendChip.Value>
+                  <TrendChip.Suffix>edge</TrendChip.Suffix>
+                </TrendChip>
+              ) : null}
+            </View>
+          }
+        />
+      </VariantCard>
+
+      <VariantCard title="9 · Circle + comps / percentile">
+        <SplitRow
+          left={<ScoreCircle pct={pct} color={color} hex={hex} label={label} />}
+          right={
+            <View className="gap-2.5">
+              <View>
+                <Typography type="body-xs" className="text-muted">
+                  Comparables
+                </Typography>
+                <Typography type="h5" weight="bold" className="text-foreground">
+                  {compCount ?? "—"}
+                  <Typography type="body-sm" className="text-muted">
+                    {" "}
+                    comps
+                  </Typography>
+                </Typography>
+              </View>
+              <Separator />
+              <View>
+                <Typography type="body-xs" className="text-muted">
+                  Market rank
+                </Typography>
+                <Typography type="body-sm" weight="semibold" className="text-foreground">
+                  {percentileRank != null ? `Top ${percentileRank}%` : "—"}
+                </Typography>
+              </View>
+            </View>
+          }
+        />
+      </VariantCard>
+
+      <VariantCard title="10 · Circle + stacked chips">
+        <SplitRow
+          left={<ScoreCircle pct={pct} color={color} hex={hex} label={label} />}
+          right={
+            <View className="gap-2">
+              <Chip size="sm" variant="soft" color={color} className="self-start">
+                <Chip.Label>{label} deal</Chip.Label>
+              </Chip>
+              {profitText ? (
+                <TrendChip trend={trend} variant="soft" size="sm">
+                  <TrendChip.Indicator />
+                  <TrendChip.Value>{profitText}</TrendChip.Value>
+                  <TrendChip.Suffix>vs fair</TrendChip.Suffix>
+                </TrendChip>
+              ) : null}
+              {compCount != null ? (
+                <Chip size="sm" variant="soft" color="default" className="self-start">
+                  <Chip.Label>{compCount} comps</Chip.Label>
+                </Chip>
+              ) : null}
+              {fairPrice != null ? (
+                <Typography type="body-xs" className="text-muted">
+                  Fair {currencySymbol}
+                  {Math.round(fairPrice).toLocaleString()}
+                </Typography>
+              ) : null}
+            </View>
+          }
+        />
       </VariantCard>
     </View>
   );
@@ -221,6 +456,20 @@ const styles = StyleSheet.create({
   variantTitle: {
     color: "#1DB954",
     letterSpacing: 0.2,
+  },
+  circleLabel: {
+    ...StyleSheet.absoluteFill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  splitLeft: {
+    width: 118,
+    minHeight: 118,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  splitRight: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    minHeight: 118,
   },
   eqBar: {
     width: "100%",

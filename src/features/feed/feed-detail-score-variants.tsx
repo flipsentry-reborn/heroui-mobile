@@ -374,7 +374,7 @@ function CutGrooveBar({ pct }: { pct: number }): JSX.Element {
   );
 }
 
-/** Dense vertical slots — score lights slots up to pct. */
+/** Dense vertical slots — full color up to pct, muted spectrum after. */
 function CutSlotBar({ pct }: { pct: number }): JSX.Element {
   const clamped = Math.max(0, Math.min(100, pct));
   const slotCount = 20;
@@ -400,8 +400,9 @@ function CutSlotBar({ pct }: { pct: number }): JSX.Element {
             style={[
               styles.slot,
               {
-                backgroundColor: active || partial ? color : "rgba(255,255,255,0.08)",
-                opacity: active ? 1 : partial ? 0.45 : 1,
+                backgroundColor: color,
+                // Filled = strong; remaining = same hue, washed out (never empty grey)
+                opacity: active ? 1 : partial ? 0.55 : 0.22,
               },
             ]}
           />
@@ -629,8 +630,8 @@ export function FeedDetailScoreVariants({
         </CutDemoBlock>
       </VariantCard>
 
-      <VariantCard title="12 · Dense slots">
-        <CutDemoBlock title="20 slot — skor kadar yanar">
+      <VariantCard title="12 · Dense slots (muted remainder)">
+        <CutDemoBlock title="Dolu = canlı · kalan = aynı renk soluk">
           {(p) => <CutSlotBar pct={p} />}
         </CutDemoBlock>
       </VariantCard>

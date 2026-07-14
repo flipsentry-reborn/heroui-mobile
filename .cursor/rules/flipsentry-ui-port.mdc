@@ -1,0 +1,32 @@
+---
+description: FlipSentry → heroui-mobile UI port constraints (Spotify, mock-only, HeroUI)
+alwaysApply: true
+---
+
+# FlipSentry UI Port
+
+## Scope
+
+- Work in **heroui-mobile** only for implementation.
+- **mobile-app** is screen/flow reference only — do not copy NativeWind, shadcn, MobX, or API clients.
+
+## Data
+
+- UI + mock only. All reads/writes go through `src/mocks/services/*` and fixtures in `src/mocks/data/*`.
+- Never use Axios, SignalR, Adapty, or real backends in this repo.
+
+## Theme
+
+- Full Spotify dark: background `#121212`, surfaces `#181818` / `#282828`, accent `#1DB954`.
+- Light mode is secondary or unused. Tokens live in `src/global.css`.
+
+## Components
+
+- Prefer `heroui-native-pro`, then `heroui-native` (OSS), then minimal custom (e.g. map placeholder).
+- Do not use web `@heroui/react` / `@heroui-pro/react` for screens.
+- Style with Uniwind `className` — not NativeWind.
+
+## Agent workflow
+
+- Before building a screen, use Native Pro MCP: `list_components` → `get_component_docs`.
+- Follow `PORTING.md` folder layout and port order (shell → auth → feed → home → settings → subscription).

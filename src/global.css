@@ -1,14 +1,12 @@
 /*
- * HeroUI Native Theme
- * Paste into global.css after your HeroUI Native imports.
- * @see https://heroui.com/docs/native/getting-started/theming
+ * Spotify-inspired dark theme for FlipSentry UI port.
+ * Restart Metro after theme changes.
  */
 @import "tailwindcss";
 @import "uniwind";
 @import "heroui-native/styles";
 @import "heroui-native-pro/styles";
 
-/* Paths are relative to this file in src/ */
 @source "../node_modules/heroui-native/lib";
 @source "../node_modules/heroui-native-pro/lib";
 
@@ -18,35 +16,44 @@
 }
 
 @layer theme {
+  /* Dark-first Spotify palette (light mirrors dark — unused for now) */
   @variant light {
-    /* Theme Colors */
-    --background: oklch(97.02% 0.0020 148.69);
-    --muted: oklch(55.17% 0.0040 148.69);
-    --surface-secondary: oklch(95.24% 0.0030 148.69);
-    --surface-tertiary: oklch(93.73% 0.0030 148.69);
-    --default: oklch(94.00% 0.0020 148.69);
-    --accent: oklch(76.97% 0.2123 148.69);
-    --accent-foreground: oklch(15% 0.0300 148.69);
-    --border: oklch(90.00% 0.0020 148.69);
-    --separator: oklch(92.00% 0.0020 148.69);
+    --background: #121212;
+    --foreground: #ffffff;
+    --muted: #b3b3b3;
+    --surface: #181818;
+    --surface-foreground: #ffffff;
+    --surface-secondary: #282828;
+    --surface-secondary-foreground: #ffffff;
+    --surface-tertiary: #333333;
+    --surface-tertiary-foreground: #ffffff;
+    --overlay: #181818;
+    --default: #282828;
+    --accent: #1db954;
+    --accent-foreground: #121212;
+    --field-background: #181818;
+    --segment: #333333;
+    --border: #282828;
+    --separator: #282828;
   }
 
   @variant dark {
-    /* Theme Colors */
-    --background: oklch(12.00% 0.0020 148.69);
-    --muted: oklch(70.50% 0.0040 148.69);
-    --surface: oklch(21.03% 0.0040 148.69);
-    --surface-secondary: oklch(25.70% 0.0030 148.69);
-    --surface-secondary-foreground: oklch(25.70% 0.0000 148.69);
-    --surface-tertiary: oklch(27.21% 0.0030 148.69);
-    --surface-tertiary-foreground: oklch(27.21% 0.0000 148.69);
-    --overlay: oklch(21.03% 0.0040 148.69);
-    --default: oklch(27.40% 0.0020 148.69);
-    --accent: oklch(76.97% 0.2123 148.69);
-    --accent-foreground: oklch(15% 0.0300 148.69);
-    --field-background: oklch(21.03% 0.0040 148.69);
-    --segment: oklch(39.64% 0.0020 148.69);
-    --border: oklch(28.00% 0.0020 148.69);
-    --separator: oklch(25.00% 0.0020 148.69);
+    --background: #121212;
+    --foreground: #ffffff;
+    --muted: #b3b3b3;
+    --surface: #181818;
+    --surface-foreground: #ffffff;
+    --surface-secondary: #282828;
+    --surface-secondary-foreground: #ffffff;
+    --surface-tertiary: #333333;
+    --surface-tertiary-foreground: #ffffff;
+    --overlay: #181818;
+    --default: #282828;
+    --accent: #1db954;
+    --accent-foreground: #121212;
+    --field-background: #181818;
+    --segment: #333333;
+    --border: #282828;
+    --separator: #282828;
   }
 }

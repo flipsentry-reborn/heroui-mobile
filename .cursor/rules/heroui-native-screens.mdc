@@ -1,0 +1,36 @@
+---
+description: HeroUI Native screen patterns for heroui-mobile TSX
+globs: src/**/*.tsx
+alwaysApply: false
+---
+
+# HeroUI Native Screens
+
+## Patterns
+
+- Use HeroUI compound components as documented (e.g. `Card` + slots, field groups).
+- Interactive handlers: `onPress`, not `onClick`.
+- Keep route files in `src/app` thin — compose UI; put fetch/mock calls in `src/mocks/services` or feature modules.
+
+## Styling
+
+- Prefer semantic tokens: `bg-background`, `text-foreground`, accent/primary classes from theme.
+- Spotify dark palette is the visual target; do not reintroduce old FlipSentry green `#009966` unless matching accent intent.
+
+## Native gaps
+
+- Maps / MapView → placeholder image + label.
+- IAP / payments → buttons + mock success/fail UI only.
+- Live feed → mock list + pull-to-refresh fixtures.
+
+## Imports
+
+```tsx
+// ✅ Pro or OSS native
+import { Button, Card } from "heroui-native";
+import { Stepper } from "heroui-native-pro";
+
+// ❌ Web packages / old app stack
+// import { Button } from "@heroui/react";
+// import { View } from "@/components/ui/…" // mobile-app shadcn
+```

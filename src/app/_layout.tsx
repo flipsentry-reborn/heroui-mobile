@@ -8,12 +8,24 @@ import "../global.css";
 
 export default function RootLayout(): JSX.Element {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#121212" }}>
       <HeroUINativeProvider>
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: "#121212" },
+          }}
+        >
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="feed/[id]"
+            options={{
+              animation: "slide_from_right",
+              gestureEnabled: true,
+            }}
+          />
         </Stack>
-        <StatusBar style="auto" />
+        <StatusBar style="light" />
       </HeroUINativeProvider>
     </GestureHandlerRootView>
   );

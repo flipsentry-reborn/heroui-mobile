@@ -7,6 +7,28 @@ Always mock. No real API calls. Keep everything simple.
 
 Port FlipSentry screens and flows into `heroui-mobile` so we can iterate on UI with Expo Go. Real networking, maps, and native modules stay in `mobile-app` until we merge later.
 
+## Locked decisions
+
+| Decision | Choice |
+|----------|--------|
+| Visual language | Full Spotify dark — `#121212` / `#181818`, accent `#1DB954`; light secondary/unused |
+| Components | `heroui-native-pro` first → `heroui-native` OSS → minimal custom only |
+| Styling | Uniwind + `className` (not NativeWind / shadcn from `mobile-app`) |
+| Data | Mock only via `src/mocks/*` |
+| Reference | `mobile-app` = flows/screens reference only |
+
+## Cursor AI tooling
+
+| Tool | Role |
+|------|------|
+| MCP `heroui-native-pro` | Live component docs / theme (`native-mcp.heroui.pro`) — use before implementing screens |
+| MCP `heroui-pro` | Web React docs (optional; not for RN screens) |
+| Skill `heroui-native-pro` | Native Pro patterns (user skills) |
+| Skill `heroui-pro-design-taste` | Design system polish (user skills) |
+| Rules `.cursor/rules/*.mdc` | Project constraints (Spotify, mock-only, port scope) |
+
+Config: `.cursor/mcp.json` (gitignored). Rules: `.cursor/rules/`.
+
 ## Principles
 
 | Rule | Detail |
@@ -15,7 +37,7 @@ Port FlipSentry screens and flows into `heroui-mobile` so we can iterate on UI w
 | Mock always | Screens call `mocks/services/*` only — never axios / SignalR / real APIs |
 | Screens thin | `src/app` routes compose UI; little business logic |
 | Models on demand | Copy/adapt from `mobile-app/models` when a screen needs them |
-| HeroUI only | Prefer `heroui-native` / `heroui-native-pro` |
+| HeroUI only | Prefer `heroui-native-pro`, then `heroui-native`; no web `@heroui/react` for screens |
 | No heavy state lib yet | Local state / light context is enough for mocked UI |
 | Stubs for native gaps | Maps, etc. → placeholder PNG; wire real later in `mobile-app` |
 
@@ -109,7 +131,7 @@ heroui-mobile/
 
 ## Theme
 
-Theme tokens live in `src/global.css` (Theme Builder export).  
+Theme tokens live in `src/global.css`. Target Spotify dark tokens (`#121212`, `#181818`, `#1DB954`).  
 Restart Metro after theme changes.
 
 ## Related repos

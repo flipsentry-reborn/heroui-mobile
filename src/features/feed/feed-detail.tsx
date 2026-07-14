@@ -22,8 +22,6 @@ import PlatformIcon from "@/components/icons/PlatformIcon";
 import { FeedDetailActions } from "@/features/feed/feed-detail-actions";
 import { FeedDetailGallery } from "@/features/feed/feed-detail-gallery";
 import { FeedDetailScoreBar } from "@/features/feed/feed-detail-score-bar";
-import { FeedDetailScoreVariants } from "@/features/feed/feed-detail-score-variants";
-import { ValuationBadge } from "@/features/feed/valuation-badge";
 import {
   getOrderedStatusBadges,
   type FeedItem,
@@ -162,9 +160,6 @@ export function FeedDetail({
               <Typography type="h5" className="flex-1 text-foreground">
                 {item.title}
               </Typography>
-              {item.valuation?.calculated ? (
-                <ValuationBadge buySignal={item.valuation.buySignal} />
-              ) : null}
             </View>
 
             {item.valuation?.calculated ? (
@@ -261,8 +256,6 @@ export function FeedDetail({
             isFavorite={item.isFavorite}
             onSave={handleFavorite}
             onDelete={() => mockAction("Delete")}
-            onSpam={() => mockAction("Spam")}
-            onExclude={() => mockAction("Exclude")}
           />
 
           <Separator />
@@ -290,18 +283,6 @@ export function FeedDetail({
               </PressableFeedback>
             ) : null}
           </View>
-
-          {item.valuation?.calculated ? (
-            <FeedDetailScoreVariants
-              buySignal={item.valuation.buySignal}
-              profit={item.valuation.profit}
-              fairPrice={item.valuation.fairPrice}
-              askPrice={item.price}
-              compCount={item.valuation.compCount}
-              percentileRank={item.valuation.percentileRank}
-              currencySymbol={item.currencySymbol}
-            />
-          ) : null}
         </View>
       </Animated.ScrollView>
 

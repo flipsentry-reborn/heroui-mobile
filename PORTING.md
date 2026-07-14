@@ -1,0 +1,118 @@
+# FlipSentry → HeroUI Mobile Port
+
+Expo Go UI rebuild of `mobile-app` using **HeroUI Native + Pro**.  
+Always mock. No real API calls. Keep everything simple.
+
+## Goal
+
+Port FlipSentry screens and flows into `heroui-mobile` so we can iterate on UI with Expo Go. Real networking, maps, and native modules stay in `mobile-app` until we merge later.
+
+## Principles
+
+| Rule | Detail |
+|------|--------|
+| Expo Go first | Ship only what runs in Expo Go |
+| Mock always | Screens call `mocks/services/*` only — never axios / SignalR / real APIs |
+| Screens thin | `src/app` routes compose UI; little business logic |
+| Models on demand | Copy/adapt from `mobile-app/models` when a screen needs them |
+| HeroUI only | Prefer `heroui-native` / `heroui-native-pro` |
+| No heavy state lib yet | Local state / light context is enough for mocked UI |
+| Stubs for native gaps | Maps, etc. → placeholder PNG; wire real later in `mobile-app` |
+
+## Folder structure
+
+```text
+heroui-mobile/
+├── src/
+│   ├── app/                         # Expo Router screens only
+│   │   ├── _layout.tsx
+│   │   ├── index.tsx                # gate → auth | main
+│   │   ├── (auth)/                  # login, register, forgot, verify
+│   │   ├── (onboarding)/            # optional
+│   │   └── (main)/
+│   │       ├── _layout.tsx
+│   │       ├── (tabs)/              # home, feed, help, settings
+│   │       ├── feed/                # detail, etc.
+│   │       ├── home/                # category flows (iphone / car / …)
+│   │       ├── settings/            # profile, notifications, …
+│   │       └── subscription/        # trial / paywall UI only
+│   ├── components/                  # shared UI (HeroUI wrappers)
+│   ├── features/                    # optional per-domain UI pieces
+│   │   ├── feed/
+│   │   ├── home/
+│   │   └── settings/
+│   ├── mocks/
+│   │   ├── data/                    # fixtures
+│   │   └── services/                # getFeed(), getUser(), … → Promise.resolve
+│   ├── models/                      # from mobile-app/models as needed
+│   ├── lib/                         # small helpers (money, dates)
+│   ├── constants/                   # routes, category ids
+│   ├── assets/
+│   │   └── placeholders/            # empty.png for maps / media stubs
+│   └── global.css                   # HeroUI + Theme Builder tokens
+├── assets/                          # app icon / splash
+└── PORTING.md
+```
+
+## Tabs (match old app)
+
+- Home
+- Feed
+- Help
+- Settings
+
+## Auth (mocked)
+
+1. Show login (and related auth screens) as UI.
+2. Fake login → navigate into `(main)` tabs.
+3. Optional: persist a mock “session” flag in memory/AsyncStorage for reload convenience — still no real API.
+
+## Mocking rules
+
+- Every data read/write goes through `src/mocks/services/*`.
+- Services return typed fixtures from `src/mocks/data/*`.
+- Use delays (`setTimeout` / fake latency) only when useful for loading UI.
+- Never import from `mobile-app` API clients or env that hits backends.
+
+## Models
+
+- Source of truth for shapes: `../mobile-app/models` (and any colocated types in `mobile-app/app`).
+- Copy into `src/models` only when a screen needs them.
+- Prefer plain TypeScript types/interfaces; keep them small.
+
+## Expo Go stubs
+
+| Feature in old app | In heroui-mobile |
+|--------------------|------------------|
+| Mapbox / maps | `Image` + `src/assets/placeholders/empty.png` + label |
+| Push notifications | UI only (toggles, sheets) |
+| SignalR live feed | Mock list / pull-to-refresh with fixtures |
+| Payments / IAP | Buttons + mock success/fail sheets |
+| Custom native modules | Skip; note TODO → implement in `mobile-app` |
+
+## Port order
+
+1. App shell + theme (`global.css`) + tab layout  
+2. Auth screens (mock login)  
+3. Feed list + detail  
+4. Home / search setup flows  
+5. Settings  
+6. Subscription / trial UI  
+
+## Out of scope (for now)
+
+- Real API, auth tokens, CI install tokens usage in the app runtime  
+- EAS/dev-client-only native map work  
+- Full 1:1 file copy of `mobile-app`  
+- NativeWind / old RN primitives component stack  
+- MobX stores from the old app  
+
+## Theme
+
+Theme tokens live in `src/global.css` (Theme Builder export).  
+Restart Metro after theme changes.
+
+## Related repos
+
+- **UI playground (this repo):** `heroui-mobile`  
+- **Production app:** `mobile-app` — later target for real native features and APIs  

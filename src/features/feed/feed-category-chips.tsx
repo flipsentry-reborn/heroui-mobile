@@ -1,8 +1,29 @@
-import type { JSX } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps, JSX } from "react";
 import { ScrollView } from "react-native";
-import { Chip, PressableFeedback } from "heroui-native";
+import { Chip } from "heroui-native";
 
 import { FEED_CATEGORIES, type FeedCategoryKey } from "@/mocks/data/feed";
+
+type IonName = ComponentProps<typeof Ionicons>["name"];
+
+const CATEGORY_ICONS: Record<FeedCategoryKey, IonName> = {
+  all: "grid-outline",
+  "best-picks": "star",
+  car: "car-outline",
+  iphone: "phone-portrait-outline",
+  custom: "ellipse-outline",
+  saved: "bookmark-outline",
+};
+
+const SHORT_LABEL: Record<FeedCategoryKey, string> = {
+  all: "All",
+  "best-picks": "Best",
+  car: "Cars",
+  iphone: "Phones",
+  custom: "Other",
+  saved: "Saved",
+};
 
 interface FeedCategoryChipsProps {
   activeCategory: FeedCategoryKey;
@@ -17,27 +38,34 @@ export function FeedCategoryChips({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 8 }}
+      contentContainerClassName="gap-2 px-3.5 py-1.5"
     >
       {FEED_CATEGORIES.map((category) => {
         const active = activeCategory === category.key;
         return (
-          <PressableFeedback
+          <Chip
             key={category.key}
+            size="sm"
+            variant={active ? "primary" : "tertiary"}
+            color={active ? "accent" : "default"}
             onPress={() => onSelect(category.key)}
-            animation={{ scale: { value: 0.96 } }}
+            className={active ? undefined : "border border-border bg-default/80"}
           >
-            <Chip
-              size="md"
-              variant={active ? "primary" : "soft"}
-              color={active ? "accent" : "default"}
-              className={active ? undefined : "bg-default"}
+            <Ionicons
+              name={CATEGORY_ICONS[category.key]}
+              size={13}
+              color={active ? "#04140A" : "#B3B3B3"}
+            />
+            <Chip.Label
+              className={
+                active
+                  ? "text-[12px] font-semibold text-accent-foreground"
+                  : "text-[12px] font-medium text-muted"
+              }
             >
-              <Chip.Label className={active ? "text-accent-foreground" : "text-foreground"}>
-                {category.label}
-              </Chip.Label>
-            </Chip>
-          </PressableFeedback>
+              {SHORT_LABEL[category.key]}
+            </Chip.Label>
+          </Chip>
         );
       })}
     </ScrollView>

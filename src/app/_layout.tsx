@@ -9,7 +9,11 @@ import "../global.css";
 export default function RootLayout(): JSX.Element {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#121212" }}>
-      <HeroUINativeProvider>
+      <HeroUINativeProvider
+        config={{
+          devInfo: { stylingPrinciples: false },
+        }}
+      >
         <Stack
           screenOptions={{
             headerShown: false,

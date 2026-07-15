@@ -26,7 +26,7 @@ export function ValuationBadge({ buySignal }: ValuationBadgeProps): JSX.Element 
   const tier = getValuationTier(buySignal);
   return (
     <Chip size="sm" variant="primary" color={TIER_COLOR[tier]} className="shadow-sm">
-      <Chip.Label className="text-[11px] font-semibold">{TIER_LABEL[tier]}</Chip.Label>
+      <Chip.Label className="text-[9px] font-semibold">{TIER_LABEL[tier]}</Chip.Label>
     </Chip>
   );
 }

@@ -19,15 +19,15 @@ interface FeedScrollableProps {
 
 function FeedSkeleton(): JSX.Element {
   return (
-    <View className="flex-row flex-wrap px-2 pt-2">
+    <View className="flex-row flex-wrap px-2 pt-1.5">
       {[0, 1, 2, 3].map((key) => (
-        <View key={key} className="w-1/2 px-1.5 pb-3">
-          <SkeletonGroup isLoading className="overflow-hidden rounded-2xl bg-default">
-            <SkeletonGroup.Item className="h-[168px] w-full" />
-            <View className="gap-2 p-2.5">
-              <SkeletonGroup.Item className="h-4 w-1/3 rounded-md" />
-              <SkeletonGroup.Item className="h-3 w-[90%] rounded-md" />
-              <SkeletonGroup.Item className="h-3 w-2/3 rounded-md" />
+        <View key={key} className="w-1/2 px-1 pb-2.5">
+          <SkeletonGroup isLoading className="overflow-hidden rounded-xl bg-default">
+            <SkeletonGroup.Item className="h-[134px] w-full" />
+            <View className="gap-1.5 p-2">
+              <SkeletonGroup.Item className="h-3.5 w-1/3 rounded-md" />
+              <SkeletonGroup.Item className="h-2.5 w-[90%] rounded-md" />
+              <SkeletonGroup.Item className="h-2.5 w-2/3 rounded-md" />
             </View>
           </SkeletonGroup>
         </View>
@@ -55,8 +55,8 @@ export function FeedScrollable({
       data={items}
       keyExtractor={(item) => item.id}
       numColumns={2}
-      columnWrapperStyle={{ paddingHorizontal: 6 }}
-      contentContainerStyle={{ paddingTop: 8, paddingBottom: bottomInset, flexGrow: 1 }}
+      columnWrapperStyle={{ paddingHorizontal: 4 }}
+      contentContainerStyle={{ paddingTop: 6, paddingBottom: bottomInset, flexGrow: 1 }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1DB954" />
       }
@@ -68,10 +68,10 @@ export function FeedScrollable({
         />
       )}
       ListEmptyComponent={
-        <EmptyState className="px-6 py-16">
+        <EmptyState className="px-6 py-12">
           <EmptyState.Header>
             <EmptyState.Media variant="icon">
-              <Ionicons name="sparkles-outline" size={28} color="#1DB954" />
+              <Ionicons name="sparkles-outline" size={22} color="#1DB954" />
             </EmptyState.Media>
             <EmptyState.Title>No listings yet</EmptyState.Title>
             <EmptyState.Description>

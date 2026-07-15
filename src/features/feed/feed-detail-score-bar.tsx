@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { View } from "react-native";
 import { Typography } from "heroui-native";
 
 import { getValuationTier, type ValuationTier } from "@/models/feed";
@@ -84,7 +84,7 @@ export function FeedDetailScoreBar({
       ) : null}
 
       <View
-        style={styles.slotRow}
+        className="h-4 w-full flex-row items-stretch gap-[3px]"
         accessibilityRole="progressbar"
         accessibilityValue={{ min: 0, max: 100, now: Math.round(pct) }}
         accessibilityLabel="Deal score"
@@ -98,44 +98,45 @@ export function FeedDetailScoreBar({
           return (
             <View
               key={i}
-              style={[
-                styles.slot,
-                {
-                  backgroundColor: color,
-                  opacity: active ? 1 : partial ? 0.55 : MUTED_OPACITY,
-                },
-              ]}
+              className="min-w-0 flex-1 rounded-sm"
+              style={{
+                backgroundColor: color,
+                opacity: active ? 1 : partial ? 0.55 : MUTED_OPACITY,
+              }}
             />
           );
         })}
       </View>
 
-      {/* Past = struck · current = strong · ahead = muted */}
-      <View style={styles.tierRow}>
+      <View className="flex-row items-center">
         {TIER_ORDER.map((t, i) => {
           const past = i < currentIdx;
           const current = i === currentIdx;
           const color = current ? TIER_HEX[t] : past ? "#6B6B6B" : "#8A8A8A";
 
           return (
-            <View key={t} style={styles.tierCell}>
-              <Text
-                style={[
-                  styles.tierLabel,
-                  {
-                    color,
-                    fontWeight: current ? "700" : "500",
-                    textDecorationLine: past ? "line-through" : "none",
-                    opacity: current ? 1 : past ? 0.55 : 0.4,
-                  },
-                ]}
+            <View key={t} className="flex-1 flex-row items-center justify-center gap-1">
+              <Typography
+                type="body-xs"
+                weight={current ? "bold" : "medium"}
+                className="text-[11px] tracking-wide"
+                style={{
+                  color,
+                  textDecorationLine: past ? "line-through" : "none",
+                  opacity: current ? 1 : past ? 0.55 : 0.4,
+                }}
               >
                 {TIER_LABEL[t]}
-              </Text>
+              </Typography>
               {current ? (
-                <Text style={[styles.scoreBeside, { color: hex }]}>
+                <Typography
+                  type="body-xs"
+                  weight="bold"
+                  className="text-[11px]"
+                  style={{ color: hex }}
+                >
                   {Math.round(pct)}
-                </Text>
+                </Typography>
               ) : null}
             </View>
           );
@@ -144,36 +145,3 @@ export function FeedDetailScoreBar({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  slotRow: {
-    flexDirection: "row",
-    gap: 3,
-    width: "100%",
-    height: 16,
-    alignItems: "stretch",
-  },
-  slot: {
-    flex: 1,
-    borderRadius: 2,
-  },
-  tierRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  tierCell: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-  },
-  tierLabel: {
-    fontSize: 11,
-    letterSpacing: 0.15,
-  },
-  scoreBeside: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
-});

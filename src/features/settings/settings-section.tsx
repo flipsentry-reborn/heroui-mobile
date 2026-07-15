@@ -1,7 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import type { ComponentProps, JSX, ReactNode } from "react";
-import { Platform, StyleSheet, View } from "react-native";
-import { ListGroup, Separator, Surface, Typography } from "heroui-native";
+import { StyleSheet, View } from "react-native";
+import { ListGroup, Separator, Typography } from "heroui-native";
+
+import { GlassSurface } from "@/components/ui/glass-surface";
 
 type IonName = ComponentProps<typeof Ionicons>["name"];
 
@@ -13,7 +16,7 @@ interface SettingsSectionProps {
   children: ReactNode;
 }
 
-/** Elevated card section — subtle 3D via border highlight + shadow. */
+/** Glass section card — soft blur + light edge, still quiet. */
 export function SettingsSection({ title, children }: SettingsSectionProps): JSX.Element {
   return (
     <View className="mb-4 gap-2">
@@ -24,13 +27,17 @@ export function SettingsSection({ title, children }: SettingsSectionProps): JSX.
       >
         {title}
       </Typography>
-      <Surface
-        variant="secondary"
-        className="mx-3 overflow-hidden rounded-2xl border border-white/10"
-        style={styles.elevated}
-      >
+      <GlassSurface intensity="settings" className="mx-3">
+        <LinearGradient
+          pointerEvents="none"
+          colors={["rgba(255,255,255,0.1)", "rgba(255,255,255,0)"]}
+          locations={[0, 0.55]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0.7, y: 0.85 }}
+          style={StyleSheet.absoluteFill}
+        />
         <ListGroup variant="transparent">{children}</ListGroup>
-      </Surface>
+      </GlassSurface>
     </View>
   );
 }
@@ -62,7 +69,10 @@ export function SettingsRow({
     <>
       <ListGroup.Item onPress={onPress} disabled={!onPress && right == null} className="py-1">
         <ListGroup.ItemPrefix>
-          <View className="h-9 w-9 items-center justify-center rounded-xl" style={{ backgroundColor: well }}>
+          <View
+            className="h-9 w-9 items-center justify-center rounded-xl"
+            style={{ backgroundColor: well }}
+          >
             <Ionicons name={icon} size={18} color={color} />
           </View>
         </ListGroup.ItemPrefix>
@@ -83,16 +93,3 @@ export function SettingsRow({
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  elevated: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    ...Platform.select({
-      android: { elevation: 8 },
-      default: {},
-    }),
-  },
-});

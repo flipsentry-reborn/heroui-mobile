@@ -23,19 +23,21 @@ export function SpotifyTabBar({ state, descriptors, navigation }: BottomTabBarPr
   const bottomPad = Math.max(insets.bottom, 10);
 
   return (
-    <View pointerEvents="box-none" style={styles.wrap}>
-      {/* Top ~25% opacity → bottom 100% (Spotify-style fade) */}
+    <View pointerEvents="box-none" className="absolute inset-x-0 bottom-0 z-50 bg-transparent">
       <LinearGradient
         colors={[
-          "rgba(18,18,18,0.25)",
-          "rgba(18,18,18,0.55)",
+          "rgba(18,18,18,0.62)",
+          "rgba(18,18,18,0.92)",
           "rgba(18,18,18,1)",
         ]}
-        locations={[0, 0.45, 1]}
+        locations={[0, 0.35, 1]}
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
-      <View style={[styles.row, { paddingBottom: bottomPad }]}>
+      <View
+        className="min-h-[52px] flex-row items-center pt-2"
+        style={{ paddingBottom: bottomPad }}
+      >
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const focused = state.index === index;
@@ -88,20 +90,3 @@ export function SpotifyTabBar({ state, descriptors, navigation }: BottomTabBarPr
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 50,
-    backgroundColor: "transparent",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 52,
-    paddingTop: 8,
-  },
-});

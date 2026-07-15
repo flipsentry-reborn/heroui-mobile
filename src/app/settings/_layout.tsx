@@ -15,7 +15,16 @@ export default function SettingsStackLayout(): JSX.Element {
     >
       <Stack.Screen name="profile" options={{ title: "Profile" }} />
       <Stack.Screen name="notification" options={{ title: "Notification" }} />
-      <Stack.Screen name="subscription" options={{ title: "Subscription" }} />
+      <Stack.Screen
+        name="subscription"
+        options={{
+          title: "Subscription",
+          headerShown: false,
+          presentation: "transparentModal",
+          animation: "fade",
+          contentStyle: { backgroundColor: "transparent" },
+        }}
+      />
       <Stack.Screen name="blocked-sellers" options={{ title: "Blocked Sellers" }} />
       <Stack.Screen name="delete-account" options={{ title: "Delete Account" }} />
     </Stack>

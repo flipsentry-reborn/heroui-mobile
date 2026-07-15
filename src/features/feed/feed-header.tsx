@@ -8,7 +8,6 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native";
@@ -20,14 +19,14 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { SearchField } from "heroui-native";
+import { SearchField, Typography } from "heroui-native";
 
 import { FeedCategoryChips } from "@/features/feed/feed-category-chips";
 import type { FeedCategoryKey } from "@/mocks/data/feed";
 
 const LOGO = require("../../../assets/images/flipsentry-logo-text-transparent.png");
-const LOGO_WIDTH = 142;
-const COLLAPSED_PILL = 108;
+const LOGO_WIDTH = 114;
+const COLLAPSED_PILL = 92;
 const TIMING = { duration: 320, easing: Easing.bezier(0.22, 1, 0.36, 1) };
 
 interface FeedHeaderProps {
@@ -80,8 +79,8 @@ export function FeedHeader({
 
   const closeStyle = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0.45, 1], [0, 1]),
-    width: interpolate(progress.value, [0, 1], [0, 40]),
-    marginLeft: interpolate(progress.value, [0, 1], [0, 8]),
+    width: interpolate(progress.value, [0, 1], [0, 32]),
+    marginLeft: interpolate(progress.value, [0, 1], [0, 6]),
   }));
 
   const openSearch = () => {
@@ -110,27 +109,31 @@ export function FeedHeader({
         tint="dark"
         style={StyleSheet.absoluteFill}
       />
-      <View style={styles.scrim} />
+      <View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(18,18,18,0.42)" }]}
+      />
 
-      <View className="px-4 pb-1 pt-2">
+      <View className="px-3.5 pb-0.5 pt-1.5">
         <View
-          className="h-11 flex-row items-center"
+          className="h-9 flex-row items-center"
           onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}
         >
           <Animated.View
-            style={[logoStyle, styles.logoWrap]}
+            style={logoStyle}
+            className="justify-center overflow-hidden"
             pointerEvents={isExpanded ? "none" : "auto"}
           >
             <Image
               source={LOGO}
-              style={styles.logo}
+              style={{ width: LOGO_WIDTH, height: 26 }}
               contentFit="contain"
               accessibilityLabel="FlipSentry"
             />
           </Animated.View>
 
           <View className="flex-1 flex-row items-center justify-end">
-            <Animated.View style={[searchStyle, styles.searchShell]}>
+            <Animated.View style={searchStyle} className="h-8 overflow-hidden">
               <Animated.View
                 style={[StyleSheet.absoluteFill, collapsedHintStyle]}
                 pointerEvents={isExpanded ? "none" : "auto"}
@@ -139,15 +142,18 @@ export function FeedHeader({
                   onPress={openSearch}
                   accessibilityRole="button"
                   accessibilityLabel="Search listings"
-                  style={styles.collapsedPill}
+                  className="h-8 flex-1 flex-row items-center gap-1.5 rounded-full border border-white/12 bg-white/10 px-3"
                 >
-                  <Ionicons name="search" size={16} color="#B3B3B3" />
-                  <Text style={styles.hintText}>Search</Text>
+                  <Ionicons name="search" size={14} color="#B3B3B3" />
+                  <Typography type="body-xs" className="text-[12px] text-[#8A8A8A]">
+                    Search
+                  </Typography>
                 </Pressable>
               </Animated.View>
 
               <Animated.View
-                style={[fieldStyle, styles.fieldFill]}
+                style={fieldStyle}
+                className="h-8 flex-1"
                 pointerEvents={isExpanded ? "auto" : "none"}
               >
                 <SearchField
@@ -156,19 +162,15 @@ export function FeedHeader({
                   className="w-full"
                   animation="disable-all"
                 >
-                  <SearchField.Group
-                    className="h-10 rounded-full"
-                    style={styles.searchGroup}
-                  >
+                  <SearchField.Group className="h-8 rounded-full border border-white/12 bg-white/10">
                     <SearchField.SearchIcon
-                      iconProps={{ color: "#B3B3B3", size: 18 }}
+                      iconProps={{ color: "#B3B3B3", size: 15 }}
                     />
                     <SearchField.Input
                       ref={inputRef}
                       placeholder="Search cars, phones…"
                       placeholderTextColor="#8A8A8A"
-                      className="text-[15px]"
-                      style={styles.input}
+                      className="text-[13px] text-white"
                       returnKeyType="search"
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -182,15 +184,16 @@ export function FeedHeader({
             </Animated.View>
 
             <Animated.View
-              style={[closeStyle, styles.closeWrap]}
+              style={closeStyle}
+              className="overflow-hidden"
               pointerEvents={isExpanded ? "auto" : "none"}
             >
               <Pressable
                 onPress={closeSearch}
                 accessibilityLabel="Close search"
-                style={styles.closeBtn}
+                className="h-8 w-8 items-center justify-center rounded-full bg-white/10"
               >
-                <Ionicons name="close" size={18} color="#FFFFFF" />
+                <Ionicons name="close" size={16} color="#FFFFFF" />
               </Pressable>
             </Animated.View>
           </View>
@@ -201,61 +204,3 @@ export function FeedHeader({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  scrim: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(18,18,18,0.42)",
-  },
-  logoWrap: {
-    overflow: "hidden",
-    justifyContent: "center",
-  },
-  logo: {
-    width: LOGO_WIDTH,
-    height: 32,
-  },
-  searchShell: {
-    height: 40,
-    overflow: "hidden",
-  },
-  collapsedPill: {
-    flex: 1,
-    height: 40,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.12)",
-    backgroundColor: "rgba(255,255,255,0.1)",
-    paddingHorizontal: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  hintText: {
-    color: "#8A8A8A",
-    fontSize: 13,
-  },
-  fieldFill: {
-    flex: 1,
-    height: 40,
-  },
-  searchGroup: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.12)",
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
-  input: {
-    color: "#FFFFFF",
-  },
-  closeWrap: {
-    overflow: "hidden",
-  },
-  closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
-});

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -12,12 +12,12 @@ import {
   Button,
   Chip,
   PressableFeedback,
-  Surface,
   Typography,
   useToast,
 } from "heroui-native";
 
 import PlatformIcon from "@/components/icons/PlatformIcon";
+import { GlassSurface } from "@/components/ui/glass-surface";
 import { FeedDetailActions } from "@/features/feed/feed-detail-actions";
 import { FeedDetailGallery } from "@/features/feed/feed-detail-gallery";
 import { FeedDetailScoreBar } from "@/features/feed/feed-detail-score-bar";
@@ -119,8 +119,8 @@ export function FeedDetail({
           <PressableFeedback
             onPress={onBack}
             accessibilityLabel="Go back"
-            className="absolute left-4 items-center justify-center rounded-full"
-            style={[styles.backBtn, { top: insets.top + 8 }]}
+            className="absolute left-4 z-10 h-10 w-10 items-center justify-center rounded-full bg-black/55"
+            style={{ top: insets.top + 8 }}
             animation={{ scale: { value: 0.92 } }}
           >
             <Ionicons name="chevron-back" size={22} color="#fff" />
@@ -132,18 +132,22 @@ export function FeedDetail({
               style={{ top: insets.top + 8, maxWidth: "58%" }}
             >
               {statusBadges.slice(0, 4).map((label) => (
-                <Chip key={label} size="sm" variant="soft" color="default" style={styles.badgeChip}>
-                  <Chip.Label className="text-[11px]" style={styles.badgeLabel}>
-                    {label}
-                  </Chip.Label>
+                <Chip
+                  key={label}
+                  size="sm"
+                  variant="soft"
+                  color="default"
+                  className="bg-black/55"
+                >
+                  <Chip.Label className="text-[11px] text-white">{label}</Chip.Label>
                 </Chip>
               ))}
             </View>
           ) : null}
         </View>
 
-        <View className="gap-4 px-5 pt-3">
-          <View className="gap-2">
+        <View className="gap-3 px-4 pt-3">
+          <GlassSurface intensity="feed" className="gap-2 p-3.5">
             <View className="flex-row flex-wrap items-center gap-2">
               <Typography type="h3" weight="bold" className="text-foreground">
                 {formatPrice(item.price, item.currencySymbol)}
@@ -155,11 +159,9 @@ export function FeedDetail({
               ) : null}
             </View>
 
-            <View className="flex-row items-start gap-2">
-              <Typography type="h5" className="flex-1 text-foreground">
-                {item.title}
-              </Typography>
-            </View>
+            <Typography type="h5" className="text-foreground">
+              {item.title}
+            </Typography>
 
             {item.valuation?.calculated ? (
               <FeedDetailScoreBar
@@ -209,10 +211,10 @@ export function FeedDetail({
                   : ""}
               </Typography>
             </View>
-          </View>
+          </GlassSurface>
 
           {item.seller ? (
-            <Surface variant="secondary" className="flex-row items-center gap-3 rounded-2xl p-3">
+            <GlassSurface intensity="feed" className="flex-row items-center gap-3 p-3">
               <Avatar size="md" alt={item.seller.name}>
                 {item.seller.avatarUrl ? (
                   <Avatar.Image source={{ uri: item.seller.avatarUrl }} />
@@ -220,7 +222,12 @@ export function FeedDetail({
                 <Avatar.Fallback />
               </Avatar>
               <View className="min-w-0 flex-1 gap-0.5">
-                <Typography type="body-sm" weight="semibold" className="text-foreground" numberOfLines={1}>
+                <Typography
+                  type="body-sm"
+                  weight="semibold"
+                  className="text-foreground"
+                  numberOfLines={1}
+                >
                   {item.seller.name}
                 </Typography>
                 <View className="flex-row flex-wrap items-center gap-2">
@@ -241,22 +248,24 @@ export function FeedDetail({
               </View>
               <Button
                 size="sm"
-                variant="secondary"
+                variant="danger-soft"
                 onPress={() => mockAction("Block seller")}
               >
-                <Button.Label style={{ color: "#f87171" }}>Block</Button.Label>
+                <Button.Label>Block</Button.Label>
               </Button>
-            </Surface>
+            </GlassSurface>
           ) : null}
 
-          <FeedDetailActions
-            isFavorite={item.isFavorite}
-            onSave={handleFavorite}
-            onDelete={() => mockAction("Delete")}
-            onShare={() => mockAction("Share")}
-          />
+          <GlassSurface intensity="feed">
+            <FeedDetailActions
+              isFavorite={item.isFavorite}
+              onSave={handleFavorite}
+              onDelete={() => mockAction("Delete")}
+              onShare={() => mockAction("Share")}
+            />
+          </GlassSurface>
 
-          <Surface variant="tertiary" className="gap-2 rounded-2xl p-3.5">
+          <GlassSurface intensity="feed" className="gap-2 p-3.5">
             <Typography type="body-sm" weight="semibold" className="text-foreground">
               Description
             </Typography>
@@ -273,16 +282,22 @@ export function FeedDetail({
                 className="self-start py-1"
                 animation={{ scale: { value: 0.98 } }}
               >
-                <Typography type="body-sm" weight="semibold" style={styles.showMore}>
+                <Typography type="body-sm" weight="semibold" className="text-accent">
                   {descExpanded ? "Show less" : "Show more"}
                 </Typography>
               </PressableFeedback>
             ) : null}
-          </Surface>
+          </GlassSurface>
         </View>
       </Animated.ScrollView>
 
-      <View style={[styles.ctaBar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+      <GlassSurface
+        intensity="feed"
+        bordered={false}
+        washColor="rgba(18,18,18,0.55)"
+        className="absolute inset-x-0 bottom-0 border-t border-white/12 px-4 pt-2.5"
+        style={{ paddingBottom: Math.max(insets.bottom, 10) }}
+      >
         <Button
           variant="primary"
           className="w-full rounded-full"
@@ -290,36 +305,9 @@ export function FeedDetail({
           onPress={() => mockAction("View on Marketplace")}
         >
           <Ionicons name="open-outline" size={16} color="#fff" />
-          <Button.Label style={{ color: "#FFFFFF" }}>View on Marketplace</Button.Label>
+          <Button.Label className="text-white">View on Marketplace</Button.Label>
         </Button>
-      </View>
+      </GlassSurface>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  backBtn: {
-    width: 40,
-    height: 40,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    zIndex: 10,
-  },
-  badgeChip: {
-    backgroundColor: "rgba(0,0,0,0.55)",
-  },
-  badgeLabel: {
-    color: "#FFFFFF",
-  },
-  ctaBar: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    backgroundColor: "rgba(18,18,18,0.92)",
-  },
-  showMore: {
-    color: "#1DB954",
-  },
-});

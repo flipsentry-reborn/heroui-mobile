@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { PressableFeedback } from "heroui-native";
+import { View } from "react-native";
+import { PressableFeedback, Typography } from "heroui-native";
 
 interface FeedDetailActionsProps {
   isFavorite: boolean;
@@ -18,64 +18,50 @@ export function FeedDetailActions({
   onShare,
 }: FeedDetailActionsProps): JSX.Element {
   return (
-    <View style={styles.row}>
+    <View className="flex-row items-center justify-center gap-9 py-2">
       <PressableFeedback
         onPress={onSave}
         accessibilityLabel={isFavorite ? "Saved" : "Save"}
         animation={{ scale: { value: 0.96 } }}
-        style={styles.action}
+        className="flex-row items-center gap-2 px-1 py-1.5"
       >
         <Ionicons
           name={isFavorite ? "bookmark" : "bookmark-outline"}
           size={18}
           color={isFavorite ? "#1DB954" : "#E8E8E8"}
         />
-        <Text style={[styles.label, { color: isFavorite ? "#1DB954" : "#E8E8E8" }]}>
+        <Typography
+          type="body-sm"
+          weight="semibold"
+          className={isFavorite ? "tracking-wide text-accent" : "tracking-wide text-foreground"}
+        >
           Saved
-        </Text>
+        </Typography>
       </PressableFeedback>
 
       <PressableFeedback
         onPress={onShare}
         accessibilityLabel="Share"
         animation={{ scale: { value: 0.96 } }}
-        style={styles.action}
+        className="flex-row items-center gap-2 px-1 py-1.5"
       >
         <Ionicons name="share-outline" size={18} color="#E8E8E8" />
-        <Text style={[styles.label, { color: "#E8E8E8" }]}>Share</Text>
+        <Typography type="body-sm" weight="semibold" className="tracking-wide text-foreground">
+          Share
+        </Typography>
       </PressableFeedback>
 
       <PressableFeedback
         onPress={onDelete}
         accessibilityLabel="Delete"
         animation={{ scale: { value: 0.96 } }}
-        style={styles.action}
+        className="flex-row items-center gap-2 px-1 py-1.5"
       >
         <Ionicons name="trash-outline" size={18} color="#f87171" />
-        <Text style={[styles.label, { color: "#f87171" }]}>Delete</Text>
+        <Typography type="body-sm" weight="semibold" className="tracking-wide text-[#f87171]">
+          Delete
+        </Typography>
       </PressableFeedback>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 36,
-    paddingVertical: 8,
-  },
-  action: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: "600",
-    letterSpacing: 0.2,
-  },
-});

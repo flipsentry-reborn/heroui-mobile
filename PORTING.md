@@ -27,7 +27,7 @@ UI preferences, settings type scale, buttons, and copy rules: **`DESIGN.md`**.
 | MCP `heroui-pro` | Web React docs (optional; not for RN screens) |
 | Skill `heroui-native-pro` | Native Pro patterns (user skills) |
 | Skill `heroui-pro-design-taste` | Design system polish (user skills) |
-| Rules `.cursor/rules/*.mdc` | Project constraints (Spotify, mock-only, port scope) |
+| Rules `.cursor/rules/*.mdc` | Project constraints (theme, mock-only, port scope) |
 
 Config: `.cursor/mcp.json` (gitignored). Rules: `.cursor/rules/`.
 
@@ -133,7 +133,7 @@ heroui-mobile/
 
 ## Theme
 
-Theme tokens live in `src/global.css`. Target Uber neutrals (black/white accent, no Spotify green).  
+Theme tokens live in `src/global.css`. Target Uber neutrals (black/white accent).  
 Restart Metro after theme changes.
 
 ## Fonts

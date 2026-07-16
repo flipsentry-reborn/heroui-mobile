@@ -7,7 +7,7 @@ For port process / folder layout see **`PORTING.md`**. For fonts / subscription 
 
 ## North star
 
-- **Uber-inspired neutrals**, not Spotify green or old FlipSentry teal.
+- **Uber-inspired neutrals**, not legacy teal/green brand hardcodes.
 - **HeroUI Native + Pro** as the component system; Uniwind `className` for styling.
 - **Mock-only** data so Expo Go stays fast and honest.
 - Prefer **calm, list-based settings** over flashy marketing chrome (except subscription).
@@ -18,7 +18,7 @@ For port process / folder layout see **`PORTING.md`**. For fonts / subscription 
 
 | Prefer | Avoid |
 |--------|--------|
-| Semantic tokens (`bg-background`, `text-foreground`, `bg-accent`, `text-muted`) | Hardcoded Spotify greens (`#1DB954`, `#121212`) or old brand teal |
+| Semantic tokens (`bg-background`, `text-foreground`, `bg-accent`, `text-muted`) | Hardcoded greens (`#1DB954`) or old brand teal |
 | Dark: near-black bg, **white** accent / black label | Neon purple glow themes as the app default |
 | Light: light gray bg, **black** accent / white label | Cream / terracotta “AI default” palettes |
 | Small radius (`--radius: 0.25rem` in `global.css`) | Large pill buttons for primary actions in settings |
@@ -153,6 +153,16 @@ Rules: `.cursor/rules/flipsentry-ui-port.mdc`, `.cursor/rules/heroui-native-scre
 - Tabs: Home, Feed, Help, Settings
 - Settings stack: profile, notifications, blocked sellers, subscription, etc.
 - Expo Go first; maps / IAP / live feed stay stubbed (see `PORTING.md`)
+
+### Avoid white flash on back / push
+
+Fitness-style setup in `src/app/_layout.tsx`:
+
+1. Expo Router `ThemeProvider` / `DarkTheme` (import from `expo-router`, not `@react-navigation/native`) with `colors.background` / `card` = HeroUI `background`
+2. Stack `contentStyle.backgroundColor` from `useThemeColor("background")`
+3. `GestureHandlerRootView` same background
+4. `expo-system-ui` `SystemUI.setBackgroundColorAsync(background)` when theme changes
+5. `app.json` `backgroundColor` fallback for the native root
 
 ### Feed categories
 

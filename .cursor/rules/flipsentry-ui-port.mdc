@@ -20,7 +20,7 @@ alwaysApply: true
 - Uber-inspired neutrals via HeroUI tokens in `src/global.css` (oklch grayscale).
 - Dark: near-black background, white `--accent` / black `--accent-foreground`.
 - Light: light gray background, black `--accent` / white `--accent-foreground`.
-- Prefer semantic classes (`bg-background`, `text-foreground`, `bg-accent`) - no Spotify green `#1DB954` / `#121212` hardcodes.
+- Prefer semantic classes (`bg-background`, `text-foreground`, `bg-accent`) - no legacy green/black hardcodes (`#1DB954`, `#121212`).
 - Use `Button variant="secondary"` for most actions; primary/accent sparingly (Uber black/white).
 
 ## Components

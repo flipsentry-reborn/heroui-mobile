@@ -15,7 +15,7 @@ alwaysApply: false
 ## Styling
 
 - Prefer semantic tokens: `bg-background`, `text-foreground`, `bg-accent` / `text-muted` from theme.
-- Uber neutrals are the visual target (black/white accent); do not reintroduce Spotify green `#1DB954` or old FlipSentry `#009966`.
+- Uber neutrals are the visual target (black/white accent); do not reintroduce legacy greens (`#1DB954`, `#009966`).
 
 ## Native gaps
 

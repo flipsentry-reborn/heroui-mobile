@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import type { ComponentProps, JSX } from "react";
 import { View } from "react-native";
@@ -32,7 +32,12 @@ function withAlpha(color: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-export function SpotifyTabBar({ state, descriptors, navigation }: BottomTabBarProps): JSX.Element {
+/** Floating bottom tab bar with fade into the screen background. */
+export function AppTabBar({
+  state,
+  descriptors,
+  navigation,
+}: BottomTabBarProps): JSX.Element {
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 10);
   const [foreground, muted, background] = useThemeColor([

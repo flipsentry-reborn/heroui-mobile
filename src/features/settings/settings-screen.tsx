@@ -59,10 +59,15 @@ function DistanceUnitFab({
     <FAB placement="top" align="end">
       <FAB.Trigger
         accessibilityLabel={`Distance unit ${DISTANCE_UNIT_LABELS[value]}`}
-        className="h-8 min-w-8 px-3"
+        className="h-8 w-24 px-3"
         animation={{ rotate: { value: [0, 0, 0] } }}
       >
-        <Typography type="body-xs" weight="bold" className="text-accent-foreground">
+        <Typography
+          type="body-xs"
+          weight="bold"
+          numberOfLines={1}
+          className="text-accent-foreground"
+        >
           {DISTANCE_UNIT_LABELS[value]}
         </Typography>
       </FAB.Trigger>
@@ -178,11 +183,12 @@ export function SettingsScreen(): JSX.Element {
         className="flex-1"
         LinearGradientComponent={LinearGradient}
         color={background}
+        size={12}
       >
         <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}
-          contentContainerClassName="pb-[110px]"
+          contentContainerClassName="pb-[110px] pt-2"
         >
           <SettingsProfileHeader
             profile={state.profile}

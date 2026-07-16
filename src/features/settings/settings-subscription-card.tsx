@@ -63,7 +63,8 @@ export function SettingsSubscriptionCard({
           </Text>
           <Button
             variant="primary"
-            className="min-h-11 w-full bg-accent"
+            size="sm"
+            className="w-full bg-accent"
             onPress={onPress}
           >
             <Button.Label className="text-sm text-accent-foreground">

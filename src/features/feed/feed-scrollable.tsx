@@ -68,6 +68,7 @@ export function FeedScrollable({
       className="flex-1"
       LinearGradientComponent={LinearGradient}
       color={background}
+      size={12}
     >
       <FlatList
         key="feed-grid-2"

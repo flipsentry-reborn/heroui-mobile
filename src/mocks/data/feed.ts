@@ -184,7 +184,7 @@ export const FEED_CATEGORIES: {
 }[] = [
   { key: "for-you", label: "For You" },
   { key: "all", label: "All" },
-  { key: "best-picks", label: "Top Rated" },
+  { key: "best-picks", label: "Top Rated", badge: "AI" },
   { key: "price-drop", label: "Price Changed", badge: "Beta" },
   { key: "car", label: "Cars" },
   { key: "iphone", label: "iPhones" },

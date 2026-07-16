@@ -1,5 +1,6 @@
+import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
-import { Tabs } from "heroui-native";
+import { Tabs, useThemeColor } from "heroui-native";
 import { Badge } from "heroui-native-pro";
 
 import { FEED_CATEGORIES, type FeedCategoryKey } from "@/mocks/data/feed";
@@ -17,6 +18,8 @@ export function FeedCategoryTabs({
   activeCategory,
   onSelect,
 }: FeedCategoryTabsProps): JSX.Element {
+  const warningForeground = useThemeColor("warning-foreground");
+
   return (
     <Tabs
       value={activeCategory}
@@ -49,8 +52,15 @@ export function FeedCategoryTabs({
                       color="warning"
                       size="sm"
                       variant="primary"
-                      className="bg-warning"
+                      className="flex-row items-center gap-0.5 bg-warning"
                     >
+                      {category.badge === "AI" ? (
+                        <Ionicons
+                          name="sparkles"
+                          size={10}
+                          color={warningForeground}
+                        />
+                      ) : null}
                       {category.badge}
                     </Badge>
                   ) : null}

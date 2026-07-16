@@ -122,6 +122,7 @@ export function FeedForYouPage({
         className="flex-1"
         LinearGradientComponent={LinearGradient}
         color={background}
+        size={12}
       >
         <ScrollView
           className="flex-1"
@@ -141,6 +142,7 @@ export function FeedForYouPage({
       className="flex-1"
       LinearGradientComponent={LinearGradient}
       color={background}
+      size={12}
     >
       <ScrollView
         className="flex-1"

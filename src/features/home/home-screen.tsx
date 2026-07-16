@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import type { JSX, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -10,7 +9,6 @@ import {
  Button,
  Chip,
  PressableFeedback,
- ScrollShadow,
  Surface,
  Typography,
  useThemeColor,
@@ -117,11 +115,10 @@ export function HomeScreen(): JSX.Element {
  const insets = useSafeAreaInsets();
  const router = useRouter();
  const { toast } = useToast();
- const [accent, accentForeground, muted, background] = useThemeColor([
+ const [accent, accentForeground, muted] = useThemeColor([
  "accent",
  "accent-foreground",
  "muted",
- "background",
  ]);
  const [state, setState] = useState<HomeState | null>(null);
  const [createOpen, setCreateOpen] = useState(false);
@@ -251,15 +248,10 @@ export function HomeScreen(): JSX.Element {
  </Typography>
  </View>
 
- <ScrollShadow
- className="flex-1"
- LinearGradientComponent={LinearGradient}
- color={background}
- >
  <ScrollView
  className="flex-1"
  showsVerticalScrollIndicator={false}
- contentContainerClassName="pb-[110px]"
+ contentContainerClassName="pb-[110px] pt-2"
  >
  {/* Plan / credits - ~15% tighter + glass on badges/credits only */}
  <PressableFeedback
@@ -447,7 +439,6 @@ export function HomeScreen(): JSX.Element {
  </View>
  )}
  </ScrollView>
- </ScrollShadow>
 
  <HomeBottomSheet
  visible={createOpen}

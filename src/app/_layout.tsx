@@ -62,32 +62,30 @@ function RootLayoutContent(): JSX.Element {
 
   return (
     <ThemeProvider value={navigationTheme}>
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: background }}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: background },
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: background },
+        }}
+      >
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="feed/[id]"
+          options={{
+            animation: "slide_from_right",
+            gestureEnabled: true,
           }}
-        >
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="feed/[id]"
-            options={{
-              animation: "slide_from_right",
-              gestureEnabled: true,
-            }}
-          />
-          <Stack.Screen
-            name="settings"
-            options={{
-              headerShown: false,
-              animation: "slide_from_right",
-              gestureEnabled: true,
-            }}
-          />
-        </Stack>
-        <StatusBar style={isDark ? "light" : "dark"} />
-      </GestureHandlerRootView>
+        />
+        <Stack.Screen
+          name="settings"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+            gestureEnabled: true,
+          }}
+        />
+      </Stack>
+      <StatusBar style={isDark ? "light" : "dark"} />
     </ThemeProvider>
   );
 }
@@ -111,12 +109,14 @@ export default function RootLayout(): JSX.Element | null {
   }
 
   return (
-    <HeroUINativeProvider
-      config={{
-        devInfo: { stylingPrinciples: false },
-      }}
-    >
-      <RootLayoutContent />
-    </HeroUINativeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <HeroUINativeProvider
+        config={{
+          devInfo: { stylingPrinciples: false },
+        }}
+      >
+        <RootLayoutContent />
+      </HeroUINativeProvider>
+    </GestureHandlerRootView>
   );
 }

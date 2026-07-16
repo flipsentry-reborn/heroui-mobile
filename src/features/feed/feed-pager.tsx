@@ -55,6 +55,7 @@ export function FeedPager({
       style={{ flex: 1 }}
       initialPage={FEED_CATEGORIES.findIndex((c) => c.key === activeCategory)}
       offscreenPageLimit={1}
+      scrollEnabled={false}
       onPageSelected={handlePageSelected}
     >
       {FEED_CATEGORIES.map((category) => (

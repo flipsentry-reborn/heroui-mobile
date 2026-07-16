@@ -2,10 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import type { JSX } from "react";
 import { View } from "react-native";
-import { Card, Chip, PressableFeedback, Typography, useThemeColor } from "heroui-native";
+import { Card, PressableFeedback, Typography, useThemeColor } from "heroui-native";
 
 import PlatformIcon from "@/components/icons/PlatformIcon";
-import { ValuationBadge } from "@/features/feed/valuation-badge";
+import {
+  StatusBadge,
+  ValuationBadge,
+} from "@/features/feed/feed-badge";
 import {
   getOrderedStatusBadges,
   type FeedItem as FeedModel,
@@ -78,20 +81,12 @@ export function FeedItem({ feed, onPress, onToggleFavorite }: FeedItemProps): JS
           </View>
 
           {(feed.valuation?.calculated || statusBadges.length > 0) && (
-            <View className="absolute bottom-1.5 left-1.5 right-1.5 flex-row flex-wrap gap-0.5">
+            <View className="absolute bottom-1.5 left-1.5 right-1.5 flex-row flex-wrap gap-1">
               {feed.valuation?.calculated ? (
                 <ValuationBadge buySignal={feed.valuation.buySignal} />
               ) : null}
               {statusBadges.slice(0, 2).map((badge) => (
-                <Chip
-                  key={badge}
-                  size="sm"
-                  variant="soft"
-                  color={badge === "Dealer" || badge === "Spam" ? "danger" : "warning"}
-                  className="bg-black/60"
-                >
-                  <Chip.Label className="text-[9px] text-white">{badge}</Chip.Label>
-                </Chip>
+                <StatusBadge key={badge} label={badge} />
               ))}
             </View>
           )}

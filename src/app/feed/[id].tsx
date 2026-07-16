@@ -1,12 +1,16 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState, type JSX } from "react";
 import { View } from "react-native";
 import { Button, SkeletonGroup } from "heroui-native";
 import { EmptyState } from "heroui-native-pro";
+import { withUniwind } from "uniwind";
 
 import { FeedDetail } from "@/features/feed/feed-detail";
 import { getFeedById, toggleFavorite } from "@/mocks/services/feed";
 import type { FeedItem } from "@/models/feed";
+
+const StyledIonicons = withUniwind(Ionicons);
 
 export default function FeedDetailScreen(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -52,18 +56,27 @@ export default function FeedDetailScreen(): JSX.Element {
 
   if (missing || !item) {
     return (
-      <View className="flex-1 bg-background items-center justify-center px-6">
+      <View className="flex-1 items-center justify-center bg-background px-6">
         <EmptyState>
           <EmptyState.Header>
+            <EmptyState.Media variant="icon">
+              <StyledIonicons
+                name="alert-circle-outline"
+                size={20}
+                className="text-muted"
+              />
+            </EmptyState.Media>
             <EmptyState.Title>Listing not found</EmptyState.Title>
             <EmptyState.Description>
               This mock item is missing or the link is invalid.
             </EmptyState.Description>
           </EmptyState.Header>
+          <EmptyState.Content>
+            <Button variant="secondary" onPress={() => router.back()}>
+              <Button.Label>Back to Feed</Button.Label>
+            </Button>
+          </EmptyState.Content>
         </EmptyState>
-        <Button variant="secondary" className="mt-4" onPress={() => router.back()}>
-          <Button.Label>Back to Feed</Button.Label>
-        </Button>
       </View>
     );
   }

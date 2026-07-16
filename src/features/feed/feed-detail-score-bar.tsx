@@ -15,8 +15,8 @@ const TIER_ORDER: ValuationTier[] = [
 const TIER_LABEL: Record<ValuationTier, string> = {
   greatDeal: "Great",
   goodValue: "Good",
-  fairPrice: "Fair",
-  overpriced: "Pass",
+  fairPrice: "OK",
+  overpriced: "Skip",
 };
 
 const SLOT_COUNT = 20;

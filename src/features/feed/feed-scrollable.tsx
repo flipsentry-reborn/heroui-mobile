@@ -3,9 +3,12 @@ import type { JSX } from "react";
 import { FlatList, RefreshControl, View } from "react-native";
 import { EmptyState } from "heroui-native-pro";
 import { SkeletonGroup, useThemeColor } from "heroui-native";
+import { withUniwind } from "uniwind";
 
 import { FeedItem } from "@/features/feed/feed-item";
 import type { FeedItem as FeedModel } from "@/models/feed";
+
+const StyledIonicons = withUniwind(Ionicons);
 
 interface FeedScrollableProps {
   items: FeedModel[];
@@ -17,22 +20,30 @@ interface FeedScrollableProps {
   bottomInset?: number;
 }
 
+/** Matches FeedItem: 2-col card, 168px image, 3 text rows. */
 function FeedSkeleton(): JSX.Element {
   return (
-    <View className="flex-row flex-wrap px-2 pt-1.5">
-      {[0, 1, 2, 3].map((key) => (
-        <View key={key} className="w-1/2 px-1 pb-2.5">
-          <SkeletonGroup isLoading className="overflow-hidden rounded-xl bg-default">
-            <SkeletonGroup.Item className="h-[168px] w-full" />
-            <View className="gap-1.5 p-2">
-              <SkeletonGroup.Item className="h-3.5 w-1/3 rounded-md" />
-              <SkeletonGroup.Item className="h-2.5 w-[90%] rounded-md" />
-              <SkeletonGroup.Item className="h-2.5 w-2/3 rounded-md" />
+    <SkeletonGroup
+      isLoading
+      isSkeletonOnly
+      className="flex-row flex-wrap px-0.5 pt-1"
+    >
+      {[0, 1, 2, 3, 4, 5].map((key) => (
+        <View key={key} className="mb-1.5 w-1/2 px-0.5">
+          <View className="overflow-hidden rounded-xl">
+            <SkeletonGroup.Item className="h-[168px] w-full rounded-xl" />
+            <View className="gap-0.5 px-1.5 pb-1.5 pt-1">
+              <View className="flex-row items-center gap-1.5">
+                <SkeletonGroup.Item className="h-4 w-14 rounded-md" />
+                <SkeletonGroup.Item className="h-3 w-16 rounded-md" />
+              </View>
+              <SkeletonGroup.Item className="h-4 w-full rounded-md" />
+              <SkeletonGroup.Item className="h-3 w-28 rounded-md" />
             </View>
-          </SkeletonGroup>
+          </View>
         </View>
       ))}
-    </View>
+    </SkeletonGroup>
   );
 }
 
@@ -73,7 +84,7 @@ export function FeedScrollable({
         <EmptyState className="px-6 py-12">
           <EmptyState.Header>
             <EmptyState.Media variant="icon">
-              <Ionicons name="sparkles-outline" size={22} color={accent} />
+              <StyledIonicons name="grid-outline" size={20} className="text-muted" />
             </EmptyState.Media>
             <EmptyState.Title>No listings yet</EmptyState.Title>
             <EmptyState.Description>

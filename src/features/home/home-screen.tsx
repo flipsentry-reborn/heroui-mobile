@@ -361,10 +361,13 @@ export function HomeScreen(): JSX.Element {
  <Surface variant="secondary" className="mx-3">
  <EmptyState className="px-5 py-10">
  <EmptyState.Header>
- <EmptyState.Title>No Active Searches</EmptyState.Title>
+ <EmptyState.Media variant="icon">
+ <Ionicons name="search-outline" size={20} color={muted} />
+ </EmptyState.Media>
+ <EmptyState.Title>No active searches</EmptyState.Title>
  <EmptyState.Description>
- Create your first search to start finding deals. We&apos;ll notify you
- instantly when new listings match.
+ Create your first search to start finding deals. We will notify you
+ when new listings match.
  </EmptyState.Description>
  </EmptyState.Header>
  </EmptyState>

@@ -43,6 +43,11 @@ import { getSubscription } from "@/mocks/services/subscription";
 
 const StyledIonicons = withUniwind(Ionicons);
 
+const DISTANCE_UNIT_LABELS = {
+  mi: "Mileage",
+  km: "Kilometers",
+} as const;
+
 function DistanceUnitFab({
   value,
   onChange,
@@ -53,19 +58,19 @@ function DistanceUnitFab({
   return (
     <FAB placement="top" align="end">
       <FAB.Trigger
-        accessibilityLabel={`Distance unit ${value}`}
-        className="h-8 min-w-8 px-0"
+        accessibilityLabel={`Distance unit ${DISTANCE_UNIT_LABELS[value]}`}
+        className="h-8 min-w-8 px-3"
         animation={{ rotate: { value: [0, 0, 0] } }}
       >
         <Typography type="body-xs" weight="bold" className="text-accent-foreground">
-          {value}
+          {DISTANCE_UNIT_LABELS[value]}
         </Typography>
       </FAB.Trigger>
       <FAB.Portal>
         <FAB.Overlay />
         <FAB.Content>
-          <FAB.Item onPress={() => onChange("mi")}>mi</FAB.Item>
-          <FAB.Item onPress={() => onChange("km")}>km</FAB.Item>
+          <FAB.Item onPress={() => onChange("mi")}>Mileage</FAB.Item>
+          <FAB.Item onPress={() => onChange("km")}>Kilometers</FAB.Item>
         </FAB.Content>
       </FAB.Portal>
     </FAB>

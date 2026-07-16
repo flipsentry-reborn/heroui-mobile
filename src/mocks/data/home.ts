@@ -58,7 +58,7 @@ function setting(
   return { id, platform, locationName, isActive, runIntervalSeconds };
 }
 
-/** Hunter plan · 8 car searches (mock). */
+/** Hunter plan · mix of car, iPhone, and custom searches (mock). */
 export const homeFixture: HomeState = {
   plan: {
     tier: "hunter",
@@ -93,19 +93,14 @@ export const homeFixture: HomeState = {
     },
     {
       id: "g2",
-      searchType: "car",
-      locationName: "Austin, TX, USA",
-      radiusMiles: 50,
-      carQuery: {
-        makes: ["Ford"],
-        minPrice: 8000,
-        maxPrice: 25000,
-        minYear: 2018,
-        maxYear: 2024,
-      },
+      searchType: "iphone",
+      locationName: "Atlanta, GA, USA",
+      radiusMiles: 25,
+      customLabel: "iPhone 13–15 Pro",
       settings: [
-        setting("g2-fb", "facebook", "Austin, TX", true, 60),
-        setting("g2-cl", "craigslist", "Round Rock, TX", false, 300),
+        setting("g2-fb", "facebook", "Atlanta, GA", true, 60),
+        setting("g2-ou", "offerUp", "Decatur, GA", true, 300),
+        setting("g2-cl", "craigslist", "Atlanta, GA", false, 900),
       ],
     },
     {
@@ -129,18 +124,13 @@ export const homeFixture: HomeState = {
     },
     {
       id: "g4",
-      searchType: "car",
-      locationName: "Chicago, IL, USA",
-      radiusMiles: 45,
-      carQuery: {
-        makes: ["Any"],
-        maxPrice: 12000,
-        minYear: 2012,
-        maxYear: 2019,
-      },
+      searchType: "custom",
+      locationName: "Atlanta, GA, USA",
+      radiusMiles: 20,
+      customLabel: "Cameras & lenses",
       settings: [
-        setting("g4-fb", "facebook", "Chicago, IL", false, 300),
-        setting("g4-cl", "craigslist", "Chicago, IL", false, 900),
+        setting("g4-fb", "facebook", "Atlanta, GA", true, 300),
+        setting("g4-ou", "offerUp", "Buckhead, GA", true, 900),
       ],
     },
     {
@@ -161,35 +151,25 @@ export const homeFixture: HomeState = {
     },
     {
       id: "g6",
-      searchType: "car",
-      locationName: "Seattle, WA, USA",
+      searchType: "iphone",
+      locationName: "Austin, TX, USA",
       radiusMiles: 30,
-      carQuery: {
-        makes: ["Tesla", "Toyota"],
-        minPrice: 15000,
-        maxPrice: 40000,
-        minYear: 2019,
-      },
+      customLabel: "Unlocked iPhones",
       settings: [
-        setting("g6-fb", "facebook", "Seattle, WA", true, 60),
-        setting("g6-cl", "craigslist", "Bellevue, WA", true, 300),
-        setting("g6-ou", "offerUp", "Seattle, WA", true, 900),
+        setting("g6-fb", "facebook", "Austin, TX", true, 60),
+        setting("g6-cl", "craigslist", "Austin, TX", true, 300),
+        setting("g6-ou", "offerUp", "Round Rock, TX", false, 900),
       ],
     },
     {
       id: "g7",
-      searchType: "car",
-      locationName: "Phoenix, AZ, USA",
-      radiusMiles: 55,
-      carQuery: {
-        makes: ["Chevrolet", "GMC"],
-        minPrice: 7000,
-        maxPrice: 22000,
-        maxMileage: 100000,
-      },
+      searchType: "custom",
+      locationName: "Chicago, IL, USA",
+      radiusMiles: 35,
+      customLabel: "Bikes & outdoor",
       settings: [
-        setting("g7-fb", "facebook", "Phoenix, AZ", true, 300),
-        setting("g7-cl", "craigslist", "Mesa, AZ", true, 900),
+        setting("g7-fb", "facebook", "Chicago, IL", true, 300),
+        setting("g7-cl", "craigslist", "Chicago, IL", true, 900),
       ],
     },
     {

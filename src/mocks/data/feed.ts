@@ -1,12 +1,26 @@
 import type { FeedItem } from "@/models/feed";
 
-/** Unsplash CDN - free stock photos for mock listings (not local assets). */
+/** Unsplash CDN - product-ish stock for mock listings (cars, phones, gear). */
 const EXTRA_PHOTOS = [
+ "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1616422285623-13ff0162193b?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1592890288564-76628a30a657?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1591337676887-a217a6970a8a?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1571068316344-75bc76f77890?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80",
  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80",
  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80",
  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=80",
  "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=800&q=80",
  "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80",
  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
  "https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?auto=format&fit=crop&w=800&q=80",
@@ -14,24 +28,10 @@ const EXTRA_PHOTOS = [
  "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=800&q=80",
  "https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&w=800&q=80",
  "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1518173946687-a0c6421f5f9f?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1465146633011-14f8e0781093?auto=format&fit=crop&w=800&q=80",
  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
  "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1492724441997-5dc865305da7?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=900&q=80",
- "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1482192505345-be19c79d409a?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1454496522488-1a8a1e5c6f84?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80",
- "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=900&q=80",
  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
+ "https://images.unsplash.com/photo-1482192505345-be19c79d409a?auto=format&fit=crop&w=800&q=80",
 ];
 
 /** Pads short listing blurbs so detail screens scroll (~10×). */
@@ -54,6 +54,118 @@ function images(main: string, seed: number): FeedItem["images"] {
 }
 
 const now = Date.now();
+
+function minsAgo(minutes: number): string {
+  return new Date(now - 1000 * 60 * minutes).toISOString();
+}
+
+type ExtraListing = {
+  id: string;
+  platform: FeedItem["platform"];
+  listingId: string;
+  minutesAgo: number;
+  title: string;
+  lead: string;
+  extras: string[];
+  price: number;
+  locationText: string;
+  lat: number;
+  lng: number;
+  distanceMiles: number;
+  image: string;
+  seed: number;
+  searchSettingIds: string[];
+  condition: string;
+  isFavorite?: boolean;
+  favoritedMinsAgo?: number;
+  vehicleSpecifications?: FeedItem["vehicleSpecifications"];
+  valuation?: FeedItem["valuation"];
+  seller?: FeedItem["seller"];
+  iphoneBatteryHealth?: number;
+  iphoneStorageGb?: number;
+  isDealership?: boolean;
+  dealershipName?: string;
+  isDamaged?: boolean;
+  damagedKeywordTexts?: string[];
+  isMajorDamaged?: boolean;
+  majorDamagedKeywordTexts?: string[];
+  isSalvageTitle?: boolean;
+  salvageTitleKeywordTexts?: string[];
+  isRebuiltTitle?: boolean;
+  rebuiltTitleKeywordTexts?: string[];
+  isNegociable?: boolean;
+  negociableKeywordTexts?: string[];
+  isUrgent?: boolean;
+  urgentKeywordTexts?: string[];
+  isMotivated?: boolean;
+  motivatedKeywordTexts?: string[];
+  scamKeywordTexts?: string[];
+  listingUrl?: string;
+  reviewScore?: number;
+  reviewCount?: number;
+};
+
+function extraListing(item: ExtraListing): FeedItem {
+  const created = minsAgo(item.minutesAgo);
+  return {
+    id: item.id,
+    platform: item.platform,
+    listingId: item.listingId,
+    creationTime: created,
+    appUserId: "user-1",
+    title: item.title,
+    description: expandDescription(item.lead, item.extras),
+    price: item.price,
+    location: { latitude: item.lat, longitude: item.lng },
+    locationText: item.locationText,
+    distanceMiles: item.distanceMiles,
+    images: images(item.image, item.seed),
+    searchSettingIds: item.searchSettingIds,
+    keywordTags: { title: [], description: [] },
+    createdAt: created,
+    seenAt: [],
+    isFavorite: item.isFavorite ?? false,
+    favoritedAt:
+      item.isFavorite && item.favoritedMinsAgo != null
+        ? minsAgo(item.favoritedMinsAgo)
+        : item.isFavorite
+          ? created
+          : null,
+    isSpamReported: false,
+    spamReportedAt: null,
+    isDeleted: false,
+    deletedAt: null,
+    isSniped: false,
+    condition: item.condition,
+    vehicleSpecifications: item.vehicleSpecifications,
+    currency: "USD",
+    currencySymbol: "$",
+    valuation: item.valuation,
+    seller: item.seller,
+    iphoneBatteryHealth: item.iphoneBatteryHealth,
+    iphoneStorageGb: item.iphoneStorageGb,
+    isDealership: item.isDealership,
+    dealershipName: item.dealershipName,
+    isDamaged: item.isDamaged,
+    damagedKeywordTexts: item.damagedKeywordTexts,
+    isMajorDamaged: item.isMajorDamaged,
+    majorDamagedKeywordTexts: item.majorDamagedKeywordTexts,
+    isSalvageTitle: item.isSalvageTitle,
+    salvageTitleKeywordTexts: item.salvageTitleKeywordTexts,
+    isRebuiltTitle: item.isRebuiltTitle,
+    rebuiltTitleKeywordTexts: item.rebuiltTitleKeywordTexts,
+    isNegociable: item.isNegociable,
+    negociableKeywordTexts: item.negociableKeywordTexts,
+    isUrgent: item.isUrgent,
+    urgentKeywordTexts: item.urgentKeywordTexts,
+    isMotivated: item.isMotivated,
+    motivatedKeywordTexts: item.motivatedKeywordTexts,
+    scamKeywordTexts: item.scamKeywordTexts,
+    listingUrl: item.listingUrl,
+    reviewScore: item.reviewScore,
+    reviewCount: item.reviewCount,
+  };
+}
 
 export type FeedCategoryKey =
   | "all"
@@ -451,7 +563,7 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  majorDamagedKeywordTexts: ["cracked"],
  valuation: {
  calculated: true,
- valuationType: "iphone",
+ valuationType: "iphone" as const,
  platform: "offerUp",
  listingId: "ou-2208",
  make: "Apple",
@@ -476,4 +588,447 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  batteryHealth: 87,
  },
  },
+ ...(
+ [
+ {
+ id: "feed-7",
+ platform: "facebookMarketplace" as const,
+ listingId: "fb-2010",
+ minutesAgo: 12,
+ title: "2018 Subaru Outback 3.6R Limited",
+ lead: "AWD touring wagon. Roof rails, heated seats, eyesight.",
+ extras: [
+ "One family since new. Dealer serviced every 5k. Timing chain design so no belt panic. Winter package already installed.",
+ "Leather is clean, no pet smell. Minor stone chips on the hood only. All-season tires with good tread plus a set of winters in the garage.",
+ "Great for mountains and daily commuting. Can meet at a credit union for a PPI. Title clear, not a salvage.",
+ ],
+ price: 16800,
+ locationText: "Sandy Springs, GA",
+ lat: 33.93,
+ lng: -84.37,
+ distanceMiles: 11.2,
+ image:
+ "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=800&q=80",
+ seed: 6,
+ searchSettingIds: ["group-cars"],
+ condition: "Used - Good",
+ isFavorite: true,
+ favoritedMinsAgo: 8,
+ isNegociable: true,
+ negociableKeywordTexts: ["obo"],
+ vehicleSpecifications: {
+ vehicleYear: 2018,
+ vehicleMileage: 72400,
+ vehicleTransmission: "Automatic",
+ },
+ valuation: {
+ calculated: true,
+ valuationType: "car" as const,
+ platform: "facebookMarketplace",
+ listingId: "fb-2010",
+ make: "Subaru",
+ model: "Outback",
+ trim: "3.6R Limited",
+ year: 2018,
+ mileage: 72400,
+ price: 16800,
+ fairPrice: 18900,
+ profit: 2100,
+ buySignal: 79,
+ compCount: 12,
+ percentileRank: 22,
+ medianCvs: 0.26,
+ targetCvs: 0.21,
+ mileageLow: 60000,
+ mileageHigh: 90000,
+ warnings: [],
+ calculatedAt: new Date().toISOString(),
+ },
+ },
+ {
+ id: "feed-8",
+ platform: "craigslist" as const,
+ listingId: "cl-4410",
+ minutesAgo: 55,
+ title: "iPhone 15 Pro Max 256GB Natural Titanium",
+ lead: "AppleCare+ until 2027. Battery 98%. Never dropped.",
+ extras: [
+ "Purchased unlocked from Apple. Always cased. Includes box, USB-C cable, and MagSafe wallet.",
+ "No screen protector haze. Cameras are clean. Prefer cash meetup near Perimeter Mall.",
+ "Can show purchase receipt and AppleCare status in Settings. Not interested in trades.",
+ ],
+ price: 890,
+ locationText: "Dunwoody, GA",
+ lat: 33.95,
+ lng: -84.33,
+ distanceMiles: 14.5,
+ image:
+ "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80",
+ seed: 7,
+ searchSettingIds: ["group-iphones"],
+ condition: "Used - Like New",
+ iphoneBatteryHealth: 98,
+ iphoneStorageGb: 256,
+ isMotivated: true,
+ motivatedKeywordTexts: ["need gone"],
+ seller: {
+ sellerId: "seller-cl-8",
+ name: "Jordan P.",
+ avatarUrl: "https://i.pravatar.cc/100?img=12",
+ isAutosDealer: false,
+ isBusinessAccount: false,
+ ratingAverage: 5,
+ ratingCount: 9,
+ },
+ valuation: {
+ calculated: true,
+ valuationType: "iphone" as const,
+ platform: "craigslist",
+ listingId: "cl-4410",
+ make: "Apple",
+ model: "iPhone 15 Pro Max",
+ trim: null,
+ year: 2023,
+ mileage: 0,
+ price: 890,
+ fairPrice: 980,
+ profit: 90,
+ buySignal: 71,
+ compCount: 19,
+ percentileRank: 28,
+ medianCvs: 0.14,
+ targetCvs: 0.11,
+ mileageLow: 0,
+ mileageHigh: 0,
+ warnings: [],
+ calculatedAt: new Date().toISOString(),
+ iphoneModel: "iPhone 15 Pro Max",
+ storageGb: 256,
+ batteryHealth: 98,
+ },
+ },
+ {
+ id: "feed-9",
+ platform: "offerUp" as const,
+ listingId: "ou-5502",
+ minutesAgo: 110,
+ title: "Trek Domane AL 2 Road Bike - 56cm",
+ lead: "Lightly ridden. Shimano Claris. Includes pedals and bottle cages.",
+ extras: [
+ "Bought last spring, commuting twice a week. No crashes. Tires still have grip.",
+ "Size 56 fits ~5'9\"–6'0\". Happy to throw in a cheap helmet. Local pickup only.",
+ "Cash preferred. Can meet at a bike shop for a quick check if that helps.",
+ ],
+ price: 420,
+ locationText: "East Atlanta",
+ lat: 33.74,
+ lng: -84.34,
+ distanceMiles: 3.6,
+ image:
+ "https://images.unsplash.com/photo-1571068316344-75bc76f77890?auto=format&fit=crop&w=800&q=80",
+ seed: 8,
+ searchSettingIds: ["group-custom"],
+ condition: "Used - Good",
+ isUrgent: true,
+ urgentKeywordTexts: ["this weekend"],
+ reviewScore: 4.6,
+ reviewCount: 14,
+ },
+ {
+ id: "feed-10",
+ platform: "kijiji" as const,
+ listingId: "kj-6601",
+ minutesAgo: 180,
+ title: "2015 BMW 328i - Salvage Title",
+ lead: "Rebuilt after minor rear hit. Runs strong. Priced for title status.",
+ extras: [
+ "Airbags never deployed. Rear quarter repaired and painted. Carfax and rebuild paperwork available.",
+ "Recent oil, plugs, and brake pads. Sport package wheels. Interior is black and clean.",
+ "Financing hard with salvage - cash buyers only. Inspect before you buy.",
+ ],
+ price: 7400,
+ locationText: "Alpharetta, GA",
+ lat: 34.07,
+ lng: -84.29,
+ distanceMiles: 22.4,
+ image:
+ "https://images.unsplash.com/photo-1555215695-3004980ad94e?auto=format&fit=crop&w=800&q=80",
+ seed: 9,
+ searchSettingIds: ["group-cars"],
+ condition: "Used - Fair",
+ isSalvageTitle: true,
+ salvageTitleKeywordTexts: ["salvage"],
+ isDamaged: true,
+ damagedKeywordTexts: ["rear hit"],
+ vehicleSpecifications: {
+ vehicleYear: 2015,
+ vehicleMileage: 98000,
+ vehicleTransmission: "Automatic",
+ },
+ valuation: {
+ calculated: true,
+ valuationType: "car" as const,
+ platform: "kijiji",
+ listingId: "kj-6601",
+ make: "BMW",
+ model: "328i",
+ trim: null,
+ year: 2015,
+ mileage: 98000,
+ price: 7400,
+ fairPrice: 6200,
+ profit: -1200,
+ buySignal: 18,
+ compCount: 7,
+ percentileRank: 82,
+ medianCvs: 0.34,
+ targetCvs: 0.28,
+ mileageLow: 80000,
+ mileageHigh: 120000,
+ warnings: ["Salvage title"],
+ calculatedAt: new Date().toISOString(),
+ },
+ },
+ {
+ id: "feed-11",
+ platform: "facebookMarketplace" as const,
+ listingId: "fb-3012",
+ minutesAgo: 240,
+ title: "Sony A7 III + 28-70 Kit Lens",
+ lead: "Shutter count ~18k. Dual card slots. Body + kit only.",
+ extras: [
+ "Always in a padded bag. Sensor cleaned last month. Includes two batteries and a charger.",
+ "No dents on the hot shoe. IBIS works. Selling because I moved to cinema cams.",
+ "Meetup at a camera store welcome. Slight room on price for cash today.",
+ ],
+ price: 1050,
+ locationText: "Buckhead, GA",
+ lat: 33.84,
+ lng: -84.38,
+ distanceMiles: 6.1,
+ image:
+ "https://images.unsplash.com/photo-1516035069371-29a1b824cc32?auto=format&fit=crop&w=800&q=80",
+ seed: 10,
+ searchSettingIds: ["group-custom"],
+ condition: "Used - Excellent",
+ isFavorite: true,
+ favoritedMinsAgo: 40,
+ isNegociable: true,
+ negociableKeywordTexts: ["flexible"],
+ seller: {
+ sellerId: "seller-fb-11",
+ name: "Chris L.",
+ avatarUrl: "https://i.pravatar.cc/100?img=33",
+ isAutosDealer: false,
+ isBusinessAccount: true,
+ ratingAverage: 4.7,
+ ratingCount: 56,
+ },
+ },
+ {
+ id: "feed-12",
+ platform: "offerUp" as const,
+ listingId: "ou-7710",
+ minutesAgo: 320,
+ title: "iPhone SE 2022 64GB Midnight",
+ lead: "Battery 91%. Home button model. Unlocked.",
+ extras: [
+ "Great secondary phone. FaceTime and Touch ID work. Small hairline on the back.",
+ "Includes a clear case. No box. Reset and ready. Cash at Lenox MARTA.",
+ ],
+ price: 160,
+ locationText: "Lenox Square area",
+ lat: 33.85,
+ lng: -84.36,
+ distanceMiles: 8.0,
+ image:
+ "https://images.unsplash.com/photo-1592890288564-76628a30a657?auto=format&fit=crop&w=800&q=80",
+ seed: 11,
+ searchSettingIds: ["group-iphones"],
+ condition: "Used - Good",
+ iphoneBatteryHealth: 91,
+ iphoneStorageGb: 64,
+ valuation: {
+ calculated: true,
+ valuationType: "iphone" as const,
+ platform: "offerUp",
+ listingId: "ou-7710",
+ make: "Apple",
+ model: "iPhone SE",
+ trim: null,
+ year: 2022,
+ mileage: 0,
+ price: 160,
+ fairPrice: 190,
+ profit: 30,
+ buySignal: 62,
+ compCount: 15,
+ percentileRank: 38,
+ medianCvs: 0.16,
+ targetCvs: 0.13,
+ mileageLow: 0,
+ mileageHigh: 0,
+ warnings: [],
+ calculatedAt: new Date().toISOString(),
+ iphoneModel: "iPhone SE (2022)",
+ storageGb: 64,
+ batteryHealth: 91,
+ },
+ },
+ {
+ id: "feed-13",
+ platform: "craigslist" as const,
+ listingId: "cl-8820",
+ minutesAgo: 400,
+ title: "2020 Jeep Wrangler Unlimited Sport",
+ lead: "Soft top. Soft top + hard top available. Low miles for year.",
+ extras: [
+ "Mostly highway. Never wheeled hard. Stock tires with decent tread. Remote start.",
+ "Interior clean, no mud baked into carpets. Service records from Jeep dealer.",
+ "Priced near book - small negotiation for a same-day deal.",
+ ],
+ price: 27500,
+ locationText: "Roswell, GA",
+ lat: 34.02,
+ lng: -84.36,
+ distanceMiles: 18.7,
+ image:
+ "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=800&q=80",
+ seed: 12,
+ searchSettingIds: ["group-cars"],
+ condition: "Used - Excellent",
+ vehicleSpecifications: {
+ vehicleYear: 2020,
+ vehicleMileage: 31200,
+ vehicleTransmission: "Automatic",
+ },
+ valuation: {
+ calculated: true,
+ valuationType: "car" as const,
+ platform: "craigslist",
+ listingId: "cl-8820",
+ make: "Jeep",
+ model: "Wrangler",
+ trim: "Unlimited Sport",
+ year: 2020,
+ mileage: 31200,
+ price: 27500,
+ fairPrice: 29200,
+ profit: 1700,
+ buySignal: 68,
+ compCount: 10,
+ percentileRank: 30,
+ medianCvs: 0.23,
+ targetCvs: 0.19,
+ mileageLow: 25000,
+ mileageHigh: 45000,
+ warnings: [],
+ calculatedAt: new Date().toISOString(),
+ },
+ },
+ {
+ id: "feed-14",
+ platform: "facebookMarketplace" as const,
+ listingId: "fb-4099",
+ minutesAgo: 480,
+ title: "Herman Miller Aeron Chair Size B",
+ lead: "Fully loaded. PostureFit. Mesh is intact.",
+ extras: [
+ "From a home office refresh. No tears. Cylinder still strong. Arms adjust fine.",
+ "Pickup in Midtown loft - stairs, no elevator help. Cash or Venmo.",
+ ],
+ price: 450,
+ locationText: "Midtown Atlanta",
+ lat: 33.78,
+ lng: -84.39,
+ distanceMiles: 1.8,
+ image:
+ "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?auto=format&fit=crop&w=800&q=80",
+ seed: 13,
+ searchSettingIds: ["group-custom"],
+ condition: "Used - Good",
+ isMotivated: true,
+ motivatedKeywordTexts: ["moving sale"],
+ },
+ {
+ id: "feed-15",
+ platform: "kijiji" as const,
+ listingId: "kj-9901",
+ minutesAgo: 520,
+ title: "!!! GUARANTEED LOAN APPROVAL - ANY CREDIT !!!",
+ lead: "We finance everyone. Text now for same-day drive-off.",
+ extras: [
+ "Huge inventory of sedans and trucks. Bad credit? No credit? We can help.",
+ "Bring a paycheck stub and ID. Open late tonight.",
+ ],
+ price: 499,
+ locationText: "Metro Atlanta",
+ lat: 33.75,
+ lng: -84.4,
+ distanceMiles: 9.9,
+ image:
+ "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80",
+ seed: 14,
+ searchSettingIds: ["group-cars"],
+ condition: "Used - Fair",
+ isDealership: true,
+ dealershipName: "QuickDrive Auto",
+ scamKeywordTexts: ["guaranteed", "any credit"],
+ isUrgent: true,
+ urgentKeywordTexts: ["same-day"],
+ },
+ {
+ id: "feed-16",
+ platform: "offerUp" as const,
+ listingId: "ou-8100",
+ minutesAgo: 600,
+ title: "2017 Honda Accord Sport - Rebuilt Title",
+ lead: "Front end rebuilt professionally. New radiator and bumper.",
+ extras: [
+ "Insurance rebuild with receipts. Alignment done. Drives straight at highway speeds.",
+ "Paint match is close in daylight. Interior untouched. Priced under clean-title comps.",
+ ],
+ price: 9800,
+ locationText: "College Park, GA",
+ lat: 33.65,
+ lng: -84.45,
+ distanceMiles: 12.8,
+ image:
+ "https://images.unsplash.com/photo-1616422285623-13ff0162193b?auto=format&fit=crop&w=800&q=80",
+ seed: 15,
+ searchSettingIds: ["group-cars"],
+ condition: "Used - Good",
+ isRebuiltTitle: true,
+ rebuiltTitleKeywordTexts: ["rebuilt"],
+ vehicleSpecifications: {
+ vehicleYear: 2017,
+ vehicleMileage: 86400,
+ vehicleTransmission: "Manual",
+ },
+ valuation: {
+ calculated: true,
+ valuationType: "car" as const,
+ platform: "offerUp",
+ listingId: "ou-8100",
+ make: "Honda",
+ model: "Accord",
+ trim: "Sport",
+ year: 2017,
+ mileage: 86400,
+ price: 9800,
+ fairPrice: 11200,
+ profit: 1400,
+ buySignal: 55,
+ compCount: 8,
+ percentileRank: 42,
+ medianCvs: 0.29,
+ targetCvs: 0.24,
+ mileageLow: 70000,
+ mileageHigh: 100000,
+ warnings: ["Rebuilt title"],
+ calculatedAt: new Date().toISOString(),
+ },
+ },
+ ] as ExtraListing[]
+ ).map(extraListing),
 ];

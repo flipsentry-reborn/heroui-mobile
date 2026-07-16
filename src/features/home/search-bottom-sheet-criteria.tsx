@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
+import { useState } from "react";
 import { View } from "react-native";
 import {
   ListGroup,
@@ -9,78 +10,65 @@ import {
   useThemeColor,
 } from "heroui-native";
 
-const CRITERIA_ROWS: {
-  key: string;
-  title: string;
-  value: string;
-  required?: boolean;
-  showSwap?: boolean;
-  showChevron?: boolean;
-}[] = [
-  {
-    key: "search",
-    title: "Search",
-    value: "Empty",
-    required: true,
-    showSwap: true,
-    showChevron: false,
-  },
-  { key: "price", title: "Price", value: "None", showChevron: true },
-  { key: "keywords", title: "Keywords", value: "None", showChevron: true },
-];
+import { SearchBottomSheetTypeFab } from "@/features/home/search-bottom-sheet-type-fab";
+import type { SearchType } from "@/mocks/data/home";
 
 function CriteriaRow({
   title,
-  value,
   required,
   showSwap,
-  showChevron = true,
   isLast,
+  isDisabled,
   onPress,
+  right,
 }: {
   title: string;
-  value: string;
   required?: boolean;
   showSwap?: boolean;
-  showChevron?: boolean;
   isLast: boolean;
+  isDisabled?: boolean;
   onPress?: () => void;
+  right: ReactNode;
 }): JSX.Element {
   const [muted, danger] = useThemeColor(["muted", "danger"]);
+  const interactive = onPress != null && !isDisabled;
 
   const body = (
     <>
       <ListGroup.ItemContent>
         <View className="flex-row items-center gap-1">
-          <ListGroup.ItemTitle className="text-[15px] font-normal text-foreground">
+          <ListGroup.ItemTitle
+            className={`text-[15px] font-normal ${
+              isDisabled ? "text-muted" : "text-foreground"
+            }`}
+          >
             {title}
           </ListGroup.ItemTitle>
           {showSwap ? (
-            <Ionicons name="swap-vertical" size={14} color={muted} />
+            <Ionicons
+              name="swap-vertical"
+              size={14}
+              color={muted}
+              style={isDisabled ? { opacity: 0.5 } : undefined}
+            />
           ) : null}
           {required ? (
-            <Typography type="body-sm" style={{ color: danger }}>
+            <Typography
+              type="body-sm"
+              style={{ color: danger, opacity: isDisabled ? 0.5 : 1 }}
+            >
               *
             </Typography>
           ) : null}
         </View>
       </ListGroup.ItemContent>
-      <ListGroup.ItemSuffix>
-        <View className="flex-row items-center gap-1">
-          <Typography type="body-sm" className="text-muted">
-            {value}
-          </Typography>
-          {showChevron ? (
-            <Ionicons name="chevron-forward" size={16} color={muted} />
-          ) : null}
-        </View>
-      </ListGroup.ItemSuffix>
+      <ListGroup.ItemSuffix>{right}</ListGroup.ItemSuffix>
     </>
   );
 
   return (
     <>
-      {onPress ? (
+      {interactive ? (
         <PressableFeedback animation={false} onPress={onPress}>
           <PressableFeedback.Scale>
             <ListGroup.Item disabled className="py-3.5">
@@ -91,7 +79,10 @@ function CriteriaRow({
           <PressableFeedback.Ripple />
         </PressableFeedback>
       ) : (
-        <ListGroup.Item disabled className="py-3.5">
+        <ListGroup.Item
+          disabled
+          className={`py-3.5 ${isDisabled ? "opacity-45" : ""}`}
+        >
           {body}
         </ListGroup.Item>
       )}
@@ -100,7 +91,37 @@ function CriteriaRow({
   );
 }
 
+function CriteriaValue({
+  label,
+  showChevron = true,
+  isDisabled,
+}: {
+  label: string;
+  showChevron?: boolean;
+  isDisabled?: boolean;
+}): JSX.Element {
+  const [muted] = useThemeColor(["muted"]);
+
+  return (
+    <View
+      className="flex-row items-center gap-1"
+      style={isDisabled ? { opacity: 0.55 } : undefined}
+    >
+      <Typography type="body-sm" className="text-muted">
+        {label}
+      </Typography>
+      {showChevron ? (
+        <Ionicons name="chevron-forward" size={16} color={muted} />
+      ) : null}
+    </View>
+  );
+}
+
 export function SearchBottomSheetCriteria(): JSX.Element {
+  const [searchType, setSearchType] = useState<SearchType | null>(null);
+  const [typeFabOpen, setTypeFabOpen] = useState(false);
+  const hasSearchType = searchType != null;
+
   return (
     <View className="mb-5 mt-1 gap-2.5">
       <Typography type="body-xs" className="mx-5 text-muted">
@@ -108,18 +129,42 @@ export function SearchBottomSheetCriteria(): JSX.Element {
       </Typography>
 
       <ListGroup className="mx-3">
-        {CRITERIA_ROWS.map((row, index) => (
-          <CriteriaRow
-            key={row.key}
-            title={row.title}
-            value={row.value}
-            required={row.required}
-            showSwap={row.showSwap}
-            showChevron={row.showChevron}
-            isLast={index === CRITERIA_ROWS.length - 1}
-            onPress={() => {}}
-          />
-        ))}
+        <CriteriaRow
+          title="Search"
+          required
+          showSwap
+          isLast={false}
+          onPress={() => setTypeFabOpen(true)}
+          right={
+            <SearchBottomSheetTypeFab
+              value={searchType}
+              isOpen={typeFabOpen}
+              onOpenChange={setTypeFabOpen}
+              onChange={(type) => {
+                setSearchType(type);
+                setTypeFabOpen(false);
+              }}
+            />
+          }
+        />
+        <CriteriaRow
+          title="Price"
+          isLast={false}
+          isDisabled={!hasSearchType}
+          onPress={hasSearchType ? () => {} : undefined}
+          right={
+            <CriteriaValue label="None" isDisabled={!hasSearchType} />
+          }
+        />
+        <CriteriaRow
+          title="Keywords"
+          isLast
+          isDisabled={!hasSearchType}
+          onPress={hasSearchType ? () => {} : undefined}
+          right={
+            <CriteriaValue label="None" isDisabled={!hasSearchType} />
+          }
+        />
       </ListGroup>
     </View>
   );

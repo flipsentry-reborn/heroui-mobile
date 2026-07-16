@@ -1,9 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import type { JSX } from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { View } from "react-native";
-import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
+import Animated, {
+  runOnJS,
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Avatar,
@@ -17,12 +21,16 @@ import {
 import { FeedDetailActions } from "@/features/feed/feed-detail-actions";
 import { FeedDetailGallery } from "@/features/feed/feed-detail-gallery";
 import { StatusBadge, ValuationBadge } from "@/features/feed/feed-badge";
-import { FeedDetailMetaSection } from "@/features/feed/feed-detail-meta";
+import {
+  FeedDetailMetaSection,
+  formatFoundIn,
+} from "@/features/feed/feed-detail-meta";
 import { FeedDetailScoreBar } from "@/features/feed/feed-detail-score-bar";
 import {
   FeedDetailSimilarNearby,
   useSimilarNearbyFilters,
 } from "@/features/feed/feed-detail-similar-nearby";
+import { FeedDetailStickyHeader } from "@/features/feed/feed-detail-sticky-header";
 import { getLocalComps } from "@/mocks/services/feed";
 import {
   getOrderedStatusBadges,
@@ -66,6 +74,9 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
   const [localComps, setLocalComps] = useState<FeedItem[]>([]);
   const [localCompsLoading, setLocalCompsLoading] = useState(false);
   const [hasShownLocalComps, setHasShownLocalComps] = useState(false);
+  const [stickyVisible, setStickyVisible] = useState(false);
+  const stickyVisibleRef = useRef(false);
+  const stickyAnchorRef = useRef<View>(null);
   const { sameYear, days, toggleSameYear, setDays } = useSimilarNearbyFilters();
   const scrollY = useSharedValue(0);
   const statusBadges = getOrderedStatusBadges(item);
@@ -74,13 +85,25 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
   const longDesc = description.length > 160;
   const showSimilarNearby = isCarListing(item) && !item.isSold && !item.isPending;
 
+  const syncStickyVisibility = useCallback(() => {
+    stickyAnchorRef.current?.measureInWindow((_x, y) => {
+      const next = y <= insets.top + 4;
+      if (next === stickyVisibleRef.current) return;
+      stickyVisibleRef.current = next;
+      setStickyVisible(next);
+    });
+  }, [insets.top]);
+
   const onScroll = useAnimatedScrollHandler({
     onScroll: (e) => {
       scrollY.value = e.contentOffset.y;
+      runOnJS(syncStickyVisibility)();
     },
   });
 
   useEffect(() => {
+    stickyVisibleRef.current = false;
+    setStickyVisible(false);
     setHasShownLocalComps(false);
   }, [item.id]);
 
@@ -131,8 +154,31 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
     router.push(`/feed/${id}`);
   };
 
+  const thumbUrl = images[0];
+
   return (
     <View className="flex-1 bg-background" style={{ paddingBottom: insets.bottom }}>
+      {stickyVisible ? (
+        <FeedDetailStickyHeader
+          title={item.title}
+          imageUrl={thumbUrl}
+          priceLabel={formatPrice(item.price, item.currencySymbol)}
+          estPriceLabel={
+            item.valuation?.fairPrice != null
+              ? formatPrice(item.valuation.fairPrice, item.currencySymbol)
+              : undefined
+          }
+          buySignal={item.valuation?.calculated ? item.valuation.buySignal : undefined}
+          foundInLabel={
+            item.creationTime && item.createdAt
+              ? formatFoundIn(item.creationTime, item.createdAt)
+              : undefined
+          }
+          locationLabel={item.locationText || undefined}
+          topInset={insets.top}
+        />
+      ) : null}
+
       <Animated.ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
@@ -143,24 +189,23 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
         <View className="relative">
           <FeedDetailGallery images={images} scrollY={scrollY} />
 
-          <PressableFeedback
-            onPress={onBack}
-            accessibilityLabel="Go back"
-            className="absolute left-4 z-10 h-10 w-10 items-center justify-center rounded-full bg-black/55"
-            style={{ top: insets.top + 8 }}
-            animation={{ scale: { value: 0.92 } }}
-          >
-            <Ionicons name="chevron-back" size={22} color="#fff" />
-          </PressableFeedback>
+          {!stickyVisible ? (
+            <PressableFeedback
+              onPress={onBack}
+              accessibilityLabel="Go back"
+              className="absolute left-4 z-10 h-10 w-10 items-center justify-center rounded-full bg-black/55"
+              style={{ top: insets.top + 8 }}
+              animation={{ scale: { value: 0.92 } }}
+            >
+              <Ionicons name="chevron-back" size={22} color="#fff" />
+            </PressableFeedback>
+          ) : null}
 
-          {item.valuation?.calculated || statusBadges.length > 0 ? (
+          {statusBadges.length > 0 ? (
             <View
               className="absolute left-1.5 right-1.5 flex-row flex-wrap gap-1"
               style={{ bottom: images.length > 1 ? 70 : 6 }}
             >
-              {item.valuation?.calculated ? (
-                <ValuationBadge buySignal={item.valuation.buySignal} scale="detail" />
-              ) : null}
               {statusBadges.slice(0, 2).map((label) => (
                 <StatusBadge key={label} label={label} scale="detail" />
               ))}
@@ -179,7 +224,7 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
               {item.title}
             </Typography>
 
-            <View className="flex-row flex-wrap items-baseline gap-2">
+            <View className="flex-row items-center gap-2">
               <Typography
                 type="body-sm"
                 weight="semibold"
@@ -188,9 +233,14 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
                 {formatPrice(item.price, item.currencySymbol)}
               </Typography>
               {item.valuation?.fairPrice != null ? (
-                <Typography type="body-xs" className="text-xs text-muted">
+                <Typography type="body-xs" className="min-w-0 flex-1 text-xs text-muted">
                   Est. {formatPrice(item.valuation.fairPrice, item.currencySymbol)}
                 </Typography>
+              ) : (
+                <View className="flex-1" />
+              )}
+              {item.valuation?.calculated ? (
+                <ValuationBadge buySignal={item.valuation.buySignal} scale="detail" />
               ) : null}
             </View>
 
@@ -207,6 +257,12 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
           </View>
 
           <FeedDetailMetaSection item={item} />
+          <View
+            ref={stickyAnchorRef}
+            onLayout={syncStickyVisibility}
+            collapsable={false}
+            className="h-0"
+          />
 
           {item.seller ? (
             <View className="flex-row items-center gap-3 rounded-sm bg-surface-secondary px-3 py-2.5">

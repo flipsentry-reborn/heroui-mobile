@@ -185,7 +185,7 @@ export const FEED_CATEGORIES: {
   { key: "for-you", label: "For You" },
   { key: "all", label: "All" },
   { key: "best-picks", label: "Top Rated", badge: "AI" },
-  { key: "price-drop", label: "Price Changed", badge: "Beta" },
+  { key: "price-drop", label: "Price Dropped", badge: "Beta" },
   { key: "car", label: "Cars" },
   { key: "iphone", label: "iPhones" },
   { key: "saved", label: "Saved" },
@@ -199,7 +199,7 @@ export const FOR_YOU_SHELVES: {
 }[] = [
   { key: "all", label: "All" },
   { key: "best-picks", label: "Top Rated", badge: "AI" },
-  { key: "price-drop", label: "Price Changed", badge: "Beta" },
+  { key: "price-drop", label: "Price Dropped", badge: "Beta" },
   { key: "car", label: "Cars" },
 ];
 

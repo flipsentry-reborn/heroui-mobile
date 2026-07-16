@@ -18,7 +18,7 @@ const BADGE_LABEL_CLASS: Record<BadgeScale, string> = {
 
 /**
  * Deal quality (valuation) only - each tier has its own color.
- * Good uses olive-lime for a natural OK → Good → Great progression.
+ * Good uses olive-lime for a natural Fair → Good → Great progression.
  */
 const TIER_STYLE: Record<
   ValuationTier,
@@ -31,7 +31,7 @@ const TIER_STYLE: Record<
     chipClass: "bg-lime-700",
     labelClass: "text-white",
   },
-  fairPrice: { label: "OK", color: "warning" },
+  fairPrice: { label: "Fair", color: "warning" },
   overpriced: { label: "Skip", color: "danger" },
 };
 

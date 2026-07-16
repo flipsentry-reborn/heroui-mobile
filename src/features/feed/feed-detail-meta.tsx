@@ -13,7 +13,7 @@ function formatTimeAgo(dateString: string): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
-function formatFoundIn(creationTime: string, createdAt: string): string {
+export function formatFoundIn(creationTime: string, createdAt: string): string {
   const diffMs = Math.max(
     0,
     new Date(createdAt).getTime() - new Date(creationTime).getTime(),

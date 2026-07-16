@@ -6,26 +6,22 @@ import { getValuationTier, type ValuationTier } from "@/models/feed";
 
 const TIER_ORDER: ValuationTier[] = ["overpriced", "fairPrice", "goodValue", "greatDeal"];
 
-const TIER_STYLE: Record<ValuationTier, { label: string; fillClass: string; textClass: string }> = {
+const TIER_STYLE: Record<ValuationTier, { label: string; fillClass: string }> = {
   greatDeal: {
     label: "Great",
     fillClass: "bg-success",
-    textClass: "text-success",
   },
   goodValue: {
     label: "Good",
     fillClass: "bg-lime-700",
-    textClass: "text-lime-700",
   },
   fairPrice: {
-    label: "OK",
+    label: "Fair",
     fillClass: "bg-warning",
-    textClass: "text-warning",
   },
   overpriced: {
     label: "Skip",
     fillClass: "bg-danger",
-    textClass: "text-danger",
   },
 };
 
@@ -36,6 +32,8 @@ interface FeedDetailScoreBarProps {
   batteryHealth?: number;
   compCount?: number;
   valuationType?: "car" | "iphone";
+  /** Compact bar only — no meta row / tier label (sticky header). */
+  compact?: boolean;
 }
 
 /** Four-threshold horizontal score with parallel diagonal cuts. */
@@ -46,14 +44,18 @@ export function FeedDetailScoreBar({
   batteryHealth,
   compCount,
   valuationType,
+  compact = false,
 }: FeedDetailScoreBarProps): JSX.Element {
   const pct = Math.max(0, Math.min(100, buySignal));
   const tier = getValuationTier(buySignal);
   const tierStyle = TIER_STYLE[tier];
+  const barH = compact ? "h-2.5" : "h-3";
+  const cutH = compact ? "h-4 -top-1" : "h-6 -top-1.5";
+  const cutBg = compact ? "bg-surface-secondary" : "bg-background";
 
   return (
-    <View className="gap-2">
-      {valuationType === "iphone" && iphoneModel ? (
+    <View className={compact ? "gap-0" : "gap-2"}>
+      {!compact && valuationType === "iphone" && iphoneModel ? (
         <View className="flex-row flex-wrap items-center gap-1.5">
           <Typography type="body-xs" weight="semibold" className="text-foreground">
             {iphoneModel}
@@ -76,18 +78,8 @@ export function FeedDetailScoreBar({
         </View>
       ) : null}
 
-      <View className="flex-row items-baseline justify-end">
-        <Typography
-          type="body-sm"
-          weight="semibold"
-          className={`text-[15px] ${tierStyle.textClass}`}
-        >
-          {tierStyle.label}
-        </Typography>
-      </View>
-
       <View
-        className="relative h-3 w-full flex-row overflow-hidden rounded-sm"
+        className={`relative w-full flex-row overflow-hidden rounded-sm ${barH}`}
         accessibilityRole="progressbar"
         accessibilityValue={{ min: 0, max: 100, now: Math.round(pct) }}
         accessibilityLabel={`Deal score: ${tierStyle.label}`}
@@ -111,7 +103,7 @@ export function FeedDetailScoreBar({
         {[25, 50, 75].map((position) => (
           <View
             key={position}
-            className="absolute -top-1.5 h-6 w-1 bg-background"
+            className={`absolute w-1 ${cutBg} ${cutH}`}
             style={{
               left: `${position}%`,
               transform: [{ translateX: -2 }, { rotate: "18deg" }],
@@ -120,7 +112,7 @@ export function FeedDetailScoreBar({
         ))}
         {pct > 0 && pct < 100 ? (
           <View
-            className="absolute -top-1.5 h-6 w-1 bg-background"
+            className={`absolute w-1 ${cutBg} ${cutH}`}
             style={{
               left: `${pct}%`,
               transform: [{ translateX: -2 }, { rotate: "18deg" }],

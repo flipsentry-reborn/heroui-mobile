@@ -178,11 +178,16 @@ export type FeedCategoryKey =
   | "couch"
   | "xbox";
 
-/** Search-type shelves nested under For You → All (alphabetical by label). */
+/** Search-type shelves nested under For You → Your Searches. */
 export type ForYouAllChildKey = Extract<
   FeedCategoryKey,
   "car" | "couch" | "iphone" | "xbox"
 >;
+
+/** Shelf keys used only on the For You page (not feed category tabs). */
+export type ForYouShelfKey =
+  | Exclude<FeedCategoryKey, "for-you" | ForYouAllChildKey>
+  | "your-searches";
 
 export const FEED_CATEGORIES: {
   key: FeedCategoryKey;
@@ -201,7 +206,7 @@ export const FEED_CATEGORIES: {
   { key: "saved", label: "Saved" },
 ];
 
-/** Nested type shelves inside the For You "All" accordion. */
+/** Nested type shelves inside the For You "Your Searches" accordion. */
 export const FOR_YOU_ALL_CHILDREN: {
   key: ForYouAllChildKey;
   label: string;
@@ -214,7 +219,7 @@ export const FOR_YOU_ALL_CHILDREN: {
 
 /** YouTube-style shelves on the For You page (title opens that category). */
 export const FOR_YOU_SHELVES: {
-  key: Exclude<FeedCategoryKey, "for-you" | ForYouAllChildKey>;
+  key: ForYouShelfKey;
   label: string;
   badge?: string;
   /** When true, shelf is an accordion; children live in FOR_YOU_ALL_CHILDREN. */
@@ -222,9 +227,10 @@ export const FOR_YOU_SHELVES: {
   /** Emphasized shelf (larger cards + secondary surface). */
   featured?: boolean;
 }[] = [
-  { key: "all", label: "All", isAccordion: true },
+  { key: "all", label: "All" },
   { key: "best-picks", label: "Top Rated", badge: "AI", featured: true },
   { key: "price-drop", label: "Price Dropped", badge: "Beta" },
+  { key: "your-searches", label: "Your Searches", isAccordion: true },
 ];
 
 export const MOCK_FEED_ITEMS: FeedItem[] = [

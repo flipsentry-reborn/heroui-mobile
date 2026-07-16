@@ -187,7 +187,7 @@ export function FeedForYouPage({
     for (const shelf of FOR_YOU_SHELVES) {
       if (shelf.isAccordion) {
         for (const child of FOR_YOU_ALL_CHILDREN) keys.push(child.key);
-      } else {
+      } else if (shelf.key !== "your-searches") {
         keys.push(shelf.key);
       }
     }
@@ -403,7 +403,10 @@ export function FeedForYouPage({
 
           const header = (
             <PressableFeedback
-              onPress={() => onOpenCategory(shelf.key)}
+              onPress={() => {
+                if (shelf.key === "your-searches") return;
+                onOpenCategory(shelf.key);
+              }}
               className="mb-1.5 flex-row items-center justify-between px-3 py-0.5"
               animation={{ scale: { value: 0.99 } }}
               accessibilityRole="button"

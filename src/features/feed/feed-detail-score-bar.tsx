@@ -1,26 +1,33 @@
 import type { JSX } from "react";
-import { useMemo } from "react";
 import { View } from "react-native";
-import { Typography, useThemeColor } from "heroui-native";
+import { Typography } from "heroui-native";
 
 import { getValuationTier, type ValuationTier } from "@/models/feed";
 
-const TIER_ORDER: ValuationTier[] = [
-  "overpriced",
-  "fairPrice",
-  "goodValue",
-  "greatDeal",
-];
+const TIER_ORDER: ValuationTier[] = ["overpriced", "fairPrice", "goodValue", "greatDeal"];
 
-const TIER_LABEL: Record<ValuationTier, string> = {
-  greatDeal: "Great",
-  goodValue: "Good",
-  fairPrice: "OK",
-  overpriced: "Skip",
+const TIER_STYLE: Record<ValuationTier, { label: string; fillClass: string; textClass: string }> = {
+  greatDeal: {
+    label: "Great",
+    fillClass: "bg-success",
+    textClass: "text-success",
+  },
+  goodValue: {
+    label: "Good",
+    fillClass: "bg-lime-700",
+    textClass: "text-lime-700",
+  },
+  fairPrice: {
+    label: "OK",
+    fillClass: "bg-warning",
+    textClass: "text-warning",
+  },
+  overpriced: {
+    label: "Skip",
+    fillClass: "bg-danger",
+    textClass: "text-danger",
+  },
 };
-
-const SLOT_COUNT = 20;
-const MUTED_OPACITY = 0.22;
 
 interface FeedDetailScoreBarProps {
   buySignal: number;
@@ -31,7 +38,7 @@ interface FeedDetailScoreBarProps {
   valuationType?: "car" | "iphone";
 }
 
-/** Dense slot bar: bright up to score, muted spectrum for the rest. */
+/** Four-threshold horizontal score with parallel diagonal cuts. */
 export function FeedDetailScoreBar({
   buySignal,
   iphoneModel,
@@ -40,36 +47,9 @@ export function FeedDetailScoreBar({
   compCount,
   valuationType,
 }: FeedDetailScoreBarProps): JSX.Element {
-  const [success, accent, warning, danger, muted] = useThemeColor([
-    "success",
-    "accent",
-    "warning",
-    "danger",
-    "muted",
-  ]);
-
-  const tierColors = useMemo(
-    () =>
-      ({
-        greatDeal: success,
-        goodValue: accent,
-        fairPrice: warning,
-        overpriced: danger,
-      }) satisfies Record<ValuationTier, string>,
-    [success, accent, warning, danger],
-  );
-
-  const slotColor = (slotMid: number): string => {
-    if (slotMid < 25) return tierColors.overpriced;
-    if (slotMid < 50) return tierColors.fairPrice;
-    if (slotMid < 75) return tierColors.goodValue;
-    return tierColors.greatDeal;
-  };
-
   const pct = Math.max(0, Math.min(100, buySignal));
   const tier = getValuationTier(buySignal);
-  const currentIdx = TIER_ORDER.indexOf(tier);
-  const tierColor = tierColors[tier];
+  const tierStyle = TIER_STYLE[tier];
 
   return (
     <View className="gap-2">
@@ -96,62 +76,75 @@ export function FeedDetailScoreBar({
         </View>
       ) : null}
 
+      <View className="flex-row items-baseline justify-between">
+        <Typography type="body-xs" className="text-xs text-muted">
+          Deal score
+        </Typography>
+        <Typography
+          type="body-sm"
+          weight="semibold"
+          className={`text-[15px] ${tierStyle.textClass}`}
+        >
+          {tierStyle.label}
+        </Typography>
+      </View>
+
       <View
-        className="h-4 w-full flex-row items-stretch gap-[3px]"
+        className="relative h-3 w-full flex-row overflow-hidden rounded-sm"
         accessibilityRole="progressbar"
         accessibilityValue={{ min: 0, max: 100, now: Math.round(pct) }}
-        accessibilityLabel="Deal score"
+        accessibilityLabel={`Deal score: ${tierStyle.label}`}
       >
-        {Array.from({ length: SLOT_COUNT }, (_, i) => {
-          const slotStart = (i / SLOT_COUNT) * 100;
-          const slotMid = ((i + 0.5) / SLOT_COUNT) * 100;
-          const active = pct >= slotMid;
-          const partial = !active && pct > slotStart;
-          const color = slotColor(slotMid);
+        {TIER_ORDER.map((itemTier, index) => {
+          const start = index * 25;
+          const localProgress = Math.max(0, Math.min(100, ((pct - start) / 25) * 100));
           return (
-            <View
-              key={i}
-              className="min-w-0 flex-1 rounded-sm"
-              style={{
-                backgroundColor: color,
-                opacity: active ? 1 : partial ? 0.55 : MUTED_OPACITY,
-              }}
-            />
+            <View key={itemTier} className="relative flex-1 overflow-hidden">
+              <View
+                className={`absolute inset-0 ${TIER_STYLE[itemTier].fillClass}`}
+                style={{ opacity: 0.22 }}
+              />
+              <View
+                className={`h-full ${TIER_STYLE[itemTier].fillClass}`}
+                style={{ width: `${localProgress}%` }}
+              />
+            </View>
           );
         })}
+        {[25, 50, 75].map((position) => (
+          <View
+            key={position}
+            className="absolute -top-1.5 h-6 w-1 bg-background"
+            style={{
+              left: `${position}%`,
+              transform: [{ translateX: -2 }, { rotate: "18deg" }],
+            }}
+          />
+        ))}
+        {pct > 0 && pct < 100 ? (
+          <View
+            className="absolute -top-1.5 h-6 w-1 bg-background"
+            style={{
+              left: `${pct}%`,
+              transform: [{ translateX: -2 }, { rotate: "18deg" }],
+            }}
+          />
+        ) : null}
       </View>
 
       <View className="flex-row items-center">
-        {TIER_ORDER.map((t, i) => {
-          const past = i < currentIdx;
-          const current = i === currentIdx;
-          const color = current ? tierColors[t] : muted;
-
+        {TIER_ORDER.map((itemTier) => {
+          const current = itemTier === tier;
           return (
-            <View key={t} className="flex-1 flex-row items-center justify-center gap-1">
-              <Typography
-                type="body-xs"
-                weight={current ? "bold" : "medium"}
-                className="text-[11px] tracking-wide"
-                style={{
-                  color,
-                  textDecorationLine: past ? "line-through" : "none",
-                  opacity: current ? 1 : past ? 0.55 : 0.4,
-                }}
-              >
-                {TIER_LABEL[t]}
-              </Typography>
-              {current ? (
-                <Typography
-                  type="body-xs"
-                  weight="bold"
-                  className="text-[11px]"
-                  style={{ color: tierColor }}
-                >
-                  {Math.round(pct)}
-                </Typography>
-              ) : null}
-            </View>
+            <Typography
+              key={itemTier}
+              type="body-xs"
+              weight={current ? "semibold" : "normal"}
+              className={`flex-1 text-center text-[10px] ${TIER_STYLE[itemTier].textClass}`}
+              style={{ opacity: current ? 1 : 0.65 }}
+            >
+              {TIER_STYLE[itemTier].label}
+            </Typography>
           );
         })}
       </View>

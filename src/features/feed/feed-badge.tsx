@@ -1,19 +1,24 @@
-import { Ionicons } from "@expo/vector-icons";
-import type { ComponentProps, JSX } from "react";
+import type { JSX } from "react";
 import { Chip } from "heroui-native";
 
 import { getValuationTier, type ValuationTier } from "@/models/feed";
 
 type ChipColor = "accent" | "default" | "success" | "warning" | "danger";
-type IonName = ComponentProps<typeof Ionicons>["name"];
+type BadgeScale = "default" | "detail";
 
-/** Shared size for every overlay badge on a feed card. */
-const CHIP_CLASS = "h-5 min-h-5 px-1.5 py-0";
-const LABEL_CLASS = "text-[10px] font-normal leading-none";
+const BADGE_SIZE_CLASS: Record<BadgeScale, string> = {
+  default: "h-5 min-h-5 px-1.5 py-0",
+  detail: "h-6 min-h-6 px-2 py-0",
+};
+
+const BADGE_LABEL_CLASS: Record<BadgeScale, string> = {
+  default: "text-[10px] font-normal leading-none",
+  detail: "text-xs font-medium leading-[14px]",
+};
 
 /**
  * Deal quality (valuation) only - each tier has its own color.
- * Good uses sky blue so it never reads like Great (success).
+ * Good uses olive-lime for a natural OK → Good → Great progression.
  */
 const TIER_STYLE: Record<
   ValuationTier,
@@ -23,31 +28,17 @@ const TIER_STYLE: Record<
   goodValue: {
     label: "Good",
     color: "accent",
-    chipClass: "bg-sky-500",
+    chipClass: "bg-lime-700",
     labelClass: "text-white",
   },
   fairPrice: { label: "OK", color: "warning" },
   overpriced: { label: "Skip", color: "danger" },
 };
 
-/** Status chips: one style + neutral (white) icon before label. */
-const STATUS_CHIP_CLASS = `${CHIP_CLASS} flex-row items-center gap-0.5 bg-black/70`;
-const STATUS_LABEL_CLASS = `${LABEL_CLASS} text-white`;
-
-const STATUS_ICON: Record<string, IonName> = {
-  Dealer: "storefront-outline",
-  Spam: "warning-outline",
-  Salvage: "construct-outline",
-  Rebuilt: "build-outline",
-  "Major Damage": "alert-circle-outline",
-  Negotiable: "pricetag-outline",
-  ASAP: "flash-outline",
-  Committed: "checkmark-circle-outline",
-};
-
 interface FeedBadgeProps {
   label: string;
   color: ChipColor;
+  scale?: BadgeScale;
   chipClass?: string;
   labelClass?: string;
 }
@@ -56,6 +47,7 @@ interface FeedBadgeProps {
 export function FeedBadge({
   label,
   color,
+  scale = "default",
   chipClass,
   labelClass,
 }: FeedBadgeProps): JSX.Element {
@@ -64,11 +56,9 @@ export function FeedBadge({
       size="sm"
       variant="primary"
       color={color}
-      className={`${CHIP_CLASS}${chipClass ? ` ${chipClass}` : ""}`}
+      className={`${BADGE_SIZE_CLASS[scale]}${chipClass ? ` ${chipClass}` : ""}`}
     >
-      <Chip.Label
-        className={`${LABEL_CLASS}${labelClass ? ` ${labelClass}` : ""}`}
-      >
+      <Chip.Label className={`${BADGE_LABEL_CLASS[scale]}${labelClass ? ` ${labelClass}` : ""}`}>
         {label}
       </Chip.Label>
     </Chip>
@@ -77,8 +67,10 @@ export function FeedBadge({
 
 export function ValuationBadge({
   buySignal,
+  scale = "default",
 }: {
   buySignal: number;
+  scale?: BadgeScale;
 }): JSX.Element {
   const tier = getValuationTier(buySignal);
   const style = TIER_STYLE[tier];
@@ -86,25 +78,29 @@ export function ValuationBadge({
     <FeedBadge
       label={style.label}
       color={style.color}
+      scale={scale}
       chipClass={style.chipClass}
       labelClass={style.labelClass}
     />
   );
 }
 
-/** Negotiable, ASAP, Damaged, Dealer, etc. - shared style + icon. */
-export function StatusBadge({ label }: { label: string }): JSX.Element {
-  const icon = STATUS_ICON[label] ?? "ellipse-outline";
-
+/** Negotiable, ASAP, Damaged, Dealer, etc. - shared text-only style. */
+export function StatusBadge({
+  label,
+  scale = "default",
+}: {
+  label: string;
+  scale?: BadgeScale;
+}): JSX.Element {
   return (
     <Chip
       size="sm"
       variant="primary"
       color="default"
-      className={STATUS_CHIP_CLASS}
+      className={`${BADGE_SIZE_CLASS[scale]} bg-black/70`}
     >
-      <Ionicons name={icon} size={10} color="#FFFFFF" />
-      <Chip.Label className={STATUS_LABEL_CLASS}>{label}</Chip.Label>
+      <Chip.Label className={`${BADGE_LABEL_CLASS[scale]} text-white`}>{label}</Chip.Label>
     </Chip>
   );
 }

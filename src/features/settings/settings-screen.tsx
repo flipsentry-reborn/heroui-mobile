@@ -183,6 +183,7 @@ export function SettingsScreen(): JSX.Element {
           <SettingsProfileHeader
             profile={state.profile}
             planLabel={planLabel}
+            planAccent={activePlan?.accent}
             onPress={() => router.push("/settings/profile")}
           />
 

@@ -1,6 +1,7 @@
+import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
 import { useEffect, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import {
   Avatar,
   Chip,
@@ -9,11 +10,16 @@ import {
   useThemeColor,
 } from "heroui-native";
 
+import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
 import {
   SettingsRow,
   SettingsSection,
 } from "@/features/settings/settings-section";
+import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
+import { PLAN_ACCENTS } from "@/features/settings/subscription-theme";
+import { Fonts } from "@/lib/fonts";
 import type { MockUserProfile } from "@/mocks/data/settings";
+import type { SubscriptionPlan } from "@/mocks/data/subscription";
 import { getSettings } from "@/mocks/services/settings";
 import { getSubscription } from "@/mocks/services/subscription";
 
@@ -33,17 +39,24 @@ function StatusChip({
   );
 }
 
+const FREE_PALETTE = PLAN_ACCENTS.purple;
+
 export default function ProfileScreen(): JSX.Element {
   const [profile, setProfile] = useState<MockUserProfile | null>(null);
-  const [planLabel, setPlanLabel] = useState("Free");
+  const [activePlan, setActivePlan] = useState<SubscriptionPlan | null>(null);
+  const [isTrial, setIsTrial] = useState(false);
   const background = useThemeColor("background");
 
   useEffect(() => {
     void Promise.all([getSettings(), getSubscription()]).then(
       ([settings, sub]) => {
         setProfile(settings.profile);
-        const plan = sub.plans.find((p) => p.id === sub.currentTier);
-        setPlanLabel(plan?.displayName ?? "Free");
+        const plan =
+          sub.hasActiveSubscription && sub.currentTier != null
+            ? (sub.plans.find((p) => p.id === sub.currentTier) ?? null)
+            : null;
+        setActivePlan(plan);
+        setIsTrial(sub.hasActiveTrial && plan == null);
       },
     );
   }, []);
@@ -61,6 +74,11 @@ export default function ProfileScreen(): JSX.Element {
   const fullName = `${profile.firstName} ${profile.lastName}`;
   const initials =
     `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase();
+  const palette = activePlan
+    ? PLAN_ACCENTS[activePlan.accent]
+    : FREE_PALETTE;
+  const planLabel =
+    activePlan?.displayName ?? (isTrial ? "Trial" : "Free");
 
   return (
     <ScrollView
@@ -69,25 +87,67 @@ export default function ProfileScreen(): JSX.Element {
       style={{ backgroundColor: background }}
       showsVerticalScrollIndicator={false}
     >
-      <View className="mb-4 items-center gap-1.5 px-5">
-        <Avatar
-          size="lg"
-          alt={fullName}
-          className="mb-1.5 bg-surface-tertiary"
-        >
-          <Avatar.Fallback className="bg-surface-tertiary text-foreground">
-            {initials}
-          </Avatar.Fallback>
-        </Avatar>
-        <Typography type="body" className="text-[15px] font-normal text-foreground">
-          {fullName}
-        </Typography>
-        <Typography type="body-xs" className="text-xs text-muted">
-          {profile.email}
-        </Typography>
-        <Chip size="sm" variant="soft" color="default" className="mt-1">
-          <Chip.Label className="text-[10px]">{planLabel}</Chip.Label>
-        </Chip>
+      <View className="mx-3 mb-4 overflow-hidden rounded-3xl border border-white/10">
+        <LinearGradient
+          colors={palette.gradient}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+        />
+        <LinearGradient
+          colors={[palette.glow, "transparent"]}
+          start={{ x: 1, y: 0 }}
+          end={{ x: 0.15, y: 0.9 }}
+          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+        />
+        <SubscriptionParticleField />
+        <View className="items-center gap-1.5 px-5 py-6">
+          <Avatar
+            size="lg"
+            alt={fullName}
+            className="mb-1.5 bg-white/10"
+          >
+            <Avatar.Fallback className="bg-white/10 text-white">
+              {initials}
+            </Avatar.Fallback>
+          </Avatar>
+          <Text
+            style={{
+              fontFamily: Fonts.heading,
+              fontSize: 18,
+              lineHeight: 24,
+              letterSpacing: -0.3,
+              color: "#FFFFFF",
+            }}
+          >
+            {fullName}
+          </Text>
+          <Text
+            style={{
+              fontFamily: Fonts.headingRegular,
+              fontSize: 12,
+              color: "rgba(255,255,255,0.55)",
+            }}
+          >
+            {profile.email}
+          </Text>
+          <View className="mt-2 flex-row items-center gap-1.5">
+            <HeroBoltIcon
+              from={palette.iconFrom}
+              to={palette.iconTo}
+              size={16}
+            />
+            <Text
+              style={{
+                fontFamily: Fonts.headingSemi,
+                fontSize: 13,
+                color: "#FFFFFF",
+              }}
+            >
+              {planLabel}
+            </Text>
+          </View>
+        </View>
       </View>
 
       <SettingsSection title="Personal">

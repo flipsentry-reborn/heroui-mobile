@@ -9,7 +9,6 @@ import { SubscriptionParticleField } from "@/features/settings/subscription-part
 import { PLAN_ACCENTS } from "@/features/settings/subscription-theme";
 import { Fonts } from "@/lib/fonts";
 import type { SubscriptionPlan } from "@/mocks/data/subscription";
-import { formatPlanPrice } from "@/mocks/data/subscription";
 
 interface SettingsSubscriptionCardProps {
   plan: SubscriptionPlan | null;
@@ -123,29 +122,16 @@ export function SettingsSubscriptionCard({
             color="rgba(255,255,255,0.55)"
           />
         </View>
-        <View className="flex-row items-end justify-between gap-3">
-          <View className="gap-0.5">
-            <Text
-              style={{
-                fontFamily: Fonts.heading,
-                fontSize: 28,
-                lineHeight: 32,
-                letterSpacing: -0.8,
-                color: "#FFFFFF",
-              }}
-            >
-              {formatPlanPrice(plan)}
-            </Text>
-            <Text
-              style={{
-                fontFamily: Fonts.headingRegular,
-                fontSize: 12,
-                color: "rgba(255,255,255,0.45)",
-              }}
-            >
-              Current plan
-            </Text>
-          </View>
+        <View className="flex-row items-center justify-between gap-3">
+          <Text
+            style={{
+              fontFamily: Fonts.headingRegular,
+              fontSize: 12,
+              color: "rgba(255,255,255,0.45)",
+            }}
+          >
+            Current plan
+          </Text>
           {plan.badge ? (
             <View className="rounded-full bg-[#FBBF24] px-2.5 py-1">
               <Text

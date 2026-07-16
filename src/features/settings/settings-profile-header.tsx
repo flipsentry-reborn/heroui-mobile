@@ -9,24 +9,30 @@ import {
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
+import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
+import { PLAN_ACCENTS } from "@/features/settings/subscription-theme";
 import type { MockUserProfile } from "@/mocks/data/settings";
+import type { PlanAccent } from "@/mocks/data/subscription";
 
 const StyledIonicons = withUniwind(Ionicons);
 
 interface SettingsProfileHeaderProps {
   profile: MockUserProfile;
   planLabel: string;
+  planAccent?: PlanAccent | null;
   onPress: () => void;
 }
 
 export function SettingsProfileHeader({
   profile,
   planLabel,
+  planAccent = null,
   onPress,
 }: SettingsProfileHeaderProps): JSX.Element {
   const initials =
     `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase();
   const fullName = `${profile.firstName} ${profile.lastName}`;
+  const palette = PLAN_ACCENTS[planAccent ?? "purple"];
 
   return (
     <View className="mb-4 gap-1.5">
@@ -52,7 +58,17 @@ export function SettingsProfileHeader({
           </ListGroup.ItemContent>
           <ListGroup.ItemSuffix>
             <View className="flex-row items-center gap-2">
-              <Chip size="sm" variant="soft" color="default">
+              <Chip
+                size="sm"
+                variant="soft"
+                color="default"
+                className="flex-row items-center gap-1 px-2"
+              >
+                <HeroBoltIcon
+                  from={palette.iconFrom}
+                  to={palette.iconTo}
+                  size={12}
+                />
                 <Chip.Label className="text-[10px]">{planLabel}</Chip.Label>
               </Chip>
               <StyledIonicons

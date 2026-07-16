@@ -1,6 +1,6 @@
 # FlipSentry → HeroUI Mobile Port
 
-Expo Go UI rebuild of `mobile-app` using **HeroUI Native + Pro**.  
+Expo Go UI rebuild of `mobile-app` using **HeroUI Native + Pro**. 
 Always mock. No real API calls. Keep everything simple.
 
 ## Goal
@@ -11,7 +11,7 @@ Port FlipSentry screens and flows into `heroui-mobile` so we can iterate on UI w
 
 | Decision | Choice |
 |----------|--------|
-| Visual language | Uber neutrals — oklch grayscale, dark white accent / light black accent (see `global.css`) |
+| Visual language | Uber neutrals - oklch grayscale, dark white accent / light black accent (see `global.css`) |
 | Components | `heroui-native-pro` first → `heroui-native` OSS → minimal custom only |
 | Styling | Uniwind + `className` (not NativeWind / shadcn from `mobile-app`) |
 | Data | Mock only via `src/mocks/*` |
@@ -21,7 +21,7 @@ Port FlipSentry screens and flows into `heroui-mobile` so we can iterate on UI w
 
 | Tool | Role |
 |------|------|
-| MCP `heroui-native-pro` | Live component docs / theme (`native-mcp.heroui.pro`) — use before implementing screens |
+| MCP `heroui-native-pro` | Live component docs / theme (`native-mcp.heroui.pro`) - use before implementing screens |
 | MCP `heroui-pro` | Web React docs (optional; not for RN screens) |
 | Skill `heroui-native-pro` | Native Pro patterns (user skills) |
 | Skill `heroui-pro-design-taste` | Design system polish (user skills) |
@@ -34,7 +34,7 @@ Config: `.cursor/mcp.json` (gitignored). Rules: `.cursor/rules/`.
 | Rule | Detail |
 |------|--------|
 | Expo Go first | Ship only what runs in Expo Go |
-| Mock always | Screens call `mocks/services/*` only — never axios / SignalR / real APIs |
+| Mock always | Screens call `mocks/services/*` only - never axios / SignalR / real APIs |
 | Screens thin | `src/app` routes compose UI; little business logic |
 | Models on demand | Copy/adapt from `mobile-app/models` when a screen needs them |
 | HeroUI only | Prefer `heroui-native-pro`, then `heroui-native`; no web `@heroui/react` for screens |
@@ -46,33 +46,33 @@ Config: `.cursor/mcp.json` (gitignored). Rules: `.cursor/rules/`.
 ```text
 heroui-mobile/
 ├── src/
-│   ├── app/                         # Expo Router screens only
-│   │   ├── _layout.tsx
-│   │   ├── index.tsx                # gate → auth | main
-│   │   ├── (auth)/                  # login, register, forgot, verify
-│   │   ├── (onboarding)/            # optional
-│   │   └── (main)/
-│   │       ├── _layout.tsx
-│   │       ├── (tabs)/              # home, feed, help, settings
-│   │       ├── feed/                # detail, etc.
-│   │       ├── home/                # category flows (iphone / car / …)
-│   │       ├── settings/            # profile, notifications, …
-│   │       └── subscription/        # trial / paywall UI only
-│   ├── components/                  # shared UI (HeroUI wrappers)
-│   ├── features/                    # optional per-domain UI pieces
-│   │   ├── feed/
-│   │   ├── home/
-│   │   └── settings/
-│   ├── mocks/
-│   │   ├── data/                    # fixtures
-│   │   └── services/                # getFeed(), getUser(), … → Promise.resolve
-│   ├── models/                      # from mobile-app/models as needed
-│   ├── lib/                         # small helpers (money, dates)
-│   ├── constants/                   # routes, category ids
-│   ├── assets/
-│   │   └── placeholders/            # empty.png for maps / media stubs
-│   └── global.css                   # HeroUI + Theme Builder tokens
-├── assets/                          # app icon / splash
+│ ├── app/ # Expo Router screens only
+│ │ ├── _layout.tsx
+│ │ ├── index.tsx # gate → auth | main
+│ │ ├── (auth)/ # login, register, forgot, verify
+│ │ ├── (onboarding)/ # optional
+│ │ └── (main)/
+│ │ ├── _layout.tsx
+│ │ ├── (tabs)/ # home, feed, help, settings
+│ │ ├── feed/ # detail, etc.
+│ │ ├── home/ # category flows (iphone / car / …)
+│ │ ├── settings/ # profile, notifications, …
+│ │ └── subscription/ # trial / paywall UI only
+│ ├── components/ # shared UI (HeroUI wrappers)
+│ ├── features/ # optional per-domain UI pieces
+│ │ ├── feed/
+│ │ ├── home/
+│ │ └── settings/
+│ ├── mocks/
+│ │ ├── data/ # fixtures
+│ │ └── services/ # getFeed(), getUser(), … → Promise.resolve
+│ ├── models/ # from mobile-app/models as needed
+│ ├── lib/ # small helpers (money, dates)
+│ ├── constants/ # routes, category ids
+│ ├── assets/
+│ │ └── placeholders/ # empty.png for maps / media stubs
+│ └── global.css # HeroUI + Theme Builder tokens
+├── assets/ # app icon / splash
 └── PORTING.md
 ```
 
@@ -87,7 +87,7 @@ heroui-mobile/
 
 1. Show login (and related auth screens) as UI.
 2. Fake login → navigate into `(main)` tabs.
-3. Optional: persist a mock “session” flag in memory/AsyncStorage for reload convenience — still no real API.
+3. Optional: persist a mock “session” flag in memory/AsyncStorage for reload convenience - still no real API.
 
 ## Mocking rules
 
@@ -114,27 +114,27 @@ heroui-mobile/
 
 ## Port order
 
-1. App shell + theme (`global.css`) + tab layout  
-2. Auth screens (mock login)  
-3. Feed list + detail  
-4. Home / search setup flows  
-5. Settings  
-6. Subscription / trial UI  
+1. App shell + theme (`global.css`) + tab layout 
+2. Auth screens (mock login) 
+3. Feed list + detail 
+4. Home / search setup flows 
+5. Settings 
+6. Subscription / trial UI - see **`SUBSCRIPTION.md`** for plan data / accents / reuse 
 
 ## Out of scope (for now)
 
-- Real API, auth tokens, CI install tokens usage in the app runtime  
-- EAS/dev-client-only native map work  
-- Full 1:1 file copy of `mobile-app`  
-- NativeWind / old RN primitives component stack  
-- MobX stores from the old app  
+- Real API, auth tokens, CI install tokens usage in the app runtime 
+- EAS/dev-client-only native map work 
+- Full 1:1 file copy of `mobile-app` 
+- NativeWind / old RN primitives component stack 
+- MobX stores from the old app 
 
 ## Theme
 
-Theme tokens live in `src/global.css`. Target Uber neutrals (black/white accent, no Spotify green).  
+Theme tokens live in `src/global.css`. Target Uber neutrals (black/white accent, no Spotify green). 
 Restart Metro after theme changes.
 
 ## Related repos
 
-- **UI playground (this repo):** `heroui-mobile`  
-- **Production app:** `mobile-app` — later target for real native features and APIs  
+- **UI playground (this repo):** `heroui-mobile` 
+- **Production app:** `mobile-app` - later target for real native features and APIs 

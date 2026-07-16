@@ -6,9 +6,9 @@
  * Britti Sans static instances extracted from their heroSans variable face.
  */
 export const Fonts = {
-  /** Britti Sans — HeroUI display / plan cards */
-  heading: "BrittiSans-Bold",
-  headingSemi: "BrittiSans-SemiBold",
-  headingMedium: "BrittiSans-Medium",
-  headingRegular: "BrittiSans-Regular",
+ /** Britti Sans - HeroUI display / plan cards */
+ heading: "BrittiSans-Bold",
+ headingSemi: "BrittiSans-SemiBold",
+ headingMedium: "BrittiSans-Medium",
+ headingRegular: "BrittiSans-Regular",
 } as const;

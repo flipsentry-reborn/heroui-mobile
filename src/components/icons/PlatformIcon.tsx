@@ -33,19 +33,19 @@ const KIJIJI_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://
 // ─── SVG map by platform key ───
 
 const PLATFORM_SVGS: Record<string, string> = {
-  facebook: FACEBOOK_SVG,
-  facebookmarketplace: FACEBOOK_SVG,
-  offerup: OFFERUP_SVG,
-  craigslist: CRAIGSLIST_SVG,
-  kijiji: KIJIJI_SVG,
+ facebook: FACEBOOK_SVG,
+ facebookmarketplace: FACEBOOK_SVG,
+ offerup: OFFERUP_SVG,
+ craigslist: CRAIGSLIST_SVG,
+ kijiji: KIJIJI_SVG,
 };
 
 const PLATFORM_COLORS: Record<string, string> = {
-  facebook: "#1877F2",
-  facebookmarketplace: "#1877F2",
-  offerup: "#00ab80",
-  craigslist: "#5a00b5",
-  kijiji: "#373373",
+ facebook: "#1877F2",
+ facebookmarketplace: "#1877F2",
+ offerup: "#00ab80",
+ craigslist: "#5a00b5",
+ kijiji: "#373373",
 };
 
 /**
@@ -54,44 +54,44 @@ const PLATFORM_COLORS: Record<string, string> = {
  * and FeedPlatform ("facebookMarketplace" | "offerUp" | "craigslist" | "kijiji").
  */
 interface PlatformIconProps {
-  platform: string;
-  size?: number;
-  /** Optional tinted square — off by default; logos render bare. */
-  withBackground?: boolean;
-  style?: StyleProp<ViewStyle>;
+ platform: string;
+ size?: number;
+ /** Optional tinted square - off by default; logos render bare. */
+ withBackground?: boolean;
+ style?: StyleProp<ViewStyle>;
 }
 
 const PlatformIcon: React.FC<PlatformIconProps> = ({
-  platform,
-  size = 28,
-  withBackground = false,
-  style,
+ platform,
+ size = 28,
+ withBackground = false,
+ style,
 }) => {
-  const key = platform.toLowerCase();
-  const xml = PLATFORM_SVGS[key] || FACEBOOK_SVG;
-  const color = PLATFORM_COLORS[key] || "#888";
+ const key = platform.toLowerCase();
+ const xml = PLATFORM_SVGS[key] || FACEBOOK_SVG;
+ const color = PLATFORM_COLORS[key] || "#888";
 
-  if (withBackground) {
-    return (
-      <View
-        style={[
-          {
-            width: size,
-            height: size,
-            borderRadius: 6,
-            backgroundColor: color + "22",
-            alignItems: "center",
-            justifyContent: "center",
-          },
-          style,
-        ]}
-      >
-        <SvgXml xml={xml} width={size * 0.7} height={size * 0.7} />
-      </View>
-    );
-  }
+ if (withBackground) {
+ return (
+ <View
+ style={[
+ {
+ width: size,
+ height: size,
+ borderRadius: 6,
+ backgroundColor: color + "22",
+ alignItems: "center",
+ justifyContent: "center",
+ },
+ style,
+ ]}
+ >
+ <SvgXml xml={xml} width={size * 0.7} height={size * 0.7} />
+ </View>
+ );
+ }
 
-  return <SvgXml xml={xml} width={size} height={size} />;
+ return <SvgXml xml={xml} width={size} height={size} />;
 };
 
 export default PlatformIcon;

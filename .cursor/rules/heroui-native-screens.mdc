@@ -10,7 +10,7 @@ alwaysApply: false
 
 - Use HeroUI compound components as documented (e.g. `Card` + slots, field groups).
 - Interactive handlers: `onPress`, not `onClick`.
-- Keep route files in `src/app` thin — compose UI; put fetch/mock calls in `src/mocks/services` or feature modules.
+- Keep route files in `src/app` thin - compose UI; put fetch/mock calls in `src/mocks/services` or feature modules.
 
 ## Styling
 

@@ -8,7 +8,7 @@ alwaysApply: true
 ## Scope
 
 - Work in **heroui-mobile** only for implementation.
-- **mobile-app** is screen/flow reference only — do not copy NativeWind, shadcn, MobX, or API clients.
+- **mobile-app** is screen/flow reference only - do not copy NativeWind, shadcn, MobX, or API clients.
 
 ## Data
 
@@ -20,14 +20,14 @@ alwaysApply: true
 - Uber-inspired neutrals via HeroUI tokens in `src/global.css` (oklch grayscale).
 - Dark: near-black background, white `--accent` / black `--accent-foreground`.
 - Light: light gray background, black `--accent` / white `--accent-foreground`.
-- Prefer semantic classes (`bg-background`, `text-foreground`, `bg-accent`) — no Spotify green `#1DB954` / `#121212` hardcodes.
+- Prefer semantic classes (`bg-background`, `text-foreground`, `bg-accent`) - no Spotify green `#1DB954` / `#121212` hardcodes.
 - Use `Button variant="secondary"` for most actions; primary/accent sparingly (Uber black/white).
 
 ## Components
 
 - Prefer `heroui-native-pro`, then `heroui-native` (OSS), then minimal custom (e.g. map placeholder).
 - Do not use web `@heroui/react` / `@heroui-pro/react` for screens.
-- Style with Uniwind `className` — not NativeWind / StyleSheet for colors.
+- Style with Uniwind `className` - not NativeWind / StyleSheet for colors.
 
 ## Agent workflow
 

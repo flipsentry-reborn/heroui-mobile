@@ -4,643 +4,649 @@ import type { JSX } from "react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import Animated, {
-  Easing,
-  FadeIn,
-  FadeInDown,
-  FadeOut,
-  LinearTransition,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withTiming,
+ Easing,
+ FadeIn,
+ FadeInDown,
+ FadeOut,
+ LinearTransition,
+ useAnimatedStyle,
+ useSharedValue,
+ withDelay,
+ withRepeat,
+ withSequence,
+ withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, {
-  Defs,
-  LinearGradient as SvgLinearGradient,
-  Path,
-  Stop,
+ Defs,
+ LinearGradient as SvgLinearGradient,
+ Path,
+ Stop,
 } from "react-native-svg";
 import { Button, Skeleton, useThemeColor, useToast } from "heroui-native";
 
 import { Fonts } from "@/lib/fonts";
 import type {
-  PlanAccent,
-  SubscriptionPlan,
-  SubscriptionTier,
+ PlanAccent,
+ SubscriptionPlan,
+ SubscriptionTier,
 } from "@/mocks/data/subscription";
-import { formatMoney } from "@/mocks/data/subscription";
+import { formatPlanPrice } from "@/mocks/data/subscription";
 import {
-  getSubscription,
-  mockRestorePurchases,
-  mockSubscribe,
+ getSubscription,
+ mockRestorePurchases,
+ mockSubscribe,
 } from "@/mocks/services/subscription";
 
 /**
- * HeroUI Pro pricing badge — hexagon fill + white bolt.
+ * HeroUI Pro pricing badge - hexagon fill + white bolt.
  * Paths from their landing markup (#7538F8 → #F690EC on purple).
  */
 function HeroBoltIcon({
-  from,
-  to,
-  size = 24,
+ from,
+ to,
+ size = 24,
 }: {
-  from: string;
-  to: string;
-  size?: number;
+ from: string;
+ to: string;
+ size?: number;
 }): JSX.Element {
-  const uid = useId().replace(/:/g, "");
-  const gradId = `hero-bolt-${uid}`;
+ const uid = useId().replace(/:/g, "");
+ const gradId = `hero-bolt-${uid}`;
 
-  return (
-    <View style={{ width: size, height: size }}>
-      <View
-        style={{
-          position: "absolute",
-          left: 1,
-          top: 1,
-          width: size - 2,
-          height: size - 2,
-        }}
-      >
-        <Svg
-          width="100%"
-          height="100%"
-          viewBox="0 0 19.0526 20.7624"
-          fill="none"
-        >
-          <Defs>
-            <SvgLinearGradient
-              id={gradId}
-              x1="9.52628"
-              y1="-0.618802"
-              x2="9.52628"
-              y2="21.3812"
-              gradientUnits="userSpaceOnUse"
-            >
-              <Stop offset="0" stopColor={from} />
-              <Stop offset="1" stopColor={to} />
-            </SvgLinearGradient>
-          </Defs>
-          <Path
-            d="M7.52628 0.535898C8.76388 -0.178633 10.2887 -0.178633 11.5263 0.535898L17.0526 3.7265C18.2902 4.44103 19.0526 5.76154 19.0526 7.1906V13.5718C19.0526 15.0009 18.2902 16.3214 17.0526 17.0359L11.5263 20.2265C10.2887 20.941 8.76388 20.941 7.52628 20.2265L2 17.0359C0.762395 16.3214 0 15.0009 0 13.5718V7.1906C0 5.76154 0.762396 4.44103 2 3.7265L7.52628 0.535898Z"
-            fill={`url(#${gradId})`}
-          />
-        </Svg>
-      </View>
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.25,
-          right: size * 0.25,
-          top: size * 0.25,
-          bottom: size * 0.22,
-        }}
-      >
-        <Svg
-          width="100%"
-          height="100%"
-          viewBox="0 0 5.62624 9.00012"
-          fill="none"
-        >
-          <Path
-            d="M3.38916 3.09412V0.35512C3.40266 0.28762 3.37716 0.12712 3.16716 0.0286197C2.98416 -0.0573803 2.78466 0.0701196 2.72466 0.15212C1.81216 1.61062 0.108164 4.67762 0.041664 4.83212C-0.042836 5.02662 0.0146642 5.14762 0.0946642 5.23712C0.154164 5.30412 0.296164 5.34412 0.372164 5.34412H2.22466L1.82966 8.69412C1.83466 8.77162 1.89966 8.93912 2.11166 8.99012C2.32416 9.04062 2.47016 8.88762 2.51666 8.80512L5.54516 3.68012C5.58916 3.61262 5.68016 3.43312 5.58316 3.27512C5.54615 3.21659 5.49422 3.16898 5.4327 3.13717C5.37119 3.10536 5.30232 3.0905 5.23316 3.09412H3.38916Z"
-            fill="#ffffff"
-          />
-        </Svg>
-      </View>
-    </View>
-  );
+ return (
+ <View style={{ width: size, height: size }}>
+ <View
+ style={{
+ position: "absolute",
+ left: 1,
+ top: 1,
+ width: size - 2,
+ height: size - 2,
+ }}
+ >
+ <Svg
+ width="100%"
+ height="100%"
+ viewBox="0 0 19.0526 20.7624"
+ fill="none"
+ >
+ <Defs>
+ <SvgLinearGradient
+ id={gradId}
+ x1="9.52628"
+ y1="-0.618802"
+ x2="9.52628"
+ y2="21.3812"
+ gradientUnits="userSpaceOnUse"
+ >
+ <Stop offset="0" stopColor={from} />
+ <Stop offset="1" stopColor={to} />
+ </SvgLinearGradient>
+ </Defs>
+ <Path
+ d="M7.52628 0.535898C8.76388 -0.178633 10.2887 -0.178633 11.5263 0.535898L17.0526 3.7265C18.2902 4.44103 19.0526 5.76154 19.0526 7.1906V13.5718C19.0526 15.0009 18.2902 16.3214 17.0526 17.0359L11.5263 20.2265C10.2887 20.941 8.76388 20.941 7.52628 20.2265L2 17.0359C0.762395 16.3214 0 15.0009 0 13.5718V7.1906C0 5.76154 0.762396 4.44103 2 3.7265L7.52628 0.535898Z"
+ fill={`url(#${gradId})`}
+ />
+ </Svg>
+ </View>
+ <View
+ style={{
+ position: "absolute",
+ left: size * 0.25,
+ right: size * 0.25,
+ top: size * 0.25,
+ bottom: size * 0.22,
+ }}
+ >
+ <Svg
+ width="100%"
+ height="100%"
+ viewBox="0 0 5.62624 9.00012"
+ fill="none"
+ >
+ <Path
+ d="M3.38916 3.09412V0.35512C3.40266 0.28762 3.37716 0.12712 3.16716 0.0286197C2.98416 -0.0573803 2.78466 0.0701196 2.72466 0.15212C1.81216 1.61062 0.108164 4.67762 0.041664 4.83212C-0.042836 5.02662 0.0146642 5.14762 0.0946642 5.23712C0.154164 5.30412 0.296164 5.34412 0.372164 5.34412H2.22466L1.82966 8.69412C1.83466 8.77162 1.89966 8.93912 2.11166 8.99012C2.32416 9.04062 2.47016 8.88762 2.51666 8.80512L5.54516 3.68012C5.58916 3.61262 5.68016 3.43312 5.58316 3.27512C5.54615 3.21659 5.49422 3.16898 5.4327 3.13717C5.37119 3.10536 5.30232 3.0905 5.23316 3.09412H3.38916Z"
+ fill="#ffffff"
+ />
+ </Svg>
+ </View>
+ </View>
+ );
 }
 
 interface ParticleSeed {
-  key: string;
-  /** 0–1 from left */
-  x: number;
-  /** 0–1 from top */
-  y: number;
-  size: number;
-  duration: number;
-  delay: number;
-  driftX: number;
-  driftY: number;
+ key: string;
+ /** 0-1 from left */
+ x: number;
+ /** 0-1 from top */
+ y: number;
+ size: number;
+ duration: number;
+ delay: number;
+ driftX: number;
+ driftY: number;
 }
 
 /** Sparse particles biased to the top-right (HeroUI pricing glow zone). */
 const PARTICLE_SEEDS: readonly ParticleSeed[] = Array.from(
-  { length: 18 },
-  (_, i) => {
-    const t = i / 17;
-    // Bias: mostly right (0.45–1.0) and top (0–0.55)
-    const x = 0.48 + Math.abs(Math.sin(i * 2.7)) * 0.48;
-    const y = Math.abs(Math.cos(i * 1.9)) * 0.5;
-    return {
-      key: `p-${i}`,
-      x,
-      y,
-      size: 1.5 + (i % 4) * 0.7,
-      duration: 2800 + (i % 5) * 700,
-      delay: i * 120,
-      driftX: -8 - t * 10,
-      driftY: 10 + (i % 3) * 6,
-    };
-  },
+ { length: 18 },
+ (_, i) => {
+ const t = i / 17;
+ // Bias: mostly right (0.45-1.0) and top (0-0.55)
+ const x = 0.48 + Math.abs(Math.sin(i * 2.7)) * 0.48;
+ const y = Math.abs(Math.cos(i * 1.9)) * 0.5;
+ return {
+ key: `p-${i}`,
+ x,
+ y,
+ size: 1.5 + (i % 4) * 0.7,
+ duration: 2800 + (i % 5) * 700,
+ delay: i * 120,
+ driftX: -8 - t * 10,
+ driftY: 10 + (i % 3) * 6,
+ };
+ },
 );
 
 function MovingParticle({ seed }: { seed: ParticleSeed }): JSX.Element {
-  const progress = useSharedValue(0);
+ const progress = useSharedValue(0);
 
-  useEffect(() => {
-    progress.value = withDelay(
-      seed.delay,
-      withRepeat(
-        withSequence(
-          withTiming(1, {
-            duration: seed.duration,
-            easing: Easing.inOut(Easing.sin),
-          }),
-          withTiming(0, {
-            duration: seed.duration,
-            easing: Easing.inOut(Easing.sin),
-          }),
-        ),
-        -1,
-        false,
-      ),
-    );
-  }, [progress, seed.delay, seed.duration]);
+ useEffect(() => {
+ progress.value = withDelay(
+ seed.delay,
+ withRepeat(
+ withSequence(
+ withTiming(1, {
+ duration: seed.duration,
+ easing: Easing.inOut(Easing.sin),
+ }),
+ withTiming(0, {
+ duration: seed.duration,
+ easing: Easing.inOut(Easing.sin),
+ }),
+ ),
+ -1,
+ false,
+ ),
+ );
+ }, [progress, seed.delay, seed.duration]);
 
-  const style = useAnimatedStyle(() => ({
-    opacity: 0.15 + progress.value * 0.7,
-    transform: [
-      { translateX: progress.value * seed.driftX },
-      { translateY: progress.value * seed.driftY },
-    ],
-  }));
+ const style = useAnimatedStyle(() => ({
+ opacity: 0.15 + progress.value * 0.7,
+ transform: [
+ { translateX: progress.value * seed.driftX },
+ { translateY: progress.value * seed.driftY },
+ ],
+ }));
 
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={[
-        {
-          position: "absolute",
-          left: `${seed.x * 100}%`,
-          top: `${seed.y * 100}%`,
-          width: seed.size,
-          height: seed.size,
-          borderRadius: seed.size,
-          backgroundColor: "white",
-        },
-        style,
-      ]}
-    />
-  );
+ return (
+ <Animated.View
+ pointerEvents="none"
+ style={[
+ {
+ position: "absolute",
+ left: `${seed.x * 100}%`,
+ top: `${seed.y * 100}%`,
+ width: seed.size,
+ height: seed.size,
+ borderRadius: seed.size,
+ backgroundColor: "white",
+ },
+ style,
+ ]}
+ />
+ );
 }
 
 function ParticleField(): JSX.Element {
-  return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: "absolute",
-        left: 0,
-        right: 0,
-        top: 0,
-        bottom: 0,
-        overflow: "hidden",
-      }}
-    >
-      {PARTICLE_SEEDS.map((seed) => (
-        <MovingParticle key={seed.key} seed={seed} />
-      ))}
-    </View>
-  );
+ return (
+ <View
+ pointerEvents="none"
+ style={{
+ position: "absolute",
+ left: 0,
+ right: 0,
+ top: 0,
+ bottom: 0,
+ overflow: "hidden",
+ }}
+ >
+ {PARTICLE_SEEDS.map((seed) => (
+ <MovingParticle key={seed.key} seed={seed} />
+ ))}
+ </View>
+ );
 }
 
 const ACCENT: Record<
-  PlanAccent,
-  {
-    gradient: [string, string, string];
-    iconFrom: string;
-    iconTo: string;
-    glow: string;
-  }
+ PlanAccent,
+ {
+ gradient: [string, string, string];
+ iconFrom: string;
+ iconTo: string;
+ glow: string;
+ }
 > = {
-  teal: {
-    gradient: ["#0b1220", "#071018", "#050505"],
-    iconFrom: "#22d3ee",
-    iconTo: "#0ea5a4",
-    glow: "rgba(34, 211, 238, 0.4)",
-  },
-  purple: {
-    gradient: ["#12081f", "#0a0614", "#050505"],
-    iconFrom: "#7538F8",
-    iconTo: "#F690EC",
-    glow: "rgba(117, 56, 248, 0.45)",
-  },
-  gold: {
-    gradient: ["#1a1208", "#0e0b06", "#050505"],
-    iconFrom: "#FBBF24",
-    iconTo: "#F59E0B",
-    glow: "rgba(251, 191, 36, 0.4)",
-  },
+ teal: {
+ gradient: ["#0b1220", "#071018", "#050505"],
+ iconFrom: "#22d3ee",
+ iconTo: "#0ea5a4",
+ glow: "rgba(34, 211, 238, 0.4)",
+ },
+ purple: {
+ gradient: ["#12081f", "#0a0614", "#050505"],
+ iconFrom: "#7538F8",
+ iconTo: "#F690EC",
+ glow: "rgba(117, 56, 248, 0.45)",
+ },
+ rose: {
+ gradient: ["#1f0814", "#12060c", "#050505"],
+ iconFrom: "#FB7185",
+ iconTo: "#E11D48",
+ glow: "rgba(251, 113, 133, 0.45)",
+ },
+ gold: {
+ gradient: ["#1a1208", "#0e0b06", "#050505"],
+ iconFrom: "#FBBF24",
+ iconTo: "#F59E0B",
+ glow: "rgba(251, 191, 36, 0.4)",
+ },
 };
 
 const FEATURE_STAGGER_MS = 70;
 const FEATURE_ENTER_MS = 380;
 
 function FeatureRow({
-  feature,
-  index,
+ feature,
+ index,
 }: {
-  feature: string;
-  index: number;
+ feature: string;
+ index: number;
 }): JSX.Element {
-  return (
-    <Animated.View
-      entering={FadeInDown.delay(index * FEATURE_STAGGER_MS)
-        .duration(FEATURE_ENTER_MS)
-        .easing(Easing.out(Easing.cubic))}
-      className="flex-row items-start gap-2.5"
-    >
-      <Ionicons
-        name="checkmark"
-        size={16}
-        color="rgba(255,255,255,0.85)"
-        style={{ marginTop: 2 }}
-      />
-      <Text
-        style={{
-          flex: 1,
-          fontFamily: Fonts.headingRegular,
-          fontSize: 14,
-          lineHeight: 20,
-          color: "rgba(255,255,255,0.85)",
-        }}
-      >
-        {feature}
-      </Text>
-    </Animated.View>
-  );
+ return (
+ <Animated.View
+ entering={FadeInDown.delay(index * FEATURE_STAGGER_MS)
+ .duration(FEATURE_ENTER_MS)
+ .easing(Easing.out(Easing.cubic))}
+ className="flex-row items-start gap-2.5"
+ >
+ <Ionicons
+ name="checkmark"
+ size={16}
+ color="rgba(255,255,255,0.85)"
+ style={{ marginTop: 2 }}
+ />
+ <Text
+ style={{
+ flex: 1,
+ fontFamily: Fonts.headingRegular,
+ fontSize: 14,
+ lineHeight: 20,
+ color: "rgba(255,255,255,0.85)",
+ }}
+ >
+ {feature}
+ </Text>
+ </Animated.View>
+ );
 }
 
 function PlanCard({
-  plan,
-  busy,
-  isCurrent,
-  expanded,
-  onToggle,
-  onSelect,
+ plan,
+ busy,
+ isCurrent,
+ expanded,
+ onToggle,
+ onSelect,
 }: {
-  plan: SubscriptionPlan;
-  busy: boolean;
-  isCurrent: boolean;
-  expanded: boolean;
-  onToggle: () => void;
-  onSelect: () => void;
+ plan: SubscriptionPlan;
+ busy: boolean;
+ isCurrent: boolean;
+ expanded: boolean;
+ onToggle: () => void;
+ onSelect: () => void;
 }): JSX.Element {
-  const palette = ACCENT[plan.accent];
-  const chevron = useSharedValue(0);
+ const palette = ACCENT[plan.accent];
+ const chevron = useSharedValue(0);
 
-  useEffect(() => {
-    chevron.value = withTiming(expanded ? 1 : 0, {
-      duration: 320,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [chevron, expanded]);
+ useEffect(() => {
+ chevron.value = withTiming(expanded ? 1 : 0, {
+ duration: 320,
+ easing: Easing.out(Easing.cubic),
+ });
+ }, [chevron, expanded]);
 
-  const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${chevron.value * 180}deg` }],
-  }));
+ const chevronStyle = useAnimatedStyle(() => ({
+ transform: [{ rotate: `${chevron.value * 180}deg` }],
+ }));
 
-  return (
-    <Animated.View
-      layout={LinearTransition.duration(420).easing(Easing.out(Easing.cubic))}
-      className="overflow-hidden rounded-3xl border border-white/10"
-    >
-      <LinearGradient
-        colors={palette.gradient}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-      />
-      <LinearGradient
-        colors={[palette.glow, "transparent"]}
-        start={{ x: 1, y: 0 }}
-        end={{ x: 0.15, y: 0.9 }}
-        style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-      />
-      <ParticleField />
+ return (
+ <Animated.View
+ layout={LinearTransition.duration(420).easing(Easing.out(Easing.cubic))}
+ className="overflow-hidden rounded-3xl border border-white/10"
+ >
+ <LinearGradient
+ colors={palette.gradient}
+ start={{ x: 0.5, y: 0 }}
+ end={{ x: 0.5, y: 1 }}
+ style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+ />
+ <LinearGradient
+ colors={[palette.glow, "transparent"]}
+ start={{ x: 1, y: 0 }}
+ end={{ x: 0.15, y: 0.9 }}
+ style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+ />
+ <ParticleField />
 
-      <Pressable onPress={onToggle} className="gap-5 p-5">
-        <View className="gap-2">
-          <View className="flex-row items-center gap-2.5">
-            <HeroBoltIcon from={palette.iconFrom} to={palette.iconTo} size={26} />
-            <Text
-              style={{
-                flex: 1,
-                fontFamily: Fonts.heading,
-                fontSize: 22,
-                lineHeight: 28,
-                letterSpacing: -0.3,
-                color: "#FFFFFF",
-              }}
-            >
-              {plan.displayName}
-            </Text>
-            {plan.badge ? (
-              <View className="rounded-full bg-[#FBBF24] px-2.5 py-1">
-                <Text
-                  style={{
-                    fontFamily: Fonts.headingSemi,
-                    fontSize: 11,
-                    color: "#000000",
-                  }}
-                >
-                  {plan.badge}
-                </Text>
-              </View>
-            ) : null}
-            <Animated.View style={chevronStyle}>
-              <Ionicons
-                name="chevron-down"
-                size={18}
-                color="rgba(255,255,255,0.55)"
-              />
-            </Animated.View>
-          </View>
-          <Text
-            style={{
-              fontFamily: Fonts.headingRegular,
-              fontSize: 14,
-              lineHeight: 20,
-              color: "rgba(255,255,255,0.65)",
-            }}
-          >
-            {plan.description}
-          </Text>
-        </View>
+ <Pressable onPress={onToggle} className="gap-5 p-5">
+ <View className="gap-2">
+ <View className="flex-row items-center gap-2.5">
+ <HeroBoltIcon from={palette.iconFrom} to={palette.iconTo} size={26} />
+ <Text
+ style={{
+ flex: 1,
+ fontFamily: Fonts.heading,
+ fontSize: 22,
+ lineHeight: 28,
+ letterSpacing: -0.3,
+ color: "#FFFFFF",
+ }}
+ >
+ {plan.displayName}
+ </Text>
+ {plan.badge ? (
+ <View className="rounded-full bg-[#FBBF24] px-2.5 py-1">
+ <Text
+ style={{
+ fontFamily: Fonts.headingSemi,
+ fontSize: 11,
+ color: "#000000",
+ }}
+ >
+ {plan.badge}
+ </Text>
+ </View>
+ ) : null}
+ <Animated.View style={chevronStyle}>
+ <Ionicons
+ name="chevron-down"
+ size={18}
+ color="rgba(255,255,255,0.55)"
+ />
+ </Animated.View>
+ </View>
+ <Text
+ style={{
+ fontFamily: Fonts.headingRegular,
+ fontSize: 14,
+ lineHeight: 20,
+ color: "rgba(255,255,255,0.65)",
+ }}
+ >
+ {plan.description}
+ </Text>
+ </View>
 
-        <View className="gap-1">
-          <Text
-            style={{
-              fontFamily: Fonts.heading,
-              fontSize: 40,
-              lineHeight: 44,
-              letterSpacing: -1,
-              color: "#FFFFFF",
-            }}
-          >
-            {formatMoney(plan.price)}
-          </Text>
-          <Text
-            style={{
-              fontFamily: Fonts.headingRegular,
-              fontSize: 12,
-              lineHeight: 16,
-              color: "rgba(255,255,255,0.45)",
-            }}
-          >
-            {plan.priceNote}
-          </Text>
-        </View>
+ <View className="gap-1">
+ <Text
+ style={{
+ fontFamily: Fonts.heading,
+ fontSize: 40,
+ lineHeight: 44,
+ letterSpacing: -1,
+ color: "#FFFFFF",
+ }}
+ >
+ {formatPlanPrice(plan)}
+ </Text>
+ <Text
+ style={{
+ fontFamily: Fonts.headingRegular,
+ fontSize: 12,
+ lineHeight: 16,
+ color: "rgba(255,255,255,0.45)",
+ }}
+ >
+ {plan.priceNote}
+ </Text>
+ </View>
 
-        {expanded ? (
-          <Animated.View
-            key={`${plan.id}-specs`}
-            entering={FadeIn.duration(280).easing(Easing.out(Easing.cubic))}
-            exiting={FadeOut.duration(160)}
-            layout={LinearTransition.duration(360)}
-            className="gap-4"
-          >
-            <View className="gap-2.5">
-              {plan.features.map((feature, index) => (
-                <FeatureRow key={feature} feature={feature} index={index} />
-              ))}
-            </View>
+ {expanded ? (
+ <Animated.View
+ key={`${plan.id}-specs`}
+ entering={FadeIn.duration(280).easing(Easing.out(Easing.cubic))}
+ exiting={FadeOut.duration(160)}
+ layout={LinearTransition.duration(360)}
+ className="gap-4"
+ >
+ <View className="gap-2.5">
+ {plan.features.map((feature, index) => (
+ <FeatureRow key={feature} feature={feature} index={index} />
+ ))}
+ </View>
 
-            <Animated.View
-              entering={FadeInDown.delay(
-                plan.features.length * FEATURE_STAGGER_MS + 40,
-              )
-                .duration(FEATURE_ENTER_MS)
-                .easing(Easing.out(Easing.cubic))}
-              className="gap-1 border-t border-white/10 pt-4"
-            >
-              <Text
-                style={{
-                  fontFamily: Fonts.headingSemi,
-                  fontSize: 14,
-                  lineHeight: 20,
-                  color: "rgba(255,255,255,0.9)",
-                }}
-              >
-                {plan.renewalTitle}
-              </Text>
-              <Text
-                style={{
-                  fontFamily: Fonts.headingRegular,
-                  fontSize: 12,
-                  lineHeight: 18,
-                  color: "rgba(255,255,255,0.45)",
-                }}
-              >
-                {plan.renewalNote}
-              </Text>
-            </Animated.View>
-          </Animated.View>
-        ) : (
-          <Animated.View
-            key={`${plan.id}-hint`}
-            entering={FadeIn.duration(220)}
-            exiting={FadeOut.duration(120)}
-          >
-            <Text
-              style={{
-                fontFamily: Fonts.headingRegular,
-                fontSize: 12,
-                color: "rgba(255,255,255,0.4)",
-              }}
-            >
-              Tap to see what's included
-            </Text>
-          </Animated.View>
-        )}
+ <Animated.View
+ entering={FadeInDown.delay(
+ plan.features.length * FEATURE_STAGGER_MS + 40,
+ )
+ .duration(FEATURE_ENTER_MS)
+ .easing(Easing.out(Easing.cubic))}
+ className="gap-1 border-t border-white/10 pt-4"
+ >
+ <Text
+ style={{
+ fontFamily: Fonts.headingSemi,
+ fontSize: 14,
+ lineHeight: 20,
+ color: "rgba(255,255,255,0.9)",
+ }}
+ >
+ {plan.renewalTitle}
+ </Text>
+ <Text
+ style={{
+ fontFamily: Fonts.headingRegular,
+ fontSize: 12,
+ lineHeight: 18,
+ color: "rgba(255,255,255,0.45)",
+ }}
+ >
+ {plan.renewalNote}
+ </Text>
+ </Animated.View>
+ </Animated.View>
+ ) : (
+ <Animated.View
+ key={`${plan.id}-hint`}
+ entering={FadeIn.duration(220)}
+ exiting={FadeOut.duration(120)}
+ >
+ <Text
+ style={{
+ fontFamily: Fonts.headingRegular,
+ fontSize: 12,
+ color: "rgba(255,255,255,0.4)",
+ }}
+ >
+ Tap to see what's included
+ </Text>
+ </Animated.View>
+ )}
 
-        <Button
-          variant={plan.featured ? "primary" : "secondary"}
-          className={
-            plan.featured
-              ? "min-h-12 w-full rounded-full bg-white"
-              : "min-h-12 w-full rounded-full border-0 bg-white/10"
-          }
-          isDisabled={busy || isCurrent}
-          onPress={onSelect}
-        >
-          <Button.Label
-            style={{
-              fontFamily: Fonts.headingSemi,
-              color: plan.featured ? "#000000" : "#FFFFFF",
-            }}
-          >
-            {isCurrent ? "Current plan" : plan.ctaLabel}
-          </Button.Label>
-        </Button>
-      </Pressable>
-    </Animated.View>
-  );
+ <Button
+ variant={plan.featured ? "primary" : "secondary"}
+ className={
+ plan.featured
+ ? "min-h-12 w-full rounded-full bg-white"
+ : "min-h-12 w-full rounded-full border-0 bg-white/10"
+ }
+ isDisabled={busy || isCurrent}
+ onPress={onSelect}
+ >
+ <Button.Label
+ style={{
+ fontFamily: Fonts.headingSemi,
+ color: plan.featured ? "#000000" : "#FFFFFF",
+ }}
+ >
+ {isCurrent ? "Current plan" : plan.ctaLabel}
+ </Button.Label>
+ </Button>
+ </Pressable>
+ </Animated.View>
+ );
 }
 
 export function SubscriptionScreen(): JSX.Element {
-  const insets = useSafeAreaInsets();
-  const { toast } = useToast();
-  const [foreground, muted] = useThemeColor(["foreground", "muted"]);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [currentTier, setCurrentTier] = useState<SubscriptionTier | null>(null);
-  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>(
-    [],
-  );
-  const [expandedId, setExpandedId] = useState<SubscriptionTier | null>(null);
+ const insets = useSafeAreaInsets();
+ const { toast } = useToast();
+ const [foreground, muted] = useThemeColor(["foreground", "muted"]);
+ const [loading, setLoading] = useState(true);
+ const [busy, setBusy] = useState(false);
+ const [currentTier, setCurrentTier] = useState<SubscriptionTier | null>(null);
+ const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>(
+ [],
+ );
+ const [expandedId, setExpandedId] = useState<SubscriptionTier | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const next = await getSubscription();
-      setCurrentTier(next.currentTier);
-      setSubscriptionPlans(next.plans);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+ const load = useCallback(async () => {
+ setLoading(true);
+ try {
+ const next = await getSubscription();
+ setCurrentTier(next.currentTier);
+ setSubscriptionPlans(next.plans);
+ } finally {
+ setLoading(false);
+ }
+ }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+ useEffect(() => {
+ void load();
+ }, [load]);
 
-  const handleSubscribe = async (tier: SubscriptionTier) => {
-    setBusy(true);
-    try {
-      const next = await mockSubscribe(tier);
-      setCurrentTier(next.currentTier);
-      toast.show({
-        variant: "success",
-        label: "Subscribed",
-        description: `You're on ${next.plans.find((p) => p.id === tier)?.displayName ?? "the plan"}`,
-        duration: 2500,
-      });
-    } catch {
-      Alert.alert("Error", "Could not complete purchase");
-    } finally {
-      setBusy(false);
-    }
-  };
+ const handleSubscribe = async (tier: SubscriptionTier) => {
+ setBusy(true);
+ try {
+ const next = await mockSubscribe(tier);
+ setCurrentTier(next.currentTier);
+ toast.show({
+ variant: "success",
+ label: "Subscribed",
+ description: `You're on ${next.plans.find((p) => p.id === tier)?.displayName ?? "the plan"}`,
+ duration: 2500,
+ });
+ } catch {
+ Alert.alert("Error", "Could not complete purchase");
+ } finally {
+ setBusy(false);
+ }
+ };
 
-  const handleRestore = async () => {
-    setBusy(true);
-    try {
-      await mockRestorePurchases();
-      toast.show({
-        variant: "default",
-        label: "Purchases restored",
-        duration: 2000,
-      });
-      await load();
-    } catch {
-      Alert.alert("Error", "Could not restore purchases");
-    } finally {
-      setBusy(false);
-    }
-  };
+ const handleRestore = async () => {
+ setBusy(true);
+ try {
+ await mockRestorePurchases();
+ toast.show({
+ variant: "default",
+ label: "Purchases restored",
+ duration: 2000,
+ });
+ await load();
+ } catch {
+ Alert.alert("Error", "Could not restore purchases");
+ } finally {
+ setBusy(false);
+ }
+ };
 
-  if (loading) {
-    return (
-      <View className="flex-1 gap-4 bg-background px-4 pt-4">
-        <Skeleton className="h-56 rounded-3xl" />
-        <Skeleton className="h-56 rounded-3xl" />
-        <Skeleton className="h-56 rounded-3xl" />
-      </View>
-    );
-  }
+ if (loading) {
+ return (
+ <View className="flex-1 gap-4 bg-background px-4 pt-4">
+ <Skeleton className="h-56 rounded-3xl" />
+ <Skeleton className="h-56 rounded-3xl" />
+ <Skeleton className="h-56 rounded-3xl" />
+ </View>
+ );
+ }
 
-  return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="gap-4 px-4 pt-2"
-      contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* HeroUI Pro pricing header — Britti Sans (heroSans) + zinc hierarchy */}
-      <View className="mb-3 items-center gap-3 px-2 pt-1">
-        <View className="items-center">
-          <Text
-            style={{
-              fontFamily: Fonts.heading,
-              fontSize: 34,
-              lineHeight: 40,
-              letterSpacing: -0.6,
-              color: foreground,
-              textAlign: "center",
-            }}
-          >
-            Become a Hero.
-          </Text>
-          <Text
-            style={{
-              fontFamily: Fonts.heading,
-              fontSize: 34,
-              lineHeight: 40,
-              letterSpacing: -0.6,
-              color: "#71717A",
-              textAlign: "center",
-            }}
-          >
-            Ship with confidence.
-          </Text>
-        </View>
-        <Text
-          style={{
-            fontFamily: Fonts.headingRegular,
-            fontSize: 16,
-            lineHeight: 24,
-            color: muted,
-            textAlign: "center",
-            paddingHorizontal: 8,
-          }}
-        >
-          Pick your stack. Start building products you're proud to ship.
-        </Text>
-      </View>
+ return (
+ <ScrollView
+ className="flex-1 bg-background"
+ contentContainerClassName="gap-4 px-4 pt-2"
+ contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+ showsVerticalScrollIndicator={false}
+ >
+ {/* HeroUI Pro pricing header - Britti Sans (heroSans) + zinc hierarchy */}
+ <View className="mb-3 items-center gap-3 px-2 pt-1">
+ <View className="items-center">
+ <Text
+ style={{
+ fontFamily: Fonts.heading,
+ fontSize: 34,
+ lineHeight: 40,
+ letterSpacing: -0.6,
+ color: foreground,
+ textAlign: "center",
+ }}
+ >
+ Become a Hero.
+ </Text>
+ <Text
+ style={{
+ fontFamily: Fonts.heading,
+ fontSize: 34,
+ lineHeight: 40,
+ letterSpacing: -0.6,
+ color: "#71717A",
+ textAlign: "center",
+ }}
+ >
+ Ship with confidence.
+ </Text>
+ </View>
+ <Text
+ style={{
+ fontFamily: Fonts.headingRegular,
+ fontSize: 16,
+ lineHeight: 24,
+ color: muted,
+ textAlign: "center",
+ paddingHorizontal: 8,
+ }}
+ >
+ Pick your stack. Start building products you're proud to ship.
+ </Text>
+ </View>
 
-      {subscriptionPlans.map((plan) => (
-        <PlanCard
-          key={plan.id}
-          plan={plan}
-          busy={busy}
-          isCurrent={currentTier === plan.id}
-          expanded={expandedId === plan.id}
-          onToggle={() =>
-            setExpandedId((id) => (id === plan.id ? null : plan.id))
-          }
-          onSelect={() => void handleSubscribe(plan.id)}
-        />
-      ))}
+ {subscriptionPlans.map((plan) => (
+ <PlanCard
+ key={plan.id}
+ plan={plan}
+ busy={busy}
+ isCurrent={currentTier === plan.id}
+ expanded={expandedId === plan.id}
+ onToggle={() =>
+ setExpandedId((id) => (id === plan.id ? null : plan.id))
+ }
+ onSelect={() => void handleSubscribe(plan.id)}
+ />
+ ))}
 
-      <Button
-        variant="ghost"
-        className="mt-1 self-center"
-        isDisabled={busy}
-        onPress={() => void handleRestore()}
-      >
-        <Button.Label
-          style={{ fontFamily: Fonts.headingRegular }}
-          className="text-muted"
-        >
-          Restore purchases
-        </Button.Label>
-      </Button>
-    </ScrollView>
-  );
+ <Button
+ variant="ghost"
+ className="mt-1 self-center"
+ isDisabled={busy}
+ onPress={() => void handleRestore()}
+ >
+ <Button.Label
+ style={{ fontFamily: Fonts.headingRegular }}
+ className="text-muted"
+ >
+ Restore purchases
+ </Button.Label>
+ </Button>
+ </ScrollView>
+ );
 }

@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
 import { FlatList, RefreshControl, View } from "react-native";
 import { EmptyState } from "heroui-native-pro";
-import { SkeletonGroup, useThemeColor } from "heroui-native";
+import { ScrollShadow, SkeletonGroup, useThemeColor } from "heroui-native";
 import { withUniwind } from "uniwind";
 
 import { FeedItem } from "@/features/feed/feed-item";
@@ -56,44 +57,62 @@ export function FeedScrollable({
   onToggleFavorite,
   bottomInset = 96,
 }: FeedScrollableProps): JSX.Element {
-  const accent = useThemeColor("accent");
+  const [accent, background] = useThemeColor(["accent", "background"]);
 
   if (loading && items.length === 0) {
     return <FeedSkeleton />;
   }
 
   return (
-    <FlatList
-      key="feed-grid-2"
-      data={items}
-      keyExtractor={(item) => item.id}
-      numColumns={2}
-      columnWrapperStyle={{ paddingHorizontal: 2 }}
-      contentContainerStyle={{ paddingTop: 4, paddingBottom: bottomInset, flexGrow: 1 }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accent} />
-      }
-      renderItem={({ item }) => (
-        <FeedItem
-          feed={item}
-          onPress={onPressItem}
-          onToggleFavorite={onToggleFavorite}
-        />
-      )}
-      ListEmptyComponent={
-        <EmptyState className="px-6 py-12">
-          <EmptyState.Header>
-            <EmptyState.Media variant="icon">
-              <StyledIonicons name="grid-outline" size={20} className="text-muted" />
-            </EmptyState.Media>
-            <EmptyState.Title>No listings yet</EmptyState.Title>
-            <EmptyState.Description>
-              Try another filter or clear your search to see mock deals.
-            </EmptyState.Description>
-          </EmptyState.Header>
-        </EmptyState>
-      }
-      showsVerticalScrollIndicator={false}
-    />
+    <ScrollShadow
+      className="flex-1"
+      LinearGradientComponent={LinearGradient}
+      color={background}
+    >
+      <FlatList
+        key="feed-grid-2"
+        data={items}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        columnWrapperStyle={{ paddingHorizontal: 2 }}
+        contentContainerStyle={{
+          paddingTop: 4,
+          paddingBottom: bottomInset,
+          flexGrow: 1,
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={accent}
+          />
+        }
+        renderItem={({ item }) => (
+          <FeedItem
+            feed={item}
+            onPress={onPressItem}
+            onToggleFavorite={onToggleFavorite}
+          />
+        )}
+        ListEmptyComponent={
+          <EmptyState className="px-6 py-12">
+            <EmptyState.Header>
+              <EmptyState.Media variant="icon">
+                <StyledIonicons
+                  name="grid-outline"
+                  size={20}
+                  className="text-muted"
+                />
+              </EmptyState.Media>
+              <EmptyState.Title>No listings yet</EmptyState.Title>
+              <EmptyState.Description>
+                Try another filter or clear your search to see mock deals.
+              </EmptyState.Description>
+            </EmptyState.Header>
+          </EmptyState>
+        }
+        showsVerticalScrollIndicator={false}
+      />
+    </ScrollShadow>
   );
 }

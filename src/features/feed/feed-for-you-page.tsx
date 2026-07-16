@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -8,6 +9,7 @@ import {
 } from "react-native";
 import {
   PressableFeedback,
+  ScrollShadow,
   SkeletonGroup,
   Typography,
   useThemeColor,
@@ -65,7 +67,7 @@ export function FeedForYouPage({
   onOpenCategory,
   onFavoriteChange,
 }: FeedForYouPageProps): JSX.Element {
-  const accent = useThemeColor("accent");
+  const [accent, background] = useThemeColor(["accent", "background"]);
   const [shelves, setShelves] = useState<ShelfState>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -116,82 +118,94 @@ export function FeedForYouPage({
 
   if (loading && Object.keys(shelves).length === 0) {
     return (
-      <ScrollView
+      <ScrollShadow
         className="flex-1"
-        contentContainerClassName="pb-28 pt-2"
-        showsVerticalScrollIndicator={false}
+        LinearGradientComponent={LinearGradient}
+        color={background}
       >
-        <ShelfSkeleton />
-        <ShelfSkeleton />
-        <ShelfSkeleton />
-      </ScrollView>
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="pb-28 pt-2"
+          showsVerticalScrollIndicator={false}
+        >
+          <ShelfSkeleton />
+          <ShelfSkeleton />
+          <ShelfSkeleton />
+        </ScrollView>
+      </ScrollShadow>
     );
   }
 
   return (
-    <ScrollView
+    <ScrollShadow
       className="flex-1"
-      contentContainerClassName="pb-28 pt-2"
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => {
-            void load({ refresh: true });
-          }}
-          tintColor={accent}
-        />
-      }
+      LinearGradientComponent={LinearGradient}
+      color={background}
     >
-      {FOR_YOU_SHELVES.map((shelf) => {
-        const items = shelves[shelf.key] ?? [];
-        if (items.length === 0 && !loading) return null;
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="pb-28 pt-2"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              void load({ refresh: true });
+            }}
+            tintColor={accent}
+          />
+        }
+      >
+        {FOR_YOU_SHELVES.map((shelf) => {
+          const items = shelves[shelf.key] ?? [];
+          if (items.length === 0 && !loading) return null;
 
-        return (
-          <View key={shelf.key} className="mb-5">
-            <PressableFeedback
-              onPress={() => onOpenCategory(shelf.key)}
-              className="mb-2 flex-row items-center justify-between px-3 py-1"
-              animation={{ scale: { value: 0.99 } }}
-              accessibilityRole="button"
-              accessibilityLabel={`Open ${shelf.label}`}
-            >
-              <Typography
-                type="body"
-                weight="semibold"
-                className="text-[17px] text-foreground"
+          return (
+            <View key={shelf.key} className="mb-5">
+              <PressableFeedback
+                onPress={() => onOpenCategory(shelf.key)}
+                className="mb-2 flex-row items-center justify-between px-3 py-1"
+                animation={{ scale: { value: 0.99 } }}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${shelf.label}`}
               >
-                {shelf.label}
-              </Typography>
-              <StyledIonicons
-                name="chevron-forward"
-                size={18}
-                className="text-muted"
-              />
-            </PressableFeedback>
-
-            <ScrollView
-              horizontal
-              nestedScrollEnabled
-              showsHorizontalScrollIndicator={false}
-              contentContainerClassName="px-3"
-              decelerationRate="fast"
-            >
-              {items.map((item) => (
-                <FeedItem
-                  key={item.id}
-                  feed={item}
-                  layout="rail"
-                  onPress={onPressItem}
-                  onToggleFavorite={(id) => {
-                    void handleToggleFavorite(id);
-                  }}
+                <Typography
+                  type="body"
+                  weight="semibold"
+                  className="text-[17px] text-foreground"
+                >
+                  {shelf.label}
+                </Typography>
+                <StyledIonicons
+                  name="chevron-forward"
+                  size={18}
+                  className="text-muted"
                 />
-              ))}
-            </ScrollView>
-          </View>
-        );
-      })}
-    </ScrollView>
+              </PressableFeedback>
+
+              <ScrollView
+                horizontal
+                nestedScrollEnabled
+                showsHorizontalScrollIndicator={false}
+                contentContainerClassName="px-3"
+                decelerationRate="fast"
+              >
+                {items.map((item) => (
+                  <FeedItem
+                    key={item.id}
+                    feed={item}
+                    layout="rail"
+                    onPress={onPressItem}
+                    onToggleFavorite={(id) => {
+                      void handleToggleFavorite(id);
+                    }}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </ScrollShadow>
   );
 }

@@ -1,16 +1,20 @@
 import type { JSX } from "react";
 import { Stack } from "expo-router";
+import { useThemeColor } from "heroui-native";
 
 export default function SettingsStackLayout(): JSX.Element {
+  const background = useThemeColor("background");
+  const foreground = useThemeColor("foreground");
+
   return (
     <Stack
       screenOptions={{
         headerShown: true,
-        headerStyle: { backgroundColor: "#121212" },
-        headerTintColor: "#FFFFFF",
+        headerStyle: { backgroundColor: background },
+        headerTintColor: foreground,
         headerTitleStyle: { fontWeight: "600" },
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: "#121212" },
+        contentStyle: { backgroundColor: background },
       }}
     >
       <Stack.Screen name="profile" options={{ title: "Profile" }} />
@@ -26,7 +30,6 @@ export default function SettingsStackLayout(): JSX.Element {
         }}
       />
       <Stack.Screen name="blocked-sellers" options={{ title: "Blocked Sellers" }} />
-      <Stack.Screen name="delete-account" options={{ title: "Delete Account" }} />
     </Stack>
   );
 }

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
 import { FlatList, RefreshControl, View } from "react-native";
 import { EmptyState } from "heroui-native-pro";
-import { SkeletonGroup } from "heroui-native";
+import { SkeletonGroup, useThemeColor } from "heroui-native";
 
 import { FeedItem } from "@/features/feed/feed-item";
 import type { FeedItem as FeedModel } from "@/models/feed";
@@ -45,6 +45,8 @@ export function FeedScrollable({
   onToggleFavorite,
   bottomInset = 96,
 }: FeedScrollableProps): JSX.Element {
+  const accent = useThemeColor("accent");
+
   if (loading && items.length === 0) {
     return <FeedSkeleton />;
   }
@@ -58,7 +60,7 @@ export function FeedScrollable({
       columnWrapperStyle={{ paddingHorizontal: 4 }}
       contentContainerStyle={{ paddingTop: 6, paddingBottom: bottomInset, flexGrow: 1 }}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1DB954" />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accent} />
       }
       renderItem={({ item }) => (
         <FeedItem
@@ -71,7 +73,7 @@ export function FeedScrollable({
         <EmptyState className="px-6 py-12">
           <EmptyState.Header>
             <EmptyState.Media variant="icon">
-              <Ionicons name="sparkles-outline" size={22} color="#1DB954" />
+              <Ionicons name="sparkles-outline" size={22} color={accent} />
             </EmptyState.Media>
             <EmptyState.Title>No listings yet</EmptyState.Title>
             <EmptyState.Description>

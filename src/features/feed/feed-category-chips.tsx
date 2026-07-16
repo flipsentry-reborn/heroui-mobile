@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps, JSX } from "react";
 import { ScrollView } from "react-native";
-import { Chip } from "heroui-native";
+import { Chip, useThemeColor } from "heroui-native";
 
 import { FEED_CATEGORIES, type FeedCategoryKey } from "@/mocks/data/feed";
 
@@ -34,6 +34,8 @@ export function FeedCategoryChips({
   activeCategory,
   onSelect,
 }: FeedCategoryChipsProps): JSX.Element {
+  const [accentForeground, muted] = useThemeColor(["accent-foreground", "muted"]);
+
   return (
     <ScrollView
       horizontal
@@ -54,7 +56,7 @@ export function FeedCategoryChips({
             <Ionicons
               name={CATEGORY_ICONS[category.key]}
               size={13}
-              color={active ? "#04140A" : "#B3B3B3"}
+              color={active ? accentForeground : muted}
             />
             <Chip.Label
               className={

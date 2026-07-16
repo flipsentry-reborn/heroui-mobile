@@ -2,10 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import type { JSX } from "react";
 import { View } from "react-native";
-import { Card, Chip, PressableFeedback, Typography } from "heroui-native";
+import { Card, Chip, PressableFeedback, Typography, useThemeColor } from "heroui-native";
 
 import PlatformIcon from "@/components/icons/PlatformIcon";
-import { GlassSurface } from "@/components/ui/glass-surface";
 import { ValuationBadge } from "@/features/feed/valuation-badge";
 import {
   getOrderedStatusBadges,
@@ -29,6 +28,10 @@ function formatPrice(price: number, symbol: string): string {
 }
 
 export function FeedItem({ feed, onPress, onToggleFavorite }: FeedItemProps): JSX.Element {
+  const [surfaceSecondary, accentForeground] = useThemeColor([
+    "surface-secondary",
+    "accent-foreground",
+  ]);
   const imageUrl =
     feed.images.imageUrlHostedByUs ||
     feed.images.mainImageUrl.imageUrl ||
@@ -45,12 +48,12 @@ export function FeedItem({ feed, onPress, onToggleFavorite }: FeedItemProps): JS
     >
       <Card
         variant="secondary"
-        className="flex-1 gap-0 overflow-hidden rounded-xl border border-white/12 bg-[#181818]/85 p-0"
+        className="flex-1 gap-0 overflow-hidden rounded-xl border border-white/12 bg-surface/85 p-0"
       >
         <View className="relative">
           <Image
             source={{ uri: imageUrl }}
-            style={{ width: "100%", height: IMAGE_H, backgroundColor: "#282828" }}
+            style={{ width: "100%", height: IMAGE_H, backgroundColor: surfaceSecondary }}
             contentFit="cover"
             transition={180}
           />
@@ -69,7 +72,7 @@ export function FeedItem({ feed, onPress, onToggleFavorite }: FeedItemProps): JS
               <Ionicons
                 name={feed.isFavorite ? "star" : "star-outline"}
                 size={12}
-                color="#fff"
+                color={feed.isFavorite ? accentForeground : "#fff"}
               />
             </PressableFeedback>
             <PlatformIcon platform={feed.platform} size={18} />
@@ -96,8 +99,7 @@ export function FeedItem({ feed, onPress, onToggleFavorite }: FeedItemProps): JS
         </View>
 
         {/* flex-1: fills leftover height so row bottoms align without empty solid gap */}
-        <GlassSurface intensity="feed" bordered={false} className="relative min-h-[72px] flex-1">
-          <Card.Body className="flex-1 justify-between gap-0.5 px-2 pb-2 pt-1.5">
+        <Card.Body className="relative min-h-[72px] flex-1 justify-between gap-0.5 bg-surface px-2 pb-2 pt-1.5">
             <View className="gap-0.5">
               <View className="flex-row items-baseline gap-1">
                 <Typography
@@ -142,7 +144,6 @@ export function FeedItem({ feed, onPress, onToggleFavorite }: FeedItemProps): JS
               </Typography>
             </View>
           </Card.Body>
-        </GlassSurface>
       </Card>
     </PressableFeedback>
   );

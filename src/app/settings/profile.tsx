@@ -11,6 +11,7 @@ import {
   Skeleton,
   Surface,
   Typography,
+  useThemeColor,
 } from "heroui-native";
 
 import type { MockUserProfile } from "@/mocks/data/settings";
@@ -67,13 +68,15 @@ function ProfileSection({
   icon: keyof typeof Ionicons.glyphMap;
   children: ReactNode;
 }): JSX.Element {
+  const accent = useThemeColor("accent");
+
   return (
     <Surface
       variant="secondary"
       className="overflow-hidden rounded-2xl border border-white/10 bg-white/5"
     >
       <View className="flex-row items-center gap-2 px-4 pb-1 pt-3.5">
-        <Ionicons name={icon} size={14} color="#1DB954" />
+        <Ionicons name={icon} size={14} color={accent} />
         <Typography
           type="body-xs"
           weight="semibold"
@@ -90,6 +93,11 @@ function ProfileSection({
 export default function ProfileScreen(): JSX.Element {
   const [profile, setProfile] = useState<MockUserProfile | null>(null);
   const [planLabel, setPlanLabel] = useState("Hunter");
+  const [background, surfaceSecondary, foreground] = useThemeColor([
+    "background",
+    "surface-secondary",
+    "foreground",
+  ]);
 
   useEffect(() => {
     void Promise.all([getSettings(), getSubscription()]).then(([settings, sub]) => {
@@ -120,9 +128,9 @@ export default function ProfileScreen(): JSX.Element {
       contentContainerClassName="pb-10"
       showsVerticalScrollIndicator={false}
     >
-      {/* Hero — same fade language as subscription */}
+      {/* Hero — neutral fade into surface */}
       <LinearGradient
-        colors={["rgba(29,185,84,0)", "rgba(29,185,84,0.45)", "#1DB954"]}
+        colors={[background, surfaceSecondary, surfaceSecondary]}
         locations={[0, 0.5, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
@@ -133,20 +141,20 @@ export default function ProfileScreen(): JSX.Element {
           paddingBottom: 22,
         }}
       >
-        <Avatar size="lg" alt={fullName} className="mb-3 border-2 border-white/30 bg-black/20">
-          <Avatar.Fallback className="bg-black/25 text-lg text-white">
+        <Avatar size="lg" alt={fullName} className="mb-3 border-2 border-border bg-surface">
+          <Avatar.Fallback className="bg-surface-secondary text-lg text-foreground">
             {initials}
           </Avatar.Fallback>
         </Avatar>
-        <Typography type="h4" weight="bold" className="text-center text-white">
+        <Typography type="h4" weight="bold" className="text-center text-foreground">
           {fullName}
         </Typography>
-        <Typography type="body-xs" className="mt-0.5 text-center text-white/85">
+        <Typography type="body-xs" className="mt-0.5 text-center text-muted">
           {profile.email}
         </Typography>
-        <View className="mt-2.5 flex-row items-center gap-1.5 rounded-full border border-white/25 bg-black/20 px-2.5 py-1">
-          <Ionicons name="diamond" size={12} color="#fff" />
-          <Typography type="body-xs" weight="semibold" className="text-white">
+        <View className="mt-2.5 flex-row items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1">
+          <Ionicons name="diamond" size={12} color={foreground} />
+          <Typography type="body-xs" weight="semibold" className="text-foreground">
             {planLabel}
           </Typography>
         </View>

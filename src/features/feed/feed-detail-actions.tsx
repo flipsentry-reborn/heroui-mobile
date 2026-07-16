@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
 import { View } from "react-native";
-import { PressableFeedback, Typography } from "heroui-native";
+import { PressableFeedback, Typography, useThemeColor } from "heroui-native";
 
 interface FeedDetailActionsProps {
   isFavorite: boolean;
@@ -17,6 +17,8 @@ export function FeedDetailActions({
   onDelete,
   onShare,
 }: FeedDetailActionsProps): JSX.Element {
+  const [accent, foreground, danger] = useThemeColor(["accent", "foreground", "danger"]);
+
   return (
     <View className="flex-row items-center justify-center gap-9 py-2">
       <PressableFeedback
@@ -28,7 +30,7 @@ export function FeedDetailActions({
         <Ionicons
           name={isFavorite ? "bookmark" : "bookmark-outline"}
           size={18}
-          color={isFavorite ? "#1DB954" : "#E8E8E8"}
+          color={isFavorite ? accent : foreground}
         />
         <Typography
           type="body-sm"
@@ -45,7 +47,7 @@ export function FeedDetailActions({
         animation={{ scale: { value: 0.96 } }}
         className="flex-row items-center gap-2 px-1 py-1.5"
       >
-        <Ionicons name="share-outline" size={18} color="#E8E8E8" />
+        <Ionicons name="share-outline" size={18} color={foreground} />
         <Typography type="body-sm" weight="semibold" className="tracking-wide text-foreground">
           Share
         </Typography>
@@ -57,8 +59,8 @@ export function FeedDetailActions({
         animation={{ scale: { value: 0.96 } }}
         className="flex-row items-center gap-2 px-1 py-1.5"
       >
-        <Ionicons name="trash-outline" size={18} color="#f87171" />
-        <Typography type="body-sm" weight="semibold" className="tracking-wide text-[#f87171]">
+        <Ionicons name="trash-outline" size={18} color={danger} />
+        <Typography type="body-sm" weight="semibold" className="tracking-wide text-danger">
           Delete
         </Typography>
       </PressableFeedback>

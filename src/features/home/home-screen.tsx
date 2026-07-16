@@ -1,23 +1,22 @@
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import type { JSX, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   BottomSheet,
   Button,
   Chip,
   PressableFeedback,
+  Surface,
   Typography,
+  useThemeColor,
   useToast,
 } from "heroui-native";
 import { EmptyState } from "heroui-native-pro";
 
 import { BrandButton } from "@/components/ui/brand-button";
-import { GlassSurface } from "@/components/ui/glass-surface";
 import { SearchGroupCard } from "@/features/home/search-group-card";
 import type { HomeState, SearchType } from "@/mocks/data/home";
 import {
@@ -67,32 +66,6 @@ const EDIT_ACTIONS = [
   },
 ];
 
-/** Tiny frosted chip on the green hero — glass on badges only. */
-function HeroGlassChip({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}): JSX.Element {
-  return (
-    <View
-      className={`overflow-hidden rounded-full border border-white/30 ${className ?? ""}`}
-    >
-      <BlurView
-        intensity={Platform.OS === "ios" ? 28 : 18}
-        tint="light"
-        style={StyleSheet.absoluteFill}
-      />
-      <View
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(255,255,255,0.12)" }]}
-      />
-      {children}
-    </View>
-  );
-}
-
 /** Portal only while visible; open after mount so HeroUI snap works; unmount when closed. */
 function HomeBottomSheet({
   visible,
@@ -126,7 +99,13 @@ function HomeBottomSheet({
     >
       <BottomSheet.Portal>
         <BottomSheet.Overlay />
-        <BottomSheet.Content>{children}</BottomSheet.Content>
+        <BottomSheet.Content
+          backgroundClassName="bg-surface rounded-t-3xl"
+          handleClassName="bg-surface"
+          handleIndicatorClassName="bg-separator"
+        >
+          {children}
+        </BottomSheet.Content>
       </BottomSheet.Portal>
     </BottomSheet>
   );
@@ -136,6 +115,11 @@ export function HomeScreen(): JSX.Element {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { toast } = useToast();
+  const [accent, accentForeground, muted] = useThemeColor([
+    "accent",
+    "accent-foreground",
+    "muted",
+  ]);
   const [state, setState] = useState<HomeState | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<SearchType | null>(null);
@@ -278,35 +262,23 @@ export function HomeScreen(): JSX.Element {
           className="mx-3 mb-3 overflow-hidden rounded-2xl"
           animation={{ scale: { value: 0.985 } }}
         >
-          <LinearGradient
-            colors={["#1ED760", "#1DB954", "#169c46"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{
-              borderRadius: 14,
-              paddingVertical: 14,
-              paddingHorizontal: 15,
-              borderWidth: StyleSheet.hairlineWidth,
-              borderColor: "rgba(255,255,255,0.18)",
-              overflow: "hidden",
-            }}
-          >
-            <View className="absolute left-0 right-0 top-0 h-px bg-white/35" />
+          <View className="overflow-hidden rounded-2xl border border-border bg-surface-secondary p-[15px]">
+            <View className="absolute left-0 right-0 top-0 h-px bg-white/12" />
 
             <View className="mb-2 flex-row items-center justify-between">
               <Typography
                 type="body-xs"
                 weight="semibold"
-                className="text-[10px] uppercase tracking-wider text-white/75"
+                className="text-[10px] uppercase tracking-wider text-muted"
               >
                 Search Credits
               </Typography>
-              <HeroGlassChip className="flex-row items-center gap-1 px-2 py-0.5">
-                <Ionicons name="diamond" size={11} color="#fff" />
-                <Typography type="body-xs" weight="semibold" className="text-[11px] text-white">
+              <Chip size="sm" variant="secondary" color="default" className="flex-row items-center gap-1 px-2 py-0.5">
+                <Ionicons name="diamond" size={11} color={accent} />
+                <Chip.Label className="text-[11px] text-foreground">
                   {plan?.displayName ?? "Hunter"}
-                </Typography>
-              </HeroGlassChip>
+                </Chip.Label>
+              </Chip>
             </View>
 
             <View className="mb-2.5 flex-row items-end justify-between">
@@ -314,34 +286,37 @@ export function HomeScreen(): JSX.Element {
                 <Typography
                   type="h4"
                   weight="bold"
-                  className="text-[22px] leading-7 text-white"
+                  className="text-[22px] leading-7 text-foreground"
                 >
                   {plan?.usedSearches ?? 0} / {plan?.maxSearches ?? 8}
                 </Typography>
-                <Typography type="body-xs" className="text-[11px] text-white/80">
+                <Typography type="body-xs" className="text-[11px] text-muted">
                   active searches
                 </Typography>
               </View>
-              <HeroGlassChip className="px-3 py-1.5">
-                <Typography type="body-xs" weight="semibold" className="text-[11px] text-white">
+              <Chip size="sm" variant="primary" color="accent" className="px-3 py-1.5">
+                <Chip.Label className="text-[11px] text-accent-foreground">
                   Upgrade
-                </Typography>
-              </HeroGlassChip>
+                </Chip.Label>
+              </Chip>
             </View>
 
             <View className="flex-row flex-wrap gap-1.5">
               {(plan?.credits ?? []).map((c) => (
-                <HeroGlassChip
+                <Chip
                   key={c.intervalSeconds}
+                  size="sm"
+                  variant="secondary"
+                  color="default"
                   className="px-2.5 py-1"
                 >
-                  <Typography type="body-xs" weight="semibold" className="text-[11px] text-white">
+                  <Chip.Label className="text-[11px] text-foreground">
                     {formatIntervalLabel(c.intervalSeconds)}: {c.remaining}/{c.total}
-                  </Typography>
-                </HeroGlassChip>
+                  </Chip.Label>
+                </Chip>
               ))}
             </View>
-          </LinearGradient>
+          </View>
         </PressableFeedback>
 
         {/* Quick action — settings-style glass shell */}
@@ -353,7 +328,7 @@ export function HomeScreen(): JSX.Element {
           >
             Actions
           </Typography>
-          <GlassSurface intensity="settings" className="mx-3">
+          <Surface variant="secondary" className="mx-3">
             <View className="p-3">
               <BrandButton
                 className="min-h-12"
@@ -362,11 +337,11 @@ export function HomeScreen(): JSX.Element {
                   setCreateOpen(true);
                 }}
               >
-                <Ionicons name="add" size={18} color="#121212" />
+                <Ionicons name="add" size={18} color={accentForeground} />
                 <BrandButton.Label>Create New Search</BrandButton.Label>
               </BrandButton>
             </View>
-          </GlassSurface>
+          </Surface>
         </View>
 
         {groups.length === 0 ? (
@@ -378,7 +353,7 @@ export function HomeScreen(): JSX.Element {
             >
               Your Searches
             </Typography>
-            <GlassSurface intensity="settings" className="mx-3">
+            <Surface variant="secondary" className="mx-3">
               <EmptyState className="px-5 py-10">
                 <EmptyState.Header>
                   <EmptyState.Title>No Active Searches</EmptyState.Title>
@@ -388,7 +363,7 @@ export function HomeScreen(): JSX.Element {
                   </EmptyState.Description>
                 </EmptyState.Header>
               </EmptyState>
-            </GlassSurface>
+            </Surface>
           </View>
         ) : (
           <View className="mt-2">
@@ -482,23 +457,22 @@ export function HomeScreen(): JSX.Element {
                 onPress={() => setSelectedType(opt.key)}
                 animation={{ scale: { value: 0.98 } }}
               >
-                <GlassSurface
-                  intensity="sheet"
-                  bordered={false}
+                <Surface
+                  variant="secondary"
                   className={`rounded-2xl border ${
-                    selected ? "border-accent/55" : "border-white/12"
+                    selected ? "border-accent/55" : "border-border"
                   }`}
                 >
                   <View className="flex-row items-center gap-3 p-3.5">
                     <View
                       className={`h-10 w-10 items-center justify-center rounded-xl ${
-                        selected ? "bg-accent/15" : "bg-white/10"
+                        selected ? "bg-accent/15" : "bg-surface-tertiary"
                       }`}
                     >
                       <Ionicons
                         name={opt.icon}
                         size={20}
-                        color={selected ? "#1DB954" : "#B3B3B3"}
+                        color={selected ? accent : muted}
                       />
                     </View>
                     <View className="min-w-0 flex-1">
@@ -510,10 +484,10 @@ export function HomeScreen(): JSX.Element {
                       </Typography>
                     </View>
                     {selected ? (
-                      <Ionicons name="checkmark-circle" size={20} color="#1DB954" />
+                      <Ionicons name="checkmark-circle" size={20} color={accent} />
                     ) : null}
                   </View>
-                </GlassSurface>
+                </Surface>
               </PressableFeedback>
             );
           })}
@@ -547,10 +521,10 @@ export function HomeScreen(): JSX.Element {
               }}
               animation={{ scale: { value: 0.98 } }}
             >
-              <GlassSurface intensity="sheet" className="rounded-2xl">
+              <Surface variant="secondary" className="rounded-2xl">
                 <View className="flex-row items-center gap-3 p-3.5">
-                  <View className="h-10 w-10 items-center justify-center rounded-xl bg-white/8">
-                    <Ionicons name={action.icon} size={18} color="#B3B3B3" />
+                  <View className="h-10 w-10 items-center justify-center rounded-xl bg-surface-tertiary">
+                    <Ionicons name={action.icon} size={18} color={muted} />
                   </View>
                   <View className="min-w-0 flex-1">
                     <Typography type="body-sm" weight="semibold" className="text-foreground">
@@ -560,9 +534,9 @@ export function HomeScreen(): JSX.Element {
                       {action.desc}
                     </Typography>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color="#6B6B6B" />
+                  <Ionicons name="chevron-forward" size={16} color={muted} />
                 </View>
-              </GlassSurface>
+              </Surface>
             </PressableFeedback>
           ))}
 

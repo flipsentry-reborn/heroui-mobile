@@ -1,5 +1,5 @@
 ---
-description: FlipSentry → heroui-mobile UI port constraints (Spotify, mock-only, HeroUI)
+description: FlipSentry → heroui-mobile UI port constraints (Uber theme, mock-only, HeroUI)
 alwaysApply: true
 ---
 
@@ -17,14 +17,17 @@ alwaysApply: true
 
 ## Theme
 
-- Full Spotify dark: background `#121212`, surfaces `#181818` / `#282828`, accent `#1DB954`.
-- Light mode is secondary or unused. Tokens live in `src/global.css`.
+- Uber-inspired neutrals via HeroUI tokens in `src/global.css` (oklch grayscale).
+- Dark: near-black background, white `--accent` / black `--accent-foreground`.
+- Light: light gray background, black `--accent` / white `--accent-foreground`.
+- Prefer semantic classes (`bg-background`, `text-foreground`, `bg-accent`) — no Spotify green `#1DB954` / `#121212` hardcodes.
+- Use `Button variant="secondary"` for most actions; primary/accent sparingly (Uber black/white).
 
 ## Components
 
 - Prefer `heroui-native-pro`, then `heroui-native` (OSS), then minimal custom (e.g. map placeholder).
 - Do not use web `@heroui/react` / `@heroui-pro/react` for screens.
-- Style with Uniwind `className` — not NativeWind.
+- Style with Uniwind `className` — not NativeWind / StyleSheet for colors.
 
 ## Agent workflow
 

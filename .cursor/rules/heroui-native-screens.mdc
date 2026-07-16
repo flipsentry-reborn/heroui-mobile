@@ -14,8 +14,8 @@ alwaysApply: false
 
 ## Styling
 
-- Prefer semantic tokens: `bg-background`, `text-foreground`, accent/primary classes from theme.
-- Spotify dark palette is the visual target; do not reintroduce old FlipSentry green `#009966` unless matching accent intent.
+- Prefer semantic tokens: `bg-background`, `text-foreground`, `bg-accent` / `text-muted` from theme.
+- Uber neutrals are the visual target (black/white accent); do not reintroduce Spotify green `#1DB954` or old FlipSentry `#009966`.
 
 ## Native gaps
 

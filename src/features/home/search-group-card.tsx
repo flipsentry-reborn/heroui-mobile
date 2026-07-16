@@ -6,11 +6,12 @@ import {
   Chip,
   PressableFeedback,
   Separator,
+  Surface,
   Typography,
+  useThemeColor,
 } from "heroui-native";
 
 import PlatformIcon from "@/components/icons/PlatformIcon";
-import { GlassSurface } from "@/components/ui/glass-surface";
 import type { SearchGroup, SearchType } from "@/mocks/data/home";
 import {
   cityFromLocation,
@@ -37,6 +38,7 @@ interface SearchGroupCardProps {
 
 export function SearchGroupCard({ group, onEdit }: SearchGroupCardProps): JSX.Element {
   const [expanded, setExpanded] = useState(false);
+  const [success, warning, muted] = useThemeColor(["success", "warning", "muted"]);
   const status = groupStatus(group);
   const settings = group.settings;
   const visible = expanded ? settings : settings.slice(0, 3);
@@ -49,10 +51,10 @@ export function SearchGroupCard({ group, onEdit }: SearchGroupCardProps): JSX.El
 
   const statusColor =
     status.tone === "success"
-      ? "#1DB954"
+      ? success
       : status.tone === "warning"
-        ? "#f59e0b"
-        : "#8A8A8A";
+        ? warning
+        : muted;
 
   const badges: string[] = [
     cityFromLocation(group.locationName),
@@ -76,7 +78,7 @@ export function SearchGroupCard({ group, onEdit }: SearchGroupCardProps): JSX.El
   }
 
   return (
-    <GlassSurface intensity="settings" className="mx-3 mb-3">
+    <Surface variant="secondary" className="mx-3 mb-3">
       <View className="gap-3 p-4">
         <View className="flex-row items-center gap-2.5">
           <View
@@ -87,7 +89,7 @@ export function SearchGroupCard({ group, onEdit }: SearchGroupCardProps): JSX.El
             <Ionicons
               name={meta.icon}
               size={18}
-              color={status.tone === "success" ? "#1DB954" : "#B3B3B3"}
+              color={status.tone === "success" ? success : muted}
             />
           </View>
           <View className="min-w-0 flex-1 gap-0.5">
@@ -158,14 +160,13 @@ export function SearchGroupCard({ group, onEdit }: SearchGroupCardProps): JSX.El
                   </Chip.Label>
                 </Chip>
                 <View
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: s.isActive ? "#1DB954" : "#6B6B6B" }}
+                  className={`h-2 w-2 rounded-full ${s.isActive ? "bg-success" : "bg-muted"}`}
                 />
               </View>
             </View>
           ))}
         </View>
       </View>
-    </GlassSurface>
+    </Surface>
   );
 }

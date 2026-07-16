@@ -7,8 +7,6 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
-  StyleSheet,
-  View,
 } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
 import Animated, {
@@ -16,7 +14,7 @@ import Animated, {
   interpolate,
   useAnimatedStyle,
 } from "react-native-reanimated";
-import { PressableFeedback } from "heroui-native";
+import { PressableFeedback, useThemeColor } from "heroui-native";
 
 export const DETAIL_HERO_H = 360;
 const SCREEN_W = Dimensions.get("window").width;
@@ -34,6 +32,7 @@ export function FeedDetailGallery({
 }: FeedDetailGalleryProps): JSX.Element {
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList<string>>(null);
+  const [surfaceSecondary, accent] = useThemeColor(["surface-secondary", "accent"]);
 
   const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const next = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
@@ -80,8 +79,8 @@ export function FeedDetailGallery({
   });
 
   return (
-    <Animated.View style={[styles.collapse, collapseStyle]}>
-      <Animated.View style={[styles.zoomLayer, zoomStyle]}>
+    <Animated.View style={collapseStyle} className="overflow-hidden bg-background">
+      <Animated.View style={[zoomStyle, { width: SCREEN_W }]}>
         <FlatList
           ref={listRef}
           data={images}
@@ -96,7 +95,15 @@ export function FeedDetailGallery({
             index: i,
           })}
           renderItem={({ item }) => (
-            <Image source={{ uri: item }} style={styles.hero} contentFit="cover" />
+            <Image
+              source={{ uri: item }}
+              style={{
+                width: SCREEN_W,
+                height: DETAIL_HERO_H,
+                backgroundColor: surfaceSecondary,
+              }}
+              contentFit="cover"
+            />
           )}
         />
 
@@ -104,16 +111,27 @@ export function FeedDetailGallery({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.thumbs}
+            contentContainerClassName="gap-1.5 px-3 py-2"
           >
             {images.map((uri, i) => (
               <PressableFeedback
                 key={`${uri}-thumb-${i}`}
                 onPress={() => select(i)}
                 animation={{ scale: { value: 0.96 } }}
-                style={[styles.thumbWrap, i === index ? styles.thumbActive : null]}
+                className="overflow-hidden rounded-lg border-2"
+                style={{
+                  borderColor: i === index ? accent : "transparent",
+                }}
               >
-                <Image source={{ uri }} style={styles.thumb} contentFit="cover" />
+                <Image
+                  source={{ uri }}
+                  style={{
+                    width: 64,
+                    height: 48,
+                    backgroundColor: surfaceSecondary,
+                  }}
+                  contentFit="cover"
+                />
               </PressableFeedback>
             ))}
           </ScrollView>
@@ -122,37 +140,3 @@ export function FeedDetailGallery({
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  collapse: {
-    overflow: "hidden",
-    backgroundColor: "#121212",
-  },
-  zoomLayer: {
-    width: SCREEN_W,
-  },
-  hero: {
-    width: SCREEN_W,
-    height: DETAIL_HERO_H,
-    backgroundColor: "#282828",
-  },
-  thumbs: {
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  thumbWrap: {
-    borderRadius: 8,
-    overflow: "hidden",
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  thumbActive: {
-    borderColor: "#1DB954",
-  },
-  thumb: {
-    width: 64,
-    height: 48,
-    backgroundColor: "#282828",
-  },
-});

@@ -54,6 +54,11 @@ export async function mockLogout(): Promise<void> {
   await delay(200);
 }
 
+/** Mock account delete via session token — no password challenge. */
+export async function mockDeleteAccount(): Promise<void> {
+  await delay(280);
+}
+
 export function refundPreferenceLabel(preference: RefundPreference): string {
   switch (preference) {
     case "decline":

@@ -6,7 +6,7 @@ type ButtonProps = ComponentProps<typeof Button>;
 type BrandButtonProps = Omit<ButtonProps, "variant">;
 
 /**
- * Primary brand CTA — theme accent fill + dark label (Spotify green).
+ * Primary brand CTA — theme accent fill + accent-foreground label (Uber-style).
  */
 export function BrandButton({
   className,
@@ -16,7 +16,7 @@ export function BrandButton({
   return (
     <Button
       variant="primary"
-      className={`rounded-2xl bg-accent ${className ?? ""}`}
+      className={`rounded-lg bg-accent ${className ?? ""}`}
       {...rest}
     >
       {children}

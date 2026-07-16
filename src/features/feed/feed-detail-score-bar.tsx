@@ -1,15 +1,9 @@
 import type { JSX } from "react";
+import { useMemo } from "react";
 import { View } from "react-native";
-import { Typography } from "heroui-native";
+import { Typography, useThemeColor } from "heroui-native";
 
 import { getValuationTier, type ValuationTier } from "@/models/feed";
-
-const TIER_HEX: Record<ValuationTier, string> = {
-  greatDeal: "#1DB954",
-  goodValue: "#4ade80",
-  fairPrice: "#f59e0b",
-  overpriced: "#ef4444",
-};
 
 const TIER_ORDER: ValuationTier[] = [
   "overpriced",
@@ -27,13 +21,6 @@ const TIER_LABEL: Record<ValuationTier, string> = {
 
 const SLOT_COUNT = 20;
 const MUTED_OPACITY = 0.22;
-
-function slotColor(slotMid: number): string {
-  if (slotMid < 25) return TIER_HEX.overpriced;
-  if (slotMid < 50) return TIER_HEX.fairPrice;
-  if (slotMid < 75) return TIER_HEX.goodValue;
-  return TIER_HEX.greatDeal;
-}
 
 interface FeedDetailScoreBarProps {
   buySignal: number;
@@ -53,10 +40,36 @@ export function FeedDetailScoreBar({
   compCount,
   valuationType,
 }: FeedDetailScoreBarProps): JSX.Element {
+  const [success, accent, warning, danger, muted] = useThemeColor([
+    "success",
+    "accent",
+    "warning",
+    "danger",
+    "muted",
+  ]);
+
+  const tierColors = useMemo(
+    () =>
+      ({
+        greatDeal: success,
+        goodValue: accent,
+        fairPrice: warning,
+        overpriced: danger,
+      }) satisfies Record<ValuationTier, string>,
+    [success, accent, warning, danger],
+  );
+
+  const slotColor = (slotMid: number): string => {
+    if (slotMid < 25) return tierColors.overpriced;
+    if (slotMid < 50) return tierColors.fairPrice;
+    if (slotMid < 75) return tierColors.goodValue;
+    return tierColors.greatDeal;
+  };
+
   const pct = Math.max(0, Math.min(100, buySignal));
   const tier = getValuationTier(buySignal);
   const currentIdx = TIER_ORDER.indexOf(tier);
-  const hex = TIER_HEX[tier];
+  const tierColor = tierColors[tier];
 
   return (
     <View className="gap-2">
@@ -112,7 +125,7 @@ export function FeedDetailScoreBar({
         {TIER_ORDER.map((t, i) => {
           const past = i < currentIdx;
           const current = i === currentIdx;
-          const color = current ? TIER_HEX[t] : past ? "#6B6B6B" : "#8A8A8A";
+          const color = current ? tierColors[t] : muted;
 
           return (
             <View key={t} className="flex-1 flex-row items-center justify-center gap-1">
@@ -133,7 +146,7 @@ export function FeedDetailScoreBar({
                   type="body-xs"
                   weight="bold"
                   className="text-[11px]"
-                  style={{ color: hex }}
+                  style={{ color: tierColor }}
                 >
                   {Math.round(pct)}
                 </Typography>

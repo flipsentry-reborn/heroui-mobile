@@ -14,9 +14,14 @@ import {
   Surface,
   Switch,
   Typography,
+  useThemeColor,
   useToast,
 } from "heroui-native";
+import { FAB } from "heroui-native-pro";
+import { withUniwind } from "uniwind";
 
+import { DeleteAccountSheets } from "@/features/settings/delete-account-sheets";
+import { HideListingsSheet } from "@/features/settings/hide-listings-sheet";
 import { SettingsProfileHeader } from "@/features/settings/settings-profile-header";
 import {
   SettingsRow,
@@ -32,17 +37,51 @@ import {
   updatePreferences,
 } from "@/mocks/services/settings";
 
-function planLabelFromState(state: SettingsState): { label: string; accent: boolean } {
-  if (state.hasActiveSubscription) return { label: "Hunter", accent: true };
-  if (state.hasActiveTrial) return { label: "Trial", accent: true };
-  return { label: "Free", accent: false };
+const StyledIonicons = withUniwind(Ionicons);
+
+function planLabelFromState(state: SettingsState): string {
+  if (state.hasActiveSubscription) return "Hunter";
+  if (state.hasActiveTrial) return "Trial";
+  return "Free";
+}
+
+function DistanceUnitFab({
+  value,
+  onChange,
+}: {
+  value: "mi" | "km";
+  onChange: (unit: "mi" | "km") => void;
+}): JSX.Element {
+  return (
+    <FAB placement="top" align="end">
+      <FAB.Trigger
+        accessibilityLabel={`Distance unit ${value}`}
+        className="h-8 min-w-8 px-0"
+        animation={{ rotate: { value: [0, 0, 0] } }}
+      >
+        <Typography type="body-xs" weight="bold" className="text-accent-foreground">
+          {value}
+        </Typography>
+      </FAB.Trigger>
+      <FAB.Portal>
+        <FAB.Overlay />
+        <FAB.Content>
+          <FAB.Item onPress={() => onChange("mi")}>mi</FAB.Item>
+          <FAB.Item onPress={() => onChange("km")}>km</FAB.Item>
+        </FAB.Content>
+      </FAB.Portal>
+    </FAB>
+  );
 }
 
 export function SettingsScreen(): JSX.Element {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { toast } = useToast();
+  const background = useThemeColor("background");
   const [state, setState] = useState<SettingsState | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [hideOpen, setHideOpen] = useState(false);
 
   const load = useCallback(async () => {
     const next = await getSettings();
@@ -54,7 +93,7 @@ export function SettingsScreen(): JSX.Element {
   }, [load]);
 
   const prefs = state?.preferences;
-  const plan = state ? planLabelFromState(state) : null;
+  const planLabel = state ? planLabelFromState(state) : "Free";
 
   const patchPrefs = async (patch: Partial<UserPreferences>) => {
     try {
@@ -74,7 +113,7 @@ export function SettingsScreen(): JSX.Element {
         onPress: () => {
           void mockLogout().then(() => {
             toast.show({
-              variant: "accent",
+              variant: "default",
               label: "Logged out",
               description: "Mock only — no auth in this build.",
               duration: 2500,
@@ -101,7 +140,10 @@ export function SettingsScreen(): JSX.Element {
 
   if (!state) {
     return (
-      <View className="flex-1 bg-background px-3 pt-16" style={{ paddingTop: insets.top + 48 }}>
+      <View
+        className="flex-1 bg-background px-3"
+        style={{ paddingTop: insets.top + 48 }}
+      >
         <Skeleton className="mb-4 h-[88px] rounded-2xl" />
         <Skeleton className="mb-3 h-14 rounded-2xl" />
         <Skeleton className="mb-3 h-14 rounded-2xl" />
@@ -121,7 +163,7 @@ export function SettingsScreen(): JSX.Element {
       <ScrollShadow
         className="flex-1"
         LinearGradientComponent={LinearGradient}
-        color="#121212"
+        color={background}
       >
         <ScrollView
           className="flex-1"
@@ -134,42 +176,39 @@ export function SettingsScreen(): JSX.Element {
               className="mx-3 mb-4 mt-1 overflow-hidden rounded-2xl"
               animation={{ scale: { value: 0.985 } }}
             >
-              <LinearGradient
-                colors={["#1ED760", "#1DB954", "#169c46"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                className="overflow-hidden rounded-2xl border border-white/20 p-5"
-              >
-                <View className="absolute left-0 right-0 top-0 h-px bg-white/35" />
+              <Surface variant="secondary" className="rounded-2xl p-5">
                 <Typography
                   type="body-xs"
                   weight="semibold"
-                  className="mb-2 uppercase tracking-wider text-white/75"
+                  className="mb-2 uppercase tracking-wider text-muted"
                 >
                   Subscribe to Flipsentry
                 </Typography>
-                <View className="flex-row items-end justify-between">
-                  <Typography type="h5" weight="bold" className="mr-3 flex-1 text-white">
+                <View className="flex-row items-end justify-between gap-3">
+                  <Typography
+                    type="h5"
+                    weight="bold"
+                    className="flex-1 text-foreground"
+                  >
                     {"Subscribe Now To\nNot Miss Deals"}
                   </Typography>
                   <Surface
-                    variant="transparent"
-                    className="rounded-full border border-white/25 bg-white/15 px-5 py-2.5"
+                    variant="tertiary"
+                    className="rounded-full px-4 py-2"
                   >
-                    <Typography type="body-sm" weight="semibold" className="text-white">
+                    <Typography type="body-sm" weight="semibold" className="text-foreground">
                       Subscribe
                     </Typography>
                   </Surface>
                 </View>
-              </LinearGradient>
+              </Surface>
               <PressableFeedback.Highlight />
             </PressableFeedback>
           ) : null}
 
           <SettingsProfileHeader
             profile={state.profile}
-            planLabel={plan?.label ?? "Free"}
-            planAccent={plan?.accent}
+            planLabel={planLabel}
             onPress={() => router.push("/settings/profile")}
           />
 
@@ -177,16 +216,19 @@ export function SettingsScreen(): JSX.Element {
             <SettingsRow
               icon="diamond-outline"
               title="Your Subscriptions"
-              accent
               onPress={() => router.push("/settings/subscription")}
               showChevron={false}
               isLast
               right={
                 <View className="flex-row items-center gap-1.5">
-                  <Chip size="sm" variant="soft" color={plan?.accent ? "accent" : "default"}>
-                    <Chip.Label>{plan?.label ?? "Free"}</Chip.Label>
+                  <Chip size="sm" variant="soft" color="default">
+                    <Chip.Label>{planLabel}</Chip.Label>
                   </Chip>
-                  <Ionicons name="chevron-forward" size={16} color="#8A8A8A" />
+                  <StyledIonicons
+                    name="chevron-forward"
+                    size={16}
+                    className="text-muted"
+                  />
                 </View>
               }
             />
@@ -200,19 +242,19 @@ export function SettingsScreen(): JSX.Element {
               onPress={() => void patchPrefs({ darkMode: !prefs?.darkMode })}
               right={
                 <View className="flex-row items-center gap-2" pointerEvents="box-none">
-                  <Ionicons
+                  <StyledIonicons
                     name="sunny"
                     size={16}
-                    color={!prefs?.darkMode ? "#1DB954" : "#8A8A8A"}
+                    className={prefs?.darkMode ? "text-muted" : "text-foreground"}
                   />
                   <Switch
                     isSelected={!!prefs?.darkMode}
                     onSelectedChange={(v) => void patchPrefs({ darkMode: v })}
                   />
-                  <Ionicons
+                  <StyledIonicons
                     name="moon"
                     size={16}
-                    color={prefs?.darkMode ? "#1DB954" : "#8A8A8A"}
+                    className={prefs?.darkMode ? "text-foreground" : "text-muted"}
                   />
                 </View>
               }
@@ -228,115 +270,20 @@ export function SettingsScreen(): JSX.Element {
               onPress={() => router.push("/settings/blocked-sellers")}
             />
             <SettingsRow
-              icon="shield-outline"
-              title="Hide Spam Listings"
-              showChevron={false}
-              onPress={() => void patchPrefs({ showScams: !prefs?.showScams })}
-              right={
-                <Switch
-                  isSelected={!prefs?.showScams}
-                  onSelectedChange={(v) => void patchPrefs({ showScams: !v })}
-                />
-              }
-            />
-            <SettingsRow
-              icon="storefront-outline"
-              title="Hide Dealer Listings"
-              showChevron={false}
-              onPress={() =>
-                void patchPrefs({
-                  showDealers: !prefs?.showDealers,
-                  showDealerships: !prefs?.showDealerships,
-                })
-              }
-              right={
-                <Switch
-                  isSelected={!prefs?.showDealerships}
-                  onSelectedChange={(v) =>
-                    void patchPrefs({ showDealers: !v, showDealerships: !v })
-                  }
-                />
-              }
-            />
-            <SettingsRow
-              icon="warning-outline"
-              title="Hide Major Damage"
-              showChevron={false}
-              onPress={() =>
-                void patchPrefs({ showMajorDamaged: !prefs?.showMajorDamaged })
-              }
-              right={
-                <Switch
-                  isSelected={!(prefs?.showMajorDamaged ?? true)}
-                  onSelectedChange={(v) => void patchPrefs({ showMajorDamaged: !v })}
-                />
-              }
-            />
-            <SettingsRow
-              icon="warning-outline"
-              title="Hide Rebuilt"
-              showChevron={false}
-              onPress={() =>
-                void patchPrefs({ showRebuiltTitle: !prefs?.showRebuiltTitle })
-              }
-              right={
-                <Switch
-                  isSelected={!(prefs?.showRebuiltTitle ?? true)}
-                  onSelectedChange={(v) => void patchPrefs({ showRebuiltTitle: !v })}
-                />
-              }
-            />
-            <SettingsRow
-              icon="warning-outline"
-              title="Hide Salvage"
-              showChevron={false}
-              onPress={() =>
-                void patchPrefs({ showSalvageTitle: !prefs?.showSalvageTitle })
-              }
-              right={
-                <Switch
-                  isSelected={!(prefs?.showSalvageTitle ?? true)}
-                  onSelectedChange={(v) => void patchPrefs({ showSalvageTitle: !v })}
-                />
-              }
+              icon="eye-off-outline"
+              title="Hide listings"
+              onPress={() => setHideOpen(true)}
             />
             <SettingsRow
               icon="resize-outline"
               title="Distance Unit"
               showChevron={false}
               isLast
-              onPress={() =>
-                void patchPrefs({
-                  distanceUnit: distanceUnit === "mi" ? "km" : "mi",
-                })
-              }
               right={
-                <Surface
-                  variant="tertiary"
-                  className="flex-row overflow-hidden rounded-lg border border-white/10 p-0.5"
-                >
-                  {(["mi", "km"] as const).map((unit) => {
-                    const active = distanceUnit === unit;
-                    return (
-                      <PressableFeedback
-                        key={unit}
-                        onPress={() => void patchPrefs({ distanceUnit: unit })}
-                        className={`rounded-md px-3.5 py-1.5 ${
-                          active ? "bg-[#1DB954]" : "bg-transparent"
-                        }`}
-                        animation={{ scale: { value: 0.95 } }}
-                      >
-                        <Typography
-                          type="body-xs"
-                          weight="semibold"
-                          className={active ? "text-[#04140A]" : "text-muted"}
-                        >
-                          {unit}
-                        </Typography>
-                      </PressableFeedback>
-                    );
-                  })}
-                </Surface>
+                <DistanceUnitFab
+                  value={distanceUnit}
+                  onChange={(unit) => void patchPrefs({ distanceUnit: unit })}
+                />
               }
             />
           </SettingsSection>
@@ -375,26 +322,43 @@ export function SettingsScreen(): JSX.Element {
             />
           </SettingsSection>
 
-          <View className="mb-10 flex-row gap-3 px-3">
-            <Button
-              variant="secondary"
-              className="min-h-12 flex-1 overflow-hidden rounded-2xl border border-white/12 bg-white/5"
-              onPress={() => router.push("/settings/delete-account")}
-            >
-              <Ionicons name="trash-outline" size={16} color="#E8E8E8" />
-              <Button.Label className="text-foreground">Delete</Button.Label>
-            </Button>
-            <Button
-              variant="primary"
-              className="min-h-12 flex-1 rounded-2xl border border-white/20 bg-[#1DB954]"
-              onPress={handleLogout}
-            >
-              <Ionicons name="log-out-outline" size={16} color="#04140A" />
-              <Button.Label className="text-[#04140A]">Logout</Button.Label>
-            </Button>
-          </View>
+          <SettingsSection title="Danger zone">
+            <View className="w-full gap-2 p-3">
+              <Button
+                variant="danger-soft"
+                className="min-h-11 w-full"
+                onPress={() => setDeleteOpen(true)}
+              >
+                <StyledIonicons name="trash-outline" size={15} className="text-danger" />
+                <Button.Label className="text-sm">Delete Account</Button.Label>
+              </Button>
+              <Button
+                variant="primary"
+                className="min-h-11 w-full bg-accent"
+                onPress={handleLogout}
+              >
+                <StyledIonicons
+                  name="log-out-outline"
+                  size={15}
+                  className="text-accent-foreground"
+                />
+                <Button.Label className="text-sm text-accent-foreground">Logout</Button.Label>
+              </Button>
+            </View>
+          </SettingsSection>
         </ScrollView>
       </ScrollShadow>
+
+      <DeleteAccountSheets isOpen={deleteOpen} onOpenChange={setDeleteOpen} />
+
+      {prefs ? (
+        <HideListingsSheet
+          isOpen={hideOpen}
+          onOpenChange={setHideOpen}
+          prefs={prefs}
+          onPatch={(patch) => void patchPrefs(patch)}
+        />
+      ) : null}
     </View>
   );
 }

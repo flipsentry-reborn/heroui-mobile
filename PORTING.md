@@ -11,7 +11,7 @@ Port FlipSentry screens and flows into `heroui-mobile` so we can iterate on UI w
 
 | Decision | Choice |
 |----------|--------|
-| Visual language | Full Spotify dark — `#121212` / `#181818`, accent `#1DB954`; light secondary/unused |
+| Visual language | Uber neutrals — oklch grayscale, dark white accent / light black accent (see `global.css`) |
 | Components | `heroui-native-pro` first → `heroui-native` OSS → minimal custom only |
 | Styling | Uniwind + `className` (not NativeWind / shadcn from `mobile-app`) |
 | Data | Mock only via `src/mocks/*` |
@@ -131,7 +131,7 @@ heroui-mobile/
 
 ## Theme
 
-Theme tokens live in `src/global.css`. Target Spotify dark tokens (`#121212`, `#181818`, `#1DB954`).  
+Theme tokens live in `src/global.css`. Target Uber neutrals (black/white accent, no Spotify green).  
 Restart Metro after theme changes.
 
 ## Related repos

@@ -28,6 +28,7 @@ import {
   Skeleton,
   Tabs,
   Typography,
+  useThemeColor,
   useToast,
 } from "heroui-native";
 
@@ -55,13 +56,15 @@ function periodCopy(period: BillingPeriod): string {
 }
 
 function PlanIncludes({ plan }: { plan: SubscriptionPlan }): JSX.Element {
+  const accent = useThemeColor("accent");
+
   return (
     <View className="items-center gap-2.5 px-4 pb-4 pt-1">
       <View className="mb-0.5 h-px w-full bg-white/10" />
       <Typography
         type="body-xs"
         weight="semibold"
-        className="text-center text-[#1DB954]"
+        className="text-center text-accent"
       >
         {plan.displayName} includes
       </Typography>
@@ -80,7 +83,7 @@ function PlanIncludes({ plan }: { plan: SubscriptionPlan }): JSX.Element {
       <View className="items-start gap-2 self-center">
         {plan.features.map((feature) => (
           <View key={feature} className="flex-row items-center gap-2">
-            <Ionicons name="checkmark-circle" size={15} color="#1DB954" />
+            <Ionicons name="checkmark-circle" size={15} color={accent} />
             <Typography type="body-xs" className="text-foreground/90">
               {feature}
             </Typography>
@@ -104,6 +107,7 @@ function PlanOptionRow({
   isCurrent: boolean;
   onSelect: () => void;
 }): JSX.Element {
+  const [accentForeground] = useThemeColor(["accent-foreground"]);
   const price = priceFor(plan, period);
   const description =
     period === "yearly"
@@ -140,8 +144,8 @@ function PlanOptionRow({
     <View className="relative pt-2.5">
       {plan.badge ? (
         <View className="absolute right-3 top-0 z-20">
-          <Chip size="sm" variant="soft" color="accent" className="bg-[#1DB954]">
-            <Chip.Label className="text-[10px] text-[#04140A]">{plan.badge}</Chip.Label>
+          <Chip size="sm" variant="soft" color="accent">
+            <Chip.Label className="text-[10px] text-accent-foreground">{plan.badge}</Chip.Label>
           </Chip>
         </View>
       ) : null}
@@ -149,7 +153,7 @@ function PlanOptionRow({
       <View
         className={`rounded-2xl border ${
           selected
-            ? "border-[#1DB954] bg-[#1DB954]/10"
+            ? "border-accent bg-accent-soft"
             : "border-white/10 bg-white/5"
         }`}
       >
@@ -194,8 +198,8 @@ function PlanOptionRow({
             <ControlField.Indicator>
               <Checkbox>
                 <Checkbox.Indicator
-                  className="bg-[#1DB954]"
-                  iconProps={{ size: 16, color: "#04140A" }}
+                  className="bg-accent"
+                  iconProps={{ size: 16, color: accentForeground }}
                 />
               </Checkbox>
             </ControlField.Indicator>
@@ -225,6 +229,11 @@ export function SubscriptionScreen(): JSX.Element {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { toast } = useToast();
+  const [background, surfaceSecondary, foreground] = useThemeColor([
+    "background",
+    "surface-secondary",
+    "foreground",
+  ]);
   const [sheetOpen, setSheetOpen] = useState(false);
   const openedRef = useRef(false);
 
@@ -310,16 +319,16 @@ export function SubscriptionScreen(): JSX.Element {
           className="gap-2 border-t border-white/10 px-4 pt-3"
           style={{
             paddingBottom: Math.max(insets.bottom, 14),
-            backgroundColor: "#121212",
+            backgroundColor: background,
           }}
         >
           <Button
             variant="primary"
-            className="min-h-14 rounded-2xl bg-[#1DB954]"
+            className="min-h-14 rounded-2xl"
             isDisabled={busy || loading || isCurrentSelected}
             onPress={() => void handleSubscribe()}
           >
-            <Button.Label className="text-lg font-bold text-[#04140A]">
+            <Button.Label className="text-lg font-bold text-accent-foreground">
               {isCurrentSelected
                 ? "You're on this plan"
                 : selectedPlan
@@ -345,6 +354,7 @@ export function SubscriptionScreen(): JSX.Element {
       insets.bottom,
       isCurrentSelected,
       loading,
+      background,
       period,
       selectedPlan,
     ],
@@ -366,7 +376,7 @@ export function SubscriptionScreen(): JSX.Element {
             enableDynamicSizing={false}
             enableOverDrag={false}
             handleClassName="hidden"
-            backgroundClassName="bg-background"
+            backgroundClassName="bg-surface"
             contentContainerClassName="h-full overflow-hidden rounded-t-3xl p-0"
             footerComponent={renderFooter}
           >
@@ -386,14 +396,10 @@ export function SubscriptionScreen(): JSX.Element {
                   paddingBottom: footerHeight + 20,
                 }}
               >
-                {/* Hero — toast-style fade: transparent top → green bottom */}
+                {/* Hero — neutral fade into surface */}
                 <View className="relative overflow-hidden">
                   <LinearGradient
-                    colors={[
-                      "rgba(29,185,84,0)",
-                      "rgba(29,185,84,0.45)",
-                      "#1DB954",
-                    ]}
+                    colors={[background, surfaceSecondary, surfaceSecondary]}
                     locations={[0, 0.5, 1]}
                     start={{ x: 0.5, y: 0 }}
                     end={{ x: 0.5, y: 1 }}
@@ -406,16 +412,16 @@ export function SubscriptionScreen(): JSX.Element {
                       paddingTop: 44,
                     }}
                   >
-                    <View className="mb-1.5 flex-row items-center gap-1.5 rounded-full border border-white/25 bg-black/20 px-2.5 py-1">
-                      <Ionicons name="diamond" size={12} color="#fff" />
-                      <Typography type="body-xs" weight="semibold" className="text-white">
+                    <View className="mb-1.5 flex-row items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1">
+                      <Ionicons name="diamond" size={12} color={foreground} />
+                      <Typography type="body-xs" weight="semibold" className="text-foreground">
                         FlipSentry Premium
                       </Typography>
                     </View>
-                    <Typography type="h4" weight="bold" className="text-center text-white">
+                    <Typography type="h4" weight="bold" className="text-center text-foreground">
                       Unlock more deals
                     </Typography>
-                    <Typography type="body-xs" className="mt-0.5 text-center text-white/85">
+                    <Typography type="body-xs" className="mt-0.5 text-center text-muted">
                       Pick the hunt speed that fits you.
                     </Typography>
                   </LinearGradient>
@@ -438,13 +444,13 @@ export function SubscriptionScreen(): JSX.Element {
                     className="gap-3"
                   >
                     <Tabs.List className="h-11 w-full rounded-xl bg-white/5 p-1">
-                      <Tabs.Indicator className="rounded-lg bg-[#1DB954]" />
+                      <Tabs.Indicator className="rounded-lg bg-accent" />
                       <Tabs.Trigger value="weekly" className="h-9 flex-1">
                         {({ isSelected }) => (
                           <Tabs.Label
                             className={
                               isSelected
-                                ? "font-bold text-[#04140A]"
+                                ? "font-bold text-accent-foreground"
                                 : "font-medium text-muted"
                             }
                           >
@@ -458,7 +464,7 @@ export function SubscriptionScreen(): JSX.Element {
                             <Tabs.Label
                               className={
                                 isSelected && YEARLY_ENABLED
-                                  ? "font-bold text-[#04140A]"
+                                  ? "font-bold text-accent-foreground"
                                   : "font-medium text-muted"
                               }
                             >
@@ -478,7 +484,7 @@ export function SubscriptionScreen(): JSX.Element {
                               <Tabs.Label
                                 className={
                                   isSelected
-                                    ? "font-bold text-[#04140A]"
+                                    ? "font-bold text-accent-foreground"
                                     : "font-medium text-muted"
                                 }
                               >

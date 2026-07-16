@@ -1,16 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import type { JSX } from "react";
 import { useEffect, useRef, useState } from "react";
-import {
-  Keyboard,
-  Platform,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
+import { Keyboard, Pressable, TextInput, View } from "react-native";
 import Animated, {
   Easing,
   interpolate,
@@ -19,7 +11,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { SearchField, Typography } from "heroui-native";
+import { SearchField, Typography, useThemeColor } from "heroui-native";
 
 import { FeedCategoryChips } from "@/features/feed/feed-category-chips";
 import type { FeedCategoryKey } from "@/mocks/data/feed";
@@ -43,6 +35,7 @@ export function FeedHeader({
   onCategorySelect,
 }: FeedHeaderProps): JSX.Element {
   const insets = useSafeAreaInsets();
+  const [foreground, muted] = useThemeColor(["foreground", "muted"]);
   const inputRef = useRef<TextInput>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [rowWidth, setRowWidth] = useState(0);
@@ -103,17 +96,7 @@ export function FeedHeader({
   };
 
   return (
-    <View style={{ paddingTop: insets.top }} className="z-20 overflow-hidden">
-      <BlurView
-        intensity={Platform.OS === "ios" ? 42 : 58}
-        tint="dark"
-        style={StyleSheet.absoluteFill}
-      />
-      <View
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(18,18,18,0.42)" }]}
-      />
-
+    <View style={{ paddingTop: insets.top }} className="z-20 overflow-hidden bg-background">
       <View className="px-3.5 pb-0.5 pt-1.5">
         <View
           className="h-9 flex-row items-center"
@@ -135,17 +118,18 @@ export function FeedHeader({
           <View className="flex-1 flex-row items-center justify-end">
             <Animated.View style={searchStyle} className="h-8 overflow-hidden">
               <Animated.View
-                style={[StyleSheet.absoluteFill, collapsedHintStyle]}
+                style={collapsedHintStyle}
+                className="absolute inset-0"
                 pointerEvents={isExpanded ? "none" : "auto"}
               >
                 <Pressable
                   onPress={openSearch}
                   accessibilityRole="button"
                   accessibilityLabel="Search listings"
-                  className="h-8 flex-1 flex-row items-center gap-1.5 rounded-full border border-white/12 bg-white/10 px-3"
+                  className="h-8 flex-1 flex-row items-center gap-1.5 rounded-full border border-border bg-surface-secondary px-3"
                 >
-                  <Ionicons name="search" size={14} color="#B3B3B3" />
-                  <Typography type="body-xs" className="text-[12px] text-[#8A8A8A]">
+                  <Ionicons name="search" size={14} color={muted} />
+                  <Typography type="body-xs" className="text-[12px] text-muted">
                     Search
                   </Typography>
                 </Pressable>
@@ -162,15 +146,15 @@ export function FeedHeader({
                   className="w-full"
                   animation="disable-all"
                 >
-                  <SearchField.Group className="h-8 rounded-full border border-white/12 bg-white/10">
+                  <SearchField.Group className="h-8 rounded-full border border-border bg-surface-secondary">
                     <SearchField.SearchIcon
-                      iconProps={{ color: "#B3B3B3", size: 15 }}
+                      iconProps={{ color: muted, size: 15 }}
                     />
                     <SearchField.Input
                       ref={inputRef}
                       placeholder="Search cars, phones…"
-                      placeholderTextColor="#8A8A8A"
-                      className="text-[13px] text-white"
+                      placeholderTextColor={muted}
+                      className="text-[13px] text-foreground"
                       returnKeyType="search"
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -191,9 +175,9 @@ export function FeedHeader({
               <Pressable
                 onPress={closeSearch}
                 accessibilityLabel="Close search"
-                className="h-8 w-8 items-center justify-center rounded-full bg-white/10"
+                className="h-8 w-8 items-center justify-center rounded-full bg-surface-secondary"
               >
-                <Ionicons name="close" size={16} color="#FFFFFF" />
+                <Ionicons name="close" size={16} color={foreground} />
               </Pressable>
             </Animated.View>
           </View>

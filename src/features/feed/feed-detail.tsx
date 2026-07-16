@@ -12,12 +12,12 @@ import {
   Button,
   Chip,
   PressableFeedback,
+  Surface,
   Typography,
   useToast,
 } from "heroui-native";
 
 import PlatformIcon from "@/components/icons/PlatformIcon";
-import { GlassSurface } from "@/components/ui/glass-surface";
 import { FeedDetailActions } from "@/features/feed/feed-detail-actions";
 import { FeedDetailGallery } from "@/features/feed/feed-detail-gallery";
 import { FeedDetailScoreBar } from "@/features/feed/feed-detail-score-bar";
@@ -147,7 +147,7 @@ export function FeedDetail({
         </View>
 
         <View className="gap-3 px-4 pt-3">
-          <GlassSurface intensity="feed" className="gap-2 p-3.5">
+          <Surface variant="secondary" className="gap-2 p-3.5">
             <View className="flex-row flex-wrap items-center gap-2">
               <Typography type="h3" weight="bold" className="text-foreground">
                 {formatPrice(item.price, item.currencySymbol)}
@@ -211,10 +211,10 @@ export function FeedDetail({
                   : ""}
               </Typography>
             </View>
-          </GlassSurface>
+          </Surface>
 
           {item.seller ? (
-            <GlassSurface intensity="feed" className="flex-row items-center gap-3 p-3">
+            <Surface variant="secondary" className="flex-row items-center gap-3 p-3">
               <Avatar size="md" alt={item.seller.name}>
                 {item.seller.avatarUrl ? (
                   <Avatar.Image source={{ uri: item.seller.avatarUrl }} />
@@ -253,19 +253,19 @@ export function FeedDetail({
               >
                 <Button.Label>Block</Button.Label>
               </Button>
-            </GlassSurface>
+            </Surface>
           ) : null}
 
-          <GlassSurface intensity="feed">
+          <Surface variant="secondary">
             <FeedDetailActions
               isFavorite={item.isFavorite}
               onSave={handleFavorite}
               onDelete={() => mockAction("Delete")}
               onShare={() => mockAction("Share")}
             />
-          </GlassSurface>
+          </Surface>
 
-          <GlassSurface intensity="feed" className="gap-2 p-3.5">
+          <Surface variant="secondary" className="gap-2 p-3.5">
             <Typography type="body-sm" weight="semibold" className="text-foreground">
               Description
             </Typography>
@@ -287,15 +287,13 @@ export function FeedDetail({
                 </Typography>
               </PressableFeedback>
             ) : null}
-          </GlassSurface>
+          </Surface>
         </View>
       </Animated.ScrollView>
 
-      <GlassSurface
-        intensity="feed"
-        bordered={false}
-        washColor="rgba(18,18,18,0.55)"
-        className="absolute inset-x-0 bottom-0 border-t border-white/12 px-4 pt-2.5"
+      <Surface
+        variant="secondary"
+        className="absolute inset-x-0 bottom-0 border-t border-border px-4 pt-2.5"
         style={{ paddingBottom: Math.max(insets.bottom, 10) }}
       >
         <Button
@@ -307,7 +305,7 @@ export function FeedDetail({
           <Ionicons name="open-outline" size={16} color="#fff" />
           <Button.Label className="text-white">View on Marketplace</Button.Label>
         </Button>
-      </GlassSurface>
+      </Surface>
     </View>
   );
 }

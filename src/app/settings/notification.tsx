@@ -1,87 +1,87 @@
 import type { JSX } from "react";
-import { Linking, Platform, View } from "react-native";
-import { Button, ListGroup, Separator, Typography, useToast } from "heroui-native";
+import { Linking, Platform, ScrollView, View } from "react-native";
+import { Button, Typography, useToast } from "heroui-native";
+
+import {
+  SettingsRow,
+  SettingsSection,
+} from "@/features/settings/settings-section";
 
 export default function NotificationSettingsScreen(): JSX.Element {
   const { toast } = useToast();
 
+  const enableNotifications = () => {
+    toast.show({
+      variant: "default",
+      label: "Enable Notifications",
+      description: "Mock only — OS permission not requested.",
+      duration: 2500,
+    });
+  };
+
   return (
-    <View className="flex-1 gap-3 bg-background p-4">
-      <ListGroup variant="secondary" className="overflow-hidden rounded-2xl">
-        <ListGroup.Item>
-          <ListGroup.ItemContent>
-            <ListGroup.ItemTitle>Notification Permission</ListGroup.ItemTitle>
-            <ListGroup.ItemDescription>Mock status for this build</ListGroup.ItemDescription>
-          </ListGroup.ItemContent>
-          <ListGroup.ItemSuffix>
-            <Typography type="body-xs" weight="semibold" className="text-success">
+    <ScrollView
+      className="flex-1 bg-background"
+      contentContainerClassName="pb-10 pt-3"
+      showsVerticalScrollIndicator={false}
+    >
+      <SettingsSection title="Status">
+        <SettingsRow
+          icon="notifications-outline"
+          title="Notification Permission"
+          showChevron={false}
+          right={
+            <Typography type="body-xs" weight="semibold" className="text-muted">
               Enabled
             </Typography>
-          </ListGroup.ItemSuffix>
-        </ListGroup.Item>
-        <Separator className="mx-4" />
-        <ListGroup.Item
-          onPress={() =>
-            toast.show({
-              variant: "accent",
-              label: "Enable Notifications",
-              description: "Mock only — OS permission not requested.",
-              duration: 2500,
-            })
           }
-        >
-          <ListGroup.ItemContent>
-            <ListGroup.ItemTitle>Enable Notifications</ListGroup.ItemTitle>
-          </ListGroup.ItemContent>
-          <ListGroup.ItemSuffix />
-        </ListGroup.Item>
-      </ListGroup>
+        />
+        <SettingsRow
+          icon="checkmark-circle-outline"
+          title="Enable Notifications"
+          onPress={enableNotifications}
+          isLast
+        />
+      </SettingsSection>
 
-      <ListGroup variant="secondary" className="overflow-hidden rounded-2xl">
-        <ListGroup.Item onPress={() => void Linking.openSettings()}>
-          <ListGroup.ItemContent>
-            <ListGroup.ItemTitle>
-              {Platform.OS === "ios"
-                ? "iOS Notification Settings"
-                : "Android Notification Settings"}
-            </ListGroup.ItemTitle>
-          </ListGroup.ItemContent>
-          <ListGroup.ItemSuffix />
-        </ListGroup.Item>
-        <Separator className="mx-4" />
-        <ListGroup.Item
+      <SettingsSection title="System">
+        <SettingsRow
+          icon="settings-outline"
+          title={
+            Platform.OS === "ios"
+              ? "iOS Notification Settings"
+              : "Android Notification Settings"
+          }
+          onPress={() => void Linking.openSettings()}
+        />
+        <SettingsRow
+          icon="refresh-outline"
+          title="Refresh Permission Status"
           onPress={() =>
             toast.show({
-              variant: "success",
+              variant: "default",
               label: "Permission refreshed",
               duration: 2000,
             })
           }
+          isLast
+        />
+      </SettingsSection>
+
+      <View className="mx-5 mb-4 gap-3">
+        <Typography type="body-xs" className="text-muted">
+          Notifications keep you updated about new listings matching your searches.
+        </Typography>
+        <Button
+          variant="primary"
+          className="min-h-11 w-full bg-accent"
+          onPress={enableNotifications}
         >
-          <ListGroup.ItemContent>
-            <ListGroup.ItemTitle>Refresh Permission Status</ListGroup.ItemTitle>
-          </ListGroup.ItemContent>
-          <ListGroup.ItemSuffix />
-        </ListGroup.Item>
-      </ListGroup>
-
-      <Typography type="body-xs" className="px-1 text-muted">
-        Notifications keep you updated about new listings matching your searches.
-      </Typography>
-
-      <Button
-        variant="secondary"
-        onPress={() =>
-          toast.show({
-            variant: "accent",
-            label: "Enable Notifications",
-            description: "Mock only.",
-            duration: 2200,
-          })
-        }
-      >
-        <Button.Label>Enable Notifications</Button.Label>
-      </Button>
-    </View>
+          <Button.Label className="text-sm text-accent-foreground">
+            Enable Notifications
+          </Button.Label>
+        </Button>
+      </View>
+    </ScrollView>
   );
 }

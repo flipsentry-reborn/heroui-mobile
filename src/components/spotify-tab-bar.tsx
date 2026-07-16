@@ -2,14 +2,11 @@ import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import type { ComponentProps, JSX } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PressableFeedback, Typography } from "heroui-native";
+import { PressableFeedback, Typography, useThemeColor } from "heroui-native";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
-
-const ACTIVE = "#FFFFFF";
-const INACTIVE = "#B3B3B3";
 
 const TAB_ICONS: Record<string, { outline: IoniconName; filled: IoniconName }> = {
   index: { outline: "home-outline", filled: "home" },
@@ -18,20 +15,42 @@ const TAB_ICONS: Record<string, { outline: IoniconName; filled: IoniconName }> =
   help: { outline: "chatbubble-ellipses-outline", filled: "chatbubble-ellipses" },
 };
 
+function withAlpha(color: string, alpha: number): string {
+  if (color.startsWith("oklch(")) {
+    const inner = color.slice(5, -1).trim();
+    if (inner.includes("/")) {
+      return `oklch(${inner.replace(/\/\s*[\d.]+%?/, `/ ${alpha}`)})`;
+    }
+    return `oklch(${inner} / ${alpha})`;
+  }
+  if (color.startsWith("rgba(")) return color;
+  const hex = color.replace("#", "");
+  if (hex.length !== 6) return color;
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 export function SpotifyTabBar({ state, descriptors, navigation }: BottomTabBarProps): JSX.Element {
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 10);
+  const [foreground, muted, background] = useThemeColor([
+    "foreground",
+    "muted",
+    "background",
+  ]);
 
   return (
     <View pointerEvents="box-none" className="absolute inset-x-0 bottom-0 z-50 bg-transparent">
       <LinearGradient
         colors={[
-          "rgba(18,18,18,0.62)",
-          "rgba(18,18,18,0.92)",
-          "rgba(18,18,18,1)",
+          withAlpha(background, 0.62),
+          withAlpha(background, 0.92),
+          background,
         ]}
         locations={[0, 0.35, 1]}
-        style={StyleSheet.absoluteFill}
+        className="absolute inset-0"
         pointerEvents="none"
       />
       <View
@@ -41,7 +60,7 @@ export function SpotifyTabBar({ state, descriptors, navigation }: BottomTabBarPr
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const focused = state.index === index;
-          const color = focused ? ACTIVE : INACTIVE;
+          const color = focused ? foreground : muted;
           const label =
             typeof options.title === "string" ? options.title : route.name;
           const icons = TAB_ICONS[route.name] ?? {

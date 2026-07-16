@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useFonts } from "expo-font";
 import {
   DarkTheme,
@@ -14,15 +14,14 @@ import { HeroUINativeProvider, useThemeColor } from "heroui-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useUniwind } from "uniwind";
 
-import { applyAppearance } from "@/lib/appearance";
-import { getSettings } from "@/mocks/services/settings";
+import {
+  applyAppearance,
+  loadCachedAppearance,
+} from "@/lib/appearance";
 
 import "../global.css";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
-
-// Lock mock default before first paint (avoid reading settings during module init)
-applyAppearance("dark");
 
 function RootLayoutContent(): JSX.Element {
   const background = useThemeColor("background");
@@ -48,12 +47,6 @@ function RootLayoutContent(): JSX.Element {
       },
     };
   }, [background, border, card, foreground, isDark]);
-
-  useEffect(() => {
-    void getSettings().then((settings) => {
-      applyAppearance(settings.preferences.appearance);
-    });
-  }, []);
 
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(background);
@@ -96,14 +89,38 @@ export default function RootLayout(): JSX.Element | null {
     "BrittiSans-SemiBold": require("../../assets/fonts/BrittiSans-SemiBold.ttf"),
     "BrittiSans-Bold": require("../../assets/fonts/BrittiSans-Bold.ttf"),
   });
+  const [appearanceReady, setAppearanceReady] = useState(false);
 
   useEffect(() => {
-    if (fontsLoaded || fontError != null) {
+    let cancelled = false;
+    void loadCachedAppearance()
+      .then((cached) => {
+        if (!cancelled) {
+          applyAppearance(cached ?? "dark");
+          setAppearanceReady(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          applyAppearance("dark");
+          setAppearanceReady(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const ready =
+    appearanceReady && (fontsLoaded || fontError != null);
+
+  useEffect(() => {
+    if (ready) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [fontsLoaded, fontError]);
+  }, [ready]);
 
-  if (!fontsLoaded && fontError == null) {
+  if (!ready) {
     return null;
   }
 

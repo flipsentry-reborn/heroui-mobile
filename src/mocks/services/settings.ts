@@ -1,36 +1,59 @@
 import {
- initialSettingsState,
- type DistanceUnit,
- type RefundPreference,
- type SettingsState,
- type UserPreferences,
+  isAppearanceMode,
+  loadCachedAppearance,
+  saveCachedAppearance,
+} from "@/lib/appearance";
+import {
+  initialSettingsState,
+  type DistanceUnit,
+  type RefundPreference,
+  type SettingsState,
+  type UserPreferences,
 } from "@/mocks/data/settings";
 
 let state: SettingsState = structuredClone(initialSettingsState);
+let appearanceHydrated = false;
 
 function delay(ms = 120): Promise<void> {
- return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function hydrateAppearanceFromCache(): Promise<void> {
+  if (appearanceHydrated) return;
+  appearanceHydrated = true;
+  const cached = await loadCachedAppearance();
+  if (cached != null) {
+    state = {
+      ...state,
+      preferences: { ...state.preferences, appearance: cached },
+    };
+  }
 }
 
 export async function getSettings(): Promise<SettingsState> {
- await delay();
- return structuredClone(state);
+  await hydrateAppearanceFromCache();
+  await delay();
+  return structuredClone(state);
 }
 
 /** Sync read for list cells (mock in-memory prefs). */
 export function getDistanceUnitSync(): DistanceUnit {
- return state.preferences.distanceUnit;
+  return state.preferences.distanceUnit;
 }
 
 export async function updatePreferences(
- patch: Partial<UserPreferences>,
+  patch: Partial<UserPreferences>,
 ): Promise<UserPreferences> {
- await delay();
- state = {
- ...state,
- preferences: { ...state.preferences, ...patch },
- };
- return structuredClone(state.preferences);
+  await hydrateAppearanceFromCache();
+  await delay();
+  state = {
+    ...state,
+    preferences: { ...state.preferences, ...patch },
+  };
+  if (patch.appearance !== undefined && isAppearanceMode(patch.appearance)) {
+    await saveCachedAppearance(patch.appearance);
+  }
+  return structuredClone(state.preferences);
 }
 
 export async function updateRefundPreference(

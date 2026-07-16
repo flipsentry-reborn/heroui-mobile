@@ -88,7 +88,7 @@ export function SearchBottomSheetRow({
       {onPress ? (
         <PressableFeedback animation={false} onPress={onPress}>
           <PressableFeedback.Scale>
-            <ListGroup.Item disabled className="py-2">
+            <ListGroup.Item disabled className="py-3.5">
               {body}
             </ListGroup.Item>
           </PressableFeedback.Scale>
@@ -96,11 +96,11 @@ export function SearchBottomSheetRow({
           <PressableFeedback.Ripple />
         </PressableFeedback>
       ) : (
-        <ListGroup.Item disabled className="py-2">
+        <ListGroup.Item disabled className="py-3.5">
           {body}
         </ListGroup.Item>
       )}
-      {!isLast ? <Separator className="ml-12 mr-4 opacity-50" /> : null}
+      {!isLast ? <Separator className="ml-12 mr-4 bg-muted/40" /> : null}
     </>
   );
 }

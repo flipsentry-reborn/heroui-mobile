@@ -83,7 +83,7 @@ function CriteriaRow({
       {onPress ? (
         <PressableFeedback animation={false} onPress={onPress}>
           <PressableFeedback.Scale>
-            <ListGroup.Item disabled className="py-2">
+            <ListGroup.Item disabled className="py-3.5">
               {body}
             </ListGroup.Item>
           </PressableFeedback.Scale>
@@ -91,18 +91,18 @@ function CriteriaRow({
           <PressableFeedback.Ripple />
         </PressableFeedback>
       ) : (
-        <ListGroup.Item disabled className="py-2">
+        <ListGroup.Item disabled className="py-3.5">
           {body}
         </ListGroup.Item>
       )}
-      {!isLast ? <Separator className="ml-4 mr-4 opacity-50" /> : null}
+      {!isLast ? <Separator className="mx-4 bg-muted/40" /> : null}
     </>
   );
 }
 
 export function SearchBottomSheetCriteria(): JSX.Element {
   return (
-    <View className="mb-4 mt-2 gap-1.5">
+    <View className="mb-5 mt-1 gap-2.5">
       <Typography type="body-xs" className="mx-5 text-muted">
         Criteria
       </Typography>

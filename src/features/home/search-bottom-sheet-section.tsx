@@ -11,7 +11,7 @@ export function SearchBottomSheetSection({
   children,
 }: SearchBottomSheetSectionProps): JSX.Element {
   return (
-    <View className="mb-4 mt-4">
+    <View className="mb-5 mt-5">
       <ListGroup className="mx-3">{children}</ListGroup>
     </View>
   );

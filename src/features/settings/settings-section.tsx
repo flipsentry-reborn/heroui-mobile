@@ -15,7 +15,7 @@ interface SettingsSectionProps {
 
 export function SettingsSection({ title, children }: SettingsSectionProps): JSX.Element {
   return (
-    <View className="mb-4 gap-1.5">
+    <View className="mb-4 gap-2">
       <Typography type="body-xs" className="mx-5 text-muted">
         {title}
       </Typography>
@@ -101,7 +101,7 @@ export function SettingsRow({
       {onPress ? (
         <PressableFeedback animation={false} onPress={onPress}>
           <PressableFeedback.Scale>
-            <ListGroup.Item disabled className="py-2">
+            <ListGroup.Item disabled className="py-2.5">
               {body}
             </ListGroup.Item>
           </PressableFeedback.Scale>
@@ -109,11 +109,11 @@ export function SettingsRow({
           <PressableFeedback.Ripple />
         </PressableFeedback>
       ) : (
-        <ListGroup.Item disabled className="py-2">
+        <ListGroup.Item disabled className="py-2.5">
           {body}
         </ListGroup.Item>
       )}
-      {!isLast ? <Separator className="ml-12 mr-4 opacity-50" /> : null}
+      {!isLast ? <Separator className="ml-12 mr-4 bg-muted/40" /> : null}
     </>
   );
 }

@@ -15,7 +15,7 @@ export function SearchBottomSheetHeader({
   const [foreground] = useThemeColor(["foreground"]);
 
   return (
-    <View className="flex-row items-center px-8 pt-3 pb-1">
+    <View className="flex-row items-center px-8 pt-3 pb-2">
       <PressableFeedback
         onPress={onClose}
         accessibilityRole="button"

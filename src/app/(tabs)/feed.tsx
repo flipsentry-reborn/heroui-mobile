@@ -14,7 +14,8 @@ export default function FeedScreen(): JSX.Element {
   const router = useRouter();
   const pagerRef = useRef<PagerView>(null);
   const [searchText, setSearchText] = useState("");
-  const [activeCategory, setActiveCategory] = useState<FeedCategoryKey>("all");
+  const [activeCategory, setActiveCategory] =
+    useState<FeedCategoryKey>("for-you");
 
   const handleCategorySelect = useCallback((key: FeedCategoryKey) => {
     setActiveCategory(key);
@@ -44,6 +45,7 @@ export default function FeedScreen(): JSX.Element {
         activeCategory={activeCategory}
         searchText={searchText}
         onCategoryChange={setActiveCategory}
+        onOpenCategory={handleCategorySelect}
         onPressItem={handlePressItem}
       />
     </View>

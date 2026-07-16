@@ -14,12 +14,16 @@ import {
   type FeedItem as FeedModel,
 } from "@/models/feed";
 
-const IMAGE_H = 168;
+const IMAGE_H_GRID = 168;
+const IMAGE_H_RAIL = 128;
+const RAIL_WIDTH = 156;
 
 interface FeedItemProps {
   feed: FeedModel;
   onPress?: (id: string) => void;
   onToggleFavorite?: (id: string) => void;
+  /** grid = 2-col feed; rail = horizontal For You shelf card */
+  layout?: "grid" | "rail";
 }
 
 function formatPrice(price: number, symbol: string): string {
@@ -29,7 +33,12 @@ function formatPrice(price: number, symbol: string): string {
   return `${symbol}${formatted}`;
 }
 
-export function FeedItem({ feed, onPress, onToggleFavorite }: FeedItemProps): JSX.Element {
+export function FeedItem({
+  feed,
+  onPress,
+  onToggleFavorite,
+  layout = "grid",
+}: FeedItemProps): JSX.Element {
   const [surfaceSecondary, accentForeground] = useThemeColor([
     "surface-secondary",
     "accent-foreground",
@@ -41,21 +50,24 @@ export function FeedItem({ feed, onPress, onToggleFavorite }: FeedItemProps): JS
   const statusBadges = getOrderedStatusBadges(feed);
   const distance =
     feed.distanceMiles != null ? `${feed.distanceMiles.toFixed(1)} mi` : null;
+  const isRail = layout === "rail";
+  const imageH = isRail ? IMAGE_H_RAIL : IMAGE_H_GRID;
 
   return (
     <PressableFeedback
       onPress={() => onPress?.(feed.id)}
-      className="mb-1.5 flex-1 px-0.5"
+      className={isRail ? "mr-2" : "mb-1.5 flex-1 px-0.5"}
+      style={isRail ? { width: RAIL_WIDTH } : undefined}
       animation={{ scale: { value: 0.98 } }}
     >
       <Card
         variant="transparent"
-        className="flex-1 gap-0 overflow-hidden rounded-xl border-0 bg-background p-0"
+        className={`${isRail ? "" : "flex-1 "}gap-0 overflow-hidden rounded-xl border-0 bg-background p-0`}
       >
         <View className="relative">
           <Image
             source={{ uri: imageUrl }}
-            style={{ width: "100%", height: IMAGE_H, backgroundColor: surfaceSecondary }}
+            style={{ width: "100%", height: imageH, backgroundColor: surfaceSecondary }}
             contentFit="cover"
             transition={180}
           />

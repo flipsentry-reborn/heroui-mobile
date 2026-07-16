@@ -166,10 +166,13 @@ Fitness-style setup in `src/app/_layout.tsx`:
 
 ### Feed categories
 
-- UI: label-only `Chip` row (no icons)
-- Pages: `react-native-pager-view` with one mounted list per visited category
-- Swipe or tap chips; revisiting a category keeps scroll (page stays mounted)
+- Default tab: **For You** (YouTube-style shelves)
+- For You shelves: All / Top Rated / Price Drop / Cars — horizontal rails of 5 items; title row opens that category
+- UI: HeroUI `Tabs` with `variant="secondary"` (bottom underline) + `Tabs.ScrollView`
+- Pages: `react-native-pager-view` with one mounted list per visited category (swipe + tap tabs)
+- Revisiting a category keeps scroll (page stays mounted)
 - Lazy: mount a category page on first visit; pull-to-refresh refetches that page only
+- Optional Pro `Badge` on a tab label (e.g. Price Drop → Beta)
 
 ---
 

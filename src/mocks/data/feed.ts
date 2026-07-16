@@ -168,6 +168,7 @@ function extraListing(item: ExtraListing): FeedItem {
 }
 
 export type FeedCategoryKey =
+  | "for-you"
   | "all"
   | "best-picks"
   | "price-drop"
@@ -178,15 +179,27 @@ export type FeedCategoryKey =
 export const FEED_CATEGORIES: {
   key: FeedCategoryKey;
   label: string;
-  /** Show HeroUI Pro Badge on the chip (e.g. Beta). */
+  /** Show HeroUI Pro Badge on the tab (e.g. Beta). */
   badge?: string;
 }[] = [
+  { key: "for-you", label: "For You" },
   { key: "all", label: "All" },
-  { key: "best-picks", label: "Best Picks" },
-  { key: "price-drop", label: "Price Drop", badge: "Beta" },
+  { key: "best-picks", label: "Top Rated" },
+  { key: "price-drop", label: "Price Changed", badge: "Beta" },
   { key: "car", label: "Cars" },
   { key: "iphone", label: "iPhones" },
   { key: "saved", label: "Saved" },
+];
+
+/** YouTube-style shelves on the For You page (title opens that category). */
+export const FOR_YOU_SHELVES: {
+  key: Exclude<FeedCategoryKey, "for-you">;
+  label: string;
+}[] = [
+  { key: "all", label: "All" },
+  { key: "best-picks", label: "Top Rated" },
+  { key: "price-drop", label: "Price Changed" },
+  { key: "car", label: "Cars" },
 ];
 
 export const MOCK_FEED_ITEMS: FeedItem[] = [

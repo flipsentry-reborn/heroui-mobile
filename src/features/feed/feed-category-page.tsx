@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from "react";
 
+import { FeedForYouPage } from "@/features/feed/feed-for-you-page";
 import { FeedScrollable } from "@/features/feed/feed-scrollable";
 import type { FeedCategoryKey } from "@/mocks/data/feed";
 import { getFeed, toggleFavorite } from "@/mocks/services/feed";
@@ -11,6 +12,7 @@ interface FeedCategoryPageProps {
   /** Bumps when favorites change elsewhere so Saved / lists stay in sync. */
   syncToken: number;
   onPressItem?: (id: string) => void;
+  onOpenCategory?: (key: FeedCategoryKey) => void;
   onFavoriteChange?: () => void;
 }
 
@@ -23,6 +25,7 @@ export function FeedCategoryPage({
   query,
   syncToken,
   onPressItem,
+  onOpenCategory,
   onFavoriteChange,
 }: FeedCategoryPageProps): JSX.Element {
   const [items, setItems] = useState<FeedModel[]>([]);
@@ -32,6 +35,7 @@ export function FeedCategoryPage({
 
   const load = useCallback(
     async (opts?: { refresh?: boolean; silent?: boolean }) => {
+      if (category === "for-you") return;
       if (opts?.refresh) setRefreshing(true);
       else if (!opts?.silent) setLoading(true);
       try {
@@ -46,16 +50,17 @@ export function FeedCategoryPage({
   );
 
   useEffect(() => {
+    if (category === "for-you") return;
     void load();
-  }, [load]);
+  }, [category, load]);
 
   useEffect(() => {
+    if (category === "for-you") return;
     if (skipNextSync.current) {
       skipNextSync.current = false;
       return;
     }
     void load({ silent: true });
-    // Only react to external sync bumps, not query/load identity changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- syncToken-only
   }, [syncToken]);
 
@@ -73,6 +78,18 @@ export function FeedCategoryPage({
     },
     [category, onFavoriteChange],
   );
+
+  if (category === "for-you") {
+    return (
+      <FeedForYouPage
+        query={query}
+        syncToken={syncToken}
+        onPressItem={onPressItem}
+        onOpenCategory={onOpenCategory ?? (() => {})}
+        onFavoriteChange={onFavoriteChange}
+      />
+    );
+  }
 
   return (
     <FeedScrollable

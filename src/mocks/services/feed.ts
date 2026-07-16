@@ -5,6 +5,7 @@ import { MOCK_FEED_ITEMS } from "@/mocks/data/feed";
 export type GetFeedParams = {
   category?: FeedCategoryKey;
   query?: string;
+  limit?: number;
 };
 
 function delay(ms = 450): Promise<void> {
@@ -12,7 +13,7 @@ function delay(ms = 450): Promise<void> {
 }
 
 function matchesCategory(item: FeedItem, category: FeedCategoryKey): boolean {
-  if (category === "all") return true;
+  if (category === "for-you" || category === "all") return true;
   if (category === "saved") return item.isFavorite;
   if (category === "best-picks") {
     return (item.valuation?.buySignal ?? 0) >= 60;
@@ -37,7 +38,7 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
   const category = params.category ?? "all";
   const query = (params.query ?? "").trim().toLowerCase();
 
-  return MOCK_FEED_ITEMS.filter((item) => {
+  const items = MOCK_FEED_ITEMS.filter((item) => {
     if (!matchesCategory(item, category)) return false;
     if (!query) return true;
     return (
@@ -46,6 +47,11 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
       item.locationText.toLowerCase().includes(query)
     );
   }).map((item) => ({ ...item }));
+
+  if (params.limit != null && params.limit > 0) {
+    return items.slice(0, params.limit);
+  }
+  return items;
 }
 
 export async function getFeedById(id: string): Promise<FeedItem | null> {

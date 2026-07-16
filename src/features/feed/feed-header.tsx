@@ -3,24 +3,15 @@ import { Image } from "expo-image";
 import type { JSX } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, Pressable, TextInput, View } from "react-native";
-import Animated, {
-  Easing,
-  interpolate,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { SearchField, Typography, useThemeColor } from "heroui-native";
+import { SearchField, useThemeColor } from "heroui-native";
 
-import { FeedCategoryChips } from "@/features/feed/feed-category-chips";
+import { FeedCategoryTabs } from "@/features/feed/feed-category-tabs";
 import type { FeedCategoryKey } from "@/mocks/data/feed";
 
 const LOGO = require("../../../assets/images/flipsentry-logo-text-transparent.png");
 const LOGO_WIDTH = 132;
 const LOGO_HEIGHT = 30;
-const COLLAPSED_PILL = 104;
-const TIMING = { duration: 320, easing: Easing.bezier(0.22, 1, 0.36, 1) };
 
 interface FeedHeaderProps {
   searchText: string;
@@ -38,50 +29,23 @@ export function FeedHeader({
   const insets = useSafeAreaInsets();
   const [foreground, muted] = useThemeColor(["foreground", "muted"]);
   const inputRef = useRef<TextInput>(null);
+  const openingRef = useRef(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [rowWidth, setRowWidth] = useState(0);
-  const progress = useSharedValue(0);
 
   const isExpanded = searchOpen || searchText.length > 0;
 
   useEffect(() => {
-    progress.value = withTiming(isExpanded ? 1 : 0, TIMING);
-  }, [isExpanded, progress]);
-
-  const logoStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.55], [1, 0]),
-    width: interpolate(progress.value, [0, 1], [LOGO_WIDTH, 0]),
-    marginRight: interpolate(progress.value, [0, 1], [12, 0]),
-    transform: [{ translateX: interpolate(progress.value, [0, 1], [0, -16]) }],
-  }));
-
-  const searchStyle = useAnimatedStyle(() => {
-    const collapsed = COLLAPSED_PILL;
-    const expanded = Math.max(rowWidth - 42, collapsed);
-    return {
-      width: interpolate(progress.value, [0, 1], [collapsed, expanded]),
-    };
-  });
-
-  const collapsedHintStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.35], [1, 0]),
-  }));
-
-  const fieldStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0.25, 0.75], [0, 1]),
-  }));
-
-  const closeStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0.45, 1], [0, 1]),
-    width: interpolate(progress.value, [0, 1], [0, 36]),
-    marginLeft: interpolate(progress.value, [0, 1], [0, 6]),
-  }));
+    if (!isExpanded) return;
+    const id = setTimeout(() => {
+      inputRef.current?.focus();
+      openingRef.current = false;
+    }, 80);
+    return () => clearTimeout(id);
+  }, [isExpanded]);
 
   const openSearch = () => {
+    openingRef.current = true;
     setSearchOpen(true);
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 180);
   };
 
   const closeSearch = () => {
@@ -91,6 +55,7 @@ export function FeedHeader({
   };
 
   const handleBlur = () => {
+    if (openingRef.current) return;
     if (!searchText.trim()) {
       setSearchOpen(false);
     }
@@ -101,64 +66,24 @@ export function FeedHeader({
       style={{ paddingTop: insets.top }}
       className="z-20 overflow-hidden bg-background"
     >
-      <View className="px-3 pb-1 pt-2">
-        <View
-          className="h-9 flex-row items-center"
-          onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}
-        >
-          <Animated.View
-            style={logoStyle}
-            className="justify-center overflow-hidden"
-            pointerEvents={isExpanded ? "none" : "auto"}
-          >
-            <Image
-              source={LOGO}
-              style={{ width: LOGO_WIDTH, height: LOGO_HEIGHT }}
-              contentFit="contain"
-              accessibilityLabel="FlipSentry"
-            />
-          </Animated.View>
-
-          <View className="flex-1 flex-row items-center justify-end">
-            <Animated.View style={searchStyle} className="h-9 overflow-hidden">
-              <Animated.View
-                style={collapsedHintStyle}
-                className="absolute inset-0"
-                pointerEvents={isExpanded ? "none" : "auto"}
-              >
-                <Pressable
-                  onPress={openSearch}
-                  accessibilityRole="button"
-                  accessibilityLabel="Search listings"
-                  className="h-9 flex-1 flex-row items-center gap-1.5 rounded-field border border-border bg-surface-secondary px-3"
-                >
-                  <Ionicons name="search" size={16} color={muted} />
-                  <Typography
-                    type="body-sm"
-                    className="text-sm font-normal text-muted"
-                  >
-                    Search
-                  </Typography>
-                </Pressable>
-              </Animated.View>
-
-              <Animated.View
-                style={fieldStyle}
-                className="h-9 flex-1"
-                pointerEvents={isExpanded ? "auto" : "none"}
-              >
+      <View className="px-3 pb-0.5 pt-1">
+        <View className="h-8 flex-row items-center">
+          {isExpanded ? (
+            <>
+              <View className="flex-1">
                 <SearchField
                   value={searchText}
                   onChange={onSearchChange}
                   className="w-full"
                   animation="disable-all"
                 >
-                  <SearchField.Group className="h-9 rounded-field border border-border bg-surface-secondary">
+                  <SearchField.Group className="h-8 rounded-field border border-border bg-surface-secondary">
                     <SearchField.SearchIcon
                       iconProps={{ color: muted, size: 16 }}
                     />
                     <SearchField.Input
                       ref={inputRef}
+                      autoFocus
                       placeholder="Search cars, phones"
                       placeholderTextColor={muted}
                       className="text-sm font-normal text-foreground"
@@ -171,27 +96,40 @@ export function FeedHeader({
                     <SearchField.ClearButton />
                   </SearchField.Group>
                 </SearchField>
-              </Animated.View>
-            </Animated.View>
-
-            <Animated.View
-              style={closeStyle}
-              className="overflow-hidden"
-              pointerEvents={isExpanded ? "auto" : "none"}
-            >
+              </View>
               <Pressable
                 onPress={closeSearch}
                 accessibilityLabel="Close search"
-                className="h-9 w-9 items-center justify-center rounded-field bg-surface-secondary"
+                className="ml-1.5 h-8 w-8 items-center justify-center rounded-field bg-surface-secondary"
               >
                 <Ionicons name="close" size={16} color={foreground} />
               </Pressable>
-            </Animated.View>
-          </View>
+            </>
+          ) : (
+            <>
+              <View className="justify-center">
+                <Image
+                  source={LOGO}
+                  style={{ width: LOGO_WIDTH, height: LOGO_HEIGHT }}
+                  contentFit="contain"
+                  accessibilityLabel="FlipSentry"
+                />
+              </View>
+              <View className="flex-1" />
+              <Pressable
+                onPress={openSearch}
+                accessibilityRole="button"
+                accessibilityLabel="Search listings"
+                className="h-8 w-8 items-center justify-center rounded-field border border-border bg-surface-secondary"
+              >
+                <Ionicons name="search" size={16} color={muted} />
+              </Pressable>
+            </>
+          )}
         </View>
       </View>
 
-      <FeedCategoryChips
+      <FeedCategoryTabs
         activeCategory={activeCategory}
         onSelect={onCategorySelect}
       />

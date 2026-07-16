@@ -17,6 +17,7 @@ interface FeedPagerProps {
   searchText: string;
   onCategoryChange: (key: FeedCategoryKey) => void;
   onPressItem?: (id: string) => void;
+  onOpenCategory?: (key: FeedCategoryKey) => void;
 }
 
 export function FeedPager({
@@ -25,6 +26,7 @@ export function FeedPager({
   searchText,
   onCategoryChange,
   onPressItem,
+  onOpenCategory,
 }: FeedPagerProps): JSX.Element {
   const [visited, setVisited] = useState<Set<FeedCategoryKey>>(
     () => new Set<FeedCategoryKey>([activeCategory]),
@@ -55,7 +57,8 @@ export function FeedPager({
       style={{ flex: 1 }}
       initialPage={FEED_CATEGORIES.findIndex((c) => c.key === activeCategory)}
       offscreenPageLimit={1}
-      scrollEnabled={false}
+      // For You has horizontal shelf scrolls - disable pager swipe there
+      scrollEnabled={activeCategory !== "for-you"}
       onPageSelected={handlePageSelected}
     >
       {FEED_CATEGORIES.map((category) => (
@@ -66,6 +69,7 @@ export function FeedPager({
               query={searchText}
               syncToken={syncToken}
               onPressItem={onPressItem}
+              onOpenCategory={onOpenCategory}
               onFavoriteChange={() => setSyncToken((n) => n + 1)}
             />
           ) : (

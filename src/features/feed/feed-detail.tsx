@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import type { JSX } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
 import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,17 +9,24 @@ import {
   Avatar,
   Button,
   PressableFeedback,
+  Separator,
   Typography,
   useToast,
 } from "heroui-native";
 
-import PlatformIcon from "@/components/icons/PlatformIcon";
 import { FeedDetailActions } from "@/features/feed/feed-detail-actions";
 import { FeedDetailGallery } from "@/features/feed/feed-detail-gallery";
 import { StatusBadge, ValuationBadge } from "@/features/feed/feed-badge";
+import { FeedDetailMetaSection } from "@/features/feed/feed-detail-meta";
 import { FeedDetailScoreBar } from "@/features/feed/feed-detail-score-bar";
 import {
+  FeedDetailSimilarNearby,
+  useSimilarNearbyFilters,
+} from "@/features/feed/feed-detail-similar-nearby";
+import { getLocalComps } from "@/mocks/services/feed";
+import {
   getOrderedStatusBadges,
+  isCarListing,
   type FeedItem,
   type FeedPlatform,
 } from "@/models/feed";
@@ -37,15 +45,6 @@ function formatPrice(price: number, symbol: string): string {
   return `${symbol}${formatted}`;
 }
 
-function formatTimeAgo(dateString: string): string {
-  const diffMs = Math.max(0, Date.now() - new Date(dateString).getTime());
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 60) return `${mins} min`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
-}
-
 function galleryUrls(item: FeedItem): string[] {
   const fromMarket = item.images.marketplaceImages.map((img) => img.imageUrl).filter(Boolean);
   if (fromMarket.length > 0) return fromMarket;
@@ -60,20 +59,55 @@ interface FeedDetailProps {
 }
 
 export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps): JSX.Element {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { toast } = useToast();
   const [descExpanded, setDescExpanded] = useState(false);
+  const [localComps, setLocalComps] = useState<FeedItem[]>([]);
+  const [localCompsLoading, setLocalCompsLoading] = useState(false);
+  const [hasShownLocalComps, setHasShownLocalComps] = useState(false);
+  const { sameYear, days, toggleSameYear, setDays } = useSimilarNearbyFilters();
   const scrollY = useSharedValue(0);
   const statusBadges = getOrderedStatusBadges(item);
   const images = galleryUrls(item);
   const description = item.description || "No description provided.";
   const longDesc = description.length > 160;
+  const showSimilarNearby = isCarListing(item) && !item.isSold && !item.isPending;
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (e) => {
       scrollY.value = e.contentOffset.y;
     },
   });
+
+  useEffect(() => {
+    setHasShownLocalComps(false);
+  }, [item.id]);
+
+  useEffect(() => {
+    if (localComps.length > 0) setHasShownLocalComps(true);
+  }, [localComps.length]);
+
+  useEffect(() => {
+    if (!showSimilarNearby) {
+      setLocalComps([]);
+      setLocalCompsLoading(false);
+      return;
+    }
+
+    let alive = true;
+    setLocalCompsLoading(true);
+    void (async () => {
+      const comps = await getLocalComps(item.id, { sameYear, days });
+      if (!alive) return;
+      setLocalComps(comps);
+      setLocalCompsLoading(false);
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [item.id, showSimilarNearby, sameYear, days]);
 
   const mockAction = (label: string) => {
     toast.show({
@@ -93,12 +127,16 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
     });
   };
 
+  const handleCompPress = (id: string) => {
+    router.push(`/feed/${id}`);
+  };
+
   return (
     <View className="flex-1 bg-background" style={{ paddingBottom: insets.bottom }}>
       <Animated.ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 96 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
         onScroll={onScroll}
         scrollEventThrottle={16}
       >
@@ -130,9 +168,18 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
           ) : null}
         </View>
 
-        <View className="px-4 pt-4">
+        <View className="gap-6 px-4 pt-4">
           <View className="gap-2">
-            <View className="flex-row flex-wrap items-center gap-2">
+            <Typography
+              type="body-sm"
+              weight="semibold"
+              className="text-[15px] leading-5 text-foreground"
+              numberOfLines={2}
+            >
+              {item.title}
+            </Typography>
+
+            <View className="flex-row flex-wrap items-baseline gap-2">
               <Typography
                 type="body-sm"
                 weight="semibold"
@@ -147,13 +194,6 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
               ) : null}
             </View>
 
-            <Typography
-              type="body-sm"
-              className="text-[15px] font-normal leading-5 text-foreground"
-            >
-              {item.title}
-            </Typography>
-
             {item.valuation?.calculated ? (
               <FeedDetailScoreBar
                 buySignal={item.valuation.buySignal}
@@ -164,46 +204,12 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
                 compCount={item.valuation.compCount}
               />
             ) : null}
-
-            {(item.vehicleSpecifications?.vehicleMileage ||
-              item.vehicleSpecifications?.vehicleTransmission) && (
-              <Typography type="body-sm" className="text-[13px] leading-5 text-foreground">
-                {item.vehicleSpecifications.vehicleMileage != null
-                  ? `Mileage: ${item.vehicleSpecifications.vehicleMileage.toLocaleString()} mi`
-                  : null}
-                {item.vehicleSpecifications.vehicleMileage != null &&
-                item.vehicleSpecifications.vehicleTransmission
-                  ? " · "
-                  : null}
-                {item.vehicleSpecifications.vehicleTransmission
-                  ? `Transmission: ${item.vehicleSpecifications.vehicleTransmission}`
-                  : null}
-              </Typography>
-            )}
-
-            {item.creationTime ? (
-              <Typography type="body-xs" className="text-xs text-muted">
-                Posted {formatTimeAgo(item.creationTime)} ago ·{" "}
-                {new Date(item.creationTime).toLocaleString(undefined, {
-                  day: "numeric",
-                  month: "short",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </Typography>
-            ) : null}
-
-            <View className="flex-row items-center gap-2">
-              <PlatformIcon platform={item.platform} size={18} />
-              <Typography type="body-sm" className="flex-1 text-[13px] text-muted">
-                {item.locationText}
-                {item.distanceMiles != null ? ` · ${item.distanceMiles.toFixed(1)} mi` : ""}
-              </Typography>
-            </View>
           </View>
 
+          <FeedDetailMetaSection item={item} />
+
           {item.seller ? (
-            <View className="mt-6 flex-row items-center gap-3">
+            <View className="flex-row items-center gap-3 rounded-sm bg-surface-secondary px-3 py-2.5">
               <Avatar size="md" alt={item.seller.name}>
                 {item.seller.avatarUrl ? (
                   <Avatar.Image source={{ uri: item.seller.avatarUrl }} />
@@ -231,6 +237,11 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
                       · Dealer
                     </Typography>
                   ) : null}
+                  {item.seller.isBusinessAccount ? (
+                    <Typography type="body-xs" className="text-xs text-muted">
+                      · Business
+                    </Typography>
+                  ) : null}
                 </View>
               </View>
               <Button size="sm" variant="secondary" onPress={() => mockAction("Block seller")}>
@@ -239,7 +250,8 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
             </View>
           ) : null}
 
-          <View className="mt-4">
+          <View className="gap-4">
+            <Separator className="opacity-50" />
             <FeedDetailActions
               isFavorite={item.isFavorite}
               onSave={handleFavorite}
@@ -248,13 +260,17 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
             />
           </View>
 
-          <View className="mt-6 gap-2">
-            <Typography type="body-sm" weight="semibold" className="text-[15px] text-foreground">
+          <View className="gap-1.5">
+            <Typography
+              type="body"
+              weight="semibold"
+              className="text-[15px] tracking-tight text-foreground"
+            >
               Description
             </Typography>
             <Typography
-              type="body-sm"
-              className="text-sm font-normal leading-5 text-muted"
+              type="body-xs"
+              className="text-xs font-normal leading-4 text-muted"
               numberOfLines={descExpanded || !longDesc ? undefined : 5}
             >
               {description}
@@ -275,11 +291,27 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
               </PressableFeedback>
             ) : null}
           </View>
+
+          {showSimilarNearby &&
+          (localCompsLoading || localComps.length > 0 || hasShownLocalComps) ? (
+            <View className="gap-4">
+              <Separator className="opacity-50" />
+              <FeedDetailSimilarNearby
+                items={localComps}
+                loading={localCompsLoading}
+                sameYear={sameYear}
+                days={days}
+                onSameYearToggle={toggleSameYear}
+                onDaysChange={setDays}
+                onPressItem={handleCompPress}
+              />
+            </View>
+          ) : null}
         </View>
       </Animated.ScrollView>
 
       <View
-        className="absolute inset-x-0 bottom-0 bg-background px-4 pt-2.5"
+        className="absolute inset-x-0 bottom-0 border-t border-border bg-background px-4 pt-2.5"
         style={{ paddingBottom: Math.max(insets.bottom, 10) }}
       >
         <Button

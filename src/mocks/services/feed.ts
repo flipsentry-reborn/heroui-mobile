@@ -1,6 +1,13 @@
 import type { FeedItem } from "@/models/feed";
+import { isCarListing } from "@/models/feed";
 import type { FeedCategoryKey } from "@/mocks/data/feed";
 import { MOCK_FEED_ITEMS } from "@/mocks/data/feed";
+import { getLocalCompsForFeed } from "@/mocks/data/local-comps";
+
+export type GetLocalCompsParams = {
+  sameYear?: boolean;
+  days?: number;
+};
 
 export type GetFeedParams = {
   category?: FeedCategoryKey;
@@ -67,4 +74,33 @@ export async function toggleFavorite(id: string): Promise<FeedItem | null> {
   item.isFavorite = !item.isFavorite;
   item.favoritedAt = item.isFavorite ? new Date().toISOString() : null;
   return { ...item };
+}
+
+export async function getLocalComps(
+  feedId: string,
+  params: GetLocalCompsParams = {},
+): Promise<FeedItem[]> {
+  await delay(400);
+
+  const source = MOCK_FEED_ITEMS.find((f) => f.id === feedId);
+  if (!source || !isCarListing(source)) return [];
+
+  const sameYear = params.sameYear ?? false;
+  const days = params.days ?? 3;
+  const sourceYear =
+    source.vehicleSpecifications?.vehicleYear ?? source.valuation?.year ?? null;
+  const cutoffMs = Date.now() - days * 24 * 60 * 60 * 1000;
+
+  return getLocalCompsForFeed(feedId).filter((comp) => {
+    const year =
+      comp.vehicleSpecifications?.vehicleYear ?? comp.valuation?.year ?? null;
+    if (sameYear && sourceYear != null && year !== sourceYear) {
+      return false;
+    }
+    if (comp.creationTime) {
+      const postedMs = new Date(comp.creationTime).getTime();
+      if (postedMs < cutoffMs) return false;
+    }
+    return true;
+  });
 }

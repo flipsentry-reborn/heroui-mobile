@@ -69,7 +69,7 @@ export function FeedHeader({
       style={{ paddingTop: insets.top }}
       className="z-20 overflow-hidden bg-background"
     >
-      <View className="px-3 pb-0.5 pt-1">
+      <View className="px-3 pb-0 pt-0.5">
         <View className="h-8 flex-row items-center">
           {searchOpen ? (
             <>

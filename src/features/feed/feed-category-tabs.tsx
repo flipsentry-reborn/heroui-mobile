@@ -23,26 +23,26 @@ export function FeedCategoryTabs({
       value={activeCategory}
       onValueChange={(value) => onSelect(value as FeedCategoryKey)}
       variant="secondary"
-      className="w-full gap-0 px-1 pt-1"
+      className="w-full gap-0 px-0.5"
     >
-      <Tabs.List className="w-full max-w-full gap-1 border-b border-border">
+      <Tabs.List className="w-full max-w-full gap-0 border-b border-border">
         <Tabs.ScrollView scrollAlign="center">
           <Tabs.Indicator />
           {FEED_CATEGORIES.map((category) => (
             <Tabs.Trigger
               key={category.key}
               value={category.key}
-              className="px-4 py-2.5"
+              className="px-3 py-2"
             >
               {({ isSelected }) => (
                 <Badge.Anchor
-                  className={category.badge ? "pr-7" : undefined}
+                  className={category.badge ? "pr-6" : undefined}
                 >
                   <Tabs.Label
                     className={
                       isSelected
-                        ? "text-sm font-medium text-foreground"
-                        : "text-sm font-normal text-muted"
+                        ? "text-[13px] font-semibold tracking-tight text-foreground"
+                        : "text-[13px] font-medium tracking-tight text-muted"
                     }
                   >
                     {category.label}

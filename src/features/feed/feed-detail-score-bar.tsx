@@ -76,10 +76,7 @@ export function FeedDetailScoreBar({
         </View>
       ) : null}
 
-      <View className="flex-row items-baseline justify-between">
-        <Typography type="body-xs" className="text-xs text-muted">
-          Deal score
-        </Typography>
+      <View className="flex-row items-baseline justify-end">
         <Typography
           type="body-sm"
           weight="semibold"

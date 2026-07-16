@@ -213,7 +213,7 @@ export function SettingsScreen(): JSX.Element {
             <SettingsRow
               icon="resize-outline"
               title="Distance Unit"
-              description="Miles or kilometers for listing distance"
+              description="Miles or kilometers for vehicle mileage"
               showChevron={false}
               isLast
               right={

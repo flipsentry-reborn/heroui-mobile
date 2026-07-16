@@ -1,5 +1,6 @@
 import {
  initialSettingsState,
+ type DistanceUnit,
  type RefundPreference,
  type SettingsState,
  type UserPreferences,
@@ -14,6 +15,11 @@ function delay(ms = 120): Promise<void> {
 export async function getSettings(): Promise<SettingsState> {
  await delay();
  return structuredClone(state);
+}
+
+/** Sync read for list cells (mock in-memory prefs). */
+export function getDistanceUnitSync(): DistanceUnit {
+ return state.preferences.distanceUnit;
 }
 
 export async function updatePreferences(

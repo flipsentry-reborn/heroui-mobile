@@ -1,10 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Pressable,
   RefreshControl,
   ScrollView,
   View,
@@ -36,12 +34,6 @@ import type { FeedItem as FeedModel } from "@/models/feed";
 const StyledIonicons = withUniwind(Ionicons);
 
 const SHELF_LIMIT = 6;
-const PREVIEW_VISIBLE = 3;
-const PREVIEW_THUMB = 56;
-const PREVIEW_GAP = 6;
-/** Viewport always fits exactly 3 thumbs. */
-const PREVIEW_COL_W =
-  PREVIEW_THUMB * PREVIEW_VISIBLE + PREVIEW_GAP * (PREVIEW_VISIBLE - 1);
 
 type ShelfState = Record<string, FeedModel[]>;
 
@@ -107,66 +99,6 @@ function ShelfRail({
         />
       ))}
     </ScrollView>
-  );
-}
-
-function itemImageUrl(item: FeedModel): string | undefined {
-  return (
-    item.images.imageUrlHostedByUs ||
-    item.images.mainImageUrl.imageUrl ||
-    item.images.marketplaceImages[0]?.imageUrl ||
-    undefined
-  );
-}
-
-/** Collapsed All preview part: label + 3 fixed thumbs (no inner scroll). */
-function CollapsedShelfColumn({
-  label,
-  items,
-  onPressItem,
-}: {
-  label: string;
-  items: FeedModel[];
-  onPressItem?: (id: string) => void;
-}): JSX.Element {
-  const [surfaceSecondary] = useThemeColor(["surface-secondary"]);
-  const thumbs = items.slice(0, PREVIEW_VISIBLE);
-
-  return (
-    <View className="gap-1.5" style={{ width: PREVIEW_COL_W }}>
-      <Typography
-        type="body-sm"
-        weight="semibold"
-        className="text-[14px] text-foreground"
-      >
-        {label}
-      </Typography>
-      <View className="flex-row" style={{ gap: PREVIEW_GAP }}>
-        {thumbs.map((item) => {
-          const uri = itemImageUrl(item);
-          return (
-            <Pressable
-              key={item.id}
-              onPress={() => onPressItem?.(item.id)}
-              accessibilityRole="button"
-              accessibilityLabel={item.title}
-            >
-              <Image
-                source={{ uri }}
-                style={{
-                  width: PREVIEW_THUMB,
-                  height: PREVIEW_THUMB,
-                  borderRadius: 10,
-                  backgroundColor: surfaceSecondary,
-                }}
-                contentFit="cover"
-                transition={120}
-              />
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
   );
 }
 
@@ -298,11 +230,6 @@ export function FeedForYouPage({
       >
         {FOR_YOU_SHELVES.map((shelf) => {
           if (shelf.isAccordion) {
-            const hasAnyChild = FOR_YOU_ALL_CHILDREN.some(
-              (child) => (shelves[child.key] ?? []).length > 0,
-            );
-            if (!hasAnyChild && !loading) return null;
-
             return (
               <Animated.View
                 key={shelf.key}
@@ -330,28 +257,15 @@ export function FeedForYouPage({
                         </Accordion.Trigger>
 
                         {!isExpanded ? (
-                          <ScrollView
-                            horizontal
-                            nestedScrollEnabled
-                            showsHorizontalScrollIndicator={false}
-                            showsVerticalScrollIndicator={false}
-                            className="mt-1.5"
-                            contentContainerClassName="flex-row items-start gap-3 px-3 pb-0.5"
-                            decelerationRate="fast"
+                          <Typography
+                            type="body-sm"
+                            className="mt-1 px-3 pb-0.5 text-[14px] text-muted"
+                            numberOfLines={1}
                           >
-                            {allChildrenAlphabetical.map((child) => {
-                              const items = shelves[child.key] ?? [];
-                              if (items.length === 0 && !loading) return null;
-                              return (
-                                <CollapsedShelfColumn
-                                  key={child.key}
-                                  label={child.label}
-                                  items={items}
-                                  onPressItem={onPressItem}
-                                />
-                              );
-                            })}
-                          </ScrollView>
+                            {allChildrenAlphabetical
+                              .map((child) => child.label)
+                              .join(", ")}
+                          </Typography>
                         ) : null}
 
                         <Accordion.Content className="pt-1">

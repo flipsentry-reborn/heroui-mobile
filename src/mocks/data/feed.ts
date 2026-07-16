@@ -174,7 +174,15 @@ export type FeedCategoryKey =
   | "price-drop"
   | "saved"
   | "car"
-  | "iphone";
+  | "iphone"
+  | "couch"
+  | "xbox";
+
+/** Search-type shelves nested under For You → All (alphabetical by label). */
+export type ForYouAllChildKey = Extract<
+  FeedCategoryKey,
+  "car" | "couch" | "iphone" | "xbox"
+>;
 
 export const FEED_CATEGORIES: {
   key: FeedCategoryKey;
@@ -187,20 +195,36 @@ export const FEED_CATEGORIES: {
   { key: "best-picks", label: "Top Rated", badge: "AI" },
   { key: "price-drop", label: "Price Dropped", badge: "Beta" },
   { key: "car", label: "Cars" },
+  { key: "couch", label: "Couch" },
   { key: "iphone", label: "iPhones" },
+  { key: "xbox", label: "Xbox" },
   { key: "saved", label: "Saved" },
+];
+
+/** Nested type shelves inside the For You "All" accordion. */
+export const FOR_YOU_ALL_CHILDREN: {
+  key: ForYouAllChildKey;
+  label: string;
+}[] = [
+  { key: "car", label: "Cars" },
+  { key: "couch", label: "Couch" },
+  { key: "iphone", label: "iPhones" },
+  { key: "xbox", label: "Xbox" },
 ];
 
 /** YouTube-style shelves on the For You page (title opens that category). */
 export const FOR_YOU_SHELVES: {
-  key: Exclude<FeedCategoryKey, "for-you">;
+  key: Exclude<FeedCategoryKey, "for-you" | ForYouAllChildKey>;
   label: string;
   badge?: string;
+  /** When true, shelf is an accordion; children live in FOR_YOU_ALL_CHILDREN. */
+  isAccordion?: boolean;
+  /** Emphasized shelf (larger cards + secondary surface). */
+  featured?: boolean;
 }[] = [
-  { key: "all", label: "All" },
-  { key: "best-picks", label: "Top Rated", badge: "AI" },
+  { key: "all", label: "All", isAccordion: true },
+  { key: "best-picks", label: "Top Rated", badge: "AI", featured: true },
   { key: "price-drop", label: "Price Dropped", badge: "Beta" },
-  { key: "car", label: "Cars" },
 ];
 
 export const MOCK_FEED_ITEMS: FeedItem[] = [
@@ -1042,6 +1066,271 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  warnings: ["Rebuilt title"],
  calculatedAt: new Date().toISOString(),
  },
+ },
+ {
+ id: "feed-17",
+ platform: "facebookMarketplace" as const,
+ listingId: "fb-5201",
+ minutesAgo: 35,
+ title: "Gray Sectional Couch - L Shaped",
+ lead: "Smoke-free home. Chaise on the right. Soft chenille fabric.",
+ extras: [
+ "About 2 years old. No pet hair. Cushions still hold shape. Includes 2 throw pillows.",
+ "Disassembles for stairs. Pickup preferred this weekend - moving out of Midtown.",
+ ],
+ price: 380,
+ locationText: "Midtown Atlanta",
+ lat: 33.78,
+ lng: -84.38,
+ distanceMiles: 2.1,
+ image:
+ "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80",
+ seed: 16,
+ searchSettingIds: ["group-couch"],
+ condition: "Used - Good",
+ isMotivated: true,
+ motivatedKeywordTexts: ["moving"],
+ isNegociable: true,
+ negociableKeywordTexts: ["obo"],
+ seller: {
+ sellerId: "seller-fb-17",
+ name: "Priya S.",
+ avatarUrl: "https://i.pravatar.cc/100?img=12",
+ isAutosDealer: false,
+ isBusinessAccount: false,
+ ratingAverage: 4.8,
+ ratingCount: 22,
+ },
+ },
+ {
+ id: "feed-18",
+ platform: "offerUp" as const,
+ listingId: "ou-5210",
+ minutesAgo: 90,
+ title: "IKEA Kivik Sofa - Beige",
+ lead: "Clean covers. Removable washable fabric. Firm seat.",
+ extras: [
+ "Bought new last year. No stains. Kids-free home. Comes with matching ottoman cover.",
+ "Can help load into a truck. Cash at pickup near Decatur Square.",
+ ],
+ price: 220,
+ locationText: "Decatur, GA",
+ lat: 33.77,
+ lng: -84.3,
+ distanceMiles: 6.4,
+ image:
+ "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=800&q=80",
+ seed: 17,
+ searchSettingIds: ["group-couch"],
+ condition: "Used - Excellent",
+ seller: {
+ sellerId: "seller-ou-18",
+ name: "Sam T.",
+ avatarUrl: "https://i.pravatar.cc/100?img=18",
+ isAutosDealer: false,
+ isBusinessAccount: false,
+ ratingAverage: 4.6,
+ ratingCount: 11,
+ },
+ },
+ {
+ id: "feed-19",
+ platform: "craigslist" as const,
+ listingId: "cl-5222",
+ minutesAgo: 150,
+ title: "Leather Loveseat - Dark Brown",
+ lead: "Genuine leather. Slight wear on arms. Very comfortable.",
+ extras: [
+ "From a smoke-free apartment. Springs are solid. Perfect for a small living room.",
+ "Must go by Sunday. Can deliver within 10 miles for a small fee.",
+ ],
+ price: 175,
+ locationText: "East Atlanta",
+ lat: 33.74,
+ lng: -84.34,
+ distanceMiles: 4.8,
+ image:
+ "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80",
+ seed: 18,
+ searchSettingIds: ["group-couch"],
+ condition: "Used - Fair",
+ isUrgent: true,
+ urgentKeywordTexts: ["must go"],
+ },
+ {
+ id: "feed-20",
+ platform: "facebookMarketplace" as const,
+ listingId: "fb-5230",
+ minutesAgo: 210,
+ title: "Blue Fabric Sofa + Chaise",
+ lead: "Reversible chaise. Stain-resistant fabric. Like new.",
+ extras: [
+ "Barely used guest sofa. Vacuumed weekly. No pets. Includes original legs in box.",
+ "Meetup evenings after 6. Prefer Venmo or cash.",
+ ],
+ price: 450,
+ locationText: "Buckhead, GA",
+ lat: 33.84,
+ lng: -84.38,
+ distanceMiles: 7.2,
+ image:
+ "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=800&q=80",
+ seed: 19,
+ searchSettingIds: ["group-couch"],
+ condition: "Used - Like New",
+ isFavorite: true,
+ favoritedMinsAgo: 25,
+ },
+ {
+ id: "feed-21",
+ platform: "kijiji" as const,
+ listingId: "kj-5240",
+ minutesAgo: 280,
+ title: "Modular Couch 3-Piece - Charcoal",
+ lead: "Modular pieces rearrange into sofa or corner. Soft boucle.",
+ extras: [
+ "Bought for staging a condo - barely sat on. Soft feel, modern look.",
+ "Fits through standard doorways when separated. Selling as a set only.",
+ ],
+ price: 520,
+ locationText: "Sandy Springs, GA",
+ lat: 33.93,
+ lng: -84.37,
+ distanceMiles: 11.5,
+ image:
+ "https://images.unsplash.com/photo-1567016432779-094069958ea5?auto=format&fit=crop&w=800&q=80",
+ seed: 20,
+ searchSettingIds: ["group-couch"],
+ condition: "Used - Like New",
+ isNegociable: true,
+ negociableKeywordTexts: ["flexible"],
+ },
+ {
+ id: "feed-22",
+ platform: "offerUp" as const,
+ listingId: "ou-6101",
+ minutesAgo: 40,
+ title: "Xbox Series X 1TB - Bundle",
+ lead: "Console + controller + HDMI. Barely used.",
+ extras: [
+ "Bought on launch year but mostly used for Game Pass nights. Quiet fan, no disc issues.",
+ "Includes original box and power cable. Local meetup preferred - no shipping.",
+ ],
+ price: 340,
+ locationText: "Midtown Atlanta",
+ lat: 33.79,
+ lng: -84.39,
+ distanceMiles: 1.4,
+ image:
+ "https://images.unsplash.com/photo-1605901309584-818e25960b8f?auto=format&fit=crop&w=800&q=80",
+ seed: 21,
+ searchSettingIds: ["group-xbox"],
+ condition: "Used - Excellent",
+ seller: {
+ sellerId: "seller-ou-22",
+ name: "Jordan M.",
+ avatarUrl: "https://i.pravatar.cc/100?img=42",
+ isAutosDealer: false,
+ isBusinessAccount: false,
+ ratingAverage: 5,
+ ratingCount: 9,
+ },
+ },
+ {
+ id: "feed-23",
+ platform: "facebookMarketplace" as const,
+ listingId: "fb-6110",
+ minutesAgo: 110,
+ title: "Xbox Series S 512GB Digital",
+ lead: "All-digital. Works great with Game Pass. White shell clean.",
+ extras: [
+ "Factory reset. No account lock. Includes one white controller and cable.",
+ "Small scratch on the top vent only. Great starter console for 1440p.",
+ ],
+ price: 210,
+ locationText: "Decatur, GA",
+ lat: 33.77,
+ lng: -84.3,
+ distanceMiles: 6.6,
+ image:
+ "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=800&q=80",
+ seed: 22,
+ searchSettingIds: ["group-xbox"],
+ condition: "Used - Good",
+ isNegociable: true,
+ negociableKeywordTexts: ["obo"],
+ },
+ {
+ id: "feed-24",
+ platform: "craigslist" as const,
+ listingId: "cl-6120",
+ minutesAgo: 180,
+ title: "Xbox Series X + Elite Controller",
+ lead: "Console with Elite Series 2. Both in great shape.",
+ extras: [
+ "Elite paddles work. Console runs cool. Selling to fund a PC build.",
+ "Can demo at meetup. Cash only please.",
+ ],
+ price: 420,
+ locationText: "Marietta, GA",
+ lat: 33.95,
+ lng: -84.55,
+ distanceMiles: 14.2,
+ image:
+ "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?auto=format&fit=crop&w=800&q=80",
+ seed: 23,
+ searchSettingIds: ["group-xbox"],
+ condition: "Used - Excellent",
+ isMotivated: true,
+ motivatedKeywordTexts: ["need gone"],
+ },
+ {
+ id: "feed-25",
+ platform: "facebookMarketplace" as const,
+ listingId: "fb-6130",
+ minutesAgo: 260,
+ title: "Xbox One X 1TB + 2 Controllers",
+ lead: "Last-gen 4K Xbox. Two black controllers. HDMI included.",
+ extras: [
+ "Still a solid 4K Blu-ray player. Disc drive quiet. Controllers stick-free.",
+ "Good hand-me-down console. Prefer local cash pickup tonight.",
+ ],
+ price: 140,
+ locationText: "East Point, GA",
+ lat: 33.68,
+ lng: -84.44,
+ distanceMiles: 9.1,
+ image:
+ "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=800&q=80",
+ seed: 24,
+ searchSettingIds: ["group-xbox"],
+ condition: "Used - Good",
+ isUrgent: true,
+ urgentKeywordTexts: ["tonight"],
+ },
+ {
+ id: "feed-26",
+ platform: "offerUp" as const,
+ listingId: "ou-6140",
+ minutesAgo: 340,
+ title: "Xbox Series X - Disc Edition Only",
+ lead: "Console only. No controller. Tested, works perfectly.",
+ extras: [
+ "Selling body alone after upgrade. Clean vents. No overheating.",
+ "Cheap if you already have a pad. Meetup at Lenox area.",
+ ],
+ price: 280,
+ locationText: "Lenox Square area",
+ lat: 33.85,
+ lng: -84.36,
+ distanceMiles: 8.3,
+ image:
+ "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80",
+ seed: 25,
+ searchSettingIds: ["group-xbox"],
+ condition: "Used - Good",
+ isFavorite: true,
+ favoritedMinsAgo: 55,
  },
  ] as ExtraListing[]
  ).map(extraListing),

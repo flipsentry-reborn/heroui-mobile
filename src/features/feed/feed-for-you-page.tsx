@@ -1,16 +1,22 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Pressable,
   RefreshControl,
   ScrollView,
   View,
 } from "react-native";
+import Animated from "react-native-reanimated";
 import {
+  Accordion,
+  AccordionLayoutTransition,
   PressableFeedback,
   ScrollShadow,
   SkeletonGroup,
+  Surface,
   Typography,
   useThemeColor,
 } from "heroui-native";
@@ -20,6 +26,7 @@ import { withUniwind } from "uniwind";
 import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import { FeedItem } from "@/features/feed/feed-item";
 import {
+  FOR_YOU_ALL_CHILDREN,
   FOR_YOU_SHELVES,
   type FeedCategoryKey,
 } from "@/mocks/data/feed";
@@ -28,7 +35,13 @@ import type { FeedItem as FeedModel } from "@/models/feed";
 
 const StyledIonicons = withUniwind(Ionicons);
 
-const SHELF_LIMIT = 5;
+const SHELF_LIMIT = 6;
+const PREVIEW_VISIBLE = 3;
+const PREVIEW_THUMB = 56;
+const PREVIEW_GAP = 6;
+/** Viewport always fits exactly 3 thumbs. */
+const PREVIEW_COL_W =
+  PREVIEW_THUMB * PREVIEW_VISIBLE + PREVIEW_GAP * (PREVIEW_VISIBLE - 1);
 
 type ShelfState = Record<string, FeedModel[]>;
 
@@ -62,6 +75,101 @@ function ShelfSkeleton(): JSX.Element {
   );
 }
 
+function ShelfRail({
+  items,
+  onPressItem,
+  onToggleFavorite,
+  featured = false,
+  contentClassName = "px-3",
+}: {
+  items: FeedModel[];
+  onPressItem?: (id: string) => void;
+  onToggleFavorite: (id: string) => void;
+  featured?: boolean;
+  contentClassName?: string;
+}): JSX.Element {
+  return (
+    <ScrollView
+      horizontal
+      nestedScrollEnabled
+      showsHorizontalScrollIndicator={false}
+      contentContainerClassName={contentClassName}
+      decelerationRate="fast"
+    >
+      {items.map((item) => (
+        <FeedItem
+          key={item.id}
+          feed={item}
+          layout="rail"
+          featured={featured}
+          onPress={onPressItem}
+          onToggleFavorite={onToggleFavorite}
+        />
+      ))}
+    </ScrollView>
+  );
+}
+
+function itemImageUrl(item: FeedModel): string | undefined {
+  return (
+    item.images.imageUrlHostedByUs ||
+    item.images.mainImageUrl.imageUrl ||
+    item.images.marketplaceImages[0]?.imageUrl ||
+    undefined
+  );
+}
+
+/** Collapsed All preview part: label + 3 fixed thumbs (no inner scroll). */
+function CollapsedShelfColumn({
+  label,
+  items,
+  onPressItem,
+}: {
+  label: string;
+  items: FeedModel[];
+  onPressItem?: (id: string) => void;
+}): JSX.Element {
+  const [surfaceSecondary] = useThemeColor(["surface-secondary"]);
+  const thumbs = items.slice(0, PREVIEW_VISIBLE);
+
+  return (
+    <View className="gap-1.5" style={{ width: PREVIEW_COL_W }}>
+      <Typography
+        type="body-sm"
+        weight="semibold"
+        className="text-[14px] text-foreground"
+      >
+        {label}
+      </Typography>
+      <View className="flex-row" style={{ gap: PREVIEW_GAP }}>
+        {thumbs.map((item) => {
+          const uri = itemImageUrl(item);
+          return (
+            <Pressable
+              key={item.id}
+              onPress={() => onPressItem?.(item.id)}
+              accessibilityRole="button"
+              accessibilityLabel={item.title}
+            >
+              <Image
+                source={{ uri }}
+                style={{
+                  width: PREVIEW_THUMB,
+                  height: PREVIEW_THUMB,
+                  borderRadius: 10,
+                  backgroundColor: surfaceSecondary,
+                }}
+                contentFit="cover"
+                transition={120}
+              />
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 export function FeedForYouPage({
   query,
   syncToken,
@@ -74,19 +182,39 @@ export function FeedForYouPage({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const shelfKeys = useMemo(() => {
+    const keys: Exclude<FeedCategoryKey, "for-you">[] = [];
+    for (const shelf of FOR_YOU_SHELVES) {
+      if (shelf.isAccordion) {
+        for (const child of FOR_YOU_ALL_CHILDREN) keys.push(child.key);
+      } else {
+        keys.push(shelf.key);
+      }
+    }
+    return keys;
+  }, []);
+
+  const allChildrenAlphabetical = useMemo(
+    () =>
+      [...FOR_YOU_ALL_CHILDREN].sort((a, b) =>
+        a.label.localeCompare(b.label),
+      ),
+    [],
+  );
+
   const load = useCallback(
     async (opts?: { refresh?: boolean }) => {
       if (opts?.refresh) setRefreshing(true);
       else setLoading(true);
       try {
         const entries = await Promise.all(
-          FOR_YOU_SHELVES.map(async (shelf) => {
+          shelfKeys.map(async (key) => {
             const items = await getFeed({
-              category: shelf.key,
+              category: key,
               query,
               limit: SHELF_LIMIT,
             });
-            return [shelf.key, items] as const;
+            return [key, items] as const;
           }),
         );
         setShelves(Object.fromEntries(entries));
@@ -95,7 +223,7 @@ export function FeedForYouPage({
         setRefreshing(false);
       }
     },
-    [query],
+    [query, shelfKeys],
   );
 
   useEffect(() => {
@@ -116,6 +244,13 @@ export function FeedForYouPage({
       onFavoriteChange?.();
     },
     [onFavoriteChange],
+  );
+
+  const onToggleFavorite = useCallback(
+    (id: string) => {
+      void handleToggleFavorite(id);
+    },
+    [handleToggleFavorite],
   );
 
   if (loading && Object.keys(shelves).length === 0) {
@@ -146,10 +281,11 @@ export function FeedForYouPage({
       color={background}
       size={12}
     >
-      <ScrollView
+      <Animated.ScrollView
         className="flex-1"
         contentContainerClassName="pb-28 pt-2"
         showsVerticalScrollIndicator={false}
+        layout={AccordionLayoutTransition}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -161,62 +297,177 @@ export function FeedForYouPage({
         }
       >
         {FOR_YOU_SHELVES.map((shelf) => {
+          if (shelf.isAccordion) {
+            const hasAnyChild = FOR_YOU_ALL_CHILDREN.some(
+              (child) => (shelves[child.key] ?? []).length > 0,
+            );
+            if (!hasAnyChild && !loading) return null;
+
+            return (
+              <Animated.View
+                key={shelf.key}
+                className="mb-2.5"
+                layout={AccordionLayoutTransition}
+              >
+                <Accordion
+                  selectionMode="single"
+                  hideSeparator
+                  isCollapsible
+                  className="bg-transparent"
+                >
+                  <Accordion.Item value={shelf.key}>
+                    {({ isExpanded }) => (
+                      <>
+                        <Accordion.Trigger className="px-3 py-0.5">
+                          <Typography
+                            type="body"
+                            weight="semibold"
+                            className="flex-1 text-[17px] text-foreground"
+                          >
+                            {shelf.label}
+                          </Typography>
+                          <Accordion.Indicator />
+                        </Accordion.Trigger>
+
+                        {!isExpanded ? (
+                          <ScrollView
+                            horizontal
+                            nestedScrollEnabled
+                            showsHorizontalScrollIndicator={false}
+                            showsVerticalScrollIndicator={false}
+                            className="mt-1.5"
+                            contentContainerClassName="flex-row items-start gap-3 px-3 pb-0.5"
+                            decelerationRate="fast"
+                          >
+                            {allChildrenAlphabetical.map((child) => {
+                              const items = shelves[child.key] ?? [];
+                              if (items.length === 0 && !loading) return null;
+                              return (
+                                <CollapsedShelfColumn
+                                  key={child.key}
+                                  label={child.label}
+                                  items={items}
+                                  onPressItem={onPressItem}
+                                />
+                              );
+                            })}
+                          </ScrollView>
+                        ) : null}
+
+                        <Accordion.Content className="pt-1">
+                          {allChildrenAlphabetical.map((child) => {
+                            const items = shelves[child.key] ?? [];
+                            if (items.length === 0 && !loading) return null;
+
+                            return (
+                              <View key={child.key} className="mb-2.5">
+                                <PressableFeedback
+                                  onPress={() => onOpenCategory(child.key)}
+                                  className="mb-1.5 flex-row items-center justify-between px-3 py-0.5"
+                                  animation={{ scale: { value: 0.99 } }}
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`Open ${child.label}`}
+                                >
+                                  <Typography
+                                    type="body"
+                                    weight="semibold"
+                                    className="text-[15px] text-foreground"
+                                  >
+                                    {child.label}
+                                  </Typography>
+                                  <StyledIonicons
+                                    name="chevron-forward"
+                                    size={16}
+                                    className="text-muted"
+                                  />
+                                </PressableFeedback>
+                                <ShelfRail
+                                  items={items}
+                                  onPressItem={onPressItem}
+                                  onToggleFavorite={onToggleFavorite}
+                                />
+                              </View>
+                            );
+                          })}
+                        </Accordion.Content>
+                      </>
+                    )}
+                  </Accordion.Item>
+                </Accordion>
+              </Animated.View>
+            );
+          }
+
           const items = shelves[shelf.key] ?? [];
           if (items.length === 0 && !loading) return null;
 
-          return (
-            <View key={shelf.key} className="mb-5">
-              <PressableFeedback
-                onPress={() => onOpenCategory(shelf.key)}
-                className="mb-2 flex-row items-center justify-between px-3 py-1"
-                animation={{ scale: { value: 0.99 } }}
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${shelf.label}`}
-              >
-                <Badge.Anchor
-                  className={shelf.badge ? "pr-7" : undefined}
+          const header = (
+            <PressableFeedback
+              onPress={() => onOpenCategory(shelf.key)}
+              className="mb-1.5 flex-row items-center justify-between px-3 py-0.5"
+              animation={{ scale: { value: 0.99 } }}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${shelf.label}`}
+            >
+              <Badge.Anchor className={shelf.badge ? "pr-7" : undefined}>
+                <Typography
+                  type="body"
+                  weight="semibold"
+                  className="text-[17px] text-foreground"
                 >
-                  <Typography
-                    type="body"
-                    weight="semibold"
-                    className="text-[17px] text-foreground"
-                  >
-                    {shelf.label}
-                  </Typography>
-                  {shelf.badge ? (
-                    <FeedCategoryBadge label={shelf.badge} />
-                  ) : null}
-                </Badge.Anchor>
-                <StyledIonicons
-                  name="chevron-forward"
-                  size={18}
-                  className="text-muted"
-                />
-              </PressableFeedback>
+                  {shelf.label}
+                </Typography>
+                {shelf.badge ? (
+                  <FeedCategoryBadge label={shelf.badge} />
+                ) : null}
+              </Badge.Anchor>
+              <StyledIonicons
+                name="chevron-forward"
+                size={18}
+                className="text-muted"
+              />
+            </PressableFeedback>
+          );
 
-              <ScrollView
-                horizontal
-                nestedScrollEnabled
-                showsHorizontalScrollIndicator={false}
-                contentContainerClassName="px-3"
-                decelerationRate="fast"
+          const rail = (
+            <ShelfRail
+              items={items}
+              onPressItem={onPressItem}
+              onToggleFavorite={onToggleFavorite}
+              featured={shelf.featured}
+            />
+          );
+
+          if (shelf.featured) {
+            return (
+              <Animated.View
+                key={shelf.key}
+                className="mb-2.5"
+                layout={AccordionLayoutTransition}
               >
-                {items.map((item) => (
-                  <FeedItem
-                    key={item.id}
-                    feed={item}
-                    layout="rail"
-                    onPress={onPressItem}
-                    onToggleFavorite={(id) => {
-                      void handleToggleFavorite(id);
-                    }}
-                  />
-                ))}
-              </ScrollView>
-            </View>
+                <Surface
+                  variant="default"
+                  className="w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl px-0 py-2"
+                >
+                  {header}
+                  {rail}
+                </Surface>
+              </Animated.View>
+            );
+          }
+
+          return (
+            <Animated.View
+              key={shelf.key}
+              className="mb-2.5"
+              layout={AccordionLayoutTransition}
+            >
+              {header}
+              {rail}
+            </Animated.View>
           );
         })}
-      </ScrollView>
+      </Animated.ScrollView>
     </ScrollShadow>
   );
 }

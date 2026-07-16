@@ -17,6 +17,8 @@ import {
 const IMAGE_H_GRID = 168;
 const IMAGE_H_RAIL = 128;
 const RAIL_WIDTH = 156;
+/** Featured shelves (e.g. Top Rated) render ~7% larger. */
+const FEATURED_SCALE = 1.07;
 
 interface FeedItemProps {
   feed: FeedModel;
@@ -24,6 +26,8 @@ interface FeedItemProps {
   onToggleFavorite?: (id: string) => void;
   /** grid = 2-col feed; rail = horizontal For You shelf card */
   layout?: "grid" | "rail";
+  /** Slightly larger rail cards for featured shelves. */
+  featured?: boolean;
 }
 
 function formatPrice(price: number, symbol: string): string {
@@ -38,6 +42,7 @@ export function FeedItem({
   onPress,
   onToggleFavorite,
   layout = "grid",
+  featured = false,
 }: FeedItemProps): JSX.Element {
   const [surfaceSecondary, accentForeground] = useThemeColor([
     "surface-secondary",
@@ -51,18 +56,24 @@ export function FeedItem({
   const distance =
     feed.distanceMiles != null ? `${feed.distanceMiles.toFixed(1)} mi` : null;
   const isRail = layout === "rail";
-  const imageH = isRail ? IMAGE_H_RAIL : IMAGE_H_GRID;
+  const scale = isRail && featured ? FEATURED_SCALE : 1;
+  const railW = Math.round(RAIL_WIDTH * scale);
+  const imageH = isRail
+    ? Math.round(IMAGE_H_RAIL * scale)
+    : IMAGE_H_GRID;
 
   return (
     <PressableFeedback
       onPress={() => onPress?.(feed.id)}
       className={isRail ? "mr-2" : "mb-1.5 flex-1 px-0.5"}
-      style={isRail ? { width: RAIL_WIDTH } : undefined}
+      style={isRail ? { width: railW } : undefined}
       animation={{ scale: { value: 0.98 } }}
     >
       <Card
         variant="transparent"
-        className={`${isRail ? "" : "flex-1 "}gap-0 overflow-hidden rounded-xl border-0 bg-background p-0`}
+        className={`${isRail ? "" : "flex-1 "}gap-0 overflow-hidden rounded-xl border-0 ${
+          featured ? "bg-transparent" : "bg-background"
+        } p-0`}
       >
         <View className="relative">
           <Image
@@ -105,12 +116,18 @@ export function FeedItem({
         </View>
 
         {/* Exactly 3 rows: price, title (ellipsis), meta */}
-        <Card.Body className="gap-0.5 bg-background px-1.5 pb-1.5 pt-1">
+        <Card.Body
+          className={`gap-0.5 px-1.5 pb-1.5 pt-1 ${
+            featured ? "bg-transparent" : "bg-background"
+          }`}
+        >
           <View className="flex-row items-baseline gap-1.5">
             <Typography
               type="body-sm"
               weight="semibold"
-              className="text-[15px] leading-5 text-foreground"
+              className={`${
+                featured ? "text-[16px]" : "text-[15px]"
+              } leading-5 text-foreground`}
               numberOfLines={1}
             >
               {formatPrice(feed.price, feed.currencySymbol)}
@@ -128,7 +145,9 @@ export function FeedItem({
 
           <Typography
             type="body-sm"
-            className="text-sm font-normal leading-5 text-foreground"
+            className={`${
+              featured ? "text-[15px]" : "text-sm"
+            } font-normal leading-5 text-foreground`}
             numberOfLines={1}
             ellipsizeMode="tail"
           >

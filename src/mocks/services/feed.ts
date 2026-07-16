@@ -37,6 +37,12 @@ function matchesCategory(item: FeedItem, category: FeedCategoryKey): boolean {
       item.valuation?.valuationType === "iphone" || item.iphoneStorageGb != null
     );
   }
+  if (category === "couch") {
+    return item.searchSettingIds.includes("group-couch");
+  }
+  if (category === "xbox") {
+    return item.searchSettingIds.includes("group-xbox");
+  }
   return true;
 }
 

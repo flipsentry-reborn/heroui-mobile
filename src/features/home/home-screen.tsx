@@ -17,14 +17,16 @@ import {
 import { EmptyState } from "heroui-native-pro";
 
 import { BrandButton } from "@/components/ui/brand-button";
+import { HomePlanCreditsCard } from "@/features/home/home-plan-credits-card";
 import { SearchGroupCard } from "@/features/home/search-group-card";
 import type { HomeState, SearchType } from "@/mocks/data/home";
+import type { SubscriptionPlan } from "@/mocks/data/subscription";
 import {
  deleteGroup,
- formatIntervalLabel,
  getHome,
  toggleGroupActive,
 } from "@/mocks/services/home";
+import { getSubscription } from "@/mocks/services/subscription";
 
 const CREATE_OPTIONS: {
  key: SearchType;
@@ -121,27 +123,31 @@ export function HomeScreen(): JSX.Element {
  "muted",
  ]);
  const [state, setState] = useState<HomeState | null>(null);
+ const [activePlan, setActivePlan] = useState<SubscriptionPlan | null>(null);
  const [createOpen, setCreateOpen] = useState(false);
  const [selectedType, setSelectedType] = useState<SearchType | null>(null);
  const [editGroupId, setEditGroupId] = useState<string | null>(null);
  const [typeFilter, setTypeFilter] = useState<SearchType | "all">("all");
 
  const load = useCallback(async () => {
- setState(await getHome());
+ const [home, sub] = await Promise.all([getHome(), getSubscription()]);
+ setState(home);
+ const plan =
+ sub.hasActiveSubscription && sub.currentTier != null
+ ? (sub.plans.find((p) => p.id === sub.currentTier) ?? null)
+ : null;
+ setActivePlan(plan);
  }, []);
-
- useEffect(() => {
- void load();
- }, [load]);
 
  useFocusEffect(
  useCallback(() => {
+ void load();
  return () => {
  setCreateOpen(false);
  setSelectedType(null);
  setEditGroupId(null);
  };
- }, []),
+ }, [load]),
  );
 
  const plan = state?.plan;
@@ -242,79 +248,17 @@ export function HomeScreen(): JSX.Element {
 
  return (
  <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
- <View className="px-5 pb-3 pt-2">
- <Typography type="h3" weight="bold" className="text-foreground">
- Home
- </Typography>
- </View>
 
  <ScrollView
  className="flex-1"
  showsVerticalScrollIndicator={false}
  contentContainerClassName="pb-[110px] pt-2"
  >
- {/* Plan / credits - ~15% tighter + glass on badges/credits only */}
- <PressableFeedback
+ <HomePlanCreditsCard
+ homePlan={state.plan}
+ subscriptionPlan={activePlan}
  onPress={() => router.push("/settings/subscription")}
- className="mx-3 mb-3 overflow-hidden rounded-2xl"
- animation={{ scale: { value: 0.985 } }}
- >
- <View className="overflow-hidden rounded-2xl border border-border bg-surface-secondary p-[15px]">
- <View className="absolute left-0 right-0 top-0 h-px bg-white/12" />
-
- <View className="mb-2 flex-row items-center justify-between">
- <Typography
- type="body-xs"
- weight="semibold"
- className="text-[10px] uppercase tracking-wider text-muted"
- >
- Search Credits
- </Typography>
- <Chip size="sm" variant="secondary" color="default" className="flex-row items-center gap-1 px-2 py-0.5">
- <Ionicons name="diamond" size={11} color={accent} />
- <Chip.Label className="text-[11px] text-foreground">
- {plan?.displayName ?? "Hunter"}
- </Chip.Label>
- </Chip>
- </View>
-
- <View className="mb-2.5 flex-row items-end justify-between">
- <View>
- <Typography
- type="h4"
- weight="bold"
- className="text-[22px] leading-7 text-foreground"
- >
- {plan?.usedSearches ?? 0} / {plan?.maxSearches ?? 8}
- </Typography>
- <Typography type="body-xs" className="text-[11px] text-muted">
- active searches
- </Typography>
- </View>
- <Chip size="sm" variant="primary" color="accent" className="px-3 py-1.5">
- <Chip.Label className="text-[11px] text-accent-foreground">
- Upgrade
- </Chip.Label>
- </Chip>
- </View>
-
- <View className="flex-row flex-wrap gap-1.5">
- {(plan?.credits ?? []).map((c) => (
- <Chip
- key={c.intervalSeconds}
- size="sm"
- variant="secondary"
- color="default"
- className="px-2.5 py-1"
- >
- <Chip.Label className="text-[11px] text-foreground">
- {formatIntervalLabel(c.intervalSeconds)}: {c.remaining}/{c.total}
- </Chip.Label>
- </Chip>
- ))}
- </View>
- </View>
- </PressableFeedback>
+ />
 
  {/* Quick action - settings-style glass shell */}
  <View className="mb-2">

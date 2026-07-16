@@ -131,23 +131,6 @@ export function FeedDetailScoreBar({
           />
         ) : null}
       </View>
-
-      <View className="flex-row items-center">
-        {TIER_ORDER.map((itemTier) => {
-          const current = itemTier === tier;
-          return (
-            <Typography
-              key={itemTier}
-              type="body-xs"
-              weight={current ? "semibold" : "normal"}
-              className={`flex-1 text-center text-[10px] ${TIER_STYLE[itemTier].textClass}`}
-              style={{ opacity: current ? 1 : 0.65 }}
-            >
-              {TIER_STYLE[itemTier].label}
-            </Typography>
-          );
-        })}
-      </View>
     </View>
   );
 }

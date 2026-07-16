@@ -9,7 +9,6 @@ import {
   Button,
   PressableFeedback,
   Typography,
-  useThemeColor,
   useToast,
 } from "heroui-native";
 
@@ -18,7 +17,18 @@ import { FeedDetailActions } from "@/features/feed/feed-detail-actions";
 import { FeedDetailGallery } from "@/features/feed/feed-detail-gallery";
 import { StatusBadge, ValuationBadge } from "@/features/feed/feed-badge";
 import { FeedDetailScoreBar } from "@/features/feed/feed-detail-score-bar";
-import { getOrderedStatusBadges, type FeedItem } from "@/models/feed";
+import {
+  getOrderedStatusBadges,
+  type FeedItem,
+  type FeedPlatform,
+} from "@/models/feed";
+
+const PLATFORM_CTA: Record<FeedPlatform, string> = {
+  facebookMarketplace: "#1877F2",
+  offerUp: "#00AB80",
+  craigslist: "#5A00B5",
+  kijiji: "#373373",
+};
 
 function formatPrice(price: number, symbol: string): string {
   const formatted = Math.round(price)
@@ -52,7 +62,6 @@ interface FeedDetailProps {
 export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps): JSX.Element {
   const insets = useSafeAreaInsets();
   const { toast } = useToast();
-  const accentForeground = useThemeColor("accent-foreground");
   const [descExpanded, setDescExpanded] = useState(false);
   const scrollY = useSharedValue(0);
   const statusBadges = getOrderedStatusBadges(item);
@@ -275,11 +284,12 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
       >
         <Button
           variant="primary"
-          className="min-h-11 w-full bg-accent"
+          className="min-h-11 w-full"
+          style={{ backgroundColor: PLATFORM_CTA[item.platform] }}
           onPress={() => mockAction("View on Marketplace")}
         >
-          <Ionicons name="open-outline" size={16} color={accentForeground} />
-          <Button.Label className="text-sm text-accent-foreground">
+          <Ionicons name="open-outline" size={16} color="#FFFFFF" />
+          <Button.Label className="text-sm text-white">
             View on Marketplace
           </Button.Label>
         </Button>

@@ -29,6 +29,7 @@ export function SettingsSection({ title, children }: SettingsSectionProps): JSX.
 interface SettingsRowProps {
   icon: IonName;
   title: string;
+  description?: string;
   onPress?: () => void;
   right?: ReactNode;
   showChevron?: boolean;
@@ -38,6 +39,7 @@ interface SettingsRowProps {
 export function SettingsRow({
   icon,
   title,
+  description,
   onPress,
   right,
   showChevron = true,
@@ -57,6 +59,11 @@ export function SettingsRow({
           <ListGroup.ItemTitle className="text-[15px] font-normal text-foreground">
             {title}
           </ListGroup.ItemTitle>
+          {description ? (
+            <ListGroup.ItemDescription className="text-xs text-muted">
+              {description}
+            </ListGroup.ItemDescription>
+          ) : null}
         </ListGroup.ItemContent>
         {right != null ? (
           <ListGroup.ItemSuffix>{right}</ListGroup.ItemSuffix>

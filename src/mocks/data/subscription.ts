@@ -1,23 +1,21 @@
-export type SubscriptionTier = "starter" | "hunter" | "master";
-export type BillingPeriod = "weekly" | "yearly";
+export type SubscriptionTier = "web" | "mobile" | "super";
 
-export interface PlanCredits {
-  instant: number;
-  fiveMin: number;
-  fifteenMin: number;
-}
+export type PlanAccent = "teal" | "purple" | "gold";
 
 export interface SubscriptionPlan {
   id: SubscriptionTier;
   displayName: string;
-  weeklyPrice: number;
-  yearlyPrice: number;
-  yearlySavePercent: number;
-  maxSearches: number;
+  description: string;
+  price: number;
+  priceNote: string;
+  ctaLabel: string;
   badge?: string;
+  accent: PlanAccent;
   features: string[];
-  credits: PlanCredits;
-  highlight?: boolean;
+  renewalTitle: string;
+  renewalNote: string;
+  /** Featured plan uses solid white CTA (HeroUI Super Heroes). */
+  featured?: boolean;
 }
 
 export interface SubscriptionState {
@@ -27,67 +25,100 @@ export interface SubscriptionState {
   plans: SubscriptionPlan[];
 }
 
-/** FlipSentry tiers — mock prices / limits for UI only. */
+/**
+ * Placeholder plans — same copy as HeroUI Pro pricing.
+ * FlipSentry-specific specs will replace these later.
+ */
 export const subscriptionPlans: SubscriptionPlan[] = [
   {
-    id: "starter",
-    displayName: "Starter",
-    weeklyPrice: 4.99,
-    yearlyPrice: 149.99,
-    yearlySavePercent: 42,
-    maxSearches: 3,
-    credits: { instant: 0, fiveMin: 1, fifteenMin: 2 },
+    id: "web",
+    displayName: "Web Heroes",
+    description: "Get access to React library components and features",
+    price: 199,
+    priceNote: "Perpetual license per seat (Min 2 seats)",
+    ctaLabel: "Get Web Heroes",
+    accent: "teal",
     features: [
-      "3 active searches",
-      "15 min deal alerts",
-      "Deal valuation scores",
-      "Basic feed filters",
+      "Pro React components",
+      "Premium templates",
+      "Pro AI (Skills and MCPs)",
+      "500 AI credits per seat included",
+      "Premium design systems",
+      "Pro theme builder",
+      "Private Discord channel",
+      "Prioritized issues",
+      "Priority support",
+      "Shared themes and rules",
+      "Usage analytics and reports",
+      "Centralized team billing",
     ],
+    renewalTitle: "Optional updates renewal at $69/yr/seat",
+    renewalNote:
+      "Get another year of updates, or keep using your current version. No pressure.",
   },
   {
-    id: "hunter",
-    displayName: "Hunter",
-    weeklyPrice: 9.99,
-    yearlyPrice: 299.99,
-    yearlySavePercent: 42,
-    maxSearches: 8,
-    badge: "Most popular",
-    highlight: true,
-    credits: { instant: 3, fiveMin: 3, fifteenMin: 2 },
+    id: "mobile",
+    displayName: "Mobile Heroes",
+    description: "Get access to React Native library components and features",
+    price: 199,
+    priceNote: "Perpetual license per seat (Min 2 seats)",
+    ctaLabel: "Get Mobile Heroes",
+    accent: "purple",
     features: [
-      "8 active searches",
-      "Instant + 5 min alerts",
-      "Full valuation scores",
-      "Spam & dealer filters",
+      "Pro React Native components",
+      "Premium templates",
+      "Pro AI (Skills and MCPs)",
+      "500 AI credits per seat included",
+      "Premium design systems",
+      "Pro theme builder",
+      "Private Discord channel",
+      "Prioritized issues",
       "Priority support",
+      "Shared themes and rules",
+      "Usage analytics and reports",
+      "Centralized team billing",
     ],
+    renewalTitle: "Optional updates renewal at $69/yr/seat",
+    renewalNote:
+      "Get another year of updates, or keep using your current version. No pressure.",
   },
   {
-    id: "master",
-    displayName: "Master",
-    weeklyPrice: 19.99,
-    yearlyPrice: 599.99,
-    yearlySavePercent: 42,
-    maxSearches: 20,
-    badge: "Best value",
-    credits: { instant: 8, fiveMin: 6, fifteenMin: 6 },
+    id: "super",
+    displayName: "Super Heroes",
+    description: "The full system. React and React Native, together",
+    price: 299,
+    priceNote: "Perpetual license per seat (Min 2 seats)",
+    ctaLabel: "Get Super Heroes",
+    badge: "Save $99",
+    accent: "gold",
+    featured: true,
     features: [
-      "20 active searches",
-      "All alert intervals",
-      "Advanced insights",
-      "Multi-location coverage",
+      "All Pro components (React + React Native)",
+      "Premium templates",
+      "Pro AI (Skills and MCPs)",
+      "1000 AI credits per seat included",
+      "Premium design systems",
+      "Pro theme builder",
+      "Private Discord channels",
+      "Prioritized issues",
       "Priority support",
+      "Shared themes and rules",
+      "Usage analytics and reports",
+      "Centralized team billing",
     ],
+    renewalTitle: "Optional updates renewal at $99/yr/seat",
+    renewalNote:
+      "Get another year of updates, or keep using your current version. No pressure.",
   },
 ];
 
 export const initialSubscriptionState: SubscriptionState = {
-  currentTier: "hunter",
-  hasActiveSubscription: true,
+  currentTier: null,
+  hasActiveSubscription: false,
   hasActiveTrial: false,
   plans: subscriptionPlans,
 };
 
 export function formatMoney(n: number): string {
-  return `$${n.toFixed(2)}`;
+  return `$${n}`;
 }

@@ -73,7 +73,7 @@ function ProfileSection({
   return (
     <Surface
       variant="secondary"
-      className="overflow-hidden rounded-2xl border border-white/10 bg-white/5"
+      className="overflow-hidden rounded-2xl border border-border"
     >
       <View className="flex-row items-center gap-2 px-4 pb-1 pt-3.5">
         <Ionicons name={icon} size={14} color={accent} />

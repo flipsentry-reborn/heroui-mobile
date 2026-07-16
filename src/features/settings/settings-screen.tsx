@@ -12,7 +12,6 @@ import {
   ScrollShadow,
   Skeleton,
   Surface,
-  Switch,
   Typography,
   useThemeColor,
   useToast,
@@ -27,6 +26,11 @@ import {
   SettingsRow,
   SettingsSection,
 } from "@/features/settings/settings-section";
+import { ThemeSelect } from "@/features/settings/theme-select";
+import {
+  applyAppearance,
+  type AppearanceMode,
+} from "@/lib/appearance";
 import type {
   SettingsState,
   UserPreferences,
@@ -85,6 +89,7 @@ export function SettingsScreen(): JSX.Element {
 
   const load = useCallback(async () => {
     const next = await getSettings();
+    applyAppearance(next.preferences.appearance);
     setState(next);
   }, []);
 
@@ -94,10 +99,14 @@ export function SettingsScreen(): JSX.Element {
 
   const prefs = state?.preferences;
   const planLabel = state ? planLabelFromState(state) : "Free";
+  const appearance: AppearanceMode = prefs?.appearance ?? "system";
 
   const patchPrefs = async (patch: Partial<UserPreferences>) => {
     try {
       const next = await updatePreferences(patch);
+      if (patch.appearance !== undefined) {
+        applyAppearance(patch.appearance);
+      }
       setState((s) => (s ? { ...s, preferences: next } : s));
     } catch {
       Alert.alert("Error", "Failed to update preference");
@@ -216,6 +225,7 @@ export function SettingsScreen(): JSX.Element {
             <SettingsRow
               icon="diamond-outline"
               title="Your Subscriptions"
+              description="Plan, billing, and search credits"
               onPress={() => router.push("/settings/subscription")}
               showChevron={false}
               isLast
@@ -236,47 +246,39 @@ export function SettingsScreen(): JSX.Element {
 
           <SettingsSection title="App Preferences">
             <SettingsRow
-              icon={prefs?.darkMode ? "moon" : "sunny"}
-              title="Dark Mode"
+              icon="contrast-outline"
+              title="Appearance"
+              description="Light, dark or system"
               showChevron={false}
-              onPress={() => void patchPrefs({ darkMode: !prefs?.darkMode })}
               right={
-                <View className="flex-row items-center gap-2" pointerEvents="box-none">
-                  <StyledIonicons
-                    name="sunny"
-                    size={16}
-                    className={prefs?.darkMode ? "text-muted" : "text-foreground"}
-                  />
-                  <Switch
-                    isSelected={!!prefs?.darkMode}
-                    onSelectedChange={(v) => void patchPrefs({ darkMode: v })}
-                  />
-                  <StyledIonicons
-                    name="moon"
-                    size={16}
-                    className={prefs?.darkMode ? "text-foreground" : "text-muted"}
-                  />
-                </View>
+                <ThemeSelect
+                  value={appearance}
+                  onChange={(mode) => void patchPrefs({ appearance: mode })}
+                />
               }
             />
             <SettingsRow
               icon="notifications-outline"
               title="Notifications"
+              description="Alerts for new matching listings"
               onPress={() => router.push("/settings/notification")}
             />
             <SettingsRow
               icon="ban-outline"
               title="Blocked Sellers"
+              description="Manage sellers you’ve blocked"
               onPress={() => router.push("/settings/blocked-sellers")}
             />
             <SettingsRow
               icon="eye-off-outline"
               title="Hide listings"
+              description="Spam, dealers, damage, and titles"
               onPress={() => setHideOpen(true)}
             />
             <SettingsRow
               icon="resize-outline"
               title="Distance Unit"
+              description="Miles or kilometers for listing distance"
               showChevron={false}
               isLast
               right={
@@ -289,20 +291,28 @@ export function SettingsScreen(): JSX.Element {
           </SettingsSection>
 
           <SettingsSection title="Help & Support">
-            <SettingsRow icon="star-outline" title="Rate App" onPress={handleRateApp} />
+            <SettingsRow
+              icon="star-outline"
+              title="Rate App"
+              description="Share feedback on the App Store"
+              onPress={handleRateApp}
+            />
             <SettingsRow
               icon="globe-outline"
               title="Web Version"
+              description="Open FlipSentry in your browser"
               onPress={() => void Linking.openURL("https://flipsentry.com/app")}
             />
             <SettingsRow
               icon="chatbubble-ellipses-outline"
               title="Messenger"
+              description="Chat with support on Messenger"
               onPress={() => void Linking.openURL("https://m.me/flipsentry")}
             />
             <SettingsRow
               icon="mail-outline"
               title="Email"
+              description="Contact support@flipsentry.com"
               onPress={() => void Linking.openURL("mailto:support@flipsentry.com")}
               isLast
             />
@@ -312,11 +322,13 @@ export function SettingsScreen(): JSX.Element {
             <SettingsRow
               icon="document-text-outline"
               title="Terms of Service"
+              description="Rules for using FlipSentry"
               onPress={() => void Linking.openURL("https://flipsentry.com/terms")}
             />
             <SettingsRow
               icon="shield-checkmark-outline"
               title="Privacy Policy"
+              description="How we handle your data"
               onPress={() => void Linking.openURL("https://flipsentry.com/privacy")}
               isLast
             />
@@ -362,3 +374,4 @@ export function SettingsScreen(): JSX.Element {
     </View>
   );
 }
+

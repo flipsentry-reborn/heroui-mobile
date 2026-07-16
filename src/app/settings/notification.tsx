@@ -29,6 +29,7 @@ export default function NotificationSettingsScreen(): JSX.Element {
         <SettingsRow
           icon="notifications-outline"
           title="Notification Permission"
+          description="Current OS permission status"
           showChevron={false}
           right={
             <Typography type="body-xs" weight="semibold" className="text-muted">
@@ -39,6 +40,7 @@ export default function NotificationSettingsScreen(): JSX.Element {
         <SettingsRow
           icon="checkmark-circle-outline"
           title="Enable Notifications"
+          description="Request permission for listing alerts"
           onPress={enableNotifications}
           isLast
         />
@@ -52,11 +54,13 @@ export default function NotificationSettingsScreen(): JSX.Element {
               ? "iOS Notification Settings"
               : "Android Notification Settings"
           }
+          description="Open system notification settings"
           onPress={() => void Linking.openSettings()}
         />
         <SettingsRow
           icon="refresh-outline"
           title="Refresh Permission Status"
+          description="Re-check the current permission"
           onPress={() =>
             toast.show({
               variant: "default",

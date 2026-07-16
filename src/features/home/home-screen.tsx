@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import type { JSX, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -9,6 +10,7 @@ import {
  Button,
  Chip,
  PressableFeedback,
+ ScrollShadow,
  Surface,
  Typography,
  useThemeColor,
@@ -115,10 +117,11 @@ export function HomeScreen(): JSX.Element {
  const insets = useSafeAreaInsets();
  const router = useRouter();
  const { toast } = useToast();
- const [accent, accentForeground, muted] = useThemeColor([
+ const [accent, accentForeground, muted, background] = useThemeColor([
  "accent",
  "accent-foreground",
  "muted",
+ "background",
  ]);
  const [state, setState] = useState<HomeState | null>(null);
  const [createOpen, setCreateOpen] = useState(false);
@@ -242,19 +245,21 @@ export function HomeScreen(): JSX.Element {
 
  return (
  <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
- <View className="px-5 pb-1 pt-2">
+ <View className="px-5 pb-3 pt-2">
  <Typography type="h3" weight="bold" className="text-foreground">
  Home
  </Typography>
- <Typography type="body-xs" className="mt-0.5 text-muted">
- Manage live searches and credits
- </Typography>
  </View>
 
+ <ScrollShadow
+ className="flex-1"
+ LinearGradientComponent={LinearGradient}
+ color={background}
+ >
  <ScrollView
  className="flex-1"
  showsVerticalScrollIndicator={false}
- contentContainerStyle={{ paddingBottom: 110, paddingTop: 8 }}
+ contentContainerClassName="pb-[110px]"
  >
  {/* Plan / credits - ~15% tighter + glass on badges/credits only */}
  <PressableFeedback
@@ -439,6 +444,7 @@ export function HomeScreen(): JSX.Element {
  </View>
  )}
  </ScrollView>
+ </ScrollShadow>
 
  <HomeBottomSheet
  visible={createOpen}

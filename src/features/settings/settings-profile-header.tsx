@@ -5,6 +5,7 @@ import {
   Avatar,
   Chip,
   ListGroup,
+  PressableFeedback,
   Typography,
 } from "heroui-native";
 import { withUniwind } from "uniwind";
@@ -40,45 +41,51 @@ export function SettingsProfileHeader({
         Profile
       </Typography>
       <ListGroup variant="secondary" className="mx-3">
-        <ListGroup.Item onPress={onPress} className="py-2">
-          <ListGroup.ItemPrefix>
-            <Avatar size="md" alt={fullName} className="bg-surface-tertiary">
-              <Avatar.Fallback className="bg-surface-tertiary text-foreground">
-                {initials}
-              </Avatar.Fallback>
-            </Avatar>
-          </ListGroup.ItemPrefix>
-          <ListGroup.ItemContent>
-            <ListGroup.ItemTitle className="text-[15px] font-normal text-foreground">
-              {fullName}
-            </ListGroup.ItemTitle>
-            <ListGroup.ItemDescription className="text-xs text-muted">
-              {profile.email}
-            </ListGroup.ItemDescription>
-          </ListGroup.ItemContent>
-          <ListGroup.ItemSuffix>
-            <View className="flex-row items-center gap-2">
-              <Chip
-                size="sm"
-                variant="soft"
-                color="default"
-                className="flex-row items-center gap-1 px-2"
-              >
-                <HeroBoltIcon
-                  from={palette.iconFrom}
-                  to={palette.iconTo}
-                  size={12}
-                />
-                <Chip.Label className="text-[10px]">{planLabel}</Chip.Label>
-              </Chip>
-              <StyledIonicons
-                name="chevron-forward"
-                size={18}
-                className="text-muted"
-              />
-            </View>
-          </ListGroup.ItemSuffix>
-        </ListGroup.Item>
+        <PressableFeedback animation={false} onPress={onPress}>
+          <PressableFeedback.Scale>
+            <ListGroup.Item disabled className="py-2">
+              <ListGroup.ItemPrefix>
+                <Avatar size="md" alt={fullName} className="bg-surface-tertiary">
+                  <Avatar.Fallback className="bg-surface-tertiary text-foreground">
+                    {initials}
+                  </Avatar.Fallback>
+                </Avatar>
+              </ListGroup.ItemPrefix>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle className="text-[15px] font-normal text-foreground">
+                  {fullName}
+                </ListGroup.ItemTitle>
+                <ListGroup.ItemDescription className="text-xs text-muted">
+                  {profile.email}
+                </ListGroup.ItemDescription>
+              </ListGroup.ItemContent>
+              <ListGroup.ItemSuffix>
+                <View className="flex-row items-center gap-2">
+                  <Chip
+                    size="sm"
+                    variant="soft"
+                    color="default"
+                    className="flex-row items-center gap-1 px-2"
+                  >
+                    <HeroBoltIcon
+                      from={palette.iconFrom}
+                      to={palette.iconTo}
+                      size={12}
+                    />
+                    <Chip.Label className="text-[10px]">{planLabel}</Chip.Label>
+                  </Chip>
+                  <StyledIonicons
+                    name="chevron-forward"
+                    size={18}
+                    className="text-muted"
+                  />
+                </View>
+              </ListGroup.ItemSuffix>
+            </ListGroup.Item>
+          </PressableFeedback.Scale>
+          <PressableFeedback.Highlight />
+          <PressableFeedback.Ripple />
+        </PressableFeedback>
       </ListGroup>
     </View>
   );

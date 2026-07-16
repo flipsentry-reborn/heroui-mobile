@@ -24,6 +24,11 @@ import {
   SettingsRow,
   SettingsSection,
 } from "@/features/settings/settings-section";
+import { ThemeSelect } from "@/features/settings/theme-select";
+import {
+  applyAppearance,
+  type AppearanceMode,
+} from "@/lib/appearance";
 import type {
   SettingsState,
   UserPreferences,
@@ -89,6 +94,7 @@ export function SettingsScreen(): JSX.Element {
 
   const load = useCallback(async () => {
     const [next, sub] = await Promise.all([getSettings(), getSubscription()]);
+    applyAppearance(next.preferences.appearance);
     setState(next);
     const plan =
       sub.hasActiveSubscription && sub.currentTier != null
@@ -105,10 +111,14 @@ export function SettingsScreen(): JSX.Element {
 
   const prefs = state?.preferences;
   const planLabel = activePlan?.displayName ?? (state?.hasActiveTrial ? "Trial" : "Free");
+  const appearance: AppearanceMode = prefs?.appearance ?? "system";
 
   const patchPrefs = async (patch: Partial<UserPreferences>) => {
     try {
       const next = await updatePreferences(patch);
+      if (patch.appearance !== undefined) {
+        applyAppearance(patch.appearance);
+      }
       setState((s) => (s ? { ...s, preferences: next } : s));
     } catch {
       Alert.alert("Error", "Failed to update preference");
@@ -193,6 +203,18 @@ export function SettingsScreen(): JSX.Element {
           />
 
           <SettingsSection title="App Preferences">
+            <SettingsRow
+              icon="contrast-outline"
+              title="Appearance"
+              description="Light, dark or system"
+              showChevron={false}
+              right={
+                <ThemeSelect
+                  value={appearance}
+                  onChange={(mode) => void patchPrefs({ appearance: mode })}
+                />
+              }
+            />
             <SettingsRow
               icon="notifications-outline"
               title="Notifications"

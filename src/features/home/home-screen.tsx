@@ -102,8 +102,12 @@ function HomeBottomSheet({
  <BottomSheet.Portal>
  <BottomSheet.Overlay />
  <BottomSheet.Content
- backgroundClassName="bg-surface rounded-t-3xl"
- handleClassName="bg-surface"
+ backgroundClassName="bg-surface-secondary"
+ backgroundStyle={{
+ borderTopLeftRadius: 32,
+ borderTopRightRadius: 32,
+ borderCurve: "continuous",
+ }}
  handleIndicatorClassName="bg-separator"
  >
  {children}

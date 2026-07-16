@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
-import { Pressable, Text, View } from "react-native";
-import { Button } from "heroui-native";
+import { Text, View } from "react-native";
+import { Button, PressableFeedback } from "heroui-native";
 
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
 import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
@@ -80,8 +80,9 @@ export function SettingsSubscriptionCard({
   const palette = PLAN_ACCENTS[plan.accent];
 
   return (
-    <Pressable
+    <PressableFeedback
       onPress={onPress}
+      animation={{ scale: { value: 0.985 } }}
       className="mx-3 mb-4 overflow-hidden rounded-3xl border border-white/10"
     >
       <LinearGradient
@@ -97,6 +98,12 @@ export function SettingsSubscriptionCard({
         style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
       />
       <SubscriptionParticleField />
+      <PressableFeedback.Highlight
+        animation={{
+          backgroundColor: { value: "#FFFFFF" },
+          opacity: { value: [0, 0.08] },
+        }}
+      />
       <View className="gap-3 p-5">
         <View className="flex-row items-center gap-2.5">
           <HeroBoltIcon
@@ -147,6 +154,6 @@ export function SettingsSubscriptionCard({
           ) : null}
         </View>
       </View>
-    </Pressable>
+    </PressableFeedback>
   );
 }

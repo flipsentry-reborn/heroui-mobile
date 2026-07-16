@@ -1,5 +1,8 @@
+import type { AppearanceMode } from "@/lib/appearance";
+
 export type DistanceUnit = "mi" | "km";
 export type RefundPreference = "no_preference" | "grant" | "decline";
+export type { AppearanceMode };
 
 export interface UserPreferences {
   showScams: boolean;
@@ -9,6 +12,7 @@ export interface UserPreferences {
   showRebuiltTitle: boolean;
   showSalvageTitle: boolean;
   distanceUnit: DistanceUnit;
+  appearance: AppearanceMode;
 }
 
 export interface RefundSaverSettings {
@@ -42,6 +46,7 @@ export const initialSettingsState: SettingsState = {
     showRebuiltTitle: true,
     showSalvageTitle: true,
     distanceUnit: "mi",
+    appearance: "dark",
   },
   refundSaver: {
     preference: "no_preference",

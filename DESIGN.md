@@ -19,11 +19,12 @@ For port process / folder layout see **`PORTING.md`**. For fonts / subscription 
 | Prefer | Avoid |
 |--------|--------|
 | Semantic tokens (`bg-background`, `text-foreground`, `bg-accent`, `text-muted`) | Hardcoded greens (`#1DB954`) or old brand teal |
-| Dark only: near-black bg, **white** accent / black label | Light mode, neon purple glow, cream / terracotta palettes |
+| Dark: near-black bg, **white** accent / black label | Neon purple glow themes as the app default |
+| Light: light gray bg, **black** accent / white label | Cream / terracotta “AI default” palettes |
 | Small radius (`--radius: 0.25rem` in `global.css`) | Large pill buttons for primary actions in settings |
 | Subtle borders / surfaces from HeroUI | Heavy multi-layer shadows, emoji decoration |
 
-Theme source of truth: `src/global.css` (`@variant dark` only). Locked via `Uniwind.setTheme("dark")` in `_layout.tsx`. Restart Metro (`npx expo start -c`) after token changes.
+Theme source of truth: `src/global.css`. Restart Metro (`npx expo start -c`) after token changes.
 
 ### Buttons
 
@@ -75,6 +76,7 @@ Settings, Notifications, Profile, and the settings profile header share one list
 | Piece | File / API |
 |-------|------------|
 | Section + rows | `src/features/settings/settings-section.tsx` → `SettingsSection` / `SettingsRow` |
+| Appearance picker | `ThemeSelect` (HeroUI `Select`, Light / Dark / System) |
 | Profile entry on Settings | `settings-profile-header.tsx` (same row type scale) |
 | Profile screen | `src/app/settings/profile.tsx` (sections + rows) |
 | Notifications | `src/app/settings/notification.tsx` (reference layout) |
@@ -95,8 +97,14 @@ Settings, Notifications, Profile, and the settings profile header share one list
 
 - Prefer a **title + short description** on every settings row (what it does, not only the label).
 - Icons: Ionicons outline, ~20px, `text-muted`.
-- Right side: chevron by default, or value / chip / control (status chip, FAB).
+- Right side: chevron by default, or value / chip / control (`ThemeSelect`, status chip).
 - Do **not** invent a second card system for profile/settings lists; reuse `SettingsSection`.
+
+### Appearance
+
+- Store `appearance: "light" | "dark" | "system"` (not a boolean `darkMode`).
+- Apply via `src/lib/appearance.ts` + Uniwind themes (including `system`).
+- Fitness-style select, not a custom bottom sheet of three giant options.
 
 ---
 

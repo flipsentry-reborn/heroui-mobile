@@ -4,6 +4,7 @@ import { View } from "react-native";
 import {
   BottomSheet,
   ListGroup,
+  PressableFeedback,
   Separator,
   Switch,
   Typography,
@@ -64,8 +65,12 @@ function SheetShell({
       <BottomSheet.Portal>
         <BottomSheet.Overlay />
         <BottomSheet.Content
-          backgroundClassName="bg-surface rounded-t-3xl"
-          handleClassName="bg-surface"
+          backgroundClassName="bg-surface-secondary"
+          backgroundStyle={{
+            borderTopLeftRadius: 32,
+            borderTopRightRadius: 32,
+            borderCurve: "continuous",
+          }}
           handleIndicatorClassName="bg-separator"
         >
           {children}
@@ -141,25 +146,31 @@ export function HideListingsSheet({
           {rows.map((row, index) => (
             <View key={row.key}>
               {index > 0 ? <Separator className="mx-1" /> : null}
-              <ListGroup.Item
-                className="bg-transparent px-1 py-2"
+              <PressableFeedback
+                animation={false}
                 onPress={() => row.onChange(!row.isHidden)}
               >
-                <ListGroup.ItemContent>
-                  <ListGroup.ItemTitle className="text-[15px] text-foreground">
-                    {row.title}
-                  </ListGroup.ItemTitle>
-                  <ListGroup.ItemDescription className="text-muted">
-                    {row.description}
-                  </ListGroup.ItemDescription>
-                </ListGroup.ItemContent>
-                <ListGroup.ItemSuffix>
-                  <Switch
-                    isSelected={row.isHidden}
-                    onSelectedChange={row.onChange}
-                  />
-                </ListGroup.ItemSuffix>
-              </ListGroup.Item>
+                <PressableFeedback.Scale>
+                  <ListGroup.Item disabled className="bg-transparent px-1 py-2">
+                    <ListGroup.ItemContent>
+                      <ListGroup.ItemTitle className="text-[15px] text-foreground">
+                        {row.title}
+                      </ListGroup.ItemTitle>
+                      <ListGroup.ItemDescription className="text-muted">
+                        {row.description}
+                      </ListGroup.ItemDescription>
+                    </ListGroup.ItemContent>
+                    <ListGroup.ItemSuffix>
+                      <Switch
+                        isSelected={row.isHidden}
+                        onSelectedChange={row.onChange}
+                      />
+                    </ListGroup.ItemSuffix>
+                  </ListGroup.Item>
+                </PressableFeedback.Scale>
+                <PressableFeedback.Highlight />
+                <PressableFeedback.Ripple />
+              </PressableFeedback>
             </View>
           ))}
         </ListGroup>

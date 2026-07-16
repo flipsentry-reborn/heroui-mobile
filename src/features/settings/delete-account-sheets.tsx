@@ -1,13 +1,18 @@
 import type { JSX, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomSheet, Button, Typography, useToast } from "heroui-native";
 import { ProgressButton } from "heroui-native-pro";
 
 import { mockDeleteAccount } from "@/mocks/services/settings";
 
-function DetachedSheet({
+const SHEET_BACKGROUND_STYLE = {
+  borderTopLeftRadius: 32,
+  borderTopRightRadius: 32,
+  borderCurve: "continuous" as const,
+};
+
+function AccountSheet({
   visible,
   onClose,
   children,
@@ -16,7 +21,6 @@ function DetachedSheet({
   onClose: () => void;
   children: ReactNode;
 }): JSX.Element | null {
-  const insets = useSafeAreaInsets();
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -41,11 +45,8 @@ function DetachedSheet({
       <BottomSheet.Portal>
         <BottomSheet.Overlay />
         <BottomSheet.Content
-          detached={true}
-          bottomInset={Math.max(insets.bottom, 12) + 8}
-          className="mx-4"
-          backgroundClassName="rounded-[32px] bg-surface"
-          handleClassName="bg-surface"
+          backgroundClassName="bg-surface-secondary"
+          backgroundStyle={SHEET_BACKGROUND_STYLE}
           handleIndicatorClassName="bg-separator"
         >
           {children}
@@ -117,7 +118,7 @@ export function DeleteAccountSheets({
 
   return (
     <>
-      <DetachedSheet visible={confirmOpen} onClose={closeAll}>
+      <AccountSheet visible={confirmOpen} onClose={closeAll}>
         <View className="gap-5 px-5 pb-5 pt-2">
           <View className="items-center gap-1.5">
             <BottomSheet.Title className="text-center text-danger">
@@ -144,9 +145,9 @@ export function DeleteAccountSheets({
             </Button>
           </View>
         </View>
-      </DetachedSheet>
+      </AccountSheet>
 
-      <DetachedSheet
+      <AccountSheet
         visible={holdOpen}
         onClose={() => {
           if (!deleting) setHoldOpen(false);
@@ -178,7 +179,7 @@ export function DeleteAccountSheets({
             <Button.Label>Cancel</Button.Label>
           </Button>
         </View>
-      </DetachedSheet>
+      </AccountSheet>
     </>
   );
 }

@@ -17,9 +17,9 @@ alwaysApply: true
 
 ## Theme
 
-- Dark only. Uber-inspired neutrals via HeroUI tokens in `src/global.css` (oklch grayscale).
-- Near-black background, white `--accent` / black `--accent-foreground`.
-- Lock with `Uniwind.setTheme("dark")` in `src/app/_layout.tsx` — no light theme or appearance picker.
+- Uber-inspired neutrals via HeroUI tokens in `src/global.css` (oklch grayscale).
+- Dark: near-black background, white `--accent` / black `--accent-foreground`.
+- Light: light gray background, black `--accent` / white `--accent-foreground`.
 - Prefer semantic classes (`bg-background`, `text-foreground`, `bg-accent`) - no legacy green/black hardcodes (`#1DB954`, `#121212`).
 - Use `Button variant="secondary"` for most actions; primary/accent sparingly (Uber black/white).
 

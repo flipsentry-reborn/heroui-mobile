@@ -1,5 +1,5 @@
 /*
- * HeroUI Native Theme - Uber-inspired neutrals (dark only).
+ * HeroUI Native Theme - Uber-inspired neutrals (black / white accent).
  * Restart Metro after theme changes.
  * @see https://heroui.com/docs/native/getting-started/theming
  */
@@ -29,6 +29,51 @@
 }
 
 @layer theme {
+  @variant light {
+    --background: oklch(97.02% 0 0);
+    --foreground: oklch(12% 0 0);
+
+    --surface: oklch(100% 0 0);
+    --surface-foreground: oklch(12% 0 0);
+    --surface-secondary: oklch(95.24% 0 0);
+    --surface-secondary-foreground: oklch(12% 0 0);
+    --surface-tertiary: oklch(93.73% 0 0);
+    --surface-tertiary-foreground: oklch(12% 0 0);
+
+    --overlay: oklch(100% 0 0);
+    --overlay-foreground: oklch(12% 0 0);
+    --backdrop: oklch(0% 0 0 / 40%);
+
+    --muted: oklch(55.17% 0 0);
+
+    --default: oklch(94% 0 0);
+    --default-foreground: oklch(12% 0 0);
+
+    /* Uber light: black primary */
+    --accent: oklch(0% 0 0);
+    --accent-foreground: oklch(100% 0 0);
+
+    --field-background: oklch(100% 0 0);
+    --field-foreground: oklch(12% 0 0);
+    --field-placeholder: var(--muted);
+    --field-border: transparent;
+
+    --success: oklch(0.6277 0.1604 153.06);
+    --success-foreground: oklch(98% 0 0);
+    --warning: oklch(0.8446 0.1525 80.6);
+    --warning-foreground: oklch(20% 0 0);
+    --danger: oklch(0.573 0.2249 21.97);
+    --danger-foreground: oklch(98% 0 0);
+
+    --segment: oklch(93.73% 0 0);
+    --segment-foreground: oklch(12% 0 0);
+
+    --border: oklch(90% 0 0);
+    --separator: oklch(92% 0 0);
+    --focus: var(--accent);
+    --link: oklch(12% 0 0);
+  }
+
   @variant dark {
     --background: oklch(12% 0 0);
     --foreground: oklch(98.48% 0 0);

@@ -1,3 +1,4 @@
+import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
 import { useEffect, useState } from "react";
@@ -5,9 +6,11 @@ import { ScrollView, Text, View } from "react-native";
 import {
   Avatar,
   Chip,
+  PressableFeedback,
   Skeleton,
   Typography,
   useThemeColor,
+  useToast,
 } from "heroui-native";
 
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
@@ -46,6 +49,7 @@ export default function ProfileScreen(): JSX.Element {
   const [activePlan, setActivePlan] = useState<SubscriptionPlan | null>(null);
   const [isTrial, setIsTrial] = useState(false);
   const background = useThemeColor("background");
+  const { toast } = useToast();
 
   useEffect(() => {
     void Promise.all([getSettings(), getSubscription()]).then(
@@ -60,6 +64,26 @@ export default function ProfileScreen(): JSX.Element {
       },
     );
   }, []);
+
+  const copyValue = async (value: string, label: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    try {
+      await Clipboard.setStringAsync(trimmed);
+      toast.show({
+        variant: "success",
+        label: `${label} copied`,
+        duration: 2200,
+      });
+    } catch {
+      toast.show({
+        variant: "danger",
+        label: "Couldn't copy",
+        description: "Try again in a moment.",
+        duration: 2500,
+      });
+    }
+  };
 
   if (!profile) {
     return (
@@ -111,26 +135,40 @@ export default function ProfileScreen(): JSX.Element {
               {initials}
             </Avatar.Fallback>
           </Avatar>
-          <Text
-            style={{
-              fontFamily: Fonts.heading,
-              fontSize: 18,
-              lineHeight: 24,
-              letterSpacing: -0.3,
-              color: "#FFFFFF",
-            }}
+          <PressableFeedback
+            accessibilityRole="button"
+            accessibilityLabel="Copy name"
+            onPress={() => void copyValue(fullName, "Name")}
+            animation={{ scale: { value: 0.97 } }}
           >
-            {fullName}
-          </Text>
-          <Text
-            style={{
-              fontFamily: Fonts.headingRegular,
-              fontSize: 12,
-              color: "rgba(255,255,255,0.55)",
-            }}
+            <Text
+              style={{
+                fontFamily: Fonts.heading,
+                fontSize: 18,
+                lineHeight: 24,
+                letterSpacing: -0.3,
+                color: "#FFFFFF",
+              }}
+            >
+              {fullName}
+            </Text>
+          </PressableFeedback>
+          <PressableFeedback
+            accessibilityRole="button"
+            accessibilityLabel="Copy email"
+            onPress={() => void copyValue(profile.email, "Email")}
+            animation={{ scale: { value: 0.97 } }}
           >
-            {profile.email}
-          </Text>
+            <Text
+              style={{
+                fontFamily: Fonts.headingRegular,
+                fontSize: 12,
+                color: "rgba(255,255,255,0.55)",
+              }}
+            >
+              {profile.email}
+            </Text>
+          </PressableFeedback>
           <View className="mt-2 flex-row items-center gap-1.5">
             <HeroBoltIcon
               from={palette.iconFrom}
@@ -156,12 +194,22 @@ export default function ProfileScreen(): JSX.Element {
           title="First Name"
           description={profile.firstName || "Not provided"}
           showChevron={false}
+          onPress={
+            profile.firstName
+              ? () => void copyValue(profile.firstName, "First name")
+              : undefined
+          }
         />
         <SettingsRow
           icon="person-outline"
           title="Last Name"
           description={profile.lastName || "Not provided"}
           showChevron={false}
+          onPress={
+            profile.lastName
+              ? () => void copyValue(profile.lastName, "Last name")
+              : undefined
+          }
           isLast
         />
       </SettingsSection>
@@ -172,6 +220,11 @@ export default function ProfileScreen(): JSX.Element {
           title="Email"
           description={profile.email || "Not provided"}
           showChevron={false}
+          onPress={
+            profile.email
+              ? () => void copyValue(profile.email, "Email")
+              : undefined
+          }
           right={
             <StatusChip
               label={profile.emailConfirmed ? "Verified" : "Unverified"}
@@ -183,6 +236,14 @@ export default function ProfileScreen(): JSX.Element {
           title="Phone Number"
           description={profile.phoneNumber ?? "Not provided"}
           showChevron={false}
+          onPress={
+            profile.phoneNumber
+              ? () => {
+                  const phone = profile.phoneNumber;
+                  if (phone) void copyValue(phone, "Phone number");
+                }
+              : undefined
+          }
           right={
             profile.phoneNumber ? (
               <StatusChip
@@ -212,8 +273,7 @@ export default function ProfileScreen(): JSX.Element {
 
       <View className="mx-5 mb-2">
         <Typography type="body-xs" className="text-muted">
-          Profile details are read-only in this mock. Edit flows ship with the
-          real account API.
+          Tap a field to copy it. Profile details are read-only in this mock.
         </Typography>
       </View>
     </ScrollView>

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps, JSX, ReactNode } from "react";
 import { View } from "react-native";
-import { ListGroup, Separator, Typography } from "heroui-native";
+import { ListGroup, PressableFeedback, Separator, Typography } from "heroui-native";
 import { withUniwind } from "uniwind";
 
 const StyledIonicons = withUniwind(Ionicons);
@@ -36,6 +36,47 @@ interface SettingsRowProps {
   isLast?: boolean;
 }
 
+function SettingsRowBody({
+  icon,
+  title,
+  description,
+  right,
+  showChevron,
+}: {
+  icon: IonName;
+  title: string;
+  description?: string;
+  right?: ReactNode;
+  showChevron: boolean;
+}): JSX.Element {
+  return (
+    <>
+      <ListGroup.ItemPrefix>
+        <StyledIonicons name={icon} size={20} className="text-muted" />
+      </ListGroup.ItemPrefix>
+      <ListGroup.ItemContent>
+        <ListGroup.ItemTitle className="text-[15px] font-normal text-foreground">
+          {title}
+        </ListGroup.ItemTitle>
+        {description ? (
+          <ListGroup.ItemDescription className="text-xs text-muted">
+            {description}
+          </ListGroup.ItemDescription>
+        ) : null}
+      </ListGroup.ItemContent>
+      {right != null ? (
+        <ListGroup.ItemSuffix>{right}</ListGroup.ItemSuffix>
+      ) : showChevron ? (
+        <ListGroup.ItemSuffix />
+      ) : (
+        <ListGroup.ItemSuffix>
+          <View />
+        </ListGroup.ItemSuffix>
+      )}
+    </>
+  );
+}
+
 export function SettingsRow({
   icon,
   title,
@@ -45,36 +86,33 @@ export function SettingsRow({
   showChevron = true,
   isLast = false,
 }: SettingsRowProps): JSX.Element {
+  const body = (
+    <SettingsRowBody
+      icon={icon}
+      title={title}
+      description={description}
+      right={right}
+      showChevron={showChevron}
+    />
+  );
+
   return (
     <>
-      <ListGroup.Item
-        onPress={onPress}
-        disabled={!onPress && right == null}
-        className="py-2"
-      >
-        <ListGroup.ItemPrefix>
-          <StyledIonicons name={icon} size={20} className="text-muted" />
-        </ListGroup.ItemPrefix>
-        <ListGroup.ItemContent>
-          <ListGroup.ItemTitle className="text-[15px] font-normal text-foreground">
-            {title}
-          </ListGroup.ItemTitle>
-          {description ? (
-            <ListGroup.ItemDescription className="text-xs text-muted">
-              {description}
-            </ListGroup.ItemDescription>
-          ) : null}
-        </ListGroup.ItemContent>
-        {right != null ? (
-          <ListGroup.ItemSuffix>{right}</ListGroup.ItemSuffix>
-        ) : showChevron ? (
-          <ListGroup.ItemSuffix />
-        ) : (
-          <ListGroup.ItemSuffix>
-            <View />
-          </ListGroup.ItemSuffix>
-        )}
-      </ListGroup.Item>
+      {onPress ? (
+        <PressableFeedback animation={false} onPress={onPress}>
+          <PressableFeedback.Scale>
+            <ListGroup.Item disabled className="py-2">
+              {body}
+            </ListGroup.Item>
+          </PressableFeedback.Scale>
+          <PressableFeedback.Highlight />
+          <PressableFeedback.Ripple />
+        </PressableFeedback>
+      ) : (
+        <ListGroup.Item disabled className="py-2">
+          {body}
+        </ListGroup.Item>
+      )}
       {!isLast ? <Separator className="ml-12 mr-4 opacity-50" /> : null}
     </>
   );

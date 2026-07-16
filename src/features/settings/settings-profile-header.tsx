@@ -40,7 +40,7 @@ export function SettingsProfileHeader({
       <Typography type="body-xs" className="mx-5 text-muted">
         Profile
       </Typography>
-      <ListGroup variant="secondary" className="mx-3">
+      <ListGroup className="mx-3">
         <PressableFeedback animation={false} onPress={onPress}>
           <PressableFeedback.Scale>
             <ListGroup.Item disabled className="py-2">

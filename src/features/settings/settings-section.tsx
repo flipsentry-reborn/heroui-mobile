@@ -19,7 +19,7 @@ export function SettingsSection({ title, children }: SettingsSectionProps): JSX.
       <Typography type="body-xs" className="mx-5 text-muted">
         {title}
       </Typography>
-      <ListGroup variant="secondary" className="mx-3">
+      <ListGroup className="mx-3">
         {children}
       </ListGroup>
     </View>

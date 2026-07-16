@@ -1,6 +1,6 @@
 /*
- * HeroUI Native Theme - Uber-inspired neutrals (black / white accent).
- * Restart Metro after theme changes.
+ * HeroUI Native Theme - light canvases use HeroUI default neutrals;
+ * accent is Uber-inspired (black / white). Restart Metro after theme changes.
  * @see https://heroui.com/docs/native/getting-started/theming
  */
 @import "tailwindcss";
@@ -30,30 +30,31 @@
 
 @layer theme {
   @variant light {
-    --background: oklch(97.02% 0 0);
+    /* HeroUI default light neutrals (cool tint); Uber accent kept below */
+    --background: oklch(97.02% 0.0015 253.83);
     --foreground: oklch(12% 0 0);
 
-    --surface: oklch(100% 0 0);
+    --surface: oklch(100.00% 0.0008 253.83);
     --surface-foreground: oklch(12% 0 0);
-    --surface-secondary: oklch(95.24% 0 0);
+    --surface-secondary: oklch(95.24% 0.0012 253.83);
     --surface-secondary-foreground: oklch(12% 0 0);
-    --surface-tertiary: oklch(93.73% 0 0);
+    --surface-tertiary: oklch(93.73% 0.0012 253.83);
     --surface-tertiary-foreground: oklch(12% 0 0);
 
-    --overlay: oklch(100% 0 0);
+    --overlay: oklch(100.00% 0.0004 253.83);
     --overlay-foreground: oklch(12% 0 0);
     --backdrop: oklch(0% 0 0 / 40%);
 
     --muted: oklch(55.17% 0 0);
 
-    --default: oklch(94% 0 0);
+    --default: oklch(94.00% 0.0015 253.83);
     --default-foreground: oklch(12% 0 0);
 
     /* Uber light: black primary */
     --accent: oklch(0% 0 0);
     --accent-foreground: oklch(100% 0 0);
 
-    --field-background: oklch(100% 0 0);
+    --field-background: oklch(100.00% 0.0008 253.83);
     --field-foreground: oklch(12% 0 0);
     --field-placeholder: var(--muted);
     --field-border: transparent;
@@ -65,11 +66,11 @@
     --danger: oklch(0.573 0.2249 21.97);
     --danger-foreground: oklch(98% 0 0);
 
-    --segment: oklch(93.73% 0 0);
+    --segment: oklch(100.00% 0.0015 253.83);
     --segment-foreground: oklch(12% 0 0);
 
-    --border: oklch(90% 0 0);
-    --separator: oklch(92% 0 0);
+    --border: oklch(90.00% 0.0015 253.83);
+    --separator: oklch(92.00% 0.0015 253.83);
     --focus: var(--accent);
     --link: oklch(12% 0 0);
   }

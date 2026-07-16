@@ -17,6 +17,8 @@ Port FlipSentry screens and flows into `heroui-mobile` so we can iterate on UI w
 | Data | Mock only via `src/mocks/*` |
 | Reference | `mobile-app` = flows/screens reference only |
 
+UI preferences, settings type scale, buttons, and copy rules: **`DESIGN.md`**.
+
 ## Cursor AI tooling
 
 | Tool | Role |
@@ -138,6 +140,14 @@ Restart Metro after theme changes.
 
 App-wide Britti Sans (HeroUI Pro pricing face). See **`FONTS.md`**.  
 Configure weights in `src/global.css` `@theme`; load files in `src/app/_layout.tsx`.
+
+## Related docs
+
+| Doc | Topic |
+|-----|--------|
+| `DESIGN.md` | Overall UI preferences and locked patterns |
+| `FONTS.md` | Britti Sans setup |
+| `SUBSCRIPTION.md` | Plan cards / accents / reuse |
 
 ## Related repos
 

@@ -1,0 +1,178 @@
+# Design & product decisions
+
+Living preferences for the FlipSentry → HeroUI mobile UI port.  
+For port process / folder layout see **`PORTING.md`**. For fonts / subscription details see **`FONTS.md`** and **`SUBSCRIPTION.md`**.
+
+---
+
+## North star
+
+- **Uber-inspired neutrals**, not Spotify green or old FlipSentry teal.
+- **HeroUI Native + Pro** as the component system; Uniwind `className` for styling.
+- **Mock-only** data so Expo Go stays fast and honest.
+- Prefer **calm, list-based settings** over flashy marketing chrome (except subscription).
+
+---
+
+## Visual language
+
+| Prefer | Avoid |
+|--------|--------|
+| Semantic tokens (`bg-background`, `text-foreground`, `bg-accent`, `text-muted`) | Hardcoded Spotify greens (`#1DB954`, `#121212`) or old brand teal |
+| Dark: near-black bg, **white** accent / black label | Neon purple glow themes as the app default |
+| Light: light gray bg, **black** accent / white label | Cream / terracotta “AI default” palettes |
+| Small radius (`--radius: 0.25rem` in `global.css`) | Large pill buttons for primary actions in settings |
+| Subtle borders / surfaces from HeroUI | Heavy multi-layer shadows, emoji decoration |
+
+Theme source of truth: `src/global.css`. Restart Metro (`npx expo start -c`) after token changes.
+
+### Buttons
+
+| Context | Pattern |
+|---------|---------|
+| Most actions | `Button variant="secondary"` |
+| Primary / accent (Logout, Subscribe CTA, Enable Notifications) | `variant="primary"` + `className="min-h-11 w-full bg-accent"` + `Button.Label className="text-sm text-accent-foreground"` |
+| Destructive soft | `variant="danger-soft"` + same `min-h-11` height |
+| Settings / system screens | **Default radius** (not `rounded-full`) so Logout / Subscribe / Enable match |
+
+Accent is intentionally high-contrast black/white (Uber), used sparingly.
+
+### Copy
+
+- No em dashes (`—` / `–`). Use commas, periods, or hyphens.
+- Short helper lines under sections (`Typography type="body-xs" className="text-muted"`).
+- Mock toasts / alerts may say they are mock when useful.
+
+---
+
+## Typography (Britti Sans)
+
+Official HeroUI Native approach ([Custom Fonts](https://heroui.com/docs/native/getting-started/theming)):
+
+1. Load with `useFonts` in `src/app/_layout.tsx`
+2. Map weights in `global.css` `@theme`:
+   - `--font-normal` → Regular  
+   - `--font-medium` → Medium  
+   - `--font-semibold` → SemiBold  
+   - `--font-bold` → Bold  
+3. HeroUI `Typography` / `Button.Label` / `ListGroup` use `font-normal|medium|semibold|bold` automatically
+
+| Prefer | Avoid |
+|--------|--------|
+| Theme classes (`font-normal`, `font-semibold`) | Per-screen Inter / system hardcodes |
+| `Fonts.*` only for raw RN `Text` (subscription cards) | Setting `fontFamily` on every `Typography` |
+| Names that match `useFonts` keys **and** TTF name tables | Broken variable-font exports with empty name IDs |
+
+Rebuild TTFs with valid names via `scripts/rebuild-britti-fonts.py` if fonts fail to resolve. Details: **`FONTS.md`**.
+
+---
+
+## Settings UI patterns
+
+Settings, Notifications, Profile, and the settings profile header share one list language.
+
+### Building blocks
+
+| Piece | File / API |
+|-------|------------|
+| Section + rows | `src/features/settings/settings-section.tsx` → `SettingsSection` / `SettingsRow` |
+| Appearance picker | `ThemeSelect` (HeroUI `Select`, Light / Dark / System) |
+| Profile entry on Settings | `settings-profile-header.tsx` (same row type scale) |
+| Profile screen | `src/app/settings/profile.tsx` (sections + rows) |
+| Notifications | `src/app/settings/notification.tsx` (reference layout) |
+
+### Type scale (locked)
+
+| Element | Classes / component |
+|---------|---------------------|
+| Section label | `Typography type="body-xs" className="mx-5 text-muted"` |
+| Row title | `text-[15px] font-normal text-foreground` |
+| Row description | `text-xs text-muted` |
+| Row padding | `ListGroup.Item` → `className="py-2"` |
+| Separators | `ml-12 mr-4 opacity-50` |
+| List container | `ListGroup variant="secondary" className="mx-3"` |
+| Screen scroll | `contentContainerClassName` with `pt-3` / `pb-10` as needed |
+
+### Row content
+
+- Prefer a **title + short description** on every settings row (what it does, not only the label).
+- Icons: Ionicons outline, ~20px, `text-muted`.
+- Right side: chevron by default, or value / chip / control (`ThemeSelect`, status chip).
+- Do **not** invent a second card system for profile/settings lists; reuse `SettingsSection`.
+
+### Appearance
+
+- Store `appearance: "light" | "dark" | "system"` (not a boolean `darkMode`).
+- Apply via `src/lib/appearance.ts` + Uniwind themes (including `system`).
+- Fitness-style select, not a custom bottom sheet of three giant options.
+
+---
+
+## Subscription
+
+Marketing-grade surface (exception to “calm lists”):
+
+- Gradient plan cards, bolt badge, sparse particles, expandable feature lists
+- Settings shows either a compact **Subscribe** CTA or an **active plan** card
+- Subscribe button on Settings matches Logout border/height (`min-h-11`, default radius, `bg-accent`)
+- Plan accents / data live in mocks + `subscription-theme.ts`
+
+Full reuse guide: **`SUBSCRIPTION.md`**.
+
+---
+
+## Components & tooling
+
+| Prefer | Avoid |
+|--------|--------|
+| `heroui-native-pro` first, then `heroui-native` | Web `@heroui/react` / `@heroui-pro/react` on screens |
+| MCP: `list_components` → `get_component_docs` before building | Guessing compound APIs |
+| Uniwind `className` | NativeWind / StyleSheet for colors |
+| Local state / light context | MobX from `mobile-app` |
+| `onPress` | `onClick` |
+
+Rules: `.cursor/rules/flipsentry-ui-port.mdc`, `.cursor/rules/heroui-native-screens.mdc`.
+
+---
+
+## Data
+
+| Prefer | Avoid |
+|--------|--------|
+| `src/mocks/services/*` + `src/mocks/data/*` | Axios, SignalR, Adapty, real backends |
+| Typed fixtures, optional fake latency | Importing `mobile-app` API clients |
+| Syncing related mocks (e.g. subscribe → settings flags) | Divergent “truth” across services |
+
+`mobile-app` is **screen/flow reference only** — do not copy its styling stack.
+
+---
+
+## Navigation & structure
+
+- Expo Router: thin routes under `src/app`, UI in `src/features/*`
+- Tabs: Home, Feed, Help, Settings
+- Settings stack: profile, notifications, blocked sellers, subscription, etc.
+- Expo Go first; maps / IAP / live feed stay stubbed (see `PORTING.md`)
+
+---
+
+## Checklist for a new settings-like screen
+
+1. Use `SettingsSection` + `SettingsRow` (or the same type scale if you must custom-build).
+2. Title 15px + description `text-xs`; section label `body-xs` muted.
+3. Primary buttons: `min-h-11`, `bg-accent`, `text-sm`, default radius.
+4. Load data only from `mocks/services`.
+5. Confirm fonts via theme classes; use `Fonts.*` only for raw `Text`.
+6. No em dashes; keep copy short.
+7. Match Notifications / Profile spacing (`mx-3` groups, `mx-5` labels).
+
+---
+
+## Related docs
+
+| Doc | Topic |
+|-----|--------|
+| `PORTING.md` | Scope, folders, port order, Expo stubs |
+| `FONTS.md` | Britti load + `@theme` mapping |
+| `SUBSCRIPTION.md` | Plans, accents, card behavior |
+| `DESIGN.md` (this file) | Preferences and UI decisions |

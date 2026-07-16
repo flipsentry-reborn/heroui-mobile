@@ -1,6 +1,15 @@
 # App fonts (Britti Sans)
 
-Same face as HeroUI Pro pricing headings (`heroSans` / Britti Sans).
+Same face as HeroUI Pro pricing headings (`heroSans` / Britti Sans).  
+Overall design preferences: **`DESIGN.md`**.
+
+If fonts silently fall back to system type, TTF name tables may be broken. Rebuild with:
+
+```bash
+python scripts/rebuild-britti-fonts.py
+```
+
+(Requires downloading the variable source into `assets/fonts/_britti_var.woff2` first; see script header.)
 
 ## Where to write / change fonts
 

@@ -3,6 +3,7 @@ import {
   type SubscriptionState,
   type SubscriptionTier,
 } from "@/mocks/data/subscription";
+import { setSubscriptionFlags } from "@/mocks/services/settings";
 
 let state: SubscriptionState = structuredClone(initialSubscriptionState);
 
@@ -23,6 +24,10 @@ export async function mockSubscribe(tier: SubscriptionTier): Promise<Subscriptio
     hasActiveSubscription: true,
     hasActiveTrial: false,
   };
+  await setSubscriptionFlags({
+    hasActiveSubscription: true,
+    hasActiveTrial: false,
+  });
   return structuredClone(state);
 }
 

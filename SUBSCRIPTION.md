@@ -7,11 +7,15 @@ HeroUI Pro-inspired plan cards for FlipSentry. UI is mock-only; swap data later 
 | Path | Role |
 |------|------|
 | `src/features/settings/subscription-screen.tsx` | Screen UI: cards, particles, expand animation, CTAs |
+| `src/features/settings/settings-subscription-card.tsx` | Settings: active plan card or Subscribe CTA |
+| `src/features/settings/subscription-theme.ts` | Shared plan accent colors |
+| `src/features/settings/hero-bolt-icon.tsx` | Shared hexagon bolt badge |
 | `src/mocks/data/subscription.ts` | Plan models + fixture copy/prices/features |
 | `src/mocks/services/subscription.ts` | Mock subscribe / restore |
 | `src/app/settings/subscription.tsx` | Route entry |
-| `src/lib/fonts.ts` | Britti Sans (`heroSans`) font keys |
-| `assets/fonts/BrittiSans-*.ttf` | Display font used on header + cards |
+| `src/lib/fonts.ts` | Britti Sans helpers (see also **`FONTS.md`**) |
+| `assets/fonts/BrittiSans-*.ttf` | Font files |
+| `src/global.css` `@theme` | App-wide `--font-normal` / `--font-bold` mapping |
 
 ## How a plan is defined
 
@@ -77,7 +81,16 @@ When real product specs land:
 - Font: Britti Sans for heading / plan typography
 - Subscribe / restore: mock toasts via `mockSubscribe` / `mockRestorePurchases`
 
+## Settings card
+
+`src/features/settings/settings-subscription-card.tsx` sits on Settings (replaces "Your Subscriptions"):
+
+- **No plan** (`currentTier == null`): Britti "Become a Hero." card + **Subscribe** button
+- **Active plan**: same accent gradient / bolt / Britti as pricing cards; tap opens `/settings/subscription`
+
+Subscription state comes from `getSubscription()`. `mockSubscribe` also flips `settings.hasActiveSubscription`.
+
 ## Route
 
-Settings → Your Subscriptions → `/settings/subscription` 
+Settings card or Subscribe → `/settings/subscription`  
 Stack title: **Subscription** (`src/app/settings/_layout.tsx`).

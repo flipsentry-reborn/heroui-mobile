@@ -131,8 +131,13 @@ heroui-mobile/
 
 ## Theme
 
-Theme tokens live in `src/global.css`. Target Uber neutrals (black/white accent, no Spotify green). 
+Theme tokens live in `src/global.css`. Target Uber neutrals (black/white accent, no Spotify green).  
 Restart Metro after theme changes.
+
+## Fonts
+
+App-wide Britti Sans (HeroUI Pro pricing face). See **`FONTS.md`**.  
+Configure weights in `src/global.css` `@theme`; load files in `src/app/_layout.tsx`.
 
 ## Related repos
 

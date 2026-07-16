@@ -1,14 +1,21 @@
 /**
- * HeroUI Pro landing (https://heroui.pro/?tab=teams):
- * - Headings / pricing: Britti Sans, loaded as `heroSans` (`--font-heading`)
- * - Body UI: Inter (`--font-sans`)
+ * Britti Sans (HeroUI Pro `heroSans`) - app-wide display/UI font.
  *
- * Britti Sans static instances extracted from their heroSans variable face.
+ * Where to configure for the whole app:
+ * 1. Load files: `src/app/_layout.tsx` (`useFonts` + `assets/fonts/BrittiSans-*.ttf`)
+ * 2. Map weights: `src/global.css` `@theme` (`--font-normal`, `--font-bold`, …)
+ *
+ * After (2), HeroUI `Typography` / `Button.Label` with `font-bold` etc. use Britti.
+ * Use `Fonts.*` only when you need an explicit `style={{ fontFamily }}` (raw Text).
  */
 export const Fonts = {
- /** Britti Sans - HeroUI display / plan cards */
- heading: "BrittiSans-Bold",
- headingSemi: "BrittiSans-SemiBold",
- headingMedium: "BrittiSans-Medium",
- headingRegular: "BrittiSans-Regular",
+  regular: "BrittiSans-Regular",
+  medium: "BrittiSans-Medium",
+  semibold: "BrittiSans-SemiBold",
+  bold: "BrittiSans-Bold",
+  /** Aliases used by subscription cards */
+  heading: "BrittiSans-Bold",
+  headingSemi: "BrittiSans-SemiBold",
+  headingMedium: "BrittiSans-Medium",
+  headingRegular: "BrittiSans-Regular",
 } as const;

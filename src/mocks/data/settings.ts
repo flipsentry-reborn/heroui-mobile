@@ -52,7 +52,7 @@ export const initialSettingsState: SettingsState = {
     preference: "no_preference",
     collectingRefundDataConsent: true,
   },
-  hasActiveSubscription: true,
+  hasActiveSubscription: false,
   hasActiveTrial: false,
   profile: {
     firstName: "Alex",

@@ -12,8 +12,20 @@
 @source "../node_modules/heroui-native-pro/lib";
 
 @theme {
- --radius: 0.25rem;
- --field-radius: 0.25rem;
+  --radius: 0.25rem;
+  --field-radius: 0.25rem;
+
+  /*
+   * App fonts = Britti Sans (HeroUI Pro heroSans).
+   * Loaded in src/app/_layout.tsx via expo-font.
+   * Names must match the file basename (no extension).
+   * HeroUI Typography / Button use font-normal|medium|semibold|bold.
+   */
+  --font-sans: "BrittiSans-Regular";
+  --font-normal: "BrittiSans-Regular";
+  --font-medium: "BrittiSans-Medium";
+  --font-semibold: "BrittiSans-SemiBold";
+  --font-bold: "BrittiSans-Bold";
 }
 
 @layer theme {

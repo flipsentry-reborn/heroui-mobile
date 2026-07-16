@@ -50,6 +50,18 @@ export async function updateRefundConsent(consent: boolean): Promise<boolean> {
  return consent;
 }
 
+export async function setSubscriptionFlags(flags: {
+  hasActiveSubscription: boolean;
+  hasActiveTrial?: boolean;
+}): Promise<void> {
+  await delay(40);
+  state = {
+    ...state,
+    hasActiveSubscription: flags.hasActiveSubscription,
+    hasActiveTrial: flags.hasActiveTrial ?? state.hasActiveTrial,
+  };
+}
+
 export async function mockLogout(): Promise<void> {
  await delay(200);
 }

@@ -4,8 +4,7 @@ import { View } from "react-native";
 import {
   Avatar,
   Chip,
-  PressableFeedback,
-  Surface,
+  ListGroup,
   Typography,
 } from "heroui-native";
 import { withUniwind } from "uniwind";
@@ -30,38 +29,41 @@ export function SettingsProfileHeader({
   const fullName = `${profile.firstName} ${profile.lastName}`;
 
   return (
-    <PressableFeedback
-      onPress={onPress}
-      className="mx-3 mb-4 overflow-hidden rounded-2xl"
-      animation={{ scale: { value: 0.985 } }}
-    >
-      <Surface variant="secondary" className="overflow-hidden rounded-2xl p-0">
-        <View className="flex-row items-center gap-3 p-4">
-          <Avatar size="lg" alt={fullName} className="bg-surface-tertiary">
-            <Avatar.Fallback className="bg-surface-tertiary text-foreground">
-              {initials}
-            </Avatar.Fallback>
-          </Avatar>
-          <View className="min-w-0 flex-1 gap-1">
-            <Typography
-              type="body-sm"
-              weight="semibold"
-              className="text-[17px] text-foreground"
-              numberOfLines={1}
-            >
+    <View className="mb-4 gap-1.5">
+      <Typography type="body-xs" className="mx-5 text-muted">
+        Profile
+      </Typography>
+      <ListGroup variant="secondary" className="mx-3">
+        <ListGroup.Item onPress={onPress} className="py-2">
+          <ListGroup.ItemPrefix>
+            <Avatar size="md" alt={fullName} className="bg-surface-tertiary">
+              <Avatar.Fallback className="bg-surface-tertiary text-foreground">
+                {initials}
+              </Avatar.Fallback>
+            </Avatar>
+          </ListGroup.ItemPrefix>
+          <ListGroup.ItemContent>
+            <ListGroup.ItemTitle className="text-[15px] font-normal text-foreground">
               {fullName}
-            </Typography>
-            <Typography type="body-xs" className="text-muted" numberOfLines={1}>
+            </ListGroup.ItemTitle>
+            <ListGroup.ItemDescription className="text-xs text-muted">
               {profile.email}
-            </Typography>
-            <Chip size="sm" variant="soft" color="default" className="mt-0.5 self-start">
-              <Chip.Label>{planLabel}</Chip.Label>
-            </Chip>
-          </View>
-          <StyledIonicons name="chevron-forward" size={18} className="text-muted" />
-        </View>
-      </Surface>
-      <PressableFeedback.Highlight />
-    </PressableFeedback>
+            </ListGroup.ItemDescription>
+          </ListGroup.ItemContent>
+          <ListGroup.ItemSuffix>
+            <View className="flex-row items-center gap-2">
+              <Chip size="sm" variant="soft" color="default">
+                <Chip.Label className="text-[10px]">{planLabel}</Chip.Label>
+              </Chip>
+              <StyledIonicons
+                name="chevron-forward"
+                size={18}
+                className="text-muted"
+              />
+            </View>
+          </ListGroup.ItemSuffix>
+        </ListGroup.Item>
+      </ListGroup>
+    </View>
   );
 }

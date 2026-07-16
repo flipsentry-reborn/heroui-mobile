@@ -11,8 +11,7 @@ import {
   type FeedItem as FeedModel,
 } from "@/models/feed";
 
-/** Feed density: ~20% tighter than original. */
-const IMAGE_H = 134;
+const IMAGE_H = 168;
 
 interface FeedItemProps {
   feed: FeedModel;
@@ -43,12 +42,12 @@ export function FeedItem({ feed, onPress, onToggleFavorite }: FeedItemProps): JS
   return (
     <PressableFeedback
       onPress={() => onPress?.(feed.id)}
-      className="mb-2 flex-1 px-1"
+      className="mb-1.5 flex-1 px-0.5"
       animation={{ scale: { value: 0.98 } }}
     >
       <Card
-        variant="secondary"
-        className="flex-1 gap-0 overflow-hidden rounded-xl border border-white/12 bg-surface/85 p-0"
+        variant="transparent"
+        className="flex-1 gap-0 overflow-hidden rounded-xl border-0 bg-background p-0"
       >
         <View className="relative">
           <Image
@@ -98,52 +97,58 @@ export function FeedItem({ feed, onPress, onToggleFavorite }: FeedItemProps): JS
           )}
         </View>
 
-        {/* flex-1: fills leftover height so row bottoms align without empty solid gap */}
-        <Card.Body className="relative min-h-[72px] flex-1 justify-between gap-0.5 bg-surface px-2 pb-2 pt-1.5">
-            <View className="gap-0.5">
-              <View className="flex-row items-baseline gap-1">
-                <Typography
-                  type="body-sm"
-                  weight="bold"
-                  className="text-[15px] leading-[18px] text-foreground"
-                >
-                  {formatPrice(feed.price, feed.currencySymbol)}
-                </Typography>
-                {feed.valuation?.fairPrice != null ? (
-                  <Typography type="body-xs" className="text-[10px] text-muted">
-                    Est. {formatPrice(feed.valuation.fairPrice, feed.currencySymbol)}
-                  </Typography>
-                ) : null}
-              </View>
-
-              <Card.Title
-                className="min-h-[28px] text-[11px] leading-[14px] text-foreground"
-                numberOfLines={2}
-              >
-                {feed.title}
-              </Card.Title>
-            </View>
-
-            <View className="mt-0.5 flex-row items-center gap-0.5">
-              {distance ? (
-                <Typography type="body-xs" className="text-[10px] text-muted">
-                  {distance}
-                </Typography>
-              ) : null}
-              {distance ? (
-                <Typography type="body-xs" className="text-[10px] text-muted">
-                  ·
-                </Typography>
-              ) : null}
+        {/* Exactly 3 rows: price, title (ellipsis), meta */}
+        <Card.Body className="gap-0.5 bg-background px-1.5 pb-1.5 pt-1">
+          <View className="flex-row items-baseline gap-1.5">
+            <Typography
+              type="body-sm"
+              weight="semibold"
+              className="text-[15px] leading-5 text-foreground"
+              numberOfLines={1}
+            >
+              {formatPrice(feed.price, feed.currencySymbol)}
+            </Typography>
+            {feed.valuation?.fairPrice != null ? (
               <Typography
                 type="body-xs"
-                className="flex-1 text-[10px] text-muted"
+                className="text-xs text-muted"
                 numberOfLines={1}
               >
-                {feed.locationText}
+                Est. {formatPrice(feed.valuation.fairPrice, feed.currencySymbol)}
               </Typography>
-            </View>
-          </Card.Body>
+            ) : null}
+          </View>
+
+          <Typography
+            type="body-sm"
+            className="text-sm font-normal leading-5 text-foreground"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {feed.title}
+          </Typography>
+
+          <View className="flex-row items-center gap-1">
+            {distance ? (
+              <Typography type="body-xs" className="text-xs text-muted" numberOfLines={1}>
+                {distance}
+              </Typography>
+            ) : null}
+            {distance ? (
+              <Typography type="body-xs" className="text-xs text-muted">
+                ·
+              </Typography>
+            ) : null}
+            <Typography
+              type="body-xs"
+              className="flex-1 text-xs text-muted"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {feed.locationText}
+            </Typography>
+          </View>
+        </Card.Body>
       </Card>
     </PressableFeedback>
   );

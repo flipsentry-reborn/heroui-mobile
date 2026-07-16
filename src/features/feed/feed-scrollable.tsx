@@ -23,7 +23,7 @@ function FeedSkeleton(): JSX.Element {
       {[0, 1, 2, 3].map((key) => (
         <View key={key} className="w-1/2 px-1 pb-2.5">
           <SkeletonGroup isLoading className="overflow-hidden rounded-xl bg-default">
-            <SkeletonGroup.Item className="h-[134px] w-full" />
+            <SkeletonGroup.Item className="h-[168px] w-full" />
             <View className="gap-1.5 p-2">
               <SkeletonGroup.Item className="h-3.5 w-1/3 rounded-md" />
               <SkeletonGroup.Item className="h-2.5 w-[90%] rounded-md" />
@@ -57,8 +57,8 @@ export function FeedScrollable({
       data={items}
       keyExtractor={(item) => item.id}
       numColumns={2}
-      columnWrapperStyle={{ paddingHorizontal: 4 }}
-      contentContainerStyle={{ paddingTop: 6, paddingBottom: bottomInset, flexGrow: 1 }}
+      columnWrapperStyle={{ paddingHorizontal: 2 }}
+      contentContainerStyle={{ paddingTop: 4, paddingBottom: bottomInset, flexGrow: 1 }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accent} />
       }

@@ -17,7 +17,13 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Skeleton, useThemeColor, useToast } from "heroui-native";
+import {
+  Button,
+  ScrollShadow,
+  Skeleton,
+  useThemeColor,
+  useToast,
+} from "heroui-native";
 
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
 import { PLAN_ACCENTS } from "@/features/settings/subscription-theme";
@@ -386,7 +392,11 @@ function PlanCard({
 export function SubscriptionScreen(): JSX.Element {
   const insets = useSafeAreaInsets();
   const { toast } = useToast();
-  const [foreground, muted] = useThemeColor(["foreground", "muted"]);
+  const [foreground, muted, background] = useThemeColor([
+    "foreground",
+    "muted",
+    "background",
+  ]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [currentTier, setCurrentTier] = useState<SubscriptionTier | null>(null);
@@ -456,78 +466,86 @@ export function SubscriptionScreen(): JSX.Element {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="gap-4 px-4 pt-2"
-      contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* HeroUI Pro pricing header - Britti Sans (heroSans) + zinc hierarchy */}
-      <View className="mb-3 items-center gap-3 px-2 pt-1">
-        <View className="items-center">
-          <Text
-            style={{
-              fontFamily: Fonts.heading,
-              fontSize: 34,
-              lineHeight: 40,
-              letterSpacing: -0.6,
-              color: foreground,
-              textAlign: "center",
-            }}
-          >
-            Become a Hero.
-          </Text>
-          <Text
-            style={{
-              fontFamily: Fonts.heading,
-              fontSize: 34,
-              lineHeight: 40,
-              letterSpacing: -0.6,
-              color: "#71717A",
-              textAlign: "center",
-            }}
-          >
-            Ship with confidence.
-          </Text>
-        </View>
-        <Text
-          style={{
-            fontFamily: Fonts.headingRegular,
-            fontSize: 16,
-            lineHeight: 24,
-            color: muted,
-            textAlign: "center",
-            paddingHorizontal: 8,
-          }}
-        >
-          Pick your stack. Start building products you're proud to ship.
-        </Text>
-      </View>
-
-      {subscriptionPlans.map((plan) => (
-        <PlanCard
-          key={plan.id}
-          plan={plan}
-          busy={busy}
-          isCurrent={currentTier === plan.id}
-          expanded={expandedId === plan.id}
-          onToggle={() =>
-            setExpandedId((id) => (id === plan.id ? null : plan.id))
-          }
-          onSelect={() => void handleSubscribe(plan.id)}
-        />
-      ))}
-
-      <Button
-        variant="ghost"
-        className="mt-1 self-center"
-        isDisabled={busy}
-        onPress={() => void handleRestore()}
+    <View className="flex-1 bg-background">
+      <ScrollShadow
+        className="flex-1"
+        LinearGradientComponent={LinearGradient}
+        color={background}
       >
-        <Button.Label className="font-normal text-muted">
-          Restore purchases
-        </Button.Label>
-      </Button>
-    </ScrollView>
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-4 px-4 pt-2"
+          contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* HeroUI Pro pricing header - Britti Sans (heroSans) + zinc hierarchy */}
+          <View className="mb-3 items-center gap-3 px-2 pt-1">
+            <View className="items-center">
+              <Text
+                style={{
+                  fontFamily: Fonts.heading,
+                  fontSize: 34,
+                  lineHeight: 40,
+                  letterSpacing: -0.6,
+                  color: foreground,
+                  textAlign: "center",
+                }}
+              >
+                Become a Hero.
+              </Text>
+              <Text
+                style={{
+                  fontFamily: Fonts.heading,
+                  fontSize: 34,
+                  lineHeight: 40,
+                  letterSpacing: -0.6,
+                  color: "#71717A",
+                  textAlign: "center",
+                }}
+              >
+                Ship with confidence.
+              </Text>
+            </View>
+            <Text
+              style={{
+                fontFamily: Fonts.headingRegular,
+                fontSize: 16,
+                lineHeight: 24,
+                color: muted,
+                textAlign: "center",
+                paddingHorizontal: 8,
+              }}
+            >
+              Pick your stack. Start building products you're proud to ship.
+            </Text>
+          </View>
+
+          {subscriptionPlans.map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              busy={busy}
+              isCurrent={currentTier === plan.id}
+              expanded={expandedId === plan.id}
+              onToggle={() =>
+                setExpandedId((id) => (id === plan.id ? null : plan.id))
+              }
+              onSelect={() => void handleSubscribe(plan.id)}
+            />
+          ))}
+
+          <Button
+            variant="ghost"
+            className="mt-1 self-center"
+            isDisabled={busy}
+            onPress={() => void handleRestore()}
+          >
+            <Button.Label className="font-normal text-muted">
+              Restore purchases
+            </Button.Label>
+          </Button>
+        </ScrollView>
+      </ScrollShadow>
+    </View>
   );
 }

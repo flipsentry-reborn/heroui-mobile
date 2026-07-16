@@ -151,7 +151,7 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
   };
 
   const handleCompPress = (id: string) => {
-    router.push(`/feed/${id}`);
+    router.push({ pathname: "/listing/[id]", params: { id } });
   };
 
   const thumbUrl = images[0];

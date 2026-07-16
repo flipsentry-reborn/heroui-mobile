@@ -1,12 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect, useRouter } from "expo-router";
 import type { JSX } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  RefreshControl,
-  ScrollView,
-  View,
-} from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { RefreshControl, ScrollView, View } from "react-native";
 import Animated from "react-native-reanimated";
 import {
   Accordion,
@@ -23,6 +20,7 @@ import { withUniwind } from "uniwind";
 
 import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import { FeedItem } from "@/features/feed/feed-item";
+import { feedCategoryHref } from "@/features/feed/feed-nav";
 import {
   FOR_YOU_ALL_CHILDREN,
   FOR_YOU_SHELVES,
@@ -39,10 +37,7 @@ type ShelfState = Record<string, FeedModel[]>;
 
 interface FeedForYouPageProps {
   query: string;
-  syncToken: number;
   onPressItem?: (id: string) => void;
-  onOpenCategory: (key: FeedCategoryKey) => void;
-  onFavoriteChange?: () => void;
 }
 
 function ShelfSkeleton(): JSX.Element {
@@ -52,7 +47,11 @@ function ShelfSkeleton(): JSX.Element {
         <SkeletonGroup.Item className="h-5 w-28 rounded-md" />
         <SkeletonGroup.Item className="h-4 w-4 rounded-md" />
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="px-3">
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerClassName="px-3"
+      >
         {[0, 1, 2].map((key) => (
           <View key={key} className="mr-2 w-[156px]">
             <SkeletonGroup.Item className="h-[128px] w-full rounded-xl" />
@@ -104,15 +103,22 @@ function ShelfRail({
 
 export function FeedForYouPage({
   query,
-  syncToken,
   onPressItem,
-  onOpenCategory,
-  onFavoriteChange,
 }: FeedForYouPageProps): JSX.Element {
+  const router = useRouter();
   const [accent, background] = useThemeColor(["accent", "background"]);
   const [shelves, setShelves] = useState<ShelfState>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const hasLoaded = useRef(false);
+
+  const openCategory = useCallback(
+    (key: string) => {
+      if (key === "for-you" || key === "your-searches") return;
+      router.push(feedCategoryHref(key));
+    },
+    [router],
+  );
 
   const shelfKeys = useMemo(() => {
     const keys: Exclude<FeedCategoryKey, "for-you">[] = [];
@@ -135,9 +141,9 @@ export function FeedForYouPage({
   );
 
   const load = useCallback(
-    async (opts?: { refresh?: boolean }) => {
+    async (opts?: { refresh?: boolean; silent?: boolean }) => {
       if (opts?.refresh) setRefreshing(true);
-      else setLoading(true);
+      else if (!opts?.silent) setLoading(true);
       try {
         const entries = await Promise.all(
           shelfKeys.map(async (key) => {
@@ -150,6 +156,7 @@ export function FeedForYouPage({
           }),
         );
         setShelves(Object.fromEntries(entries));
+        hasLoaded.current = true;
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -158,25 +165,23 @@ export function FeedForYouPage({
     [query, shelfKeys],
   );
 
-  useEffect(() => {
-    void load();
-  }, [load, syncToken]);
-
-  const handleToggleFavorite = useCallback(
-    async (id: string) => {
-      const updated = await toggleFavorite(id);
-      if (!updated) return;
-      setShelves((prev) => {
-        const next: ShelfState = {};
-        for (const [key, items] of Object.entries(prev)) {
-          next[key] = items.map((item) => (item.id === id ? updated : item));
-        }
-        return next;
-      });
-      onFavoriteChange?.();
-    },
-    [onFavoriteChange],
+  useFocusEffect(
+    useCallback(() => {
+      void load({ silent: hasLoaded.current });
+    }, [load]),
   );
+
+  const handleToggleFavorite = useCallback(async (id: string) => {
+    const updated = await toggleFavorite(id);
+    if (!updated) return;
+    setShelves((prev) => {
+      const next: ShelfState = {};
+      for (const [key, items] of Object.entries(prev)) {
+        next[key] = items.map((item) => (item.id === id ? updated : item));
+      }
+      return next;
+    });
+  }, []);
 
   const onToggleFavorite = useCallback(
     (id: string) => {
@@ -276,7 +281,7 @@ export function FeedForYouPage({
                             return (
                               <View key={child.key} className="mb-2.5">
                                 <PressableFeedback
-                                  onPress={() => onOpenCategory(child.key)}
+                                  onPress={() => openCategory(child.key)}
                                   className="mb-1.5 flex-row items-center justify-between px-3 py-0.5"
                                   animation={{ scale: { value: 0.99 } }}
                                   accessibilityRole="button"
@@ -317,10 +322,7 @@ export function FeedForYouPage({
 
           const header = (
             <PressableFeedback
-              onPress={() => {
-                if (shelf.key === "your-searches") return;
-                onOpenCategory(shelf.key);
-              }}
+              onPress={() => openCategory(shelf.key)}
               className="mb-1.5 flex-row items-center justify-between px-3 py-0.5"
               animation={{ scale: { value: 0.99 } }}
               accessibilityRole="button"

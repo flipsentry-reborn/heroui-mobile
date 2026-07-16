@@ -6,8 +6,10 @@ import { Keyboard, Pressable, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SearchField, useThemeColor } from "heroui-native";
 
-import { FeedCategoryTabs } from "@/features/feed/feed-category-tabs";
-import type { FeedCategoryKey } from "@/mocks/data/feed";
+import {
+  FeedCategoryTabs,
+  type FeedTabKey,
+} from "@/features/feed/feed-category-tabs";
 
 const LOGO = require("../../../assets/images/flipsentry-logo-text-transparent.png");
 const LOGO_WIDTH = 132;
@@ -16,15 +18,15 @@ const LOGO_HEIGHT = 30;
 interface FeedHeaderProps {
   searchText: string;
   onSearchChange: (value: string) => void;
-  activeCategory: FeedCategoryKey;
-  onCategorySelect: (key: FeedCategoryKey) => void;
+  activeTab?: FeedTabKey;
+  onTabSelect: (key: FeedTabKey) => void;
 }
 
 export function FeedHeader({
   searchText,
   onSearchChange,
-  activeCategory,
-  onCategorySelect,
+  activeTab = "for-you",
+  onTabSelect,
 }: FeedHeaderProps): JSX.Element {
   const insets = useSafeAreaInsets();
   const [foreground, muted] = useThemeColor(["foreground", "muted"]);
@@ -132,10 +134,7 @@ export function FeedHeader({
         </View>
       </View>
 
-      <FeedCategoryTabs
-        activeCategory={activeCategory}
-        onSelect={onCategorySelect}
-      />
+      <FeedCategoryTabs activeTab={activeTab} onSelect={onTabSelect} />
     </View>
   );
 }

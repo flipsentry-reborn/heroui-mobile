@@ -1,46 +1,35 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useRef, useState, type JSX } from "react";
 
-import { FeedForYouPage } from "@/features/feed/feed-for-you-page";
 import { FeedScrollable } from "@/features/feed/feed-scrollable";
-import type { FeedCategoryKey } from "@/mocks/data/feed";
 import { getFeed, toggleFavorite } from "@/mocks/services/feed";
 import type { FeedItem as FeedModel } from "@/models/feed";
 
 interface FeedCategoryPageProps {
-  category: FeedCategoryKey;
+  category: string;
   query: string;
-  /** Bumps when favorites change elsewhere so Saved / lists stay in sync. */
-  syncToken: number;
   onPressItem?: (id: string) => void;
-  onOpenCategory?: (key: FeedCategoryKey) => void;
-  onFavoriteChange?: () => void;
 }
 
-/**
- * One mounted feed page per category. Stays alive inside PagerView so scroll
- * position is preserved when swiping away and back.
- */
+/** Category list page (All, Top Rated, user searches, …). */
 export function FeedCategoryPage({
   category,
   query,
-  syncToken,
   onPressItem,
-  onOpenCategory,
-  onFavoriteChange,
 }: FeedCategoryPageProps): JSX.Element {
   const [items, setItems] = useState<FeedModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const skipNextSync = useRef(true);
+  const hasLoaded = useRef(false);
 
   const load = useCallback(
     async (opts?: { refresh?: boolean; silent?: boolean }) => {
-      if (category === "for-you") return;
       if (opts?.refresh) setRefreshing(true);
       else if (!opts?.silent) setLoading(true);
       try {
         const data = await getFeed({ category, query });
         setItems(data);
+        hasLoaded.current = true;
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -49,20 +38,11 @@ export function FeedCategoryPage({
     [category, query],
   );
 
-  useEffect(() => {
-    if (category === "for-you") return;
-    void load();
-  }, [category, load]);
-
-  useEffect(() => {
-    if (category === "for-you") return;
-    if (skipNextSync.current) {
-      skipNextSync.current = false;
-      return;
-    }
-    void load({ silent: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- syncToken-only
-  }, [syncToken]);
+  useFocusEffect(
+    useCallback(() => {
+      void load({ silent: hasLoaded.current });
+    }, [load]),
+  );
 
   const handleToggleFavorite = useCallback(
     async (id: string) => {
@@ -74,22 +54,9 @@ export function FeedCategoryPage({
         }
         return prev.map((item) => (item.id === id ? updated : item));
       });
-      onFavoriteChange?.();
     },
-    [category, onFavoriteChange],
+    [category],
   );
-
-  if (category === "for-you") {
-    return (
-      <FeedForYouPage
-        query={query}
-        syncToken={syncToken}
-        onPressItem={onPressItem}
-        onOpenCategory={onOpenCategory ?? (() => {})}
-        onFavoriteChange={onFavoriteChange}
-      />
-    );
-  }
 
   return (
     <FeedScrollable
@@ -103,6 +70,8 @@ export function FeedCategoryPage({
       onToggleFavorite={(id) => {
         void handleToggleFavorite(id);
       }}
+      topInset={14}
+      shadowSize={16}
     />
   );
 }

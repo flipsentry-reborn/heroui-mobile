@@ -1,6 +1,5 @@
 import type { FeedItem } from "@/models/feed";
 import { isCarListing } from "@/models/feed";
-import type { FeedCategoryKey } from "@/mocks/data/feed";
 import { MOCK_FEED_ITEMS } from "@/mocks/data/feed";
 import { getLocalCompsForFeed } from "@/mocks/data/local-comps";
 
@@ -10,7 +9,8 @@ export type GetLocalCompsParams = {
 };
 
 export type GetFeedParams = {
-  category?: FeedCategoryKey;
+  /** System key (all, car, …) or user search id (pinball, group-pinball). */
+  category?: string;
   query?: string;
   limit?: number;
 };
@@ -19,7 +19,7 @@ function delay(ms = 450): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function matchesCategory(item: FeedItem, category: FeedCategoryKey): boolean {
+function matchesCategory(item: FeedItem, category: string): boolean {
   if (category === "for-you" || category === "all") return true;
   if (category === "saved") return item.isFavorite;
   if (category === "best-picks") {
@@ -43,7 +43,11 @@ function matchesCategory(item: FeedItem, category: FeedCategoryKey): boolean {
   if (category === "xbox") {
     return item.searchSettingIds.includes("group-xbox");
   }
-  return true;
+  // User-created searches (e.g. pinball / group-pinball)
+  return (
+    item.searchSettingIds.includes(category) ||
+    item.searchSettingIds.includes(`group-${category}`)
+  );
 }
 
 export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {

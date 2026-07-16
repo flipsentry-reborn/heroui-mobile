@@ -18,7 +18,11 @@ interface FeedScrollableProps {
   onRefresh: () => void;
   onPressItem?: (id: string) => void;
   onToggleFavorite?: (id: string) => void;
+  /** Extra space above the first row so cards aren’t flush under the header. */
+  topInset?: number;
   bottomInset?: number;
+  /** ScrollShadow fade size (px). */
+  shadowSize?: number;
 }
 
 /** Matches FeedItem: 2-col card, 168px image, 3 text rows. */
@@ -55,12 +59,25 @@ export function FeedScrollable({
   onRefresh,
   onPressItem,
   onToggleFavorite,
+  topInset = 4,
   bottomInset = 96,
+  shadowSize = 12,
 }: FeedScrollableProps): JSX.Element {
   const [accent, background] = useThemeColor(["accent", "background"]);
 
   if (loading && items.length === 0) {
-    return <FeedSkeleton />;
+    return (
+      <ScrollShadow
+        className="flex-1"
+        LinearGradientComponent={LinearGradient}
+        color={background}
+        size={shadowSize}
+      >
+        <View style={{ paddingTop: topInset }}>
+          <FeedSkeleton />
+        </View>
+      </ScrollShadow>
+    );
   }
 
   return (
@@ -68,7 +85,7 @@ export function FeedScrollable({
       className="flex-1"
       LinearGradientComponent={LinearGradient}
       color={background}
-      size={12}
+      size={shadowSize}
     >
       <FlatList
         key="feed-grid-2"
@@ -77,7 +94,7 @@ export function FeedScrollable({
         numColumns={2}
         columnWrapperStyle={{ paddingHorizontal: 2 }}
         contentContainerStyle={{
-          paddingTop: 4,
+          paddingTop: topInset,
           paddingBottom: bottomInset,
           flexGrow: 1,
         }}

@@ -12,7 +12,7 @@ import type { FeedItem } from "@/models/feed";
 
 const StyledIonicons = withUniwind(Ionicons);
 
-export default function FeedDetailScreen(): JSX.Element {
+export default function ListingDetailScreen(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [item, setItem] = useState<FeedItem | null>(null);

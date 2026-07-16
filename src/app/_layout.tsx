@@ -53,7 +53,7 @@ function RootLayoutContent(): JSX.Element {
       >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
-          name="feed/[id]"
+          name="listing/[id]"
           options={{
             animation: "slide_from_right",
             gestureEnabled: true,

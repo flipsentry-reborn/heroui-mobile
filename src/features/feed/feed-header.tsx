@@ -32,22 +32,27 @@ export function FeedHeader({
   const openingRef = useRef(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const isExpanded = searchOpen || searchText.length > 0;
-
   useEffect(() => {
-    if (!isExpanded) return;
+    if (!searchOpen) return;
     const id = setTimeout(() => {
       inputRef.current?.focus();
       openingRef.current = false;
     }, 80);
     return () => clearTimeout(id);
-  }, [isExpanded]);
+  }, [searchOpen]);
 
   const openSearch = () => {
     openingRef.current = true;
     setSearchOpen(true);
   };
 
+  /** Collapse field UI; keep typed query so results stay filtered. */
+  const collapseSearch = () => {
+    setSearchOpen(false);
+    Keyboard.dismiss();
+  };
+
+  /** Clear query and collapse. */
   const closeSearch = () => {
     onSearchChange("");
     setSearchOpen(false);
@@ -56,9 +61,7 @@ export function FeedHeader({
 
   const handleBlur = () => {
     if (openingRef.current) return;
-    if (!searchText.trim()) {
-      setSearchOpen(false);
-    }
+    setSearchOpen(false);
   };
 
   return (
@@ -68,7 +71,7 @@ export function FeedHeader({
     >
       <View className="px-3 pb-0.5 pt-1">
         <View className="h-8 flex-row items-center">
-          {isExpanded ? (
+          {searchOpen ? (
             <>
               <View className="flex-1">
                 <SearchField
@@ -91,7 +94,7 @@ export function FeedHeader({
                       autoCapitalize="none"
                       autoCorrect={false}
                       onBlur={handleBlur}
-                      onSubmitEditing={() => Keyboard.dismiss()}
+                      onSubmitEditing={collapseSearch}
                     />
                     <SearchField.ClearButton />
                   </SearchField.Group>
@@ -99,7 +102,7 @@ export function FeedHeader({
               </View>
               <Pressable
                 onPress={closeSearch}
-                accessibilityLabel="Close search"
+                accessibilityLabel="Clear search"
                 className="ml-1.5 h-8 w-8 items-center justify-center rounded-field bg-surface-secondary"
               >
                 <Ionicons name="close" size={16} color={foreground} />

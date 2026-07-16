@@ -15,15 +15,14 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useUniwind } from "uniwind";
 
 import { applyAppearance } from "@/lib/appearance";
-import { initialSettingsState } from "@/mocks/data/settings";
 import { getSettings } from "@/mocks/services/settings";
 
 import "../global.css";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-// Match mock default before first paint
-applyAppearance(initialSettingsState.preferences.appearance);
+// Lock mock default before first paint (avoid reading settings during module init)
+applyAppearance("dark");
 
 function RootLayoutContent(): JSX.Element {
   const background = useThemeColor("background");

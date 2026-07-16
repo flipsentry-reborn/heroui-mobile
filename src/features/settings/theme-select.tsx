@@ -6,6 +6,7 @@ import { withUniwind } from "uniwind";
 
 import {
   APPEARANCE_OPTIONS,
+  isAppearanceMode,
   type AppearanceMode,
 } from "@/lib/appearance";
 
@@ -20,10 +21,6 @@ const OPTION_ICONS: Record<AppearanceMode, IonName> = {
 };
 
 type LooseSelectOption = { value: string; label: string } | undefined;
-
-function isAppearanceMode(value: string): value is AppearanceMode {
-  return APPEARANCE_OPTIONS.some((option) => option.value === value);
-}
 
 interface ThemeSelectProps {
   value: AppearanceMode;

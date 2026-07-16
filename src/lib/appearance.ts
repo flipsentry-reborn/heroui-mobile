@@ -28,12 +28,12 @@ export const APPEARANCE_OPTIONS: {
   },
 ];
 
+export function isAppearanceMode(value: unknown): value is AppearanceMode {
+  return value === "light" || value === "dark" || value === "system";
+}
+
 /** Apply app appearance via Uniwind (HeroUI tokens follow). */
-export function applyAppearance(mode: AppearanceMode): void {
-  if (mode === "system") {
-    // Runtime accepts "system" for adaptive light/dark
-    (Uniwind.setTheme as (theme: string) => void)("system");
-    return;
-  }
-  Uniwind.setTheme(mode);
+export function applyAppearance(mode: AppearanceMode | null | undefined): void {
+  const next = isAppearanceMode(mode) ? mode : "dark";
+  Uniwind.setTheme(next);
 }

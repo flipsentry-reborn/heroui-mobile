@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import type { JSX } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
@@ -285,6 +286,7 @@ function PlanCard({
 
 export function SubscriptionScreen(): JSX.Element {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { toast } = useToast();
   const [foreground, muted, background] = useThemeColor([
     "foreground",
@@ -351,7 +353,10 @@ export function SubscriptionScreen(): JSX.Element {
 
   if (loading) {
     return (
-      <View className="flex-1 gap-4 bg-background px-4 pt-4">
+      <View
+        className="flex-1 gap-4 bg-background px-4"
+        style={{ paddingTop: insets.top + 16 }}
+      >
         <Skeleton className="h-56 rounded-3xl" />
         <Skeleton className="h-56 rounded-3xl" />
         <Skeleton className="h-56 rounded-3xl" />
@@ -360,7 +365,18 @@ export function SubscriptionScreen(): JSX.Element {
   }
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      <View className="px-3 pb-1 pt-1">
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={12}
+          className="h-10 w-10 items-center justify-center rounded-full"
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={24} color={foreground} />
+        </Pressable>
+      </View>
       <ScrollShadow
         className="flex-1"
         LinearGradientComponent={LinearGradient}

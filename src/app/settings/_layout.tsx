@@ -19,7 +19,7 @@ export default function SettingsStackLayout(): JSX.Element {
     >
       <Stack.Screen name="profile" options={{ title: "Profile" }} />
       <Stack.Screen name="notification" options={{ title: "Notification" }} />
-      <Stack.Screen name="subscription" options={{ title: "Subscription" }} />
+      <Stack.Screen name="subscription" options={{ headerShown: false }} />
       <Stack.Screen name="blocked-sellers" options={{ title: "Blocked Sellers" }} />
     </Stack>
   );

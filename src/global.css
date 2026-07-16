@@ -1,5 +1,5 @@
 /*
- * HeroUI Native Theme - Uber-inspired neutrals (black / white accent).
+ * HeroUI Native Theme - Uber-inspired neutrals (dark only).
  * Restart Metro after theme changes.
  * @see https://heroui.com/docs/native/getting-started/theming
  */
@@ -29,93 +29,48 @@
 }
 
 @layer theme {
- @variant light {
- --background: oklch(97.02% 0 0);
- --foreground: oklch(12% 0 0);
+  @variant dark {
+    --background: oklch(12% 0 0);
+    --foreground: oklch(98.48% 0 0);
 
- --surface: oklch(100% 0 0);
- --surface-foreground: oklch(12% 0 0);
- --surface-secondary: oklch(95.24% 0 0);
- --surface-secondary-foreground: oklch(12% 0 0);
- --surface-tertiary: oklch(93.73% 0 0);
- --surface-tertiary-foreground: oklch(12% 0 0);
+    --surface: oklch(21.03% 0 0);
+    --surface-foreground: oklch(98.48% 0 0);
+    --surface-secondary: oklch(25.7% 0 0);
+    --surface-secondary-foreground: oklch(98.48% 0 0);
+    --surface-tertiary: oklch(27.21% 0 0);
+    --surface-tertiary-foreground: oklch(98.48% 0 0);
 
- --overlay: oklch(100% 0 0);
- --overlay-foreground: oklch(12% 0 0);
- --backdrop: oklch(0% 0 0 / 40%);
+    --overlay: oklch(21.03% 0 0);
+    --overlay-foreground: oklch(98.48% 0 0);
+    --backdrop: oklch(0% 0 0 / 50%);
 
- --muted: oklch(55.17% 0 0);
+    --muted: oklch(70.5% 0 0);
 
- --default: oklch(94% 0 0);
- --default-foreground: oklch(12% 0 0);
+    --default: oklch(27.4% 0 0);
+    --default-foreground: oklch(98.48% 0 0);
 
- /* Uber light: black primary */
- --accent: oklch(0% 0 0);
- --accent-foreground: oklch(100% 0 0);
+    /* Uber dark: white primary */
+    --accent: oklch(98.48% 0 0);
+    --accent-foreground: oklch(0% 0 0);
 
- --field-background: oklch(100% 0 0);
- --field-foreground: oklch(12% 0 0);
- --field-placeholder: var(--muted);
- --field-border: transparent;
+    --field-background: oklch(21.03% 0 0);
+    --field-foreground: oklch(98.48% 0 0);
+    --field-placeholder: var(--muted);
+    --field-border: transparent;
 
- --success: oklch(0.6277 0.1604 153.06);
- --success-foreground: oklch(98% 0 0);
- --warning: oklch(0.8446 0.1525 80.6);
- --warning-foreground: oklch(20% 0 0);
- --danger: oklch(0.573 0.2249 21.97);
- --danger-foreground: oklch(98% 0 0);
+    --success: oklch(0.6514 0.1321 156.22);
+    --success-foreground: oklch(12% 0 0);
+    --warning: oklch(0.8803 0.1348 86.06);
+    --warning-foreground: oklch(20% 0 0);
+    --danger: oklch(0.7044 0.1872 23.19);
+    --danger-foreground: oklch(12% 0 0);
 
- --segment: oklch(93.73% 0 0);
- --segment-foreground: oklch(12% 0 0);
+    --segment: oklch(39.64% 0 0);
+    --segment-foreground: oklch(98.48% 0 0);
 
- --border: oklch(90% 0 0);
- --separator: oklch(92% 0 0);
- --focus: var(--accent);
- --link: oklch(12% 0 0);
- }
-
- @variant dark {
- --background: oklch(12% 0 0);
- --foreground: oklch(98.48% 0 0);
-
- --surface: oklch(21.03% 0 0);
- --surface-foreground: oklch(98.48% 0 0);
- --surface-secondary: oklch(25.7% 0 0);
- --surface-secondary-foreground: oklch(98.48% 0 0);
- --surface-tertiary: oklch(27.21% 0 0);
- --surface-tertiary-foreground: oklch(98.48% 0 0);
-
- --overlay: oklch(21.03% 0 0);
- --overlay-foreground: oklch(98.48% 0 0);
- --backdrop: oklch(0% 0 0 / 50%);
-
- --muted: oklch(70.5% 0 0);
-
- --default: oklch(27.4% 0 0);
- --default-foreground: oklch(98.48% 0 0);
-
- /* Uber dark: white primary */
- --accent: oklch(98.48% 0 0);
- --accent-foreground: oklch(0% 0 0);
-
- --field-background: oklch(21.03% 0 0);
- --field-foreground: oklch(98.48% 0 0);
- --field-placeholder: var(--muted);
- --field-border: transparent;
-
- --success: oklch(0.6514 0.1321 156.22);
- --success-foreground: oklch(12% 0 0);
- --warning: oklch(0.8803 0.1348 86.06);
- --warning-foreground: oklch(20% 0 0);
- --danger: oklch(0.7044 0.1872 23.19);
- --danger-foreground: oklch(12% 0 0);
-
- --segment: oklch(39.64% 0 0);
- --segment-foreground: oklch(98.48% 0 0);
-
- --border: oklch(28% 0 0);
- --separator: oklch(25% 0 0);
- --focus: var(--accent);
- --link: oklch(98.48% 0 0);
- }
+    --border: oklch(28% 0 0);
+    --separator: oklch(25% 0 0);
+    --focus: var(--accent);
+    --link: oklch(98.48% 0 0);
+  }
 }

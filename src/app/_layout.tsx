@@ -1,44 +1,32 @@
 import type { JSX } from "react";
 import { useEffect, useMemo } from "react";
 import { useFonts } from "expo-font";
-import {
-  DarkTheme,
-  DefaultTheme,
-  Stack,
-  ThemeProvider,
-} from "expo-router";
+import { DarkTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
 import { HeroUINativeProvider, useThemeColor } from "heroui-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useUniwind } from "uniwind";
-
-import { applyAppearance } from "@/lib/appearance";
-import { initialSettingsState } from "@/mocks/data/settings";
-import { getSettings } from "@/mocks/services/settings";
+import { Uniwind } from "uniwind";
 
 import "../global.css";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-// Match mock default before first paint
-applyAppearance(initialSettingsState.preferences.appearance);
+// App is dark-only — lock Uniwind before first paint
+Uniwind.setTheme("dark");
 
 function RootLayoutContent(): JSX.Element {
   const background = useThemeColor("background");
   const foreground = useThemeColor("foreground");
   const card = useThemeColor("surface");
   const border = useThemeColor("border");
-  const { theme } = useUniwind();
-  const isDark = theme === "dark";
 
-  const navigationTheme = useMemo(() => {
-    const base = isDark ? DarkTheme : DefaultTheme;
-    return {
-      ...base,
+  const navigationTheme = useMemo(
+    () => ({
+      ...DarkTheme,
       colors: {
-        ...base.colors,
+        ...DarkTheme.colors,
         // Native stack uses these during push/pop - default is white without ThemeProvider
         primary: foreground,
         background,
@@ -47,14 +35,9 @@ function RootLayoutContent(): JSX.Element {
         border,
         notification: foreground,
       },
-    };
-  }, [background, border, card, foreground, isDark]);
-
-  useEffect(() => {
-    void getSettings().then((settings) => {
-      applyAppearance(settings.preferences.appearance);
-    });
-  }, []);
+    }),
+    [background, border, card, foreground],
+  );
 
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(background);
@@ -85,7 +68,7 @@ function RootLayoutContent(): JSX.Element {
           }}
         />
       </Stack>
-      <StatusBar style={isDark ? "light" : "dark"} />
+      <StatusBar style="light" />
     </ThemeProvider>
   );
 }

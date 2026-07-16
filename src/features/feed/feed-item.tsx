@@ -9,11 +9,10 @@ import {
   StatusBadge,
   ValuationBadge,
 } from "@/features/feed/feed-badge";
-import type { DistanceUnit } from "@/mocks/data/settings";
+import { formatOdometerCompact } from "@/lib/distance-utils";
 import { getDistanceUnitSync } from "@/mocks/services/settings";
 import {
   getOrderedStatusBadges,
-  isCarListing,
   type FeedItem as FeedModel,
 } from "@/models/feed";
 
@@ -22,7 +21,6 @@ const IMAGE_H_RAIL = 128;
 const RAIL_WIDTH = 156;
 /** Featured shelves (e.g. Top Rated) render ~7% larger. */
 const FEATURED_SCALE = 1.07;
-const MILES_TO_KM = 1.60934;
 
 interface FeedItemProps {
   feed: FeedModel;
@@ -41,30 +39,6 @@ function formatPrice(price: number, symbol: string): string {
   return `${symbol}${formatted}`;
 }
 
-/** Vehicle odometer from stored miles, labeled by user distance preference. */
-function formatVehicleMileage(
-  miles: number,
-  unit: DistanceUnit,
-): string {
-  const value =
-    unit === "km" ? Math.round(miles * MILES_TO_KM) : Math.round(miles);
-  const label = unit === "km" ? "km" : "mi";
-  return `${value.toLocaleString()} ${label}`;
-}
-
-function feedMetaLine(feed: FeedModel, unit: DistanceUnit): string {
-  const location = feed.locationText?.trim() || "";
-  if (isCarListing(feed)) {
-    const miles =
-      feed.vehicleSpecifications?.vehicleMileage ?? feed.valuation?.mileage;
-    if (miles != null && miles > 0) {
-      const mileage = formatVehicleMileage(miles, unit);
-      return location ? `${mileage} · ${location}` : mileage;
-    }
-  }
-  return location;
-}
-
 export function FeedItem({
   feed,
   onPress,
@@ -81,7 +55,13 @@ export function FeedItem({
     feed.images.mainImageUrl.imageUrl ||
     feed.images.marketplaceImages[0]?.imageUrl;
   const statusBadges = getOrderedStatusBadges(feed);
-  const meta = feedMetaLine(feed, getDistanceUnitSync());
+  const distanceUnit = getDistanceUnitSync();
+  const rawMileage = feed.vehicleSpecifications?.vehicleMileage;
+  const mileageText =
+    rawMileage != null
+      ? formatOdometerCompact(rawMileage, distanceUnit)
+      : null;
+  const primaryLocation = feed.locationText?.split(",")[0]?.trim() || null;
   const isRail = layout === "rail";
   const scale = isRail && featured ? FEATURED_SCALE : 1;
   const railW = Math.round(RAIL_WIDTH * scale);
@@ -181,15 +161,36 @@ export function FeedItem({
             {feed.title}
           </Typography>
 
-          {meta ? (
-            <Typography
-              type="body-xs"
-              className="text-xs text-muted"
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {meta}
-            </Typography>
+          {(mileageText || primaryLocation) ? (
+            <View className="min-w-0 flex-row items-center">
+              {mileageText ? (
+                <Typography
+                  type="body-xs"
+                  className="shrink-0 text-xs text-muted"
+                  numberOfLines={1}
+                >
+                  {mileageText}
+                </Typography>
+              ) : null}
+              {mileageText && primaryLocation ? (
+                <Typography
+                  type="body-xs"
+                  className="mx-1.5 text-xs text-muted"
+                >
+                  ·
+                </Typography>
+              ) : null}
+              {primaryLocation ? (
+                <Typography
+                  type="body-xs"
+                  className="min-w-0 flex-1 text-xs text-muted"
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {primaryLocation}
+                </Typography>
+              ) : null}
+            </View>
           ) : null}
         </Card.Body>
       </Card>

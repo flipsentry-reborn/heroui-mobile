@@ -154,6 +154,13 @@ Rules: `.cursor/rules/flipsentry-ui-port.mdc`, `.cursor/rules/heroui-native-scre
 - Settings stack: profile, notifications, blocked sellers, subscription, etc.
 - Expo Go first; maps / IAP / live feed stay stubbed (see `PORTING.md`)
 
+### Feed categories
+
+- UI: label-only `Chip` row (no icons)
+- Pages: `react-native-pager-view` with one mounted list per visited category
+- Swipe or tap chips; revisiting a category keeps scroll (page stays mounted)
+- Lazy: mount a category page on first visit; pull-to-refresh refetches that page only
+
 ---
 
 ## Checklist for a new settings-like screen

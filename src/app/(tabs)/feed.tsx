@@ -1,53 +1,28 @@
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState, type JSX } from "react";
+import { useCallback, useRef, useState, type JSX } from "react";
 import { View } from "react-native";
+import type PagerView from "react-native-pager-view";
 
 import { FeedHeader } from "@/features/feed/feed-header";
-import { FeedScrollable } from "@/features/feed/feed-scrollable";
-import type { FeedCategoryKey } from "@/mocks/data/feed";
-import { getFeed, toggleFavorite } from "@/mocks/services/feed";
-import type { FeedItem as FeedModel } from "@/models/feed";
+import { FeedPager } from "@/features/feed/feed-pager";
+import {
+  FEED_CATEGORIES,
+  type FeedCategoryKey,
+} from "@/mocks/data/feed";
 
 export default function FeedScreen(): JSX.Element {
   const router = useRouter();
-  const [items, setItems] = useState<FeedModel[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const pagerRef = useRef<PagerView>(null);
   const [searchText, setSearchText] = useState("");
   const [activeCategory, setActiveCategory] = useState<FeedCategoryKey>("all");
 
-  const loadFeed = useCallback(
-    async (opts?: { refresh?: boolean }) => {
-      if (opts?.refresh) setRefreshing(true);
-      else setLoading(true);
-      try {
-        const data = await getFeed({
-          category: activeCategory,
-          query: searchText,
-        });
-        setItems(data);
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [activeCategory, searchText],
-  );
-
-  useEffect(() => {
-    void loadFeed();
-  }, [loadFeed]);
-
-  const handleToggleFavorite = useCallback(async (id: string) => {
-    const updated = await toggleFavorite(id);
-    if (!updated) return;
-    setItems((prev) => {
-      if (activeCategory === "saved" && !updated.isFavorite) {
-        return prev.filter((item) => item.id !== id);
-      }
-      return prev.map((item) => (item.id === id ? updated : item));
-    });
-  }, [activeCategory]);
+  const handleCategorySelect = useCallback((key: FeedCategoryKey) => {
+    setActiveCategory(key);
+    const index = FEED_CATEGORIES.findIndex((c) => c.key === key);
+    if (index >= 0) {
+      pagerRef.current?.setPage(index);
+    }
+  }, []);
 
   const handlePressItem = useCallback(
     (id: string) => {
@@ -62,19 +37,14 @@ export default function FeedScreen(): JSX.Element {
         searchText={searchText}
         onSearchChange={setSearchText}
         activeCategory={activeCategory}
-        onCategorySelect={setActiveCategory}
+        onCategorySelect={handleCategorySelect}
       />
-      <FeedScrollable
-        items={items}
-        loading={loading}
-        refreshing={refreshing}
-        onRefresh={() => {
-          void loadFeed({ refresh: true });
-        }}
+      <FeedPager
+        pagerRef={pagerRef}
+        activeCategory={activeCategory}
+        searchText={searchText}
+        onCategoryChange={setActiveCategory}
         onPressItem={handlePressItem}
-        onToggleFavorite={(id) => {
-          void handleToggleFavorite(id);
-        }}
       />
     </View>
   );

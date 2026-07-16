@@ -17,12 +17,17 @@ function matchesCategory(item: FeedItem, category: FeedCategoryKey): boolean {
   if (category === "best-picks") {
     return (item.valuation?.buySignal ?? 0) >= 60;
   }
-  if (category === "car") return item.valuation?.valuationType === "car" || !!item.vehicleSpecifications;
-  if (category === "iphone") {
-    return item.valuation?.valuationType === "iphone" || item.iphoneStorageGb != null;
+  if (category === "price-drop") {
+    // Mock: listings with positive estimated profit count as price drops
+    return (item.valuation?.profit ?? 0) > 0;
   }
-  if (category === "custom") {
-    return !item.vehicleSpecifications && item.iphoneStorageGb == null && item.valuation?.valuationType !== "car";
+  if (category === "car") {
+    return item.valuation?.valuationType === "car" || !!item.vehicleSpecifications;
+  }
+  if (category === "iphone") {
+    return (
+      item.valuation?.valuationType === "iphone" || item.iphoneStorageGb != null
+    );
   }
   return true;
 }

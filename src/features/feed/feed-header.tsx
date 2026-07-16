@@ -17,8 +17,9 @@ import { FeedCategoryChips } from "@/features/feed/feed-category-chips";
 import type { FeedCategoryKey } from "@/mocks/data/feed";
 
 const LOGO = require("../../../assets/images/flipsentry-logo-text-transparent.png");
-const LOGO_WIDTH = 114;
-const COLLAPSED_PILL = 92;
+const LOGO_WIDTH = 132;
+const LOGO_HEIGHT = 30;
+const COLLAPSED_PILL = 104;
 const TIMING = { duration: 320, easing: Easing.bezier(0.22, 1, 0.36, 1) };
 
 interface FeedHeaderProps {
@@ -50,13 +51,13 @@ export function FeedHeader({
   const logoStyle = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0, 0.55], [1, 0]),
     width: interpolate(progress.value, [0, 1], [LOGO_WIDTH, 0]),
-    marginRight: interpolate(progress.value, [0, 1], [10, 0]),
+    marginRight: interpolate(progress.value, [0, 1], [12, 0]),
     transform: [{ translateX: interpolate(progress.value, [0, 1], [0, -16]) }],
   }));
 
   const searchStyle = useAnimatedStyle(() => {
     const collapsed = COLLAPSED_PILL;
-    const expanded = Math.max(rowWidth - 48, collapsed);
+    const expanded = Math.max(rowWidth - 42, collapsed);
     return {
       width: interpolate(progress.value, [0, 1], [collapsed, expanded]),
     };
@@ -72,7 +73,7 @@ export function FeedHeader({
 
   const closeStyle = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0.45, 1], [0, 1]),
-    width: interpolate(progress.value, [0, 1], [0, 32]),
+    width: interpolate(progress.value, [0, 1], [0, 36]),
     marginLeft: interpolate(progress.value, [0, 1], [0, 6]),
   }));
 
@@ -96,8 +97,11 @@ export function FeedHeader({
   };
 
   return (
-    <View style={{ paddingTop: insets.top }} className="z-20 overflow-hidden bg-background">
-      <View className="px-3.5 pb-0.5 pt-1.5">
+    <View
+      style={{ paddingTop: insets.top }}
+      className="z-20 overflow-hidden bg-background"
+    >
+      <View className="px-3 pb-1 pt-2">
         <View
           className="h-9 flex-row items-center"
           onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}
@@ -109,14 +113,14 @@ export function FeedHeader({
           >
             <Image
               source={LOGO}
-              style={{ width: LOGO_WIDTH, height: 26 }}
+              style={{ width: LOGO_WIDTH, height: LOGO_HEIGHT }}
               contentFit="contain"
               accessibilityLabel="FlipSentry"
             />
           </Animated.View>
 
           <View className="flex-1 flex-row items-center justify-end">
-            <Animated.View style={searchStyle} className="h-8 overflow-hidden">
+            <Animated.View style={searchStyle} className="h-9 overflow-hidden">
               <Animated.View
                 style={collapsedHintStyle}
                 className="absolute inset-0"
@@ -126,10 +130,13 @@ export function FeedHeader({
                   onPress={openSearch}
                   accessibilityRole="button"
                   accessibilityLabel="Search listings"
-                  className="h-8 flex-1 flex-row items-center gap-1.5 rounded-full border border-border bg-surface-secondary px-3"
+                  className="h-9 flex-1 flex-row items-center gap-1.5 rounded-field border border-border bg-surface-secondary px-3"
                 >
-                  <Ionicons name="search" size={14} color={muted} />
-                  <Typography type="body-xs" className="text-[12px] text-muted">
+                  <Ionicons name="search" size={16} color={muted} />
+                  <Typography
+                    type="body-sm"
+                    className="text-sm font-normal text-muted"
+                  >
                     Search
                   </Typography>
                 </Pressable>
@@ -137,7 +144,7 @@ export function FeedHeader({
 
               <Animated.View
                 style={fieldStyle}
-                className="h-8 flex-1"
+                className="h-9 flex-1"
                 pointerEvents={isExpanded ? "auto" : "none"}
               >
                 <SearchField
@@ -146,15 +153,15 @@ export function FeedHeader({
                   className="w-full"
                   animation="disable-all"
                 >
-                  <SearchField.Group className="h-8 rounded-full border border-border bg-surface-secondary">
+                  <SearchField.Group className="h-9 rounded-field border border-border bg-surface-secondary">
                     <SearchField.SearchIcon
-                      iconProps={{ color: muted, size: 15 }}
+                      iconProps={{ color: muted, size: 16 }}
                     />
                     <SearchField.Input
                       ref={inputRef}
-                      placeholder="Search cars, phones…"
+                      placeholder="Search cars, phones"
                       placeholderTextColor={muted}
-                      className="text-[13px] text-foreground"
+                      className="text-sm font-normal text-foreground"
                       returnKeyType="search"
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -175,7 +182,7 @@ export function FeedHeader({
               <Pressable
                 onPress={closeSearch}
                 accessibilityLabel="Close search"
-                className="h-8 w-8 items-center justify-center rounded-full bg-surface-secondary"
+                className="h-9 w-9 items-center justify-center rounded-field bg-surface-secondary"
               >
                 <Ionicons name="close" size={16} color={foreground} />
               </Pressable>
@@ -184,7 +191,10 @@ export function FeedHeader({
         </View>
       </View>
 
-      <FeedCategoryChips activeCategory={activeCategory} onSelect={onCategorySelect} />
+      <FeedCategoryChips
+        activeCategory={activeCategory}
+        onSelect={onCategorySelect}
+      />
     </View>
   );
 }

@@ -1,75 +1,70 @@
-import { Ionicons } from "@expo/vector-icons";
-import type { ComponentProps, JSX } from "react";
+import type { JSX } from "react";
 import { ScrollView } from "react-native";
-import { Chip, useThemeColor } from "heroui-native";
+import { Chip } from "heroui-native";
+import { Badge } from "heroui-native-pro";
 
 import { FEED_CATEGORIES, type FeedCategoryKey } from "@/mocks/data/feed";
-
-type IonName = ComponentProps<typeof Ionicons>["name"];
-
-const CATEGORY_ICONS: Record<FeedCategoryKey, IonName> = {
-  all: "grid-outline",
-  "best-picks": "star",
-  car: "car-outline",
-  iphone: "phone-portrait-outline",
-  custom: "ellipse-outline",
-  saved: "bookmark-outline",
-};
-
-const SHORT_LABEL: Record<FeedCategoryKey, string> = {
-  all: "All",
-  "best-picks": "Best",
-  car: "Cars",
-  iphone: "Phones",
-  custom: "Other",
-  saved: "Saved",
-};
 
 interface FeedCategoryChipsProps {
   activeCategory: FeedCategoryKey;
   onSelect: (key: FeedCategoryKey) => void;
 }
 
+function CategoryChip({
+  label,
+  active,
+  badge,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  badge?: string;
+  onPress: () => void;
+}): JSX.Element {
+  const chip = (
+    <Chip
+      size="sm"
+      variant={active ? "primary" : "secondary"}
+      color={active ? "accent" : "default"}
+      onPress={onPress}
+      className="h-8 px-3"
+    >
+      <Chip.Label className="text-sm font-normal">{label}</Chip.Label>
+    </Chip>
+  );
+
+  if (!badge) return chip;
+
+  // HeroUI Pro Badge example pattern (Badge.Anchor + Badge label)
+  return (
+    <Badge.Anchor>
+      {chip}
+      <Badge color="success" size="sm" variant="primary" className="bg-success">
+        {badge}
+      </Badge>
+    </Badge.Anchor>
+  );
+}
+
 export function FeedCategoryChips({
   activeCategory,
   onSelect,
 }: FeedCategoryChipsProps): JSX.Element {
-  const [accentForeground, muted] = useThemeColor(["accent-foreground", "muted"]);
-
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerClassName="gap-2 px-3.5 py-1.5"
+      contentContainerClassName="gap-2 px-3 py-2"
     >
-      {FEED_CATEGORIES.map((category) => {
-        const active = activeCategory === category.key;
-        return (
-          <Chip
-            key={category.key}
-            size="sm"
-            variant={active ? "primary" : "tertiary"}
-            color={active ? "accent" : "default"}
-            onPress={() => onSelect(category.key)}
-            className={active ? undefined : "border border-border bg-default/80"}
-          >
-            <Ionicons
-              name={CATEGORY_ICONS[category.key]}
-              size={13}
-              color={active ? accentForeground : muted}
-            />
-            <Chip.Label
-              className={
-                active
-                  ? "text-[12px] font-semibold text-accent-foreground"
-                  : "text-[12px] font-medium text-muted"
-              }
-            >
-              {SHORT_LABEL[category.key]}
-            </Chip.Label>
-          </Chip>
-        );
-      })}
+      {FEED_CATEGORIES.map((category) => (
+        <CategoryChip
+          key={category.key}
+          label={category.label}
+          badge={category.badge}
+          active={activeCategory === category.key}
+          onPress={() => onSelect(category.key)}
+        />
+      ))}
     </ScrollView>
   );
 }

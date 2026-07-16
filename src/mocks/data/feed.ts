@@ -55,15 +55,26 @@ function images(main: string, seed: number): FeedItem["images"] {
 
 const now = Date.now();
 
-export type FeedCategoryKey = "all" | "best-picks" | "saved" | "car" | "iphone" | "custom";
+export type FeedCategoryKey =
+  | "all"
+  | "best-picks"
+  | "price-drop"
+  | "saved"
+  | "car"
+  | "iphone";
 
-export const FEED_CATEGORIES: { key: FeedCategoryKey; label: string }[] = [
- { key: "all", label: "All" },
- { key: "best-picks", label: "Best Picks" },
- { key: "car", label: "Cars" },
- { key: "iphone", label: "iPhones" },
- { key: "custom", label: "Other" },
- { key: "saved", label: "Saved" },
+export const FEED_CATEGORIES: {
+  key: FeedCategoryKey;
+  label: string;
+  /** Show HeroUI Pro Badge on the chip (e.g. Beta). */
+  badge?: string;
+}[] = [
+  { key: "all", label: "All" },
+  { key: "best-picks", label: "Best Picks" },
+  { key: "price-drop", label: "Price Drop", badge: "Beta" },
+  { key: "car", label: "Cars" },
+  { key: "iphone", label: "iPhones" },
+  { key: "saved", label: "Saved" },
 ];
 
 export const MOCK_FEED_ITEMS: FeedItem[] = [

@@ -5,6 +5,7 @@ import { Pressable, Text, View } from "react-native";
 import { Button } from "heroui-native";
 
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
+import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
 import { PLAN_ACCENTS } from "@/features/settings/subscription-theme";
 import { Fonts } from "@/lib/fonts";
 import type { SubscriptionPlan } from "@/mocks/data/subscription";
@@ -35,6 +36,7 @@ export function SettingsSubscriptionCard({
           end={{ x: 0.15, y: 0.9 }}
           style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
         />
+        <SubscriptionParticleField />
         <View className="gap-3 p-4">
           <View className="flex-row items-center gap-2">
             <HeroBoltIcon from="#7538F8" to="#F690EC" size={22} />
@@ -64,10 +66,10 @@ export function SettingsSubscriptionCard({
           <Button
             variant="primary"
             size="sm"
-            className="w-full bg-accent"
+            className="w-full bg-white"
             onPress={onPress}
           >
-            <Button.Label className="text-sm text-accent-foreground">
+            <Button.Label className="text-sm text-black">
               Subscribe
             </Button.Label>
           </Button>
@@ -95,6 +97,7 @@ export function SettingsSubscriptionCard({
         end={{ x: 0.15, y: 0.9 }}
         style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
       />
+      <SubscriptionParticleField />
       <View className="gap-3 p-5">
         <View className="flex-row items-center gap-2.5">
           <HeroBoltIcon

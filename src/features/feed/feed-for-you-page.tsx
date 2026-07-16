@@ -14,8 +14,10 @@ import {
   Typography,
   useThemeColor,
 } from "heroui-native";
+import { Badge } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
+import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import { FeedItem } from "@/features/feed/feed-item";
 import {
   FOR_YOU_SHELVES,
@@ -171,13 +173,20 @@ export function FeedForYouPage({
                 accessibilityRole="button"
                 accessibilityLabel={`Open ${shelf.label}`}
               >
-                <Typography
-                  type="body"
-                  weight="semibold"
-                  className="text-[17px] text-foreground"
+                <Badge.Anchor
+                  className={shelf.badge ? "pr-7" : undefined}
                 >
-                  {shelf.label}
-                </Typography>
+                  <Typography
+                    type="body"
+                    weight="semibold"
+                    className="text-[17px] text-foreground"
+                  >
+                    {shelf.label}
+                  </Typography>
+                  {shelf.badge ? (
+                    <FeedCategoryBadge label={shelf.badge} />
+                  ) : null}
+                </Badge.Anchor>
                 <StyledIonicons
                   name="chevron-forward"
                   size={18}

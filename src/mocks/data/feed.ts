@@ -195,10 +195,11 @@ export const FEED_CATEGORIES: {
 export const FOR_YOU_SHELVES: {
   key: Exclude<FeedCategoryKey, "for-you">;
   label: string;
+  badge?: string;
 }[] = [
   { key: "all", label: "All" },
-  { key: "best-picks", label: "Top Rated" },
-  { key: "price-drop", label: "Price Changed" },
+  { key: "best-picks", label: "Top Rated", badge: "AI" },
+  { key: "price-drop", label: "Price Changed", badge: "Beta" },
   { key: "car", label: "Cars" },
 ];
 

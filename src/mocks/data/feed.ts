@@ -231,6 +231,7 @@ export const FOR_YOU_SHELVES: {
   { key: "best-picks", label: "Top Rated", badge: "AI", featured: true },
   { key: "price-drop", label: "Price Dropped", badge: "Beta" },
   { key: "your-searches", label: "Your Searches", isAccordion: true },
+  { key: "saved", label: "Saved" },
 ];
 
 export const MOCK_FEED_ITEMS: FeedItem[] = [

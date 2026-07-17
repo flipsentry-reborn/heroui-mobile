@@ -14,6 +14,7 @@ import {
   SearchBottomSheetCriteria,
 } from "@/features/home/search-bottom-sheet-criteria";
 import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
+import { SearchBottomSheetKeywordsSheet } from "@/features/home/search-bottom-sheet-keywords-sheet";
 import { SearchBottomSheetPriceSheet } from "@/features/home/search-bottom-sheet-price-sheet";
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
 import { SearchBottomSheetSection } from "@/features/home/search-bottom-sheet-section";
@@ -35,6 +36,9 @@ function SearchSheetContent({
   onPriceOpenChange,
   onMinChange,
   onMaxChange,
+  keywordIncluders,
+  keywordExcluders,
+  onKeywordsOpenChange,
 }: {
   locationLabel: string;
   onLocationPress?: () => void;
@@ -49,6 +53,9 @@ function SearchSheetContent({
   onPriceOpenChange: (open: boolean) => void;
   onMinChange: (value: string) => void;
   onMaxChange: (value: string) => void;
+  keywordIncluders: string[];
+  keywordExcluders: string[];
+  onKeywordsOpenChange: (open: boolean) => void;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const [muted] = useThemeColor(["muted"]);
@@ -128,6 +135,11 @@ function SearchSheetContent({
             onMinChange,
             onMaxChange,
           }}
+          keywords={{
+            includers: keywordIncluders,
+            excluders: keywordExcluders,
+            onOpenChange: onKeywordsOpenChange,
+          }}
         />
       </View>
     </BottomSheet.Content>
@@ -148,11 +160,14 @@ export function SearchBottomSheet({
   onLocationPress,
 }: SearchBottomSheetProps): JSX.Element {
   const [priceOpen, setPriceOpen] = useState(false);
+  const [keywordsOpen, setKeywordsOpen] = useState(false);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [searchType, setSearchType] = useState<SearchType | null>(null);
   const [customQuery, setCustomQuery] = useState("");
   const [customQueryInvalid, setCustomQueryInvalid] = useState(false);
+  const [keywordIncluders, setKeywordIncluders] = useState<string[]>([]);
+  const [keywordExcluders, setKeywordExcluders] = useState<string[]>([]);
 
   const handleSearchTypeChange = (type: SearchType) => {
     setSearchType(type);
@@ -164,6 +179,7 @@ export function SearchBottomSheet({
 
   const handleClose = () => {
     setPriceOpen(false);
+    setKeywordsOpen(false);
     onClose();
   };
 
@@ -184,6 +200,9 @@ export function SearchBottomSheet({
           onPriceOpenChange={setPriceOpen}
           onMinChange={setMinPrice}
           onMaxChange={setMaxPrice}
+          keywordIncluders={keywordIncluders}
+          keywordExcluders={keywordExcluders}
+          onKeywordsOpenChange={setKeywordsOpen}
         />
       </SheetShell>
 
@@ -194,6 +213,15 @@ export function SearchBottomSheet({
         max={maxPrice}
         onMinChange={setMinPrice}
         onMaxChange={setMaxPrice}
+      />
+
+      <SearchBottomSheetKeywordsSheet
+        isOpen={visible && keywordsOpen}
+        onOpenChange={setKeywordsOpen}
+        includers={keywordIncluders}
+        excluders={keywordExcluders}
+        onIncludersChange={setKeywordIncluders}
+        onExcludersChange={setKeywordExcluders}
       />
     </>
   );

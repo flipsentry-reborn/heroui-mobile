@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import { Input, useBottomSheetAwareHandlers } from "heroui-native";
 
+import { formatKeywordsLabel } from "@/features/home/search-bottom-sheet-keywords-sheet";
 import { formatPriceRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
 import {
   SearchSheetGroup,
@@ -17,6 +18,12 @@ export interface SearchPriceState {
   onMaxChange: (value: string) => void;
 }
 
+export interface SearchKeywordsState {
+  includers: string[];
+  excluders: string[];
+  onOpenChange: (open: boolean) => void;
+}
+
 export function isCustomSearchQueryValid(query: string): boolean {
   return query.trim().length >= 1;
 }
@@ -27,6 +34,7 @@ interface SearchBottomSheetCriteriaProps {
   onCustomQueryChange: (value: string) => void;
   customQueryInvalid?: boolean;
   price: SearchPriceState;
+  keywords: SearchKeywordsState;
 }
 
 function CustomSearchInput({
@@ -45,9 +53,13 @@ function CustomSearchInput({
       value={value}
       onChangeText={onChange}
       placeholder="Empty"
-      variant="primary"
+      variant="secondary"
       isInvalid={isInvalid}
-      className="h-8 min-h-8 w-40 px-2 py-0 text-sm text-foreground"
+      textAlign="right"
+      className={`h-auto min-h-0 flex-1 border-0 bg-transparent px-0 py-0 text-[15px] shadow-none ios:outline-0 ios:focus:outline-transparent android:border-0 android:focus:border-transparent ${
+        isInvalid ? "text-danger" : "text-foreground"
+      }`}
+      placeholderColorClassName="text-muted"
       onFocus={onFocus}
       onBlur={onBlur}
     />
@@ -60,11 +72,18 @@ export function SearchBottomSheetCriteria({
   onCustomQueryChange,
   customQueryInvalid = false,
   price,
+  keywords,
 }: SearchBottomSheetCriteriaProps): JSX.Element {
   const hasSearchType = searchType != null;
   const isCustom = searchType === "custom";
   const priceLabel = formatPriceRangeLabel(price.min, price.max);
   const hasPriceFilter = price.min !== "" || price.max !== "";
+  const keywordsLabel = formatKeywordsLabel(
+    keywords.includers,
+    keywords.excluders,
+  );
+  const hasKeywords =
+    keywords.includers.length > 0 || keywords.excluders.length > 0;
 
   return (
     <SearchSheetGroup title="Criteria">
@@ -72,6 +91,8 @@ export function SearchBottomSheetCriteria({
         <SearchSheetRow
           title="Search"
           required
+          showSwap
+          expandRight
           isLast={false}
           right={
             <CustomSearchInput
@@ -99,8 +120,14 @@ export function SearchBottomSheetCriteria({
         title="Keywords"
         isLast
         isDisabled={!hasSearchType}
-        onPress={hasSearchType ? () => {} : undefined}
-        right={<SearchSheetValue label="None" isDisabled={!hasSearchType} />}
+        onPress={hasSearchType ? () => keywords.onOpenChange(true) : undefined}
+        right={
+          <SearchSheetValue
+            label={keywordsLabel}
+            isDisabled={!hasSearchType}
+            emphasized={hasSearchType && hasKeywords}
+          />
+        }
       />
     </SearchSheetGroup>
   );

@@ -14,7 +14,10 @@ import {
   SearchBottomSheetCriteria,
 } from "@/features/home/search-bottom-sheet-criteria";
 import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
-import { SearchBottomSheetIphoneModelsSheet } from "@/features/home/search-bottom-sheet-iphone-models-sheet";
+import {
+  SearchBottomSheetIphoneModelsSheet,
+  type IphoneModelSelection,
+} from "@/features/home/search-bottom-sheet-iphone-models-sheet";
 import {
   EMPTY_KEYWORDS,
   SearchBottomSheetKeywordsSheet,
@@ -36,7 +39,7 @@ function SearchSheetContent({
   onCustomQueryChange,
   customQueryInvalid,
   onCustomQueryInvalidChange,
-  iphoneModelIds,
+  iphoneSelections,
   onIphoneModelsOpenChange,
   minPrice,
   maxPrice,
@@ -55,7 +58,7 @@ function SearchSheetContent({
   onCustomQueryChange: (value: string) => void;
   customQueryInvalid: boolean;
   onCustomQueryInvalidChange: (invalid: boolean) => void;
-  iphoneModelIds: string[];
+  iphoneSelections: IphoneModelSelection[];
   onIphoneModelsOpenChange: (open: boolean) => void;
   minPrice: string;
   maxPrice: string;
@@ -75,6 +78,10 @@ function SearchSheetContent({
   const handleConfirm = () => {
     if (searchType === "custom" && !isCustomSearchQueryValid(customQuery)) {
       onCustomQueryInvalidChange(true);
+      return;
+    }
+    if (searchType === "iphone" && iphoneSelections.length === 0) {
+      onIphoneModelsOpenChange(true);
       return;
     }
     dismiss();
@@ -140,7 +147,7 @@ function SearchSheetContent({
           onCustomQueryChange={handleCustomQueryChange}
           customQueryInvalid={customQueryInvalid}
           iphoneModels={{
-            selectedIds: iphoneModelIds,
+            selections: iphoneSelections,
             onOpenChange: onIphoneModelsOpenChange,
           }}
           price={{
@@ -181,7 +188,9 @@ export function SearchBottomSheet({
   const [searchType, setSearchType] = useState<SearchType | null>(null);
   const [customQuery, setCustomQuery] = useState("");
   const [customQueryInvalid, setCustomQueryInvalid] = useState(false);
-  const [iphoneModelIds, setIphoneModelIds] = useState<string[]>([]);
+  const [iphoneSelections, setIphoneSelections] = useState<
+    IphoneModelSelection[]
+  >([]);
   const [keywords, setKeywords] = useState<KeywordsState>(EMPTY_KEYWORDS);
 
   const handleSearchTypeChange = (type: SearchType) => {
@@ -191,7 +200,7 @@ export function SearchBottomSheet({
       setCustomQueryInvalid(false);
     }
     if (type !== "iphone") {
-      setIphoneModelIds([]);
+      setIphoneSelections([]);
       setIphoneModelsOpen(false);
     }
   };
@@ -215,7 +224,7 @@ export function SearchBottomSheet({
           onCustomQueryChange={setCustomQuery}
           customQueryInvalid={customQueryInvalid}
           onCustomQueryInvalidChange={setCustomQueryInvalid}
-          iphoneModelIds={iphoneModelIds}
+          iphoneSelections={iphoneSelections}
           onIphoneModelsOpenChange={setIphoneModelsOpen}
           minPrice={minPrice}
           maxPrice={maxPrice}
@@ -247,8 +256,8 @@ export function SearchBottomSheet({
       <SearchBottomSheetIphoneModelsSheet
         isOpen={visible && iphoneModelsOpen}
         onOpenChange={setIphoneModelsOpen}
-        selectedIds={iphoneModelIds}
-        onSelectedIdsChange={setIphoneModelIds}
+        selections={iphoneSelections}
+        onSelectionsChange={setIphoneSelections}
       />
     </>
   );

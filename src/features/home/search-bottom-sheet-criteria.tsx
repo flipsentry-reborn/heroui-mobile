@@ -1,7 +1,10 @@
 import type { JSX } from "react";
 import { Input, useBottomSheetAwareHandlers } from "heroui-native";
 
-import { formatIphoneModelsLabel } from "@/features/home/search-bottom-sheet-iphone-models-sheet";
+import {
+  formatIphoneModelsLabel,
+  type IphoneModelSelection,
+} from "@/features/home/search-bottom-sheet-iphone-models-sheet";
 import {
   formatKeywordsLabel,
   type KeywordsState,
@@ -28,7 +31,7 @@ export interface SearchKeywordsState {
 }
 
 export interface SearchIphoneModelsState {
-  selectedIds: string[];
+  selections: IphoneModelSelection[];
   onOpenChange: (open: boolean) => void;
 }
 
@@ -89,8 +92,8 @@ export function SearchBottomSheetCriteria({
   const isIphone = searchType === "iphone";
   const priceLabel = formatPriceRangeLabel(price.min, price.max);
   const hasPriceFilter = price.min !== "" || price.max !== "";
-  const modelsLabel = formatIphoneModelsLabel(iphoneModels.selectedIds);
-  const hasModels = iphoneModels.selectedIds.length > 0;
+  const modelsLabel = formatIphoneModelsLabel(iphoneModels.selections);
+  const hasModels = iphoneModels.selections.length > 0;
   const keywordsLabel = formatKeywordsLabel(keywords.value);
   const hasKeywords = keywordsLabel !== "None";
 
@@ -119,26 +122,25 @@ export function SearchBottomSheetCriteria({
           isLast={false}
           onPress={() => iphoneModels.onOpenChange(true)}
           right={
+            <SearchSheetValue label={modelsLabel} emphasized={hasModels} />
+          }
+        />
+      ) : null}
+      {!isIphone ? (
+        <SearchSheetRow
+          title="Price"
+          isLast={false}
+          isDisabled={!hasSearchType}
+          onPress={hasSearchType ? () => price.onOpenChange(true) : undefined}
+          right={
             <SearchSheetValue
-              label={modelsLabel}
-              emphasized={hasModels}
+              label={priceLabel}
+              isDisabled={!hasSearchType}
+              emphasized={hasSearchType && hasPriceFilter}
             />
           }
         />
       ) : null}
-      <SearchSheetRow
-        title="Price"
-        isLast={false}
-        isDisabled={!hasSearchType}
-        onPress={hasSearchType ? () => price.onOpenChange(true) : undefined}
-        right={
-          <SearchSheetValue
-            label={priceLabel}
-            isDisabled={!hasSearchType}
-            emphasized={hasSearchType && hasPriceFilter}
-          />
-        }
-      />
       <SearchSheetRow
         title="Keywords"
         isLast

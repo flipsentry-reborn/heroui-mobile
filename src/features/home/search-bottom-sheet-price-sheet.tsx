@@ -54,7 +54,7 @@ function PriceFieldInput({
       keyboardType="number-pad"
       variant="secondary"
       isInvalid={isInvalid}
-      className="h-10 w-28 px-2.5 text-center text-sm text-foreground"
+      className="h-8 min-h-8 w-40 px-2 py-0 text-sm text-foreground"
       onFocus={onFocus}
       onBlur={onBlur}
     />
@@ -88,6 +88,7 @@ function PriceSheetContent({
   return (
     <BottomSheet.Content
       keyboardBehavior="extend"
+      android_keyboardInputMode="adjustResize"
       backgroundClassName="rounded-t-[32px] bg-surface-secondary"
       handleComponent={null}
       contentContainerClassName="bg-surface-secondary p-0"

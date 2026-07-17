@@ -13,7 +13,9 @@
 
 @theme {
   --radius: 0.25rem;
-  --field-radius: 0.25rem;
+  --field-radius: 0.5rem;
+  /* HeroUI default is 0px + transparent border; we use a real border instead. */
+  --field-border-width: 1px;
 
   /*
    * App fonts = Britti Sans (HeroUI Pro heroSans).
@@ -55,10 +57,11 @@
     --accent: oklch(0% 0 0);
     --accent-foreground: oklch(100% 0 0);
 
-    --field-background: oklch(100.00% 0.0008 253.83);
+    /* Slightly cooler than surface so inputs read on ListGroup cards */
+    --field-background: oklch(95.24% 0.0012 253.83);
     --field-foreground: oklch(12% 0 0);
     --field-placeholder: var(--muted);
-    --field-border: transparent;
+    --field-border: oklch(90.00% 0.0015 253.83);
 
     --success: oklch(0.6277 0.1604 153.06);
     --success-foreground: oklch(98% 0 0);
@@ -74,6 +77,14 @@
     --separator: oklch(92.00% 0.0015 253.83);
     --focus: var(--accent);
     --link: oklch(12% 0 0);
+
+    --surface-shadow:
+      0 2px 4px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06),
+      0 0 1px 0 rgba(0, 0, 0, 0.06);
+    --overlay-shadow:
+      0 2px 8px 0 rgba(0, 0, 0, 0.02), 0 -6px 12px 0 rgba(0, 0, 0, 0.01),
+      0 14px 28px 0 rgba(0, 0, 0, 0.03);
+    --field-shadow: 0 0 0 0 transparent;
   }
 
   @variant dark {
@@ -100,10 +111,11 @@
     --accent: oklch(98.48% 0 0);
     --accent-foreground: oklch(0% 0 0);
 
-    --field-background: oklch(21.03% 0 0);
+    /* Lift above surface so inputs read on ListGroup cards */
+    --field-background: oklch(27.4% 0 0);
     --field-foreground: oklch(98.48% 0 0);
     --field-placeholder: var(--muted);
-    --field-border: transparent;
+    --field-border: oklch(38% 0 0);
 
     --success: oklch(0.6514 0.1321 156.22);
     --success-foreground: oklch(12% 0 0);
@@ -119,5 +131,9 @@
     --separator: oklch(25% 0 0);
     --focus: var(--accent);
     --link: oklch(98.48% 0 0);
+
+    --surface-shadow: 0 0 0 0 transparent;
+    --overlay-shadow: 0 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+    --field-shadow: 0 0 0 0 transparent;
   }
 }

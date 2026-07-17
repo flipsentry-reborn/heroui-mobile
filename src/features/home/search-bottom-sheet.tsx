@@ -9,7 +9,10 @@ import {
   useThemeColor,
 } from "heroui-native";
 
-import { SearchBottomSheetCriteria } from "@/features/home/search-bottom-sheet-criteria";
+import {
+  isCustomSearchQueryValid,
+  SearchBottomSheetCriteria,
+} from "@/features/home/search-bottom-sheet-criteria";
 import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import { SearchBottomSheetPriceSheet } from "@/features/home/search-bottom-sheet-price-sheet";
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
@@ -23,6 +26,10 @@ function SearchSheetContent({
   onLocationPress,
   searchType,
   onSearchTypeChange,
+  customQuery,
+  onCustomQueryChange,
+  customQueryInvalid,
+  onCustomQueryInvalidChange,
   minPrice,
   maxPrice,
   onPriceOpenChange,
@@ -33,6 +40,10 @@ function SearchSheetContent({
   onLocationPress?: () => void;
   searchType: SearchType | null;
   onSearchTypeChange: (type: SearchType) => void;
+  customQuery: string;
+  onCustomQueryChange: (value: string) => void;
+  customQueryInvalid: boolean;
+  onCustomQueryInvalidChange: (invalid: boolean) => void;
   minPrice: string;
   maxPrice: string;
   onPriceOpenChange: (open: boolean) => void;
@@ -43,6 +54,21 @@ function SearchSheetContent({
   const [muted] = useThemeColor(["muted"]);
   const snapPoints = useMemo(() => ["70%", "92%"], []);
   const dismiss = () => onOpenChange(false);
+
+  const handleConfirm = () => {
+    if (searchType === "custom" && !isCustomSearchQueryValid(customQuery)) {
+      onCustomQueryInvalidChange(true);
+      return;
+    }
+    dismiss();
+  };
+
+  const handleCustomQueryChange = (value: string) => {
+    onCustomQueryChange(value);
+    if (isCustomSearchQueryValid(value)) {
+      onCustomQueryInvalidChange(false);
+    }
+  };
 
   return (
     <BottomSheet.Content
@@ -55,7 +81,7 @@ function SearchSheetContent({
       handleComponent={null}
     >
       <View className="flex-1">
-        <SearchBottomSheetHeader onClose={dismiss} onConfirm={dismiss} />
+        <SearchBottomSheetHeader onClose={dismiss} onConfirm={handleConfirm} />
 
         <SearchBottomSheetSection>
           <SearchBottomSheetRow
@@ -91,7 +117,10 @@ function SearchSheetContent({
         </SearchBottomSheetSection>
 
         <SearchBottomSheetCriteria
-          hasSearchType={searchType != null}
+          searchType={searchType}
+          customQuery={customQuery}
+          onCustomQueryChange={handleCustomQueryChange}
+          customQueryInvalid={customQueryInvalid}
           price={{
             min: minPrice,
             max: maxPrice,
@@ -122,6 +151,16 @@ export function SearchBottomSheet({
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [searchType, setSearchType] = useState<SearchType | null>(null);
+  const [customQuery, setCustomQuery] = useState("");
+  const [customQueryInvalid, setCustomQueryInvalid] = useState(false);
+
+  const handleSearchTypeChange = (type: SearchType) => {
+    setSearchType(type);
+    if (type !== "custom") {
+      setCustomQuery("");
+      setCustomQueryInvalid(false);
+    }
+  };
 
   const handleClose = () => {
     setPriceOpen(false);
@@ -135,7 +174,11 @@ export function SearchBottomSheet({
           locationLabel={locationLabel}
           onLocationPress={onLocationPress}
           searchType={searchType}
-          onSearchTypeChange={setSearchType}
+          onSearchTypeChange={handleSearchTypeChange}
+          customQuery={customQuery}
+          onCustomQueryChange={setCustomQuery}
+          customQueryInvalid={customQueryInvalid}
+          onCustomQueryInvalidChange={setCustomQueryInvalid}
           minPrice={minPrice}
           maxPrice={maxPrice}
           onPriceOpenChange={setPriceOpen}

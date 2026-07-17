@@ -38,6 +38,8 @@ interface SearchSheetRowProps {
   showSwap?: boolean;
   isLast: boolean;
   isDisabled?: boolean;
+  /** Let the right slot take remaining row width (e.g. growing text inputs). */
+  expandRight?: boolean;
   onPress?: () => void;
   right: ReactNode;
 }
@@ -48,6 +50,7 @@ export function SearchSheetRow({
   showSwap,
   isLast,
   isDisabled,
+  expandRight,
   onPress,
   right,
 }: SearchSheetRowProps): JSX.Element {
@@ -56,7 +59,7 @@ export function SearchSheetRow({
 
   const body = (
     <>
-      <ListGroup.ItemContent>
+      <ListGroup.ItemContent className={expandRight ? "flex-none" : undefined}>
         <View className="flex-row items-center gap-1">
           <ListGroup.ItemTitle
             className={`text-[15px] font-normal ${
@@ -83,7 +86,11 @@ export function SearchSheetRow({
           ) : null}
         </View>
       </ListGroup.ItemContent>
-      <ListGroup.ItemSuffix>{right}</ListGroup.ItemSuffix>
+      <ListGroup.ItemSuffix
+        className={expandRight ? "min-w-0 flex-1 items-stretch" : undefined}
+      >
+        {right}
+      </ListGroup.ItemSuffix>
     </>
   );
 

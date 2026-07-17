@@ -1,0 +1,24 @@
+---
+description: Never use React Native StyleSheet — Uniwind className + HeroUI only
+alwaysApply: true
+---
+
+# No StyleSheet
+
+## Hard ban
+
+- **Never** import or use `StyleSheet` from `react-native`.
+- **Never** use `StyleSheet.create`, style arrays for layout/colors, or ad-hoc `style={{}}` for theming/layout when a Uniwind class exists.
+- Style UI with **Uniwind `className`** and **HeroUI component props** (`variant`, `className`, `backgroundClassName`, etc.).
+
+## How to style
+
+1. Check HeroUI MCP docs / existing screens for the component pattern.
+2. Prefer `heroui-native-pro` → `heroui-native` → minimal custom.
+3. Use semantic tokens: `bg-surface-secondary`, `text-foreground`, `text-muted`, `bg-default`, etc.
+4. Size/spacing via Tailwind classes (`h-10`, `w-28`, `px-2.5`, `text-sm`, `text-center`).
+
+## Allowed exceptions (rare)
+
+- Third-party libs that **require** a `style` prop (e.g. some map/chart APIs) — keep minimal and do not use `StyleSheet.create`.
+- Do **not** treat BottomSheet/Input/ListGroup as exceptions — use their `className` / `*ClassName` props.

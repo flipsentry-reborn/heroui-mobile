@@ -13,7 +13,7 @@ Port FlipSentry screens and flows into `heroui-mobile` so we can iterate on UI w
 |----------|--------|
 | Visual language | Uber neutrals - oklch grayscale, dark white accent / light black accent (see `global.css`) |
 | Components | `heroui-native-pro` first → `heroui-native` OSS → minimal custom only |
-| Styling | Uniwind + `className` (not NativeWind / shadcn from `mobile-app`) |
+| Styling | Uniwind + `className` only — **never** `StyleSheet` / NativeWind / shadcn |
 | Data | Mock only via `src/mocks/*` |
 | Reference | `mobile-app` = flows/screens reference only |
 
@@ -40,6 +40,7 @@ Config: `.cursor/mcp.json` (gitignored). Rules: `.cursor/rules/`.
 | Screens thin | `src/app` routes compose UI; little business logic |
 | Models on demand | Copy/adapt from `mobile-app/models` when a screen needs them |
 | HeroUI only | Prefer `heroui-native-pro`, then `heroui-native`; no web `@heroui/react` for screens |
+| No StyleSheet | Never `StyleSheet.create` — use Uniwind `className` + HeroUI props (see `.cursor/rules/no-stylesheet.mdc`) |
 | No heavy state lib yet | Local state / light context is enough for mocked UI |
 | Stubs for native gaps | Maps, etc. → placeholder PNG; wire real later in `mobile-app` |
 

@@ -1,6 +1,6 @@
 import type { JSX, ReactNode } from "react";
-import { View } from "react-native";
-import { ListGroup } from "heroui-native";
+
+import { SearchSheetGroup } from "@/features/home/search-sheet-group";
 
 interface SearchBottomSheetSectionProps {
   children: ReactNode;
@@ -10,9 +10,5 @@ interface SearchBottomSheetSectionProps {
 export function SearchBottomSheetSection({
   children,
 }: SearchBottomSheetSectionProps): JSX.Element {
-  return (
-    <View className="mb-5 mt-5">
-      <ListGroup className="mx-3">{children}</ListGroup>
-    </View>
-  );
+  return <SearchSheetGroup>{children}</SearchSheetGroup>;
 }

@@ -27,7 +27,8 @@ alwaysApply: true
 
 - Prefer `heroui-native-pro`, then `heroui-native` (OSS), then minimal custom (e.g. map placeholder).
 - Do not use web `@heroui/react` / `@heroui-pro/react` for screens.
-- Style with Uniwind `className` - not NativeWind / StyleSheet for colors.
+- Style with Uniwind `className` only — **never** `StyleSheet` / NativeWind (see `no-stylesheet.mdc`).
+- Always check HeroUI MCP docs for how a component is meant to be used before inventing custom layout.
 
 ## Agent workflow
 

@@ -4,13 +4,19 @@ import { Pressable, View } from "react-native";
 import { Typography, useThemeColor } from "heroui-native";
 
 interface SearchBottomSheetHeaderProps {
+  title?: string;
   onClose: () => void;
   onConfirm: () => void;
+  closeLabel?: string;
+  confirmLabel?: string;
 }
 
 export function SearchBottomSheetHeader({
+  title = "New Search",
   onClose,
   onConfirm,
+  closeLabel = "Cancel",
+  confirmLabel = "Save",
 }: SearchBottomSheetHeaderProps): JSX.Element {
   const [foreground] = useThemeColor(["foreground"]);
 
@@ -19,7 +25,7 @@ export function SearchBottomSheetHeader({
       <Pressable
         onPress={onClose}
         accessibilityRole="button"
-        accessibilityLabel="Close"
+        accessibilityLabel={closeLabel}
       >
         <View
           className="h-9 w-9 items-center justify-center rounded-full border border-foreground"
@@ -30,13 +36,13 @@ export function SearchBottomSheetHeader({
       </Pressable>
       <View className="flex-1 items-center px-2">
         <Typography type="body" weight="normal">
-          New Search
+          {title}
         </Typography>
       </View>
       <Pressable
         onPress={onConfirm}
         accessibilityRole="button"
-        accessibilityLabel="Confirm"
+        accessibilityLabel={confirmLabel}
       >
         <View
           className="h-9 w-9 items-center justify-center rounded-full border border-foreground"

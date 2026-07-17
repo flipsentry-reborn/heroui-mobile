@@ -1,17 +1,18 @@
 import type { JSX } from "react";
-import { StyleSheet, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { View } from "react-native";
 import {
   BottomSheet,
+  FieldError,
   Input,
-  Typography,
   useBottomSheetAwareHandlers,
 } from "heroui-native";
 
-const SHEET_BACKGROUND_STYLE = {
-  borderTopLeftRadius: 32,
-  borderTopRightRadius: 32,
-  borderCurve: "continuous" as const,
-};
+import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
+import {
+  SearchSheetGroup,
+  SearchSheetRow,
+} from "@/features/home/search-sheet-group";
 
 export function sanitizePriceInput(text: string): string {
   return text.replace(/[^0-9]/g, "");
@@ -21,65 +22,108 @@ export function formatPriceRangeLabel(min: string, max: string): string {
   return `${min === "" ? "Any" : min} - ${max === "" ? "Any" : max}`;
 }
 
-function PriceRangeInputs({
+function getPriceRangeError(min: string, max: string): string | null {
+  if (min === "" || max === "") return null;
+  if (Number(min) > Number(max)) {
+    return "Min cannot be greater than Max";
+  }
+  return null;
+}
+
+function PriceFieldInput({
+  value,
+  onChange,
+  isInvalid,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  isInvalid: boolean;
+}): JSX.Element {
+  const { onFocus, onBlur } = useBottomSheetAwareHandlers();
+
+  return (
+    <Input
+      value={value}
+      onChangeText={(text) => onChange(sanitizePriceInput(text))}
+      placeholder="Any"
+      keyboardType="number-pad"
+      variant="secondary"
+      isInvalid={isInvalid}
+      className="h-10 w-28 px-2.5 text-center text-sm text-foreground"
+      onFocus={onFocus}
+      onBlur={onBlur}
+    />
+  );
+}
+
+function PriceSheetContent({
   min,
   max,
   onMinChange,
   onMaxChange,
+  onClose,
+  onSave,
 }: {
   min: string;
   max: string;
   onMinChange: (value: string) => void;
   onMaxChange: (value: string) => void;
+  onClose: () => void;
+  onSave: () => void;
 }): JSX.Element {
-  const { onFocus, onBlur } = useBottomSheetAwareHandlers();
+  const snapPoints = useMemo(() => ["40%", "70%"], []);
+  const error = getPriceRangeError(min, max);
+  const isInvalid = error != null;
 
   return (
-    <View style={styles.row}>
-      <Input
-        value={min}
-        onChangeText={(text) => onMinChange(sanitizePriceInput(text))}
-        placeholder="Any"
-        keyboardType="number-pad"
-        variant="secondary"
-        style={styles.input}
-        className="text-center"
-        onFocus={onFocus}
-        onBlur={onBlur}
-      />
-      <Typography type="body" className="text-muted" style={styles.dash}>
-        -
-      </Typography>
-      <Input
-        value={max}
-        onChangeText={(text) => onMaxChange(sanitizePriceInput(text))}
-        placeholder="Any"
-        keyboardType="number-pad"
-        variant="secondary"
-        style={styles.input}
-        className="text-center"
-        onFocus={onFocus}
-        onBlur={onBlur}
-      />
-    </View>
+    <BottomSheet.Content
+      snapPoints={snapPoints}
+      enableOverDrag={false}
+      enableDynamicSizing={false}
+      keyboardBehavior="extend"
+      backgroundClassName="rounded-t-[32px] bg-surface-secondary"
+      handleComponent={null}
+      contentContainerClassName="h-full bg-surface-secondary p-0"
+    >
+      <View>
+        <SearchBottomSheetHeader
+          title="Price"
+          onClose={onClose}
+          onConfirm={onSave}
+        />
+        <SearchSheetGroup>
+          <SearchSheetRow
+            title="Min"
+            isLast={false}
+            right={
+              <PriceFieldInput
+                value={min}
+                onChange={onMinChange}
+                isInvalid={isInvalid}
+              />
+            }
+          />
+          <SearchSheetRow
+            title="Max"
+            isLast
+            right={
+              <PriceFieldInput
+                value={max}
+                onChange={onMaxChange}
+                isInvalid={isInvalid}
+              />
+            }
+          />
+        </SearchSheetGroup>
+        {error ? (
+          <FieldError isInvalid className="mx-5 -mt-3">
+            {error}
+          </FieldError>
+        ) : null}
+      </View>
+    </BottomSheet.Content>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-    gap: 8,
-  },
-  input: {
-    flex: 1,
-    minWidth: 0,
-  },
-  dash: {
-    flexShrink: 0,
-  },
-});
 
 interface SearchBottomSheetPriceSheetProps {
   isOpen: boolean;
@@ -98,28 +142,44 @@ export function SearchBottomSheetPriceSheet({
   onMinChange,
   onMaxChange,
 }: SearchBottomSheetPriceSheetProps): JSX.Element {
+  const [draftMin, setDraftMin] = useState(min);
+  const [draftMax, setDraftMax] = useState(max);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setDraftMin(min);
+    setDraftMax(max);
+  }, [isOpen, min, max]);
+
+  const handleCancel = () => {
+    onOpenChange(false);
+  };
+
+  const handleSave = () => {
+    if (getPriceRangeError(draftMin, draftMax) != null) return;
+    onMinChange(draftMin);
+    onMaxChange(draftMax);
+    onOpenChange(false);
+  };
+
   return (
-    <BottomSheet isOpen={isOpen} onOpenChange={onOpenChange}>
-      <BottomSheet.Portal disableFullWindowOverlay>
+    <BottomSheet
+      isOpen={isOpen}
+      onOpenChange={(open) => {
+        if (!open) handleCancel();
+        else onOpenChange(true);
+      }}
+    >
+      <BottomSheet.Portal>
         <BottomSheet.Overlay />
-        <BottomSheet.Content
-          keyboardBehavior="extend"
-          keyboardBlurBehavior="restore"
-          android_keyboardInputMode="adjustResize"
-          backgroundClassName="bg-surface-secondary"
-          backgroundStyle={SHEET_BACKGROUND_STYLE}
-          handleIndicatorClassName="bg-separator"
-        >
-          <View className="gap-4 px-5 pb-8 pt-1">
-            <BottomSheet.Title>Price</BottomSheet.Title>
-            <PriceRangeInputs
-              min={min}
-              max={max}
-              onMinChange={onMinChange}
-              onMaxChange={onMaxChange}
-            />
-          </View>
-        </BottomSheet.Content>
+        <PriceSheetContent
+          min={draftMin}
+          max={draftMax}
+          onMinChange={setDraftMin}
+          onMaxChange={setDraftMax}
+          onClose={handleCancel}
+          onSave={handleSave}
+        />
       </BottomSheet.Portal>
     </BottomSheet>
   );

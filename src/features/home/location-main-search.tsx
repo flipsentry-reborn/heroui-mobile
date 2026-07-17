@@ -7,6 +7,7 @@ import {
   Separator,
   Typography,
 } from "heroui-native";
+import { useUniwind } from "uniwind";
 
 import type { LocationResult } from "@/mocks/data/locations";
 
@@ -26,6 +27,9 @@ export function LocationMainSearch({
   showPredictions,
   onSelect,
 }: LocationMainSearchProps): JSX.Element {
+  const { theme } = useUniwind();
+  const isDark = theme === "dark";
+
   return (
     <View className="gap-2.5">
       <Typography type="body-xs" className="mx-1 text-muted">
@@ -37,7 +41,10 @@ export function LocationMainSearch({
           <SearchField.SearchIcon />
           <SearchField.Input
             placeholder="Search city or area"
-            className="text-[15px] font-normal"
+            variant={isDark ? "secondary" : "primary"}
+            className={`text-[15px] font-normal ${
+              isDark ? "bg-surface border-border" : ""
+            }`}
             autoCorrect={false}
             autoCapitalize="words"
           />

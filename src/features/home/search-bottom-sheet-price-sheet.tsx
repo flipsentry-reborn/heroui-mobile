@@ -18,14 +18,17 @@ export function sanitizePriceInput(text: string): string {
   return text.replace(/[^0-9]/g, "");
 }
 
+/** Non-breaking spaces so "Any - Any" stays on one row in criteria. */
 export function formatPriceRangeLabel(min: string, max: string): string {
-  return `${min === "" ? "Any" : min} - ${max === "" ? "Any" : max}`;
+  const left = min === "" ? "Any" : min;
+  const right = max === "" ? "Any" : max;
+  return `${left}\u00A0-\u00A0${right}`;
 }
 
 function getPriceRangeError(min: string, max: string): string | null {
   if (min === "" || max === "") return null;
   if (Number(min) > Number(max)) {
-    return "Min cannot be greater than Max";
+    return "Minimum cannot be greater than Maximum";
   }
   return null;
 }
@@ -93,7 +96,7 @@ function PriceSheetContent({
         />
         <SearchSheetGroup>
           <SearchSheetRow
-            title="Min"
+            title="Minimum"
             isLast={false}
             right={
               <PriceFieldInput
@@ -104,7 +107,7 @@ function PriceSheetContent({
             }
           />
           <SearchSheetRow
-            title="Max"
+            title="Maximum"
             isLast
             right={
               <PriceFieldInput

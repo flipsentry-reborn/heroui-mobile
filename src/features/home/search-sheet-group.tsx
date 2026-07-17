@@ -125,12 +125,14 @@ export function SearchSheetValue({
 
   return (
     <View
-      className="flex-row items-center gap-1"
-      style={isDisabled ? { opacity: 0.55 } : undefined}
+      className={`shrink-0 flex-row items-center gap-1 ${
+        isDisabled ? "opacity-50" : ""
+      }`}
     >
       <Typography
         type="body-sm"
-        className={emphasized ? "text-foreground" : "text-muted"}
+        numberOfLines={1}
+        className={`shrink-0 ${emphasized ? "text-foreground" : "text-muted"}`}
       >
         {label}
       </Typography>

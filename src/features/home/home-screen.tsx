@@ -64,8 +64,8 @@ export function HomeScreen(): JSX.Element {
           onPress={() => router.push("/settings/subscription")}
         />
 
-        <View className="mx-5 mb-2">
-          <BrandButton className="min-h-12" onPress={() => setCreateOpen(true)}>
+        <View className="mx-3 mb-2">
+          <BrandButton className="min-h-12 w-full" onPress={() => setCreateOpen(true)}>
             <Ionicons name="add" size={18} color={accentForeground} />
             <BrandButton.Label>New Search</BrandButton.Label>
           </BrandButton>

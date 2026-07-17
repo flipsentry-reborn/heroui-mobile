@@ -50,7 +50,7 @@ export function SearchBottomSheetCriteria({
         onPress={hasSearchType ? () => price.onOpenChange(true) : undefined}
         right={
           <SearchSheetValue
-            label={hasSearchType ? priceLabel : "Any - Any"}
+            label={priceLabel}
             isDisabled={!hasSearchType}
             emphasized={hasSearchType && hasPriceFilter}
           />

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import {
   BottomSheet,
@@ -158,6 +158,7 @@ function KeywordsSheetContent({
   onPersist: (includers: string[], excluders: string[]) => void;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
+  const snapPoints = useMemo(() => ["92%"], []);
   const [includerDraft, setIncluderDraft] = useState("");
   const [excluderDraft, setExcluderDraft] = useState("");
   const dismiss = () => onOpenChange(false);
@@ -173,6 +174,7 @@ function KeywordsSheetContent({
 
   return (
     <BottomSheet.Content
+      snapPoints={snapPoints}
       keyboardBehavior="extend"
       android_keyboardInputMode="adjustResize"
       backgroundClassName="rounded-t-[32px] bg-surface-secondary"

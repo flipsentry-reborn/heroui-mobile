@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
-import { View } from "react-native";
-import { PressableFeedback, Typography, useThemeColor } from "heroui-native";
+import { Pressable, View } from "react-native";
+import { Typography, useThemeColor } from "heroui-native";
 
 interface SearchBottomSheetHeaderProps {
   onClose: () => void;
@@ -16,7 +16,7 @@ export function SearchBottomSheetHeader({
 
   return (
     <View className="flex-row items-center px-8 pt-3 pb-2">
-      <PressableFeedback
+      <Pressable
         onPress={onClose}
         accessibilityRole="button"
         accessibilityLabel="Close"
@@ -27,13 +27,13 @@ export function SearchBottomSheetHeader({
         >
           <Ionicons name="close" size={18} color={foreground} />
         </View>
-      </PressableFeedback>
+      </Pressable>
       <View className="flex-1 items-center px-2">
         <Typography type="body" weight="normal">
           New Search
         </Typography>
       </View>
-      <PressableFeedback
+      <Pressable
         onPress={onConfirm}
         accessibilityRole="button"
         accessibilityLabel="Confirm"
@@ -44,7 +44,7 @@ export function SearchBottomSheetHeader({
         >
           <Ionicons name="checkmark" size={18} color={foreground} />
         </View>
-      </PressableFeedback>
+      </Pressable>
     </View>
   );
 }

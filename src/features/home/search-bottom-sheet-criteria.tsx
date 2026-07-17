@@ -1,16 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { JSX, ReactNode } from "react";
 import { useState } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import {
   ListGroup,
-  PressableFeedback,
   Separator,
   Typography,
   useThemeColor,
 } from "heroui-native";
 
-import { SearchBottomSheetTypeFab } from "@/features/home/search-bottom-sheet-type-fab";
+import { formatPriceRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
+import { SearchBottomSheetTypeSelect } from "@/features/home/search-bottom-sheet-type-select";
 import type { SearchType } from "@/mocks/data/home";
 
 function CriteriaRow({
@@ -69,15 +69,11 @@ function CriteriaRow({
   return (
     <>
       {interactive ? (
-        <PressableFeedback animation={false} onPress={onPress}>
-          <PressableFeedback.Scale>
-            <ListGroup.Item disabled className="py-3.5">
-              {body}
-            </ListGroup.Item>
-          </PressableFeedback.Scale>
-          <PressableFeedback.Highlight />
-          <PressableFeedback.Ripple />
-        </PressableFeedback>
+        <Pressable onPress={onPress}>
+          <ListGroup.Item disabled className="py-3.5">
+            {body}
+          </ListGroup.Item>
+        </Pressable>
       ) : (
         <ListGroup.Item
           disabled
@@ -95,10 +91,12 @@ function CriteriaValue({
   label,
   showChevron = true,
   isDisabled,
+  emphasized,
 }: {
   label: string;
   showChevron?: boolean;
   isDisabled?: boolean;
+  emphasized?: boolean;
 }): JSX.Element {
   const [muted] = useThemeColor(["muted"]);
 
@@ -107,7 +105,10 @@ function CriteriaValue({
       className="flex-row items-center gap-1"
       style={isDisabled ? { opacity: 0.55 } : undefined}
     >
-      <Typography type="body-sm" className="text-muted">
+      <Typography
+        type="body-sm"
+        className={emphasized ? "text-foreground" : "text-muted"}
+      >
         {label}
       </Typography>
       {showChevron ? (
@@ -117,10 +118,25 @@ function CriteriaValue({
   );
 }
 
-export function SearchBottomSheetCriteria(): JSX.Element {
+export interface SearchPriceState {
+  min: string;
+  max: string;
+  onOpenChange: (open: boolean) => void;
+  onMinChange: (value: string) => void;
+  onMaxChange: (value: string) => void;
+}
+
+interface SearchBottomSheetCriteriaProps {
+  price: SearchPriceState;
+}
+
+export function SearchBottomSheetCriteria({
+  price,
+}: SearchBottomSheetCriteriaProps): JSX.Element {
   const [searchType, setSearchType] = useState<SearchType | null>(null);
-  const [typeFabOpen, setTypeFabOpen] = useState(false);
   const hasSearchType = searchType != null;
+  const priceLabel = formatPriceRangeLabel(price.min, price.max);
+  const hasPriceFilter = price.min !== "" || price.max !== "";
 
   return (
     <View className="mb-5 mt-1 gap-2.5">
@@ -132,18 +148,11 @@ export function SearchBottomSheetCriteria(): JSX.Element {
         <CriteriaRow
           title="Search"
           required
-          showSwap
           isLast={false}
-          onPress={() => setTypeFabOpen(true)}
           right={
-            <SearchBottomSheetTypeFab
+            <SearchBottomSheetTypeSelect
               value={searchType}
-              isOpen={typeFabOpen}
-              onOpenChange={setTypeFabOpen}
-              onChange={(type) => {
-                setSearchType(type);
-                setTypeFabOpen(false);
-              }}
+              onChange={setSearchType}
             />
           }
         />
@@ -151,9 +160,15 @@ export function SearchBottomSheetCriteria(): JSX.Element {
           title="Price"
           isLast={false}
           isDisabled={!hasSearchType}
-          onPress={hasSearchType ? () => {} : undefined}
+          onPress={
+            hasSearchType ? () => price.onOpenChange(true) : undefined
+          }
           right={
-            <CriteriaValue label="None" isDisabled={!hasSearchType} />
+            <CriteriaValue
+              label={hasSearchType ? priceLabel : "Any - Any"}
+              isDisabled={!hasSearchType}
+              emphasized={hasSearchType && hasPriceFilter}
+            />
           }
         />
         <CriteriaRow
@@ -161,9 +176,7 @@ export function SearchBottomSheetCriteria(): JSX.Element {
           isLast
           isDisabled={!hasSearchType}
           onPress={hasSearchType ? () => {} : undefined}
-          right={
-            <CriteriaValue label="None" isDisabled={!hasSearchType} />
-          }
+          right={<CriteriaValue label="None" isDisabled={!hasSearchType} />}
         />
       </ListGroup>
     </View>

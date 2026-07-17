@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps, JSX, ReactNode } from "react";
-import { View } from "react-native";
-import { ListGroup, PressableFeedback, Separator } from "heroui-native";
+import { Pressable, View } from "react-native";
+import { ListGroup, Separator } from "heroui-native";
 import { withUniwind } from "uniwind";
 
 const StyledIonicons = withUniwind(Ionicons);
@@ -86,15 +86,11 @@ export function SearchBottomSheetRow({
   return (
     <>
       {onPress ? (
-        <PressableFeedback animation={false} onPress={onPress}>
-          <PressableFeedback.Scale>
-            <ListGroup.Item disabled className="py-3.5">
-              {body}
-            </ListGroup.Item>
-          </PressableFeedback.Scale>
-          <PressableFeedback.Highlight />
-          <PressableFeedback.Ripple />
-        </PressableFeedback>
+        <Pressable onPress={onPress}>
+          <ListGroup.Item disabled className="py-3.5">
+            {body}
+          </ListGroup.Item>
+        </Pressable>
       ) : (
         <ListGroup.Item disabled className="py-3.5">
           {body}

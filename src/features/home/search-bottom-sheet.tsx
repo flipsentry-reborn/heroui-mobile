@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { View } from "react-native";
 import {
   BottomSheet,
+  Button,
   Typography,
   useBottomSheet,
   useThemeColor,
@@ -113,7 +114,8 @@ function SearchSheetContent({
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const [muted] = useThemeColor(["muted"]);
-  const snapPoints = useMemo(() => ["70%", "92%"], []);
+  /** Max height for keyboard `extend`; dynamic sizing still hugs content when closed. */
+  const snapPoints = useMemo(() => ["92%"], []);
   const dismiss = () => onOpenChange(false);
 
   const handleConfirm = () => {
@@ -138,16 +140,16 @@ function SearchSheetContent({
   return (
     <BottomSheet.Content
       snapPoints={snapPoints}
-      enableOverDrag={false}
-      enableDynamicSizing={false}
       keyboardBehavior={childSheetOpen ? undefined : "extend"}
+      keyboardBlurBehavior={childSheetOpen ? undefined : "restore"}
       android_keyboardInputMode={childSheetOpen ? undefined : "adjustResize"}
-      contentContainerClassName="h-full bg-surface-secondary p-0"
+      className="overflow-hidden"
+      contentContainerClassName="p-0"
       backgroundClassName="rounded-t-[32px] bg-surface-secondary"
       handleComponent={null}
     >
-      <View className="flex-1">
-        <SearchBottomSheetHeader onClose={dismiss} onConfirm={handleConfirm} />
+      <View>
+        <SearchBottomSheetHeader />
 
         <SearchBottomSheetSection>
           <SearchBottomSheetRow
@@ -213,6 +215,23 @@ function SearchSheetContent({
             onOpenChange: onKeywordsOpenChange,
           }}
         />
+
+        <View className="flex-row gap-3 px-5 pb-6 pt-0">
+          <Button
+            variant="secondary"
+            className="min-h-12 flex-1"
+            onPress={dismiss}
+          >
+            <Button.Label>Cancel</Button.Label>
+          </Button>
+          <Button
+            variant="primary"
+            className="min-h-12 flex-1"
+            onPress={handleConfirm}
+          >
+            <Button.Label>Save</Button.Label>
+          </Button>
+        </View>
       </View>
     </BottomSheet.Content>
   );

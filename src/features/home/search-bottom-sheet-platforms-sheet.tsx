@@ -71,9 +71,10 @@ function PlatformsSheetContent({
   return (
     <BottomSheet.Content
       snapPoints={snapPoints}
+      className="overflow-hidden"
       backgroundClassName="rounded-t-[32px] bg-surface-secondary"
       handleComponent={null}
-      contentContainerClassName="bg-surface-secondary p-0"
+      contentContainerClassName="p-0"
     >
       <View>
         <View className="items-center px-5 pt-4 pb-1">

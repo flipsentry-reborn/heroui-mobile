@@ -353,9 +353,10 @@ function KeywordsSheetContent({
       keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
+      className="overflow-hidden"
       backgroundClassName="rounded-t-[32px] bg-surface-secondary"
       handleComponent={null}
-      contentContainerClassName="h-full bg-surface-secondary p-0"
+      contentContainerClassName="h-full p-0"
     >
       <View className="flex-1">
         <View className="items-center px-5 pb-1 pt-4">

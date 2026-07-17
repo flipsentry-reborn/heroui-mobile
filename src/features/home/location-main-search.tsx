@@ -6,6 +6,7 @@ import {
   SearchField,
   Separator,
   Typography,
+  useBottomSheetAwareHandlers,
 } from "heroui-native";
 import { useUniwind } from "uniwind";
 
@@ -29,6 +30,7 @@ export function LocationMainSearch({
 }: LocationMainSearchProps): JSX.Element {
   const { theme } = useUniwind();
   const isDark = theme === "dark";
+  const { onFocus, onBlur } = useBottomSheetAwareHandlers();
 
   return (
     <View className="gap-2.5">
@@ -47,6 +49,8 @@ export function LocationMainSearch({
             }`}
             autoCorrect={false}
             autoCapitalize="words"
+            onFocus={onFocus}
+            onBlur={onBlur}
           />
           <SearchField.ClearButton />
         </SearchField.Group>

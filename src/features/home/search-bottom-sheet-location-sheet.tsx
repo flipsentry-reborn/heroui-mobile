@@ -1,13 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
+import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import type { JSX } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, View } from "react-native";
-import {
-  BottomSheet,
-  PressableFeedback,
-  Typography,
-  useBottomSheet,
-} from "heroui-native";
+import { View } from "react-native";
+import { BottomSheet, Button, Typography, useBottomSheet } from "heroui-native";
 import { withUniwind } from "uniwind";
 
 import { LocationMainSearch } from "@/features/home/location-main-search";
@@ -28,7 +23,7 @@ import {
   setLocationDraft,
 } from "@/mocks/services/location";
 
-const StyledIonicons = withUniwind(Ionicons);
+const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
 
 function LocationSheetContent({
   main,
@@ -63,10 +58,11 @@ function LocationSheetContent({
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const snapPoints = useMemo(() => ["92%"], []);
+  const dismiss = () => onOpenChange(false);
 
-  const handleBack = () => {
+  const handleSave = () => {
     onPersist();
-    onOpenChange(false);
+    dismiss();
   };
 
   return (
@@ -75,34 +71,25 @@ function LocationSheetContent({
       enableOverDrag={false}
       enableDynamicSizing={false}
       keyboardBehavior="extend"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
+      className="overflow-hidden"
       backgroundClassName="rounded-t-[32px] bg-surface-secondary"
       handleComponent={null}
-      contentContainerClassName="h-full bg-surface-secondary p-0"
+      contentContainerClassName="h-full p-0"
     >
       <View className="flex-1">
-        <View className="flex-row items-center px-8 pt-3 pb-2">
-          <PressableFeedback
-            onPress={handleBack}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            className="h-9 w-9 items-center justify-center rounded-full bg-danger/15"
-            animation={{ scale: { value: 0.92 } }}
-          >
-            <StyledIonicons name="close" size={20} className="text-danger" />
-          </PressableFeedback>
-          <View className="flex-1 items-center px-2">
-            <Typography type="body" weight="normal">
-              Location
-            </Typography>
-          </View>
-          <View className="h-9 w-9" />
+        <View className="items-center px-5 pb-1 pt-4">
+          <Typography type="body" weight="normal">
+            Location
+          </Typography>
         </View>
 
-        <ScrollView
+        <StyledBottomSheetScrollView
           className="flex-1"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerClassName="gap-5 px-3 pb-8 pt-2"
+          contentContainerClassName="gap-5 px-3 pb-4 pt-2"
         >
           <LocationMap
             main={main}
@@ -134,7 +121,25 @@ function LocationSheetContent({
               Search and select a main location to set radius and nearby areas.
             </Typography>
           )}
-        </ScrollView>
+        </StyledBottomSheetScrollView>
+
+        <View className="flex-row gap-3 px-5 pb-6 pt-2">
+          <Button
+            variant="secondary"
+            className="min-h-12 flex-1"
+            onPress={dismiss}
+          >
+            <Button.Label>Cancel</Button.Label>
+          </Button>
+          <Button
+            variant="primary"
+            className="min-h-12 flex-1"
+            isDisabled={main == null}
+            onPress={handleSave}
+          >
+            <Button.Label>Save</Button.Label>
+          </Button>
+        </View>
       </View>
     </BottomSheet.Content>
   );
@@ -263,13 +268,7 @@ export function SearchBottomSheetLocationSheet({
   };
 
   return (
-    <SheetShell
-      visible={isOpen}
-      onClose={() => {
-        handlePersist();
-        onOpenChange(false);
-      }}
-    >
+    <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
       <LocationSheetContent
         main={main}
         radiusMiles={radiusMiles}

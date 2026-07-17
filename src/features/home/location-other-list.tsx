@@ -154,10 +154,7 @@ export function LocationOtherList({
     <View className="gap-2.5">
       <View className="mx-1 gap-1">
         <Typography type="body-xs" className="text-muted">
-          Other Locations
-        </Typography>
-        <Typography type="body-xs" className="text-muted">
-          Pick a speed to include a nearby area
+          Multiple Locations
         </Typography>
       </View>
 

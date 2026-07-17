@@ -15,7 +15,15 @@ import {
   SearchBottomSheetCriteria,
 } from "@/features/home/search-bottom-sheet-criteria";
 import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
-import { SearchBottomSheetKeywordsSheet } from "@/features/home/search-bottom-sheet-keywords-sheet";
+import {
+  SearchBottomSheetIphoneModelsSheet,
+  type IphoneModelSelection,
+} from "@/features/home/search-bottom-sheet-iphone-models-sheet";
+import {
+  EMPTY_KEYWORDS,
+  SearchBottomSheetKeywordsSheet,
+  type KeywordsState,
+} from "@/features/home/search-bottom-sheet-keywords-sheet";
 import { SearchBottomSheetLocationSheet } from "@/features/home/search-bottom-sheet-location-sheet";
 import {
   DEFAULT_SEARCH_PLATFORMS,
@@ -68,13 +76,14 @@ function SearchSheetContent({
   onCustomQueryChange,
   customQueryInvalid,
   onCustomQueryInvalidChange,
+  iphoneSelections,
+  onIphoneModelsOpenChange,
   minPrice,
   maxPrice,
   onPriceOpenChange,
   onMinChange,
   onMaxChange,
-  keywordIncluders,
-  keywordExcluders,
+  keywords,
   onKeywordsOpenChange,
   childSheetOpen,
   selectedPlatforms,
@@ -88,15 +97,16 @@ function SearchSheetContent({
   onCustomQueryChange: (value: string) => void;
   customQueryInvalid: boolean;
   onCustomQueryInvalidChange: (invalid: boolean) => void;
+  iphoneSelections: IphoneModelSelection[];
+  onIphoneModelsOpenChange: (open: boolean) => void;
   minPrice: string;
   maxPrice: string;
   onPriceOpenChange: (open: boolean) => void;
   onMinChange: (value: string) => void;
   onMaxChange: (value: string) => void;
-  keywordIncluders: string[];
-  keywordExcluders: string[];
+  keywords: KeywordsState;
   onKeywordsOpenChange: (open: boolean) => void;
-  /** Nested price/keywords sheets own the keyboard — parent must not fight them. */
+  /** Nested price/keywords sheets own the keyboard ? parent must not fight them. */
   childSheetOpen: boolean;
   selectedPlatforms: HomePlatform[];
   onPlatformsOpenChange: (open: boolean) => void;
@@ -109,6 +119,10 @@ function SearchSheetContent({
   const handleConfirm = () => {
     if (searchType === "custom" && !isCustomSearchQueryValid(customQuery)) {
       onCustomQueryInvalidChange(true);
+      return;
+    }
+    if (searchType === "iphone" && iphoneSelections.length === 0) {
+      onIphoneModelsOpenChange(true);
       return;
     }
     dismiss();
@@ -183,6 +197,10 @@ function SearchSheetContent({
           customQuery={customQuery}
           onCustomQueryChange={handleCustomQueryChange}
           customQueryInvalid={customQueryInvalid}
+          iphoneModels={{
+            selections: iphoneSelections,
+            onOpenChange: onIphoneModelsOpenChange,
+          }}
           price={{
             min: minPrice,
             max: maxPrice,
@@ -191,8 +209,7 @@ function SearchSheetContent({
             onMaxChange,
           }}
           keywords={{
-            includers: keywordIncluders,
-            excluders: keywordExcluders,
+            value: keywords,
             onOpenChange: onKeywordsOpenChange,
           }}
         />
@@ -218,13 +235,16 @@ export function SearchBottomSheet({
   const [keywordsOpen, setKeywordsOpen] = useState(false);
   const [platformsOpen, setPlatformsOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
+  const [iphoneModelsOpen, setIphoneModelsOpen] = useState(false);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [searchType, setSearchType] = useState<SearchType | null>(null);
   const [customQuery, setCustomQuery] = useState("");
   const [customQueryInvalid, setCustomQueryInvalid] = useState(false);
-  const [keywordIncluders, setKeywordIncluders] = useState<string[]>([]);
-  const [keywordExcluders, setKeywordExcluders] = useState<string[]>([]);
+  const [iphoneSelections, setIphoneSelections] = useState<
+    IphoneModelSelection[]
+  >([]);
+  const [keywords, setKeywords] = useState<KeywordsState>(EMPTY_KEYWORDS);
   const [selectedPlatforms, setSelectedPlatforms] = useState<HomePlatform[]>(
     DEFAULT_SEARCH_PLATFORMS,
   );
@@ -235,6 +255,10 @@ export function SearchBottomSheet({
       setCustomQuery("");
       setCustomQueryInvalid(false);
     }
+    if (type !== "iphone") {
+      setIphoneSelections([]);
+      setIphoneModelsOpen(false);
+    }
   };
 
   const handleClose = () => {
@@ -242,6 +266,7 @@ export function SearchBottomSheet({
     setKeywordsOpen(false);
     setPlatformsOpen(false);
     setLocationOpen(false);
+    setIphoneModelsOpen(false);
     onClose();
   };
 
@@ -264,15 +289,16 @@ export function SearchBottomSheet({
           onCustomQueryChange={setCustomQuery}
           customQueryInvalid={customQueryInvalid}
           onCustomQueryInvalidChange={setCustomQueryInvalid}
+          iphoneSelections={iphoneSelections}
+          onIphoneModelsOpenChange={setIphoneModelsOpen}
           minPrice={minPrice}
           maxPrice={maxPrice}
           onPriceOpenChange={setPriceOpen}
           onMinChange={setMinPrice}
           onMaxChange={setMaxPrice}
-          keywordIncluders={keywordIncluders}
-          keywordExcluders={keywordExcluders}
+          keywords={keywords}
           onKeywordsOpenChange={setKeywordsOpen}
-          childSheetOpen={priceOpen || keywordsOpen}
+          childSheetOpen={priceOpen || keywordsOpen || iphoneModelsOpen}
           selectedPlatforms={selectedPlatforms}
           onPlatformsOpenChange={setPlatformsOpen}
         />
@@ -290,10 +316,15 @@ export function SearchBottomSheet({
       <SearchBottomSheetKeywordsSheet
         isOpen={visible && keywordsOpen}
         onOpenChange={setKeywordsOpen}
-        includers={keywordIncluders}
-        excluders={keywordExcluders}
-        onIncludersChange={setKeywordIncluders}
-        onExcludersChange={setKeywordExcluders}
+        keywords={keywords}
+        onKeywordsChange={setKeywords}
+      />
+
+      <SearchBottomSheetIphoneModelsSheet
+        isOpen={visible && iphoneModelsOpen}
+        onOpenChange={setIphoneModelsOpen}
+        selections={iphoneSelections}
+        onSelectionsChange={setIphoneSelections}
       />
 
       <SearchBottomSheetPlatformsSheet

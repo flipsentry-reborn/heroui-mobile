@@ -1,23 +1,31 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { JSX } from "react";
-import { useEffect, useMemo, useState } from "react";
-import { View } from "react-native";
 import {
+  BottomSheetScrollView,
+  BottomSheetTextInput,
+} from "@gorhom/bottom-sheet";
+import type { JSX, RefObject } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { View, type TextInput } from "react-native";
+import {
+  Accordion,
   BottomSheet,
   Button,
   Chip,
-  Description,
-  Input,
-  Label,
+  ListGroup,
+  Menu,
+  Separator,
   Typography,
   useBottomSheet,
-  useBottomSheetAwareHandlers,
+  useThemeColor,
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
 import { SheetShell } from "@/features/home/sheet-shell";
 
 const StyledIonicons = withUniwind(Ionicons);
+const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
+
+type KeywordTone = "required" | "ignored";
 
 export function formatKeywordsLabel(
   includers: string[],
@@ -50,36 +58,119 @@ function KeywordFieldInput({
   value,
   onChangeText,
   onSubmit,
-  placeholder,
+  inputRef,
+  caretAtEndToken,
 }: {
   value: string;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
-  placeholder: string;
+  inputRef: RefObject<TextInput | null>;
+  /** Bumps when Edit puts text into the field — focus + caret at end. */
+  caretAtEndToken: number;
 }): JSX.Element {
-  const { onFocus, onBlur } = useBottomSheetAwareHandlers();
+  const [muted, foreground] = useThemeColor(["muted", "foreground"]);
+
+  useEffect(() => {
+    if (caretAtEndToken === 0) return;
+    const end = value.length;
+    // Wait for Menu dismiss so focus/caret aren't stolen.
+    const id = setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.setNativeProps({
+        selection: { start: end, end },
+      });
+    }, 80);
+    return () => clearTimeout(id);
+  }, [caretAtEndToken, inputRef, value.length]);
 
   return (
-    <Input
+    <BottomSheetTextInput
+      ref={inputRef}
       value={value}
       onChangeText={onChangeText}
-      placeholder={placeholder}
-      variant="primary"
+      placeholder="Add keyword"
+      placeholderTextColor={muted}
       autoCorrect={false}
       autoCapitalize="none"
       returnKeyType="done"
       onSubmitEditing={onSubmit}
-      className="h-8 min-h-8 flex-1 px-2 py-0 text-sm text-foreground"
-      onFocus={onFocus}
-      onBlur={onBlur}
+      style={{
+        height: 40,
+        minHeight: 40,
+        width: "100%",
+        paddingHorizontal: 0,
+        paddingVertical: 0,
+        backgroundColor: "transparent",
+        color: foreground,
+        fontSize: 15,
+      }}
     />
+  );
+}
+
+function KeywordChip({
+  keyword,
+  tone,
+  onEdit,
+  onDelete,
+}: {
+  keyword: string;
+  tone: KeywordTone;
+  onEdit: () => void;
+  onDelete: () => void;
+}): JSX.Element {
+  // Theme accent is B/W — Required needs explicit blue (ref image), Ignored uses danger.
+  const chipClassName =
+    tone === "required"
+      ? "rounded-full bg-sky-500/25 px-2.5 py-1"
+      : "rounded-full px-2.5 py-1";
+  const labelClassName =
+    tone === "required"
+      ? "text-xs text-sky-400"
+      : "text-xs text-danger-soft-foreground";
+
+  return (
+    <Menu>
+      <Menu.Trigger asChild>
+        <Chip
+          size="sm"
+          variant="soft"
+          color={tone === "required" ? "default" : "danger"}
+          className={chipClassName}
+          accessibilityRole="button"
+          accessibilityLabel={`Options for ${keyword}`}
+        >
+          <Chip.Label className={labelClassName}>{keyword}</Chip.Label>
+        </Chip>
+      </Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Overlay />
+        <Menu.Content presentation="popover" width={160} placement="top">
+          <Menu.Item onPress={onEdit}>
+            <StyledIonicons
+              name="create-outline"
+              size={18}
+              className="text-foreground"
+            />
+            <Menu.ItemTitle>Edit</Menu.ItemTitle>
+          </Menu.Item>
+          <Menu.Item variant="danger" onPress={onDelete}>
+            <StyledIonicons
+              name="trash-outline"
+              size={18}
+              className="text-danger"
+            />
+            <Menu.ItemTitle>Delete</Menu.ItemTitle>
+          </Menu.Item>
+        </Menu.Content>
+      </Menu.Portal>
+    </Menu>
   );
 }
 
 function KeywordSection({
   title,
-  placeholder,
-  help,
+  tone,
   values,
   draft,
   onDraftChange,
@@ -87,14 +178,16 @@ function KeywordSection({
   onRemove,
 }: {
   title: string;
-  placeholder: string;
-  help: string;
+  tone: KeywordTone;
   values: string[];
   draft: string;
   onDraftChange: (value: string) => void;
   onAdd: (text: string) => void;
   onRemove: (value: string) => void;
 }): JSX.Element {
+  const inputRef = useRef<TextInput>(null);
+  const [caretAtEndToken, setCaretAtEndToken] = useState(0);
+
   const handleChangeText = (text: string) => {
     if (text.includes(",")) {
       onAdd(text);
@@ -103,47 +196,55 @@ function KeywordSection({
     onDraftChange(text);
   };
 
-  const handleAddPress = () => {
+  const handleAdd = () => {
     onAdd(draft);
   };
 
+  const handleEdit = (keyword: string) => {
+    onRemove(keyword);
+    onDraftChange(keyword);
+    setCaretAtEndToken((token) => token + 1);
+  };
+
   return (
-    <View className="gap-2.5">
-      <Label>{title}</Label>
-      <View className="flex-row items-center gap-2">
+    <ListGroup className="mx-3 rounded-3xl p-0">
+      <View className="px-4 pb-2.5 pt-3.5">
+        <Typography type="body-xs" className="text-muted">
+          {title}
+        </Typography>
+      </View>
+      <Separator className="mx-4 bg-muted/40" />
+      <View className="gap-2 px-4 pb-3.5 pt-2">
+        {values.length > 0 ? (
+          <View className="flex-row flex-wrap gap-2">
+            {values.map((keyword) => (
+              <KeywordChip
+                key={keyword}
+                keyword={keyword}
+                tone={tone}
+                onEdit={() => handleEdit(keyword)}
+                onDelete={() => onRemove(keyword)}
+              />
+            ))}
+          </View>
+        ) : null}
         <KeywordFieldInput
           value={draft}
           onChangeText={handleChangeText}
-          onSubmit={handleAddPress}
-          placeholder={placeholder}
+          onSubmit={handleAdd}
+          inputRef={inputRef}
+          caretAtEndToken={caretAtEndToken}
         />
-        <Button size="sm" variant="primary" onPress={handleAddPress}>
-          <Button.Label>Add</Button.Label>
-        </Button>
       </View>
-      {values.length > 0 ? (
-        <View className="flex-row flex-wrap gap-2">
-          {values.map((keyword) => (
-            <Chip
-              key={keyword}
-              size="sm"
-              variant="secondary"
-              color="default"
-              onPress={() => onRemove(keyword)}
-              accessibilityRole="button"
-              accessibilityLabel={`Remove ${keyword}`}
-            >
-              <Chip.Label>{keyword}</Chip.Label>
-              <StyledIonicons name="close" size={14} className="text-muted" />
-            </Chip>
-          ))}
-        </View>
-      ) : null}
-      <Description className="italic">{help}</Description>
-    </View>
+    </ListGroup>
   );
 }
 
+/**
+ * HeroUI scrollable sheet pattern:
+ * snapPoints + enableDynamicSizing={false} + contentContainerClassName="h-full"
+ * @see heroui-native BottomSheet.md — "Scrollable with Snap Points"
+ */
 function KeywordsSheetContent({
   includers,
   excluders,
@@ -158,9 +259,10 @@ function KeywordsSheetContent({
   onPersist: (includers: string[], excluders: string[]) => void;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
-  const snapPoints = useMemo(() => ["92%"], []);
   const [includerDraft, setIncluderDraft] = useState("");
   const [excluderDraft, setExcluderDraft] = useState("");
+  // ~30% taller than a mid cut-off sheet (~60%) → open near full usable height
+  const snapPoints = useMemo(() => ["90%"], []);
   const dismiss = () => onOpenChange(false);
 
   const handleSave = () => {
@@ -175,24 +277,65 @@ function KeywordsSheetContent({
   return (
     <BottomSheet.Content
       snapPoints={snapPoints}
+      enableOverDrag={false}
+      enableDynamicSizing={false}
       keyboardBehavior="extend"
+      keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
       backgroundClassName="rounded-t-[32px] bg-surface-secondary"
       handleComponent={null}
-      contentContainerClassName="bg-surface-secondary p-0"
+      contentContainerClassName="h-full bg-surface-secondary p-0"
     >
-      <View>
+      <View className="flex-1">
         <View className="items-center px-5 pt-4 pb-1">
           <Typography type="body" weight="normal">
             Keywords
           </Typography>
         </View>
 
-        <View className="gap-6 px-5 pb-2 pt-3">
+        <StyledBottomSheetScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          className="flex-1"
+          contentContainerClassName="gap-3 px-0 pb-4 pt-3"
+        >
+          <Accordion
+            variant="surface"
+            selectionMode="single"
+            hideSeparator
+            isCollapsible
+            className="mx-3"
+          >
+            <Accordion.Item value="guide">
+              <Accordion.Trigger>
+                <View className="flex-row items-center gap-2.5">
+                  <StyledIonicons
+                    name="sparkles"
+                    size={16}
+                    className="text-violet-400"
+                  />
+                  <Typography
+                    type="body-sm"
+                    weight="semibold"
+                    className="text-foreground"
+                  >
+                    Guide
+                  </Typography>
+                </View>
+                <Accordion.Indicator />
+              </Accordion.Trigger>
+              <Accordion.Content>
+                <Typography type="body-xs" className="text-muted">
+                  Required words must appear in the listing title. Ignored words
+                  hide matching titles.
+                </Typography>
+              </Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+
           <KeywordSection
-            title="Text Includer (Optional)"
-            placeholder="Enter keywords to include"
-            help="Only shows listings with at least one of these words (separate multiple with commas)"
+            title="Required"
+            tone="required"
             values={includers}
             draft={includerDraft}
             onDraftChange={setIncluderDraft}
@@ -204,10 +347,10 @@ function KeywordsSheetContent({
               onIncludersChange(removeKeyword(includers, value))
             }
           />
+
           <KeywordSection
-            title="Text Excluder (Optional)"
-            placeholder="Enter keywords to exclude"
-            help="Hides listings containing any of these words (separate multiple with commas)"
+            title="Ignored"
+            tone="ignored"
             values={excluders}
             draft={excluderDraft}
             onDraftChange={setExcluderDraft}
@@ -219,7 +362,7 @@ function KeywordsSheetContent({
               onExcludersChange(removeKeyword(excluders, value))
             }
           />
-        </View>
+        </StyledBottomSheetScrollView>
 
         <View className="flex-row gap-3 px-5 pb-6 pt-2">
           <Button

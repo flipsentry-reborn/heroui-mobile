@@ -76,6 +76,7 @@ function SearchSheetContent({
   keywordIncluders,
   keywordExcluders,
   onKeywordsOpenChange,
+  childSheetOpen,
   selectedPlatforms,
   onPlatformsOpenChange,
 }: {
@@ -95,6 +96,8 @@ function SearchSheetContent({
   keywordIncluders: string[];
   keywordExcluders: string[];
   onKeywordsOpenChange: (open: boolean) => void;
+  /** Nested price/keywords sheets own the keyboard — parent must not fight them. */
+  childSheetOpen: boolean;
   selectedPlatforms: HomePlatform[];
   onPlatformsOpenChange: (open: boolean) => void;
 }): JSX.Element {
@@ -123,7 +126,8 @@ function SearchSheetContent({
       snapPoints={snapPoints}
       enableOverDrag={false}
       enableDynamicSizing={false}
-      keyboardBehavior="extend"
+      keyboardBehavior={childSheetOpen ? undefined : "extend"}
+      android_keyboardInputMode={childSheetOpen ? undefined : "adjustResize"}
       contentContainerClassName="h-full bg-surface-secondary p-0"
       backgroundClassName="rounded-t-[32px] bg-surface-secondary"
       handleComponent={null}
@@ -268,6 +272,7 @@ export function SearchBottomSheet({
           keywordIncluders={keywordIncluders}
           keywordExcluders={keywordExcluders}
           onKeywordsOpenChange={setKeywordsOpen}
+          childSheetOpen={priceOpen || keywordsOpen}
           selectedPlatforms={selectedPlatforms}
           onPlatformsOpenChange={setPlatformsOpen}
         />

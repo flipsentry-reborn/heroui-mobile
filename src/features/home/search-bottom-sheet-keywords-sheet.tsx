@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import type { JSX } from "react";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
@@ -187,10 +186,7 @@ function KeywordsSheetContent({
           </Typography>
         </View>
 
-        <BottomSheetScrollView
-          keyboardShouldPersistTaps="handled"
-          contentContainerClassName="gap-6 px-5 pb-2 pt-3"
-        >
+        <View className="gap-6 px-5 pb-2 pt-3">
           <KeywordSection
             title="Text Includer (Optional)"
             placeholder="Enter keywords to include"
@@ -221,7 +217,7 @@ function KeywordsSheetContent({
               onExcludersChange(removeKeyword(excluders, value))
             }
           />
-        </BottomSheetScrollView>
+        </View>
 
         <View className="flex-row gap-3 px-5 pb-6 pt-2">
           <Button

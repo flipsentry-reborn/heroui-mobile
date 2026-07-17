@@ -3,7 +3,6 @@ import { View } from "react-native";
 import {
   Checkbox,
   ControlField,
-  Label,
   ListGroup,
   Separator,
   Typography,
@@ -26,17 +25,21 @@ export function LocationOtherList({
 }: LocationOtherListProps): JSX.Element {
   return (
     <View className="gap-2.5">
-      <Label className="text-[15px]">Other Locations</Label>
-      <Typography type="body-xs" className="text-muted">
-        Nearby areas to expand coverage (optional)
-      </Typography>
+      <View className="mx-1 gap-1">
+        <Typography type="body-xs" className="text-muted">
+          Other Locations
+        </Typography>
+        <Typography type="body-xs" className="text-muted">
+          Nearby areas to expand coverage (optional)
+        </Typography>
+      </View>
 
       {loading ? (
-        <Typography type="body-sm" className="text-muted">
-          Loading nearby places…
+        <Typography type="body-sm" className="mx-1 text-muted">
+          Loading nearby places...
         </Typography>
       ) : places.length === 0 ? (
-        <Typography type="body-sm" className="text-muted">
+        <Typography type="body-sm" className="mx-1 text-muted">
           No nearby suggestions for this area
         </Typography>
       ) : (
@@ -53,10 +56,18 @@ export function LocationOtherList({
                   className="items-center gap-3 px-4 py-3.5"
                 >
                   <View className="min-w-0 flex-1">
-                    <Label className="text-[15px] font-normal">
+                    <Typography
+                      type="body-sm"
+                      className="text-[15px] font-normal text-foreground"
+                      numberOfLines={1}
+                    >
                       {place.name}
-                    </Label>
-                    <Typography type="body-xs" className="text-muted">
+                    </Typography>
+                    <Typography
+                      type="body-xs"
+                      className="text-xs text-muted"
+                      numberOfLines={1}
+                    >
                       {place.secondaryText}
                     </Typography>
                   </View>

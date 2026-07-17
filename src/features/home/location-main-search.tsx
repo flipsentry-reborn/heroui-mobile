@@ -1,11 +1,11 @@
 import type { JSX } from "react";
 import { View } from "react-native";
 import {
-  Label,
   ListGroup,
   PressableFeedback,
   SearchField,
   Separator,
+  Typography,
 } from "heroui-native";
 
 import type { LocationResult } from "@/mocks/data/locations";
@@ -28,13 +28,16 @@ export function LocationMainSearch({
 }: LocationMainSearchProps): JSX.Element {
   return (
     <View className="gap-2.5">
-      <SearchField value={query} onChange={onQueryChange}>
-        <Label className="text-[15px]">Main Location</Label>
+      <Typography type="body-xs" className="mx-1 text-muted">
+        Main Location
+      </Typography>
+
+      <SearchField value={query} onChange={onQueryChange} className="mx-0">
         <SearchField.Group>
           <SearchField.SearchIcon />
           <SearchField.Input
             placeholder="Search city or area"
-            className="text-[15px]"
+            className="text-[15px] font-normal"
             autoCorrect={false}
             autoCapitalize="words"
           />
@@ -45,7 +48,7 @@ export function LocationMainSearch({
       {showPredictions ? (
         <ListGroup>
           {predictions.length === 0 ? (
-            <ListGroup.Item disabled className="py-3">
+            <ListGroup.Item disabled className="py-3.5">
               <ListGroup.ItemContent>
                 <ListGroup.ItemTitle className="text-[15px] font-normal text-muted">
                   No matches
@@ -60,7 +63,7 @@ export function LocationMainSearch({
                   onPress={() => onSelect(place)}
                 >
                   <PressableFeedback.Scale>
-                    <ListGroup.Item disabled className="py-3">
+                    <ListGroup.Item disabled className="py-3.5">
                       <ListGroup.ItemContent>
                         <ListGroup.ItemTitle
                           className="text-[15px] font-normal text-foreground"

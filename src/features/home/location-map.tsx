@@ -36,7 +36,7 @@ export function LocationMap({
 
   return (
     <View
-      className="h-48 w-full overflow-hidden rounded-2xl bg-surface"
+      className="h-48 w-full overflow-hidden rounded-3xl bg-surface shadow-surface"
       pointerEvents="none"
     >
       <MapView

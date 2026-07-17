@@ -78,7 +78,7 @@ function LocationSheetContent({
       contentContainerClassName="h-full bg-surface-secondary p-0"
     >
       <View className="flex-1">
-        <View className="flex-row items-center px-5 pt-4 pb-2">
+        <View className="flex-row items-center px-8 pt-3 pb-2">
           <PressableFeedback
             onPress={handleBack}
             accessibilityRole="button"
@@ -88,13 +88,19 @@ function LocationSheetContent({
           >
             <StyledIonicons name="close" size={20} className="text-danger" />
           </PressableFeedback>
+          <View className="flex-1 items-center px-2">
+            <Typography type="body" weight="normal">
+              Location
+            </Typography>
+          </View>
+          <View className="h-9 w-9" />
         </View>
 
         <ScrollView
           className="flex-1"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerClassName="gap-5 px-4 pb-8 pt-1"
+          contentContainerClassName="gap-5 px-3 pb-8 pt-2"
         >
           <LocationMap
             main={main}
@@ -122,16 +128,10 @@ function LocationSheetContent({
               />
             </>
           ) : (
-            <Typography type="body-sm" className="text-muted">
+            <Typography type="body-xs" className="mx-1 text-muted">
               Search and select a main location to set radius and nearby areas.
             </Typography>
           )}
-
-          {main == null ? (
-            <Typography type="body-xs" className="text-center text-muted">
-              Tip: try “Atlanta”, “Miami”, or “Voorhees”
-            </Typography>
-          ) : null}
         </ScrollView>
       </View>
     </BottomSheet.Content>

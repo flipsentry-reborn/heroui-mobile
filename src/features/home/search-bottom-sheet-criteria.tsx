@@ -1,7 +1,11 @@
 import type { JSX } from "react";
 import { Input, useBottomSheetAwareHandlers } from "heroui-native";
 
-import { formatKeywordsLabel } from "@/features/home/search-bottom-sheet-keywords-sheet";
+import { formatIphoneModelsLabel } from "@/features/home/search-bottom-sheet-iphone-models-sheet";
+import {
+  formatKeywordsLabel,
+  type KeywordsState,
+} from "@/features/home/search-bottom-sheet-keywords-sheet";
 import { formatPriceRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
 import {
   SearchSheetGroup,
@@ -19,8 +23,12 @@ export interface SearchPriceState {
 }
 
 export interface SearchKeywordsState {
-  includers: string[];
-  excluders: string[];
+  value: KeywordsState;
+  onOpenChange: (open: boolean) => void;
+}
+
+export interface SearchIphoneModelsState {
+  selectedIds: string[];
   onOpenChange: (open: boolean) => void;
 }
 
@@ -33,6 +41,7 @@ interface SearchBottomSheetCriteriaProps {
   customQuery: string;
   onCustomQueryChange: (value: string) => void;
   customQueryInvalid?: boolean;
+  iphoneModels: SearchIphoneModelsState;
   price: SearchPriceState;
   keywords: SearchKeywordsState;
 }
@@ -71,19 +80,19 @@ export function SearchBottomSheetCriteria({
   customQuery,
   onCustomQueryChange,
   customQueryInvalid = false,
+  iphoneModels,
   price,
   keywords,
 }: SearchBottomSheetCriteriaProps): JSX.Element {
   const hasSearchType = searchType != null;
   const isCustom = searchType === "custom";
+  const isIphone = searchType === "iphone";
   const priceLabel = formatPriceRangeLabel(price.min, price.max);
   const hasPriceFilter = price.min !== "" || price.max !== "";
-  const keywordsLabel = formatKeywordsLabel(
-    keywords.includers,
-    keywords.excluders,
-  );
-  const hasKeywords =
-    keywords.includers.length > 0 || keywords.excluders.length > 0;
+  const modelsLabel = formatIphoneModelsLabel(iphoneModels.selectedIds);
+  const hasModels = iphoneModels.selectedIds.length > 0;
+  const keywordsLabel = formatKeywordsLabel(keywords.value);
+  const hasKeywords = keywordsLabel !== "None";
 
   return (
     <SearchSheetGroup title="Criteria">
@@ -99,6 +108,20 @@ export function SearchBottomSheetCriteria({
               value={customQuery}
               onChange={onCustomQueryChange}
               isInvalid={customQueryInvalid}
+            />
+          }
+        />
+      ) : null}
+      {isIphone ? (
+        <SearchSheetRow
+          title="Models"
+          required
+          isLast={false}
+          onPress={() => iphoneModels.onOpenChange(true)}
+          right={
+            <SearchSheetValue
+              label={modelsLabel}
+              emphasized={hasModels}
             />
           }
         />

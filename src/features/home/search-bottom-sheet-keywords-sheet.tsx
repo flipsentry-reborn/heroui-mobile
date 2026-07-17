@@ -27,11 +27,26 @@ const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
 
 type KeywordTone = "required" | "ignored";
 
-export function formatKeywordsLabel(
-  includers: string[],
-  excluders: string[],
-): string {
-  const total = includers.length + excluders.length;
+export interface KeywordsState {
+  titleIncluders: string[];
+  titleExcluders: string[];
+  descriptionIncluders: string[];
+  descriptionExcluders: string[];
+}
+
+export const EMPTY_KEYWORDS: KeywordsState = {
+  titleIncluders: [],
+  titleExcluders: [],
+  descriptionIncluders: [],
+  descriptionExcluders: [],
+};
+
+export function formatKeywordsLabel(keywords: KeywordsState): string {
+  const total =
+    keywords.titleIncluders.length +
+    keywords.titleExcluders.length +
+    keywords.descriptionIncluders.length +
+    keywords.descriptionExcluders.length;
   if (total === 0) return "None";
   return String(total);
 }
@@ -65,7 +80,6 @@ function KeywordFieldInput({
   onChangeText: (text: string) => void;
   onSubmit: () => void;
   inputRef: RefObject<TextInput | null>;
-  /** Bumps when Edit puts text into the field — focus + caret at end. */
   caretAtEndToken: number;
 }): JSX.Element {
   const [muted, foreground] = useThemeColor(["muted", "foreground"]);
@@ -73,7 +87,6 @@ function KeywordFieldInput({
   useEffect(() => {
     if (caretAtEndToken === 0) return;
     const end = value.length;
-    // Wait for Menu dismiss so focus/caret aren't stolen.
     const id = setTimeout(() => {
       inputRef.current?.focus();
       inputRef.current?.setNativeProps({
@@ -119,7 +132,6 @@ function KeywordChip({
   onEdit: () => void;
   onDelete: () => void;
 }): JSX.Element {
-  // Theme accent is B/W — Required needs explicit blue (ref image), Ignored uses danger.
   const chipClassName =
     tone === "required"
       ? "rounded-full bg-sky-500/25 px-2.5 py-1"
@@ -168,7 +180,7 @@ function KeywordChip({
   );
 }
 
-function KeywordSection({
+function KeywordBlock({
   title,
   tone,
   values,
@@ -196,10 +208,6 @@ function KeywordSection({
     onDraftChange(text);
   };
 
-  const handleAdd = () => {
-    onAdd(draft);
-  };
-
   const handleEdit = (keyword: string) => {
     onRemove(keyword);
     onDraftChange(keyword);
@@ -207,14 +215,13 @@ function KeywordSection({
   };
 
   return (
-    <ListGroup className="mx-3 rounded-3xl p-0">
-      <View className="px-4 pb-2.5 pt-3.5">
+    <View>
+      <View className="px-4 pb-2 pt-3">
         <Typography type="body-xs" className="text-muted">
           {title}
         </Typography>
       </View>
-      <Separator className="mx-4 bg-muted/40" />
-      <View className="gap-2 px-4 pb-3.5 pt-2">
+      <View className="gap-2 px-4 pb-3.5">
         {values.length > 0 ? (
           <View className="flex-row flex-wrap gap-2">
             {values.map((keyword) => (
@@ -231,46 +238,122 @@ function KeywordSection({
         <KeywordFieldInput
           value={draft}
           onChangeText={handleChangeText}
-          onSubmit={handleAdd}
+          onSubmit={() => onAdd(draft)}
           inputRef={inputRef}
           caretAtEndToken={caretAtEndToken}
         />
       </View>
-    </ListGroup>
+    </View>
   );
 }
 
-/**
- * HeroUI scrollable sheet pattern:
- * snapPoints + enableDynamicSizing={false} + contentContainerClassName="h-full"
- * @see heroui-native BottomSheet.md — "Scrollable with Snap Points"
- */
-function KeywordsSheetContent({
+/** Small left label + card with Required / Ignored. */
+function KeywordsFieldGroup({
+  label,
   includers,
   excluders,
+  includerDraft,
+  excluderDraft,
+  onIncluderDraftChange,
+  onExcluderDraftChange,
   onIncludersChange,
   onExcludersChange,
-  onPersist,
 }: {
+  label: string;
   includers: string[];
   excluders: string[];
+  includerDraft: string;
+  excluderDraft: string;
+  onIncluderDraftChange: (value: string) => void;
+  onExcluderDraftChange: (value: string) => void;
   onIncludersChange: (values: string[]) => void;
   onExcludersChange: (values: string[]) => void;
-  onPersist: (includers: string[], excluders: string[]) => void;
+}): JSX.Element {
+  return (
+    <View className="gap-2">
+      <Typography type="body-xs" className="mx-5 text-muted">
+        {label}
+      </Typography>
+      <ListGroup className="mx-3 overflow-hidden rounded-3xl p-0">
+        <KeywordBlock
+          title="Required"
+          tone="required"
+          values={includers}
+          draft={includerDraft}
+          onDraftChange={onIncluderDraftChange}
+          onAdd={(text) => {
+            onIncludersChange(addKeywordSegments(includers, text));
+            onIncluderDraftChange("");
+          }}
+          onRemove={(value) =>
+            onIncludersChange(removeKeyword(includers, value))
+          }
+        />
+        <Separator className="mx-4 bg-muted/40" />
+        <KeywordBlock
+          title="Ignored"
+          tone="ignored"
+          values={excluders}
+          draft={excluderDraft}
+          onDraftChange={onExcluderDraftChange}
+          onAdd={(text) => {
+            onExcludersChange(addKeywordSegments(excluders, text));
+            onExcluderDraftChange("");
+          }}
+          onRemove={(value) =>
+            onExcludersChange(removeKeyword(excluders, value))
+          }
+        />
+      </ListGroup>
+    </View>
+  );
+}
+
+function KeywordsSheetContent({
+  keywords,
+  onKeywordsChange,
+  onPersist,
+}: {
+  keywords: KeywordsState;
+  onKeywordsChange: (next: KeywordsState) => void;
+  onPersist: (next: KeywordsState) => void;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
-  const [includerDraft, setIncluderDraft] = useState("");
-  const [excluderDraft, setExcluderDraft] = useState("");
-  // ~30% taller than a mid cut-off sheet (~60%) → open near full usable height
+  const [titleIncluderDraft, setTitleIncluderDraft] = useState("");
+  const [titleExcluderDraft, setTitleExcluderDraft] = useState("");
+  const [descriptionIncluderDraft, setDescriptionIncluderDraft] = useState("");
+  const [descriptionExcluderDraft, setDescriptionExcluderDraft] = useState("");
   const snapPoints = useMemo(() => ["90%"], []);
   const dismiss = () => onOpenChange(false);
 
+  const patch = (partial: Partial<KeywordsState>) => {
+    onKeywordsChange({ ...keywords, ...partial });
+  };
+
   const handleSave = () => {
-    const nextIncluders = addKeywordSegments(includers, includerDraft);
-    const nextExcluders = addKeywordSegments(excluders, excluderDraft);
-    setIncluderDraft("");
-    setExcluderDraft("");
-    onPersist(nextIncluders, nextExcluders);
+    const next: KeywordsState = {
+      titleIncluders: addKeywordSegments(
+        keywords.titleIncluders,
+        titleIncluderDraft,
+      ),
+      titleExcluders: addKeywordSegments(
+        keywords.titleExcluders,
+        titleExcluderDraft,
+      ),
+      descriptionIncluders: addKeywordSegments(
+        keywords.descriptionIncluders,
+        descriptionIncluderDraft,
+      ),
+      descriptionExcluders: addKeywordSegments(
+        keywords.descriptionExcluders,
+        descriptionExcluderDraft,
+      ),
+    };
+    setTitleIncluderDraft("");
+    setTitleExcluderDraft("");
+    setDescriptionIncluderDraft("");
+    setDescriptionExcluderDraft("");
+    onPersist(next);
     dismiss();
   };
 
@@ -287,7 +370,7 @@ function KeywordsSheetContent({
       contentContainerClassName="h-full bg-surface-secondary p-0"
     >
       <View className="flex-1">
-        <View className="items-center px-5 pt-4 pb-1">
+        <View className="items-center px-5 pb-1 pt-4">
           <Typography type="body" weight="normal">
             Keywords
           </Typography>
@@ -299,6 +382,34 @@ function KeywordsSheetContent({
           className="flex-1"
           contentContainerClassName="gap-3 px-0 pb-4 pt-3"
         >
+          <KeywordsFieldGroup
+            label="Title"
+            includers={keywords.titleIncluders}
+            excluders={keywords.titleExcluders}
+            includerDraft={titleIncluderDraft}
+            excluderDraft={titleExcluderDraft}
+            onIncluderDraftChange={setTitleIncluderDraft}
+            onExcluderDraftChange={setTitleExcluderDraft}
+            onIncludersChange={(titleIncluders) => patch({ titleIncluders })}
+            onExcludersChange={(titleExcluders) => patch({ titleExcluders })}
+          />
+
+          <KeywordsFieldGroup
+            label="Description"
+            includers={keywords.descriptionIncluders}
+            excluders={keywords.descriptionExcluders}
+            includerDraft={descriptionIncluderDraft}
+            excluderDraft={descriptionExcluderDraft}
+            onIncluderDraftChange={setDescriptionIncluderDraft}
+            onExcluderDraftChange={setDescriptionExcluderDraft}
+            onIncludersChange={(descriptionIncluders) =>
+              patch({ descriptionIncluders })
+            }
+            onExcludersChange={(descriptionExcluders) =>
+              patch({ descriptionExcluders })
+            }
+          />
+
           <Accordion
             variant="surface"
             selectionMode="single"
@@ -326,42 +437,12 @@ function KeywordsSheetContent({
               </Accordion.Trigger>
               <Accordion.Content>
                 <Typography type="body-xs" className="text-muted">
-                  Required words must appear in the listing title. Ignored words
-                  hide matching titles.
+                  Title and Description each have Required and Ignored keywords.
+                  Required must match; Ignored hides matching listings.
                 </Typography>
               </Accordion.Content>
             </Accordion.Item>
           </Accordion>
-
-          <KeywordSection
-            title="Required"
-            tone="required"
-            values={includers}
-            draft={includerDraft}
-            onDraftChange={setIncluderDraft}
-            onAdd={(text) => {
-              onIncludersChange(addKeywordSegments(includers, text));
-              setIncluderDraft("");
-            }}
-            onRemove={(value) =>
-              onIncludersChange(removeKeyword(includers, value))
-            }
-          />
-
-          <KeywordSection
-            title="Ignored"
-            tone="ignored"
-            values={excluders}
-            draft={excluderDraft}
-            onDraftChange={setExcluderDraft}
-            onAdd={(text) => {
-              onExcludersChange(addKeywordSegments(excluders, text));
-              setExcluderDraft("");
-            }}
-            onRemove={(value) =>
-              onExcludersChange(removeKeyword(excluders, value))
-            }
-          />
         </StyledBottomSheetScrollView>
 
         <View className="flex-row gap-3 px-5 pb-6 pt-2">
@@ -388,40 +469,29 @@ function KeywordsSheetContent({
 interface SearchBottomSheetKeywordsSheetProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  includers: string[];
-  excluders: string[];
-  onIncludersChange: (values: string[]) => void;
-  onExcludersChange: (values: string[]) => void;
+  keywords: KeywordsState;
+  onKeywordsChange: (keywords: KeywordsState) => void;
 }
 
 export function SearchBottomSheetKeywordsSheet({
   isOpen,
   onOpenChange,
-  includers,
-  excluders,
-  onIncludersChange,
-  onExcludersChange,
+  keywords,
+  onKeywordsChange,
 }: SearchBottomSheetKeywordsSheetProps): JSX.Element | null {
-  const [draftIncluders, setDraftIncluders] = useState(includers);
-  const [draftExcluders, setDraftExcluders] = useState(excluders);
+  const [draft, setDraft] = useState(keywords);
 
   useEffect(() => {
     if (!isOpen) return;
-    setDraftIncluders(includers);
-    setDraftExcluders(excluders);
-  }, [isOpen, includers, excluders]);
+    setDraft(keywords);
+  }, [isOpen, keywords]);
 
   return (
     <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
       <KeywordsSheetContent
-        includers={draftIncluders}
-        excluders={draftExcluders}
-        onIncludersChange={setDraftIncluders}
-        onExcludersChange={setDraftExcluders}
-        onPersist={(nextIncluders, nextExcluders) => {
-          onIncludersChange(nextIncluders);
-          onExcludersChange(nextExcluders);
-        }}
+        keywords={draft}
+        onKeywordsChange={setDraft}
+        onPersist={onKeywordsChange}
       />
     </SheetShell>
   );

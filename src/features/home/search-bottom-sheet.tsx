@@ -14,7 +14,12 @@ import {
   SearchBottomSheetCriteria,
 } from "@/features/home/search-bottom-sheet-criteria";
 import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
-import { SearchBottomSheetKeywordsSheet } from "@/features/home/search-bottom-sheet-keywords-sheet";
+import { SearchBottomSheetIphoneModelsSheet } from "@/features/home/search-bottom-sheet-iphone-models-sheet";
+import {
+  EMPTY_KEYWORDS,
+  SearchBottomSheetKeywordsSheet,
+  type KeywordsState,
+} from "@/features/home/search-bottom-sheet-keywords-sheet";
 import { SearchBottomSheetPriceSheet } from "@/features/home/search-bottom-sheet-price-sheet";
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
 import { SearchBottomSheetSection } from "@/features/home/search-bottom-sheet-section";
@@ -31,13 +36,14 @@ function SearchSheetContent({
   onCustomQueryChange,
   customQueryInvalid,
   onCustomQueryInvalidChange,
+  iphoneModelIds,
+  onIphoneModelsOpenChange,
   minPrice,
   maxPrice,
   onPriceOpenChange,
   onMinChange,
   onMaxChange,
-  keywordIncluders,
-  keywordExcluders,
+  keywords,
   onKeywordsOpenChange,
   childSheetOpen,
 }: {
@@ -49,13 +55,14 @@ function SearchSheetContent({
   onCustomQueryChange: (value: string) => void;
   customQueryInvalid: boolean;
   onCustomQueryInvalidChange: (invalid: boolean) => void;
+  iphoneModelIds: string[];
+  onIphoneModelsOpenChange: (open: boolean) => void;
   minPrice: string;
   maxPrice: string;
   onPriceOpenChange: (open: boolean) => void;
   onMinChange: (value: string) => void;
   onMaxChange: (value: string) => void;
-  keywordIncluders: string[];
-  keywordExcluders: string[];
+  keywords: KeywordsState;
   onKeywordsOpenChange: (open: boolean) => void;
   /** Nested price/keywords sheets own the keyboard — parent must not fight them. */
   childSheetOpen: boolean;
@@ -132,6 +139,10 @@ function SearchSheetContent({
           customQuery={customQuery}
           onCustomQueryChange={handleCustomQueryChange}
           customQueryInvalid={customQueryInvalid}
+          iphoneModels={{
+            selectedIds: iphoneModelIds,
+            onOpenChange: onIphoneModelsOpenChange,
+          }}
           price={{
             min: minPrice,
             max: maxPrice,
@@ -140,8 +151,7 @@ function SearchSheetContent({
             onMaxChange,
           }}
           keywords={{
-            includers: keywordIncluders,
-            excluders: keywordExcluders,
+            value: keywords,
             onOpenChange: onKeywordsOpenChange,
           }}
         />
@@ -165,13 +175,14 @@ export function SearchBottomSheet({
 }: SearchBottomSheetProps): JSX.Element {
   const [priceOpen, setPriceOpen] = useState(false);
   const [keywordsOpen, setKeywordsOpen] = useState(false);
+  const [iphoneModelsOpen, setIphoneModelsOpen] = useState(false);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [searchType, setSearchType] = useState<SearchType | null>(null);
   const [customQuery, setCustomQuery] = useState("");
   const [customQueryInvalid, setCustomQueryInvalid] = useState(false);
-  const [keywordIncluders, setKeywordIncluders] = useState<string[]>([]);
-  const [keywordExcluders, setKeywordExcluders] = useState<string[]>([]);
+  const [iphoneModelIds, setIphoneModelIds] = useState<string[]>([]);
+  const [keywords, setKeywords] = useState<KeywordsState>(EMPTY_KEYWORDS);
 
   const handleSearchTypeChange = (type: SearchType) => {
     setSearchType(type);
@@ -179,11 +190,16 @@ export function SearchBottomSheet({
       setCustomQuery("");
       setCustomQueryInvalid(false);
     }
+    if (type !== "iphone") {
+      setIphoneModelIds([]);
+      setIphoneModelsOpen(false);
+    }
   };
 
   const handleClose = () => {
     setPriceOpen(false);
     setKeywordsOpen(false);
+    setIphoneModelsOpen(false);
     onClose();
   };
 
@@ -199,15 +215,16 @@ export function SearchBottomSheet({
           onCustomQueryChange={setCustomQuery}
           customQueryInvalid={customQueryInvalid}
           onCustomQueryInvalidChange={setCustomQueryInvalid}
+          iphoneModelIds={iphoneModelIds}
+          onIphoneModelsOpenChange={setIphoneModelsOpen}
           minPrice={minPrice}
           maxPrice={maxPrice}
           onPriceOpenChange={setPriceOpen}
           onMinChange={setMinPrice}
           onMaxChange={setMaxPrice}
-          keywordIncluders={keywordIncluders}
-          keywordExcluders={keywordExcluders}
+          keywords={keywords}
           onKeywordsOpenChange={setKeywordsOpen}
-          childSheetOpen={priceOpen || keywordsOpen}
+          childSheetOpen={priceOpen || keywordsOpen || iphoneModelsOpen}
         />
       </SheetShell>
 
@@ -223,10 +240,15 @@ export function SearchBottomSheet({
       <SearchBottomSheetKeywordsSheet
         isOpen={visible && keywordsOpen}
         onOpenChange={setKeywordsOpen}
-        includers={keywordIncluders}
-        excluders={keywordExcluders}
-        onIncludersChange={setKeywordIncluders}
-        onExcludersChange={setKeywordExcluders}
+        keywords={keywords}
+        onKeywordsChange={setKeywords}
+      />
+
+      <SearchBottomSheetIphoneModelsSheet
+        isOpen={visible && iphoneModelsOpen}
+        onOpenChange={setIphoneModelsOpen}
+        selectedIds={iphoneModelIds}
+        onSelectedIdsChange={setIphoneModelIds}
       />
     </>
   );

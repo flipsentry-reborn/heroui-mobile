@@ -4,14 +4,15 @@ import type { JSX } from "react";
 import { useCallback, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Typography, useThemeColor } from "heroui-native";
+import { Typography, useThemeColor } from "heroui-native";
 
 import { BrandButton } from "@/components/ui/brand-button";
 import { HomePlanCreditsCard } from "@/features/home/home-plan-credits-card";
 import { SearchBottomSheet } from "@/features/home/search-bottom-sheet";
-import type { HomeState } from "@/mocks/data/home";
+import { SearchCards } from "@/features/home/search-cards";
+import type { HomeState, SearchGroup } from "@/mocks/data/home";
 import type { SubscriptionPlan } from "@/mocks/data/subscription";
-import { getHome } from "@/mocks/services/home";
+import { deleteGroup, getHome } from "@/mocks/services/home";
 import {
   formatLocationLabel,
   getLocationDraft,
@@ -49,6 +50,11 @@ export function HomeScreen(): JSX.Element {
     }, [load]),
   );
 
+  const handleDelete = useCallback(async (group: SearchGroup) => {
+    const ok = await deleteGroup(group.id);
+    if (ok) await load();
+  }, [load]);
+
   if (!state) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
@@ -72,7 +78,7 @@ export function HomeScreen(): JSX.Element {
           onPress={() => router.push("/settings/subscription")}
         />
 
-        <View className="mx-3 mb-2 gap-2">
+        <View className="mx-3 mb-3">
           <BrandButton
             className="min-h-12 w-full"
             onPress={() => setCreateOpen(true)}
@@ -80,14 +86,9 @@ export function HomeScreen(): JSX.Element {
             <Ionicons name="add" size={18} color={accentForeground} />
             <BrandButton.Label>New Search</BrandButton.Label>
           </BrandButton>
-          <Button
-            variant="secondary"
-            className="min-h-11 w-full"
-            onPress={() => router.push("/home-card-examples")}
-          >
-            <Button.Label>Compare card layouts</Button.Label>
-          </Button>
         </View>
+
+        <SearchCards groups={state.groups} onDelete={handleDelete} />
       </ScrollView>
 
       <SearchBottomSheet

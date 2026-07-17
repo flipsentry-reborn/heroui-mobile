@@ -168,8 +168,8 @@ export const homeFixture: HomeState = {
       radiusMiles: 35,
       customLabel: "Bikes & outdoor",
       settings: [
-        setting("g7-fb", "facebook", "Chicago, IL", true, 300),
-        setting("g7-cl", "craigslist", "Chicago, IL", true, 900),
+        setting("g7-fb", "facebook", "Chicago, IL", false, 300),
+        setting("g7-cl", "craigslist", "Chicago, IL", false, 900),
       ],
     },
     {

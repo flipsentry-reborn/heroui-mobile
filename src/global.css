@@ -50,8 +50,11 @@
 
     --muted: oklch(55.17% 0 0);
 
-    /* Match surface / ListGroup cards — Button variant="secondary" uses bg-default */
-    --default: oklch(100.00% 0.0008 253.83);
+    /*
+     * Recess below surface so Button variant="secondary" (bg-default) contrasts
+     * on white cards — mirrors dark where --default is lifted above --surface.
+     */
+    --default: oklch(93.73% 0.0012 253.83);
     --default-foreground: oklch(12% 0 0);
 
     /* Uber light: black primary */

@@ -1,8 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import {
-  BottomSheetScrollView,
-  BottomSheetTextInput,
-} from "@gorhom/bottom-sheet";
+import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import type { JSX, RefObject } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { View, type TextInput } from "react-native";
@@ -11,15 +8,16 @@ import {
   BottomSheet,
   Button,
   Chip,
-  ListGroup,
+  Input,
   Menu,
   Separator,
   Typography,
   useBottomSheet,
-  useThemeColor,
+  useBottomSheetAwareHandlers,
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
+import { SearchSheetGroup } from "@/features/home/search-sheet-group";
 import { SheetShell } from "@/features/home/sheet-shell";
 
 const StyledIonicons = withUniwind(Ionicons);
@@ -82,7 +80,7 @@ function KeywordFieldInput({
   inputRef: RefObject<TextInput | null>;
   caretAtEndToken: number;
 }): JSX.Element {
-  const [muted, foreground] = useThemeColor(["muted", "foreground"]);
+  const { onFocus, onBlur } = useBottomSheetAwareHandlers();
 
   useEffect(() => {
     if (caretAtEndToken === 0) return;
@@ -97,26 +95,20 @@ function KeywordFieldInput({
   }, [caretAtEndToken, inputRef, value.length]);
 
   return (
-    <BottomSheetTextInput
+    <Input
       ref={inputRef}
       value={value}
       onChangeText={onChangeText}
       placeholder="Add keyword"
-      placeholderTextColor={muted}
       autoCorrect={false}
       autoCapitalize="none"
       returnKeyType="done"
       onSubmitEditing={onSubmit}
-      style={{
-        height: 40,
-        minHeight: 40,
-        width: "100%",
-        paddingHorizontal: 0,
-        paddingVertical: 0,
-        backgroundColor: "transparent",
-        color: foreground,
-        fontSize: 15,
-      }}
+      variant="secondary"
+      className="h-auto min-h-0 w-full border-0 bg-transparent px-0 py-0 text-[15px] shadow-none ios:outline-0 ios:focus:outline-transparent android:border-0 android:focus:border-transparent text-foreground"
+      placeholderColorClassName="text-muted"
+      onFocus={onFocus}
+      onBlur={onBlur}
     />
   );
 }
@@ -188,6 +180,7 @@ function KeywordBlock({
   onDraftChange,
   onAdd,
   onRemove,
+  isLast,
 }: {
   title: string;
   tone: KeywordTone;
@@ -196,6 +189,7 @@ function KeywordBlock({
   onDraftChange: (value: string) => void;
   onAdd: (text: string) => void;
   onRemove: (value: string) => void;
+  isLast?: boolean;
 }): JSX.Element {
   const inputRef = useRef<TextInput>(null);
   const [caretAtEndToken, setCaretAtEndToken] = useState(0);
@@ -215,13 +209,11 @@ function KeywordBlock({
   };
 
   return (
-    <View>
-      <View className="px-4 pb-2 pt-3">
+    <>
+      <View className="gap-2.5 px-4 py-3.5">
         <Typography type="body-xs" className="text-muted">
           {title}
         </Typography>
-      </View>
-      <View className="gap-2 px-4 pb-3.5">
         {values.length > 0 ? (
           <View className="flex-row flex-wrap gap-2">
             {values.map((keyword) => (
@@ -243,7 +235,8 @@ function KeywordBlock({
           caretAtEndToken={caretAtEndToken}
         />
       </View>
-    </View>
+      {!isLast ? <Separator className="mx-4 bg-muted/40" /> : null}
+    </>
   );
 }
 
@@ -270,42 +263,37 @@ function KeywordsFieldGroup({
   onExcludersChange: (values: string[]) => void;
 }): JSX.Element {
   return (
-    <View className="gap-2">
-      <Typography type="body-xs" className="mx-5 text-muted">
-        {label}
-      </Typography>
-      <ListGroup className="mx-3 overflow-hidden rounded-3xl p-0">
-        <KeywordBlock
-          title="Required"
-          tone="required"
-          values={includers}
-          draft={includerDraft}
-          onDraftChange={onIncluderDraftChange}
-          onAdd={(text) => {
-            onIncludersChange(addKeywordSegments(includers, text));
-            onIncluderDraftChange("");
-          }}
-          onRemove={(value) =>
-            onIncludersChange(removeKeyword(includers, value))
-          }
-        />
-        <Separator className="mx-4 bg-muted/40" />
-        <KeywordBlock
-          title="Ignored"
-          tone="ignored"
-          values={excluders}
-          draft={excluderDraft}
-          onDraftChange={onExcluderDraftChange}
-          onAdd={(text) => {
-            onExcludersChange(addKeywordSegments(excluders, text));
-            onExcluderDraftChange("");
-          }}
-          onRemove={(value) =>
-            onExcludersChange(removeKeyword(excluders, value))
-          }
-        />
-      </ListGroup>
-    </View>
+    <SearchSheetGroup title={label}>
+      <KeywordBlock
+        title="Required"
+        tone="required"
+        values={includers}
+        draft={includerDraft}
+        onDraftChange={onIncluderDraftChange}
+        onAdd={(text) => {
+          onIncludersChange(addKeywordSegments(includers, text));
+          onIncluderDraftChange("");
+        }}
+        onRemove={(value) =>
+          onIncludersChange(removeKeyword(includers, value))
+        }
+      />
+      <KeywordBlock
+        title="Ignored"
+        tone="ignored"
+        values={excluders}
+        draft={excluderDraft}
+        onDraftChange={onExcluderDraftChange}
+        onAdd={(text) => {
+          onExcludersChange(addKeywordSegments(excluders, text));
+          onExcluderDraftChange("");
+        }}
+        onRemove={(value) =>
+          onExcludersChange(removeKeyword(excluders, value))
+        }
+        isLast
+      />
+    </SearchSheetGroup>
   );
 }
 
@@ -323,7 +311,7 @@ function KeywordsSheetContent({
   const [titleExcluderDraft, setTitleExcluderDraft] = useState("");
   const [descriptionIncluderDraft, setDescriptionIncluderDraft] = useState("");
   const [descriptionExcluderDraft, setDescriptionExcluderDraft] = useState("");
-  const snapPoints = useMemo(() => ["90%"], []);
+  const snapPoints = useMemo(() => ["92%"], []);
   const dismiss = () => onOpenChange(false);
 
   const patch = (partial: Partial<KeywordsState>) => {
@@ -380,8 +368,44 @@ function KeywordsSheetContent({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           className="flex-1"
-          contentContainerClassName="gap-3 px-0 pb-4 pt-3"
+          contentContainerClassName="pb-2 pt-2"
         >
+          <View className="mb-3 px-3">
+            <Accordion
+              variant="surface"
+              selectionMode="single"
+              hideSeparator
+              isCollapsible
+            >
+              <Accordion.Item value="guide">
+                <Accordion.Trigger>
+                  <View className="flex-row items-center gap-2.5">
+                    <StyledIonicons
+                      name="sparkles"
+                      size={16}
+                      className="text-violet-400"
+                    />
+                    <Typography
+                      type="body-sm"
+                      weight="semibold"
+                      className="text-foreground"
+                    >
+                      Guide
+                    </Typography>
+                  </View>
+                  <Accordion.Indicator />
+                </Accordion.Trigger>
+                <Accordion.Content>
+                  <Typography type="body-xs" className="text-muted">
+                    Title and Description each have Required and Ignored
+                    keywords. Required must match; Ignored hides matching
+                    listings.
+                  </Typography>
+                </Accordion.Content>
+              </Accordion.Item>
+            </Accordion>
+          </View>
+
           <KeywordsFieldGroup
             label="Title"
             includers={keywords.titleIncluders}
@@ -409,40 +433,6 @@ function KeywordsSheetContent({
               patch({ descriptionExcluders })
             }
           />
-
-          <Accordion
-            variant="surface"
-            selectionMode="single"
-            hideSeparator
-            isCollapsible
-            className="mx-3"
-          >
-            <Accordion.Item value="guide">
-              <Accordion.Trigger>
-                <View className="flex-row items-center gap-2.5">
-                  <StyledIonicons
-                    name="sparkles"
-                    size={16}
-                    className="text-violet-400"
-                  />
-                  <Typography
-                    type="body-sm"
-                    weight="semibold"
-                    className="text-foreground"
-                  >
-                    Guide
-                  </Typography>
-                </View>
-                <Accordion.Indicator />
-              </Accordion.Trigger>
-              <Accordion.Content>
-                <Typography type="body-xs" className="text-muted">
-                  Title and Description each have Required and Ignored keywords.
-                  Required must match; Ignored hides matching listings.
-                </Typography>
-              </Accordion.Content>
-            </Accordion.Item>
-          </Accordion>
         </StyledBottomSheetScrollView>
 
         <View className="flex-row gap-3 px-5 pb-6 pt-2">

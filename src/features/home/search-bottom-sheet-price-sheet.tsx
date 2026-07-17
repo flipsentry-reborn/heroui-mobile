@@ -55,6 +55,7 @@ function PriceFieldInput({
       keyboardType="number-pad"
       variant="primary"
       isInvalid={isInvalid}
+      textAlign="center"
       className="h-8 min-h-8 w-40 px-2 py-0 text-sm text-foreground"
       onFocus={onFocus}
       onBlur={onBlur}

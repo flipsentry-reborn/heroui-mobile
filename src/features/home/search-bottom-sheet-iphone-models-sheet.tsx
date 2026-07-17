@@ -3,12 +3,23 @@ import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import type { JSX } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
+import Animated, {
+  FadeIn,
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import {
   Accordion,
   BottomSheet,
   Button,
+  cn,
   Input,
+  Separator,
   Typography,
+  useAccordion,
+  useAccordionItem,
   useBottomSheet,
   useBottomSheetAwareHandlers,
   useThemeColor,
@@ -21,10 +32,18 @@ import {
   getIphoneModelDefaults,
   MOCK_IPHONE_SERIES,
   type IphoneModelOption,
+  type IphoneSeries,
 } from "@/mocks/data/iphone";
 
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
 const StyledIonicons = withUniwind(Ionicons);
+const StyledAnimatedView = withUniwind(Animated.View);
+
+/** Matches HeroUI Native `AccordionWithDepthEffect` layout spring. */
+const DEPTH_LAYOUT_TRANSITION = LinearTransition.springify()
+  .damping(70)
+  .stiffness(1000)
+  .mass(2);
 
 const ALL_MODELS = MOCK_IPHONE_SERIES.flatMap((series) => series.models);
 
@@ -53,7 +72,7 @@ function CountBadge({ value }: { value: number }): JSX.Element {
   );
 }
 
-function EmptyPriceInput({
+function ModelPriceInput({
   value,
   onChange,
   accessibilityLabel,
@@ -68,13 +87,12 @@ function EmptyPriceInput({
     <Input
       value={value}
       onChangeText={(text) => onChange(sanitizePriceInput(text))}
-      placeholder="Empty"
+      placeholder="Any"
       keyboardType="number-pad"
-      variant="secondary"
-      textAlign="right"
+      variant="primary"
+      textAlign="center"
       accessibilityLabel={accessibilityLabel}
-      className="h-auto min-h-0 w-[72px] border-0 bg-transparent px-0 py-0 text-[15px] shadow-none ios:outline-0 ios:focus:outline-transparent android:border-0 android:focus:border-transparent text-foreground"
-      placeholderColorClassName="text-muted"
+      className="h-8 min-h-8 w-20 px-2 py-0 text-sm text-foreground"
       onFocus={onFocus}
       onBlur={onBlur}
     />
@@ -120,7 +138,7 @@ function ModelRow({
       </Pressable>
 
       <View className="flex-row items-center gap-1.5">
-        <EmptyPriceInput
+        <ModelPriceInput
           value={min}
           onChange={onMinChange}
           accessibilityLabel={`${model.label} min price`}
@@ -128,7 +146,7 @@ function ModelRow({
         <Typography type="body-xs" className="text-muted">
           –
         </Typography>
-        <EmptyPriceInput
+        <ModelPriceInput
           value={max}
           onChange={onMaxChange}
           accessibilityLabel={`${model.label} max price`}
@@ -142,6 +160,146 @@ function defaultPriceFor(id: string): PriceDraft {
   return getIphoneModelDefaults(id) ?? { min: "", max: "" };
 }
 
+function SeriesDepthItem({
+  series,
+  index,
+  seriesCount,
+  seriesSelected,
+  seriesAllSelected,
+  selectedSet,
+  getPrice,
+  onToggleSeries,
+  onToggleModel,
+  onMinChange,
+  onMaxChange,
+}: {
+  series: IphoneSeries;
+  index: number;
+  seriesCount: number;
+  seriesSelected: number;
+  seriesAllSelected: boolean;
+  selectedSet: Set<string>;
+  getPrice: (id: string) => PriceDraft;
+  onToggleSeries: () => void;
+  onToggleModel: (id: string) => void;
+  onMinChange: (id: string, value: string) => void;
+  onMaxChange: (id: string, value: string) => void;
+}): JSX.Element {
+  const { value } = useAccordion();
+  const { isExpanded } = useAccordionItem();
+  const scale = useSharedValue(isExpanded ? 1 : 0.97);
+
+  useEffect(() => {
+    scale.value = withTiming(isExpanded ? 1 : 0.97, { duration: 200 });
+  }, [isExpanded, scale]);
+
+  const depthStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const expandedIds = useMemo(() => {
+    if (Array.isArray(value)) return new Set(value);
+    if (typeof value === "string" && value.length > 0) return new Set([value]);
+    return new Set<string>();
+  }, [value]);
+
+  const prevId = index > 0 ? MOCK_IPHONE_SERIES[index - 1]?.id : undefined;
+  const nextId =
+    index < seriesCount - 1 ? MOCK_IPHONE_SERIES[index + 1]?.id : undefined;
+  const isBeforeSelected = nextId != null && expandedIds.has(nextId);
+  const isAfterSelected = prevId != null && expandedIds.has(prevId);
+
+  const showDivider =
+    index < seriesCount - 1 && !isExpanded && !isBeforeSelected;
+
+  return (
+    <Animated.View layout={DEPTH_LAYOUT_TRANSITION} style={depthStyle}>
+      <StyledAnimatedView
+        layout={DEPTH_LAYOUT_TRANSITION}
+        className={cn(
+          "overflow-hidden bg-surface",
+          index === 0 && !isExpanded && "rounded-t-2xl",
+          index === seriesCount - 1 &&
+            !isExpanded &&
+            !isBeforeSelected &&
+            "rounded-b-3xl",
+          isBeforeSelected && "rounded-b-2xl",
+          isExpanded && "rounded-2xl",
+          isAfterSelected && "rounded-t-2xl",
+          isExpanded && index === 0 && "mb-2",
+          isExpanded && index > 0 && index < seriesCount - 1 && "my-2",
+          isExpanded && index === seriesCount - 1 && "mt-2",
+        )}
+      >
+        <Accordion.Trigger className="gap-2 px-4 py-3">
+          <View className="min-w-0 flex-1 flex-row items-center gap-2.5">
+            <StyledIonicons
+              name="phone-portrait-outline"
+              size={16}
+              className="text-muted"
+            />
+            <Typography
+              type="body-sm"
+              weight="semibold"
+              className="shrink text-foreground"
+              numberOfLines={1}
+            >
+              {series.title}
+            </Typography>
+          </View>
+
+          <Button
+            size="sm"
+            variant="secondary"
+            accessibilityLabel={
+              seriesAllSelected
+                ? `Clear ${series.title}`
+                : `Select all in ${series.title}`
+            }
+            onPress={onToggleSeries}
+            className="min-h-0 px-2.5 py-1"
+          >
+            <Button.Label className="text-xs">
+              {seriesAllSelected ? "Clear" : "Select All"}
+            </Button.Label>
+          </Button>
+
+          <CountBadge value={seriesSelected} />
+          <Accordion.Indicator />
+        </Accordion.Trigger>
+        <Accordion.Content className="px-4 pb-3 pt-0">
+          <View className="gap-0.5">
+            {series.models.map((model) => {
+              const price = getPrice(model.id);
+              return (
+                <ModelRow
+                  key={model.id}
+                  model={model}
+                  selected={selectedSet.has(model.id)}
+                  min={price.min}
+                  max={price.max}
+                  onToggle={() => onToggleModel(model.id)}
+                  onMinChange={(value) => onMinChange(model.id, value)}
+                  onMaxChange={(value) => onMaxChange(model.id, value)}
+                />
+              );
+            })}
+          </View>
+        </Accordion.Content>
+      </StyledAnimatedView>
+      {showDivider ? (
+        <StyledAnimatedView
+          layout={DEPTH_LAYOUT_TRANSITION}
+          entering={FadeIn.duration(200)}
+          className="bg-surface px-3 pb-3 -mb-3"
+        >
+          <Separator />
+        </StyledAnimatedView>
+      ) : null}
+    </Animated.View>
+  );
+}
+
 function IphoneModelsSheetContent({
   selections,
   onSelectionsChange,
@@ -153,8 +311,15 @@ function IphoneModelsSheetContent({
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const [showError, setShowError] = useState(false);
+  const [expandedSeries, setExpandedSeries] = useState<string[]>([]);
   const snapPoints = useMemo(() => ["90%"], []);
   const dismiss = () => onOpenChange(false);
+
+  const expandSeries = (seriesId: string) => {
+    setExpandedSeries((prev) =>
+      prev.includes(seriesId) ? prev : [...prev, seriesId],
+    );
+  };
 
   const selectedIds = useMemo(
     () => selections.map((item) => item.id),
@@ -229,13 +394,14 @@ function IphoneModelsSheetContent({
     onSelectionsChange(selections.filter((item) => !ids.has(item.id)));
   };
 
-  const toggleSeries = (models: IphoneModelOption[]) => {
+  const toggleSeries = (seriesId: string, models: IphoneModelOption[]) => {
     const allInSeries = models.every((model) => selectedSet.has(model.id));
     if (allInSeries) {
       deselectModels(models);
       return;
     }
     selectModels(models);
+    expandSeries(seriesId);
   };
 
   const handleSelectAll = () => {
@@ -300,13 +466,23 @@ function IphoneModelsSheetContent({
           contentContainerClassName="gap-3 px-3 pb-4 pt-3"
         >
           <Accordion
-            selectionMode="single"
-            variant="surface"
+            selectionMode="multiple"
+            value={expandedSeries}
+            onValueChange={(next: string | string[] | undefined) => {
+              setExpandedSeries(
+                Array.isArray(next) ? next : next != null ? [next] : [],
+              );
+            }}
             isCollapsible
             hideSeparator
-            className="rounded-3xl"
+            animation={{
+              layout: {
+                value: DEPTH_LAYOUT_TRANSITION,
+              },
+            }}
+            className="w-full overflow-visible"
           >
-            {MOCK_IPHONE_SERIES.map((series) => {
+            {MOCK_IPHONE_SERIES.map((series, index) => {
               const seriesSelected = series.models.filter((model) =>
                 selectedSet.has(model.id),
               ).length;
@@ -315,66 +491,26 @@ function IphoneModelsSheetContent({
                 series.models.length > 0;
 
               return (
-                <Accordion.Item key={series.id} value={series.id}>
-                  <Accordion.Trigger className="gap-2 px-3 py-3">
-                    <View className="min-w-0 flex-1 flex-row items-center gap-2.5">
-                      <StyledIonicons
-                        name="phone-portrait-outline"
-                        size={16}
-                        className="text-muted"
-                      />
-                      <Typography
-                        type="body-sm"
-                        weight="semibold"
-                        className="shrink text-foreground"
-                        numberOfLines={1}
-                      >
-                        {series.title}
-                      </Typography>
-                    </View>
-
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={
-                        seriesAllSelected
-                          ? `Clear ${series.title}`
-                          : `Select all in ${series.title}`
-                      }
-                      onPress={() => toggleSeries(series.models)}
-                      hitSlop={8}
-                      className="rounded-full bg-default px-2.5 py-1"
-                    >
-                      <Typography type="body-xs" className="text-sky-400">
-                        {seriesAllSelected ? "Clear" : "All"}
-                      </Typography>
-                    </Pressable>
-
-                    <CountBadge value={seriesSelected} />
-                    <Accordion.Indicator />
-                  </Accordion.Trigger>
-                  <Accordion.Content className="px-3 pb-3 pt-0">
-                    <View className="gap-0.5">
-                      {series.models.map((model) => {
-                        const price = getPrice(model.id);
-                        return (
-                          <ModelRow
-                            key={model.id}
-                            model={model}
-                            selected={selectedSet.has(model.id)}
-                            min={price.min}
-                            max={price.max}
-                            onToggle={() => toggleModel(model.id)}
-                            onMinChange={(value) =>
-                              setPriceField(model.id, "min", value)
-                            }
-                            onMaxChange={(value) =>
-                              setPriceField(model.id, "max", value)
-                            }
-                          />
-                        );
-                      })}
-                    </View>
-                  </Accordion.Content>
+                <Accordion.Item
+                  key={series.id}
+                  value={series.id}
+                  className="overflow-visible"
+                >
+                  <SeriesDepthItem
+                    series={series}
+                    index={index}
+                    seriesCount={MOCK_IPHONE_SERIES.length}
+                    seriesSelected={seriesSelected}
+                    seriesAllSelected={seriesAllSelected}
+                    selectedSet={selectedSet}
+                    getPrice={getPrice}
+                    onToggleSeries={() =>
+                      toggleSeries(series.id, series.models)
+                    }
+                    onToggleModel={toggleModel}
+                    onMinChange={(id, value) => setPriceField(id, "min", value)}
+                    onMaxChange={(id, value) => setPriceField(id, "max", value)}
+                  />
                 </Accordion.Item>
               );
             })}

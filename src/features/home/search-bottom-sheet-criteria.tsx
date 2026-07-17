@@ -33,8 +33,9 @@ export function SearchBottomSheetCriteria({
   return (
     <SearchSheetGroup title="Criteria">
       <SearchSheetRow
-        title="Search"
+        title="Search Type"
         required
+        showSwap
         isLast={false}
         right={
           <SearchBottomSheetTypeSelect

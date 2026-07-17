@@ -85,18 +85,12 @@ function metaChips(group: SearchGroup): string[] {
   return chips;
 }
 
-function statusChipClass(tone: ReturnType<typeof groupStatus>["tone"]): string {
-  if (tone === "success") return "bg-success/15";
-  if (tone === "warning") return "bg-warning/15";
-  return "bg-muted/20";
-}
-
-function statusLabelClass(
+function statusBadgeColor(
   tone: ReturnType<typeof groupStatus>["tone"],
-): string {
-  if (tone === "success") return "text-success";
-  if (tone === "warning") return "text-warning";
-  return "text-muted";
+): "success" | "warning" | "default" {
+  if (tone === "success") return "success";
+  if (tone === "warning") return "warning";
+  return "default";
 }
 
 function MetaChipRow({ group }: { group: SearchGroup }): JSX.Element {
@@ -220,17 +214,13 @@ function SearchDepthItem({
               >
                 {groupTitle(group)}
               </Typography>
-              <Chip
+              <Badge
+                color={statusBadgeColor(status.tone)}
+                variant="soft"
                 size="sm"
-                variant="secondary"
-                className={statusChipClass(status.tone)}
               >
-                <Chip.Label
-                  className={`text-[10px] ${statusLabelClass(status.tone)}`}
-                >
-                  {status.label}
-                </Chip.Label>
-              </Chip>
+                {status.label}
+              </Badge>
             </View>
             <View className="flex-row items-center gap-2">
               <View className="flex-row items-center gap-1.5">

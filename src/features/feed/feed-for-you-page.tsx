@@ -241,78 +241,83 @@ export function FeedForYouPage({
                 className="mb-2.5"
                 layout={AccordionLayoutTransition}
               >
-                <Accordion
-                  selectionMode="single"
-                  hideSeparator
-                  isCollapsible
-                  className="bg-transparent"
+                <Surface
+                  variant="default"
+                  className="w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl px-0 py-2"
                 >
-                  <Accordion.Item value={shelf.key}>
-                    {({ isExpanded }) => (
-                      <>
-                        <Accordion.Trigger className="px-3 py-0.5">
-                          <Typography
-                            type="body"
-                            weight="semibold"
-                            className="flex-1 text-[17px] text-foreground"
-                          >
-                            {shelf.label}
-                          </Typography>
-                          <Accordion.Indicator />
-                        </Accordion.Trigger>
+                  <Accordion
+                    selectionMode="single"
+                    hideSeparator
+                    isCollapsible
+                    className="bg-transparent"
+                  >
+                    <Accordion.Item value={shelf.key}>
+                      {({ isExpanded }) => (
+                        <>
+                          <Accordion.Trigger className="px-3 py-0.5">
+                            <Typography
+                              type="body"
+                              weight="semibold"
+                              className="flex-1 text-[17px] text-foreground"
+                            >
+                              {shelf.label}
+                            </Typography>
+                            <Accordion.Indicator />
+                          </Accordion.Trigger>
 
-                        {!isExpanded ? (
-                          <Typography
-                            type="body-sm"
-                            className="mt-1 px-3 pb-0.5 text-[14px] text-muted"
-                            numberOfLines={1}
-                          >
-                            {allChildrenAlphabetical
-                              .map((child) => child.label)
-                              .join(", ")}
-                          </Typography>
-                        ) : null}
+                          {!isExpanded ? (
+                            <Typography
+                              type="body-sm"
+                              className="mt-1 px-3 pb-0.5 text-[14px] text-muted"
+                              numberOfLines={1}
+                            >
+                              {allChildrenAlphabetical
+                                .map((child) => child.label)
+                                .join(", ")}
+                            </Typography>
+                          ) : null}
 
-                        <Accordion.Content className="pt-1">
-                          {allChildrenAlphabetical.map((child) => {
-                            const items = shelves[child.key] ?? [];
-                            if (items.length === 0 && !loading) return null;
+                          <Accordion.Content className="pt-1">
+                            {allChildrenAlphabetical.map((child) => {
+                              const items = shelves[child.key] ?? [];
+                              if (items.length === 0 && !loading) return null;
 
-                            return (
-                              <View key={child.key} className="mb-2.5">
-                                <PressableFeedback
-                                  onPress={() => openCategory(child.key)}
-                                  className="mb-1.5 flex-row items-center justify-between px-3 py-0.5"
-                                  animation={{ scale: { value: 0.99 } }}
-                                  accessibilityRole="button"
-                                  accessibilityLabel={`Open ${child.label}`}
-                                >
-                                  <Typography
-                                    type="body"
-                                    weight="semibold"
-                                    className="text-[15px] text-foreground"
+                              return (
+                                <View key={child.key} className="mb-2.5">
+                                  <PressableFeedback
+                                    onPress={() => openCategory(child.key)}
+                                    className="mb-1.5 flex-row items-center justify-between px-3 py-0.5"
+                                    animation={{ scale: { value: 0.99 } }}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Open ${child.label}`}
                                   >
-                                    {child.label}
-                                  </Typography>
-                                  <StyledIonicons
-                                    name="chevron-forward"
-                                    size={16}
-                                    className="text-muted"
+                                    <Typography
+                                      type="body"
+                                      weight="semibold"
+                                      className="text-[15px] text-foreground"
+                                    >
+                                      {child.label}
+                                    </Typography>
+                                    <StyledIonicons
+                                      name="chevron-forward"
+                                      size={16}
+                                      className="text-muted"
+                                    />
+                                  </PressableFeedback>
+                                  <ShelfRail
+                                    items={items}
+                                    onPressItem={onPressItem}
+                                    onToggleFavorite={onToggleFavorite}
                                   />
-                                </PressableFeedback>
-                                <ShelfRail
-                                  items={items}
-                                  onPressItem={onPressItem}
-                                  onToggleFavorite={onToggleFavorite}
-                                />
-                              </View>
-                            );
-                          })}
-                        </Accordion.Content>
-                      </>
-                    )}
-                  </Accordion.Item>
-                </Accordion>
+                                </View>
+                              );
+                            })}
+                          </Accordion.Content>
+                        </>
+                      )}
+                    </Accordion.Item>
+                  </Accordion>
+                </Surface>
               </Animated.View>
             );
           }

@@ -203,8 +203,8 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
 
           {statusBadges.length > 0 ? (
             <View
-              className="absolute left-1.5 right-1.5 flex-row flex-wrap gap-1"
-              style={{ bottom: images.length > 1 ? 70 : 6 }}
+              className="absolute left-[5px] right-[5px] flex-row flex-wrap gap-[3px]"
+              style={{ bottom: images.length > 1 ? 70 : 5 }}
             >
               {statusBadges.slice(0, 2).map((label) => (
                 <StatusBadge key={label} label={label} scale="detail" />

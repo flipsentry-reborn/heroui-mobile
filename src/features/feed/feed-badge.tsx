@@ -6,14 +6,15 @@ import { getValuationTier, type ValuationTier } from "@/models/feed";
 type ChipColor = "accent" | "default" | "success" | "warning" | "danger";
 type BadgeScale = "default" | "detail";
 
+/** ~10% smaller than prior h-5/h-6 + 10px/12px type. */
 const BADGE_SIZE_CLASS: Record<BadgeScale, string> = {
-  default: "h-5 min-h-5 px-1.5 py-0",
-  detail: "h-6 min-h-6 px-2 py-0",
+  default: "h-[18px] min-h-[18px] px-[5px] py-0",
+  detail: "h-[22px] min-h-[22px] px-[7px] py-0",
 };
 
 const BADGE_LABEL_CLASS: Record<BadgeScale, string> = {
-  default: "text-[10px] font-normal leading-none",
-  detail: "text-xs font-medium leading-[14px]",
+  default: "text-[9px] font-normal leading-none",
+  detail: "text-[11px] font-medium leading-[13px]",
 };
 
 /**

@@ -16,9 +16,9 @@ import {
   type FeedItem as FeedModel,
 } from "@/models/feed";
 
-const IMAGE_H_GRID = 168;
-const IMAGE_H_RAIL = 128;
-const RAIL_WIDTH = 156;
+const IMAGE_H_GRID = 194; // +10% then +5% height from 168
+const IMAGE_H_RAIL = 148; // +10% then +5% height from 128
+const RAIL_WIDTH = 172; // +10% from 156
 /** Featured shelves (e.g. Top Rated) render ~7% larger. */
 const FEATURED_SCALE = 1.07;
 
@@ -46,10 +46,7 @@ export function FeedItem({
   layout = "grid",
   featured = false,
 }: FeedItemProps): JSX.Element {
-  const [surfaceSecondary, accentForeground] = useThemeColor([
-    "surface-secondary",
-    "accent-foreground",
-  ]);
+  const [surfaceSecondary] = useThemeColor(["surface-secondary"]);
   const imageUrl =
     feed.images.imageUrlHostedByUs ||
     feed.images.mainImageUrl.imageUrl ||
@@ -90,28 +87,25 @@ export function FeedItem({
             transition={180}
           />
 
-          <View className="absolute left-1.5 top-1.5 flex-row items-center gap-1">
-            <PressableFeedback
-              accessibilityLabel={feed.isFavorite ? "Unfavorite" : "Favorite"}
-              onPress={() => onToggleFavorite?.(feed.id)}
-              className={
-                feed.isFavorite
-                  ? "h-7 w-7 items-center justify-center rounded-full border border-accent bg-accent"
-                  : "h-7 w-7 items-center justify-center rounded-full border border-white/25 bg-black/55"
-              }
-              animation={{ scale: { value: 0.9 } }}
-            >
-              <Ionicons
-                name={feed.isFavorite ? "star" : "star-outline"}
-                size={12}
-                color={feed.isFavorite ? accentForeground : "#fff"}
-              />
-            </PressableFeedback>
-            <PlatformIcon platform={feed.platform} size={18} />
-          </View>
+          <PressableFeedback
+            accessibilityLabel={feed.isFavorite ? "Unfavorite" : "Favorite"}
+            onPress={() => onToggleFavorite?.(feed.id)}
+            className={
+              feed.isFavorite
+                ? "absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-white/20"
+                : "absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-white/10"
+            }
+            animation={{ scale: { value: 0.9 } }}
+          >
+            <Ionicons
+              name={feed.isFavorite ? "star" : "star-outline"}
+              size={13}
+              color={feed.isFavorite ? "#166534" : "rgba(255,255,255,0.85)"}
+            />
+          </PressableFeedback>
 
           {(feed.valuation?.calculated || statusBadges.length > 0) && (
-            <View className="absolute bottom-1.5 left-1.5 right-1.5 flex-row flex-wrap gap-1">
+            <View className="absolute bottom-[5px] left-[5px] right-[5px] flex-row flex-wrap gap-[3px]">
               {feed.valuation?.calculated ? (
                 <ValuationBadge buySignal={feed.valuation.buySignal} />
               ) : null}
@@ -161,37 +155,35 @@ export function FeedItem({
             {feed.title}
           </Typography>
 
-          {(mileageText || primaryLocation) ? (
-            <View className="min-w-0 flex-row items-center">
-              {mileageText ? (
-                <Typography
-                  type="body-xs"
-                  className="shrink-0 text-xs text-muted"
-                  numberOfLines={1}
-                >
-                  {mileageText}
-                </Typography>
-              ) : null}
-              {mileageText && primaryLocation ? (
-                <Typography
-                  type="body-xs"
-                  className="mx-1.5 text-xs text-muted"
-                >
-                  ·
-                </Typography>
-              ) : null}
-              {primaryLocation ? (
-                <Typography
-                  type="body-xs"
-                  className="min-w-0 flex-1 text-xs text-muted"
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {primaryLocation}
-                </Typography>
-              ) : null}
-            </View>
-          ) : null}
+          <View className="min-w-0 flex-row items-center gap-1">
+            {mileageText ? (
+              <Typography
+                type="body-xs"
+                className="shrink-0 text-xs text-muted"
+                numberOfLines={1}
+              >
+                {mileageText}
+              </Typography>
+            ) : null}
+            {mileageText && primaryLocation ? (
+              <Typography type="body-xs" className="text-xs text-muted">
+                ·
+              </Typography>
+            ) : null}
+            {primaryLocation ? (
+              <Typography
+                type="body-xs"
+                className="min-w-0 flex-1 text-xs text-muted"
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {primaryLocation}
+              </Typography>
+            ) : (
+              <View className="min-w-0 flex-1" />
+            )}
+            <PlatformIcon platform={feed.platform} size={14} />
+          </View>
         </Card.Body>
       </Card>
     </PressableFeedback>

@@ -40,22 +40,30 @@ function PriceFieldInput({
   value,
   onChange,
   isInvalid,
+  maxLength,
 }: {
   value: string;
   onChange: (value: string) => void;
   isInvalid: boolean;
+  maxLength?: number;
 }): JSX.Element {
   const { onFocus, onBlur } = useBottomSheetAwareHandlers();
 
   return (
     <Input
       value={value}
-      onChangeText={(text) => onChange(sanitizePriceInput(text))}
-      placeholder="Any"
+      onChangeText={(text) => {
+        const next = sanitizePriceInput(text);
+        onChange(
+          maxLength != null ? next.slice(0, maxLength) : next,
+        );
+      }}
+      placeholder="Empty"
       keyboardType="number-pad"
       variant="primary"
       isInvalid={isInvalid}
       textAlign="center"
+      maxLength={maxLength}
       className="h-8 min-h-8 w-40 px-2 py-0 text-sm text-foreground"
       onFocus={onFocus}
       onBlur={onBlur}
@@ -64,17 +72,21 @@ function PriceFieldInput({
 }
 
 function PriceSheetContent({
+  title,
   min,
   max,
   onMinChange,
   onMaxChange,
   onPersist,
+  maxLength,
 }: {
+  title: string;
   min: string;
   max: string;
   onMinChange: (value: string) => void;
   onMaxChange: (value: string) => void;
   onPersist: (min: string, max: string) => void;
+  maxLength?: number;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const snapPoints = useMemo(() => ["92%"], []);
@@ -101,7 +113,7 @@ function PriceSheetContent({
       <View>
         <View className="items-center px-5 pt-4 pb-1">
           <Typography type="body" weight="normal">
-            Price
+            {title}
           </Typography>
         </View>
         <SearchSheetGroup>
@@ -113,6 +125,7 @@ function PriceSheetContent({
                 value={min}
                 onChange={onMinChange}
                 isInvalid={isInvalid}
+                maxLength={maxLength}
               />
             }
           />
@@ -124,6 +137,7 @@ function PriceSheetContent({
                 value={max}
                 onChange={onMaxChange}
                 isInvalid={isInvalid}
+                maxLength={maxLength}
               />
             }
           />
@@ -162,6 +176,9 @@ interface SearchBottomSheetPriceSheetProps {
   max: string;
   onMinChange: (value: string) => void;
   onMaxChange: (value: string) => void;
+  /** Sheet title — reuse for Year / Mileage ranges. */
+  title?: string;
+  maxLength?: number;
 }
 
 export function SearchBottomSheetPriceSheet({
@@ -171,6 +188,8 @@ export function SearchBottomSheetPriceSheet({
   max,
   onMinChange,
   onMaxChange,
+  title = "Price",
+  maxLength,
 }: SearchBottomSheetPriceSheetProps): JSX.Element | null {
   const [draftMin, setDraftMin] = useState(min);
   const [draftMax, setDraftMax] = useState(max);
@@ -184,10 +203,12 @@ export function SearchBottomSheetPriceSheet({
   return (
     <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
       <PriceSheetContent
+        title={title}
         min={draftMin}
         max={draftMax}
         onMinChange={setDraftMin}
         onMaxChange={setDraftMax}
+        maxLength={maxLength}
         onPersist={(nextMin, nextMax) => {
           onMinChange(nextMin);
           onMaxChange(nextMax);

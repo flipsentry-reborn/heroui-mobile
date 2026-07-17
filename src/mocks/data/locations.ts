@@ -176,14 +176,36 @@ export const MIN_RADIUS_MILES = 5;
 export const MAX_RADIUS_MILES = 250;
 export const RADIUS_STEP_MILES = 5;
 
+/** Run speed for an other-location slot. `none` = not selected. */
+export type LocationRunSpeed = "none" | "instant" | "3min" | "5min";
+
+export const LOCATION_RUN_SPEEDS: {
+  id: LocationRunSpeed;
+  label: string;
+}[] = [
+  { id: "instant", label: "Instant" },
+  { id: "3min", label: "3 Min" },
+  { id: "5min", label: "5 Min" },
+  { id: "none", label: "None" },
+];
+
+export function locationRunSpeedLabel(speed: LocationRunSpeed): string {
+  return LOCATION_RUN_SPEEDS.find((item) => item.id === speed)?.label ?? "None";
+}
+
+export function isLocationSpeedSelected(speed: LocationRunSpeed): boolean {
+  return speed !== "none";
+}
+
 export interface LocationDraft {
   main: LocationResult | null;
   radiusMiles: number;
-  otherIds: string[];
+  /** Per other-location id → speed. Missing keys default to `none`. */
+  otherSpeeds: Record<string, LocationRunSpeed>;
 }
 
 export const defaultLocationDraft: LocationDraft = {
   main: locationsFixture[0] ?? null,
   radiusMiles: DEFAULT_RADIUS_MILES,
-  otherIds: [],
+  otherSpeeds: {},
 };

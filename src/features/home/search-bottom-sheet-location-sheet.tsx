@@ -17,7 +17,9 @@ import { LocationRadius } from "@/features/home/location-radius";
 import { SheetShell } from "@/features/home/sheet-shell";
 import {
   DEFAULT_RADIUS_MILES,
+  isLocationSpeedSelected,
   type LocationResult,
+  type LocationRunSpeed,
 } from "@/mocks/data/locations";
 import {
   getLocationDraft,
@@ -31,7 +33,7 @@ const StyledIonicons = withUniwind(Ionicons);
 function LocationSheetContent({
   main,
   radiusMiles,
-  otherIds,
+  otherSpeeds,
   query,
   predictions,
   showPredictions,
@@ -41,12 +43,12 @@ function LocationSheetContent({
   onQueryChange,
   onSelectMain,
   onRadiusChange,
-  onToggleOther,
+  onOtherSpeedChange,
   onPersist,
 }: {
   main: LocationResult | null;
   radiusMiles: number;
-  otherIds: string[];
+  otherSpeeds: Record<string, LocationRunSpeed>;
   query: string;
   predictions: LocationResult[];
   showPredictions: boolean;
@@ -56,7 +58,7 @@ function LocationSheetContent({
   onQueryChange: (value: string) => void;
   onSelectMain: (place: LocationResult) => void;
   onRadiusChange: (miles: number) => void;
-  onToggleOther: (id: string, selected: boolean) => void;
+  onOtherSpeedChange: (id: string, speed: LocationRunSpeed) => void;
   onPersist: () => void;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
@@ -122,8 +124,8 @@ function LocationSheetContent({
               <LocationRadius value={radiusMiles} onChange={onRadiusChange} />
               <LocationOtherList
                 places={nearby}
-                selectedIds={otherIds}
-                onToggle={onToggleOther}
+                speeds={otherSpeeds}
+                onSpeedChange={onOtherSpeedChange}
                 loading={nearbyLoading}
               />
             </>
@@ -152,7 +154,9 @@ export function SearchBottomSheetLocationSheet({
   const [radiusMiles, setRadiusMiles] = useState(
     draft.radiusMiles || DEFAULT_RADIUS_MILES,
   );
-  const [otherIds, setOtherIds] = useState<string[]>(draft.otherIds);
+  const [otherSpeeds, setOtherSpeeds] = useState<
+    Record<string, LocationRunSpeed>
+  >(draft.otherSpeeds);
   const [query, setQuery] = useState(draft.main?.displayName ?? "");
   const [predictions, setPredictions] = useState<LocationResult[]>([]);
   const [showPredictions, setShowPredictions] = useState(false);
@@ -164,7 +168,7 @@ export function SearchBottomSheetLocationSheet({
     const next = getLocationDraft();
     setMain(next.main);
     setRadiusMiles(next.radiusMiles || DEFAULT_RADIUS_MILES);
-    setOtherIds(next.otherIds);
+    setOtherSpeeds(next.otherSpeeds ?? {});
     setQuery(next.main?.displayName ?? "");
     setShowPredictions(false);
     setPredictions([]);
@@ -202,9 +206,13 @@ export function SearchBottomSheetLocationSheet({
     void getNearbyLocations(main).then((results) => {
       if (cancelled) return;
       setNearby(results);
-      setOtherIds((prev) =>
-        prev.filter((id) => results.some((place) => place.id === id)),
-      );
+      setOtherSpeeds((prev) => {
+        const next: Record<string, LocationRunSpeed> = {};
+        for (const place of results) {
+          if (prev[place.id] != null) next[place.id] = prev[place.id];
+        }
+        return next;
+      });
       setNearbyLoading(false);
     });
 
@@ -213,14 +221,16 @@ export function SearchBottomSheetLocationSheet({
     };
   }, [main, isOpen]);
 
-  const selectedOthers = nearby.filter((place) => otherIds.includes(place.id));
+  const selectedOthers = nearby.filter((place) =>
+    isLocationSpeedSelected(otherSpeeds[place.id] ?? "none"),
+  );
 
   const handleQueryChange = (value: string) => {
     setQuery(value);
     setShowPredictions(true);
     if (main != null && value.trim() !== main.displayName) {
       setMain(null);
-      setOtherIds([]);
+      setOtherSpeeds({});
     }
   };
 
@@ -229,16 +239,17 @@ export function SearchBottomSheetLocationSheet({
     setQuery(place.displayName);
     setShowPredictions(false);
     setPredictions([]);
-    setOtherIds([]);
+    setOtherSpeeds({});
   };
 
-  const handleToggleOther = (id: string, selected: boolean) => {
-    setOtherIds((prev) => {
-      if (selected) {
-        if (prev.includes(id)) return prev;
-        return [...prev, id];
+  const handleOtherSpeedChange = (id: string, speed: LocationRunSpeed) => {
+    setOtherSpeeds((prev) => {
+      if (speed === "none") {
+        const next = { ...prev };
+        delete next[id];
+        return next;
       }
-      return prev.filter((value) => value !== id);
+      return { ...prev, [id]: speed };
     });
   };
 
@@ -247,7 +258,7 @@ export function SearchBottomSheetLocationSheet({
     setLocationDraft({
       main,
       radiusMiles,
-      otherIds,
+      otherSpeeds,
     });
   };
 
@@ -262,7 +273,7 @@ export function SearchBottomSheetLocationSheet({
       <LocationSheetContent
         main={main}
         radiusMiles={radiusMiles}
-        otherIds={otherIds}
+        otherSpeeds={otherSpeeds}
         query={query}
         predictions={predictions}
         showPredictions={showPredictions}
@@ -272,7 +283,7 @@ export function SearchBottomSheetLocationSheet({
         onQueryChange={handleQueryChange}
         onSelectMain={handleSelectMain}
         onRadiusChange={setRadiusMiles}
-        onToggleOther={handleToggleOther}
+        onOtherSpeedChange={handleOtherSpeedChange}
         onPersist={handlePersist}
       />
     </SheetShell>

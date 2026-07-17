@@ -64,14 +64,16 @@ export function AppTabBar({
       >
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
+          // Skip redirect-only routes (e.g. `index`) — custom bars don't honor `href: null`.
+          if (!(route.name in TAB_ICONS)) {
+            return null;
+          }
+
           const focused = state.index === index;
           const color = focused ? foreground : muted;
           const label =
             typeof options.title === "string" ? options.title : route.name;
-          const icons = TAB_ICONS[route.name] ?? {
-            outline: "ellipse-outline" as IoniconName,
-            filled: "ellipse" as IoniconName,
-          };
+          const icons = TAB_ICONS[route.name];
 
           const onPress = () => {
             const event = navigation.emit({

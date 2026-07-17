@@ -1,9 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps, JSX } from "react";
 import { View } from "react-native";
-import { BottomSheet, Switch, useBottomSheet } from "heroui-native";
+import { BottomSheet, Switch, Typography } from "heroui-native";
 
-import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
 import { SearchSheetGroup } from "@/features/home/search-sheet-group";
 import { SheetShell } from "@/features/home/sheet-shell";
@@ -39,9 +38,6 @@ function HideListingsContent({
   prefs: UserPreferences;
   onPatch: (patch: HidePatch) => void;
 }): JSX.Element {
-  const { onOpenChange } = useBottomSheet();
-  const dismiss = () => onOpenChange(false);
-
   const rows: HideRow[] = [
     {
       key: "spam",
@@ -93,11 +89,11 @@ function HideListingsContent({
       contentContainerClassName="bg-surface-secondary p-0"
     >
       <View>
-        <SearchBottomSheetHeader
-          title="Hide listings"
-          onClose={dismiss}
-          onConfirm={dismiss}
-        />
+        <View className="items-center px-8 pt-3 pb-2">
+          <Typography type="body" weight="normal">
+            Hide listings
+          </Typography>
+        </View>
 
         <SearchSheetGroup>
           {rows.map((row, index) => (

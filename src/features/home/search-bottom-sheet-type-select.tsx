@@ -1,7 +1,7 @@
  import { Ionicons } from "@expo/vector-icons";
-import type { JSX } from "react";
+import { Fragment, type JSX } from "react";
 import { Pressable, View } from "react-native";
-import { Select, Typography, useThemeColor } from "heroui-native";
+import { Select, Separator, Typography, useThemeColor } from "heroui-native";
 
 import type { SearchType } from "@/mocks/data/home";
 
@@ -74,26 +74,32 @@ export function SearchBottomSheetTypeSelect({
           width={220}
           className="rounded-2xl"
         >
-          {SEARCH_TYPE_OPTIONS.map((option) => (
-            <Select.Item
-              key={option.value}
-              value={option.value}
-              label={option.label}
-              className="py-3"
-            >
-              {({ isSelected }) => (
-                <>
-                  <Select.ItemLabel />
-                  <View className="items-center justify-center">
-                    <Ionicons
-                      name={isSelected ? "radio-button-on" : "radio-button-off"}
-                      size={18}
-                      color={isSelected ? accent : muted}
-                    />
-                  </View>
-                </>
-              )}
-            </Select.Item>
+          {SEARCH_TYPE_OPTIONS.map((option, index) => (
+            <Fragment key={option.value}>
+              <Select.Item
+                value={option.value}
+                label={option.label}
+                className="py-3"
+              >
+                {({ isSelected }) => (
+                  <>
+                    <Select.ItemLabel />
+                    <View className="items-center justify-center">
+                      <Ionicons
+                        name={
+                          isSelected ? "radio-button-on" : "radio-button-off"
+                        }
+                        size={18}
+                        color={isSelected ? accent : muted}
+                      />
+                    </View>
+                  </>
+                )}
+              </Select.Item>
+              {index < SEARCH_TYPE_OPTIONS.length - 1 ? (
+                <Separator className="mx-4 bg-muted/40" />
+              ) : null}
+            </Fragment>
           ))}
         </Select.Content>
       </Select.Portal>

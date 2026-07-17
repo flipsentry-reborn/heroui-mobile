@@ -47,7 +47,8 @@
 
     --muted: oklch(55.17% 0 0);
 
-    --default: oklch(94.00% 0.0015 253.83);
+    /* Match surface-secondary — Button variant="secondary" uses bg-default */
+    --default: oklch(95.24% 0.0012 253.83);
     --default-foreground: oklch(12% 0 0);
 
     /* Uber light: black primary */

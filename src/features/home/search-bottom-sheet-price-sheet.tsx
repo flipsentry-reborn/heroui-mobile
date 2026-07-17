@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
 import {
   BottomSheet,
@@ -75,7 +75,6 @@ function PriceSheetContent({
   onPersist: (min: string, max: string) => void;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
-  const snapPoints = useMemo(() => ["40%", "70%"], []);
   const error = getPriceRangeError(min, max);
   const isInvalid = error != null;
   const dismiss = () => onOpenChange(false);
@@ -88,13 +87,10 @@ function PriceSheetContent({
 
   return (
     <BottomSheet.Content
-      snapPoints={snapPoints}
-      enableOverDrag={false}
-      enableDynamicSizing={false}
       keyboardBehavior="extend"
       backgroundClassName="rounded-t-[32px] bg-surface-secondary"
       handleComponent={null}
-      contentContainerClassName="h-full bg-surface-secondary p-0"
+      contentContainerClassName="bg-surface-secondary p-0"
     >
       <View>
         <SearchBottomSheetHeader

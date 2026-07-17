@@ -1,103 +1,49 @@
-import type { JSX, ReactNode } from "react";
+import type { JSX } from "react";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
-import { BottomSheet, Button, Typography, useToast } from "heroui-native";
+import {
+  Alert,
+  BottomSheet,
+  Button,
+  Checkbox,
+  ControlField,
+  Label,
+  Typography,
+  useBottomSheet,
+  useToast,
+} from "heroui-native";
 import { ProgressButton } from "heroui-native-pro";
 
+import { SheetShell } from "@/features/home/sheet-shell";
 import { mockDeleteAccount } from "@/mocks/services/settings";
 
-const SHEET_BACKGROUND_STYLE = {
-  borderTopLeftRadius: 32,
-  borderTopRightRadius: 32,
-  borderCurve: "continuous" as const,
-};
+type DeleteStep = "confirm" | "hold";
 
-function AccountSheet({
-  visible,
-  onClose,
-  children,
+const LOSE_ACCESS_ITEMS = [
+  "Saved searches and preferences",
+  "Active subscription and credits",
+  "Listings history and feed data",
+] as const;
+
+function DeleteAccountContent({
+  onDeleted,
 }: {
-  visible: boolean;
-  onClose: () => void;
-  children: ReactNode;
-}): JSX.Element | null {
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    if (!visible) {
-      setIsOpen(false);
-      return;
-    }
-    const id = requestAnimationFrame(() => setIsOpen(true));
-    return () => cancelAnimationFrame(id);
-  }, [visible]);
-
-  if (!visible) return null;
-
-  return (
-    <BottomSheet
-      isOpen={isOpen}
-      onOpenChange={(open) => {
-        setIsOpen(open);
-        if (!open) onClose();
-      }}
-    >
-      <BottomSheet.Portal>
-        <BottomSheet.Overlay />
-        <BottomSheet.Content
-          backgroundClassName="bg-surface-secondary"
-          backgroundStyle={SHEET_BACKGROUND_STYLE}
-          handleIndicatorClassName="bg-separator"
-        >
-          {children}
-        </BottomSheet.Content>
-      </BottomSheet.Portal>
-    </BottomSheet>
-  );
-}
-
-interface DeleteAccountSheetsProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-export function DeleteAccountSheets({
-  isOpen,
-  onOpenChange,
-}: DeleteAccountSheetsProps): JSX.Element | null {
+  onDeleted: () => void;
+}): JSX.Element {
   const { toast } = useToast();
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [holdOpen, setHoldOpen] = useState(false);
+  const { onOpenChange } = useBottomSheet();
+  const [step, setStep] = useState<DeleteStep>("confirm");
+  const [acknowledged, setAcknowledged] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setConfirmOpen(false);
-      setHoldOpen(false);
-      setDeleting(false);
-      return;
-    }
-    const id = requestAnimationFrame(() => setConfirmOpen(true));
-    return () => cancelAnimationFrame(id);
-  }, [isOpen]);
-
-  const closeAll = () => {
-    setHoldOpen(false);
-    setConfirmOpen(false);
-    setDeleting(false);
-    onOpenChange(false);
-  };
-
-  const handleProceed = () => {
-    requestAnimationFrame(() => setHoldOpen(true));
-  };
+  const dismiss = () => onOpenChange(false);
 
   const handleHoldComplete = () => {
-    if (deleting) return;
+    if (deleting || !acknowledged) return;
     setDeleting(true);
     void mockDeleteAccount()
       .then(() => {
-        closeAll();
+        onDeleted();
         toast.show({
           variant: "default",
           label: "Account deleted",
@@ -114,50 +60,96 @@ export function DeleteAccountSheets({
       });
   };
 
-  if (!isOpen) return null;
-
-  return (
-    <>
-      <AccountSheet visible={confirmOpen} onClose={closeAll}>
-        <View className="gap-5 px-5 pb-5 pt-2">
-          <View className="items-center gap-1.5">
-            <BottomSheet.Title className="text-center text-danger">
+  if (step === "confirm") {
+    return (
+      <BottomSheet.Content
+        backgroundClassName="rounded-t-[32px]"
+        handleComponent={null}
+        contentContainerClassName="bg-surface-secondary p-0"
+      >
+        <View>
+          <View className="items-center px-8 pt-3 pb-2">
+            <Typography type="body" weight="normal">
               Delete Account
-            </BottomSheet.Title>
+            </Typography>
+          </View>
+
+          <View className="gap-5 px-5 pb-6 pt-2">
             <Typography type="body-sm" className="text-center text-muted">
               You want to delete your account?
             </Typography>
-          </View>
-          <View className="flex-row gap-3">
-            <Button
-              variant="secondary"
-              className="min-h-12 flex-1"
-              onPress={closeAll}
-            >
-              <Button.Label>Cancel</Button.Label>
-            </Button>
-            <Button
-              variant="primary"
-              className="min-h-12 flex-1 bg-accent"
-              onPress={handleProceed}
-            >
-              <Button.Label className="text-accent-foreground">Proceed</Button.Label>
-            </Button>
+
+            <View className="flex-row gap-3">
+              <Button
+                className="min-h-12 flex-1"
+                onPress={dismiss}
+              >
+                <Button.Label>Cancel</Button.Label>
+              </Button>
+              <Button
+                variant="danger"
+                className="min-h-12 flex-1"
+                onPress={() => setStep("hold")}
+              >
+                <Button.Label>Delete Account</Button.Label>
+              </Button>
+            </View>
           </View>
         </View>
-      </AccountSheet>
+      </BottomSheet.Content>
+    );
+  }
 
-      <AccountSheet
-        visible={holdOpen}
-        onClose={() => {
-          if (!deleting) setHoldOpen(false);
-        }}
-      >
-        <View className="gap-3 px-5 pb-5 pt-3">
+  return (
+    <BottomSheet.Content
+      backgroundClassName="rounded-t-[32px] bg-surface-secondary"
+      handleComponent={null}
+      contentContainerClassName="bg-surface-secondary p-0"
+    >
+      <View>
+        <View className="items-center px-8 pt-3 pb-2">
+          <Typography type="body" weight="normal">
+            Delete Account
+          </Typography>
+        </View>
+
+        <View className="gap-4 px-5 pb-6 pt-2">
+          <Alert status="danger">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>You will lose all access</Alert.Title>
+              <Alert.Description>
+                Deleting your account is permanent and cannot be undone.
+              </Alert.Description>
+            </Alert.Content>
+          </Alert>
+
+          <View className="gap-2 px-1">
+            {LOSE_ACCESS_ITEMS.map((item) => (
+              <Typography key={item} type="body-sm" className="text-muted">
+                • {item}
+              </Typography>
+            ))}
+          </View>
+
+          <ControlField
+            isSelected={acknowledged}
+            onSelectedChange={setAcknowledged}
+            isDisabled={deleting}
+            className="items-start gap-3"
+          >
+            <ControlField.Indicator className="mt-0.5">
+              <Checkbox />
+            </ControlField.Indicator>
+            <Label className="flex-1 text-sm">
+              I understand I will lose all access
+            </Label>
+          </ControlField>
+
           <ProgressButton
             variant="danger"
             holdDuration={2000}
-            isDisabled={deleting}
+            isDisabled={!acknowledged || deleting}
             onComplete={handleHoldComplete}
             className="w-full"
           >
@@ -170,16 +162,44 @@ export function DeleteAccountSheets({
               </ProgressButton.MaskLabel>
             </ProgressButton.Overlay>
           </ProgressButton>
+
           <Button
-            variant="secondary"
             className="min-h-12 w-full"
             isDisabled={deleting}
-            onPress={() => setHoldOpen(false)}
+            onPress={() => {
+              setAcknowledged(false);
+              setStep("confirm");
+            }}
           >
             <Button.Label>Cancel</Button.Label>
           </Button>
         </View>
-      </AccountSheet>
-    </>
+      </View>
+    </BottomSheet.Content>
+  );
+}
+
+interface DeleteAccountSheetsProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function DeleteAccountSheets({
+  isOpen,
+  onOpenChange,
+}: DeleteAccountSheetsProps): JSX.Element | null {
+  const [contentKey, setContentKey] = useState(0);
+
+  useEffect(() => {
+    if (isOpen) setContentKey((key) => key + 1);
+  }, [isOpen]);
+
+  return (
+    <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
+      <DeleteAccountContent
+        key={contentKey}
+        onDeleted={() => onOpenChange(false)}
+      />
+    </SheetShell>
   );
 }

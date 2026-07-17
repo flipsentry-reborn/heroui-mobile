@@ -3,13 +3,14 @@ import { useEffect, useState } from "react";
 import { View } from "react-native";
 import {
   BottomSheet,
+  Button,
   FieldError,
   Input,
+  Typography,
   useBottomSheet,
   useBottomSheetAwareHandlers,
 } from "heroui-native";
 
-import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import {
   SearchSheetGroup,
   SearchSheetRow,
@@ -52,7 +53,7 @@ function PriceFieldInput({
       onChangeText={(text) => onChange(sanitizePriceInput(text))}
       placeholder="Any"
       keyboardType="number-pad"
-      variant="secondary"
+      variant="primary"
       isInvalid={isInvalid}
       className="h-8 min-h-8 w-40 px-2 py-0 text-sm text-foreground"
       onFocus={onFocus}
@@ -94,11 +95,11 @@ function PriceSheetContent({
       contentContainerClassName="bg-surface-secondary p-0"
     >
       <View>
-        <SearchBottomSheetHeader
-          title="Price"
-          onClose={dismiss}
-          onConfirm={handleSave}
-        />
+        <View className="items-center px-5 pt-4 pb-1">
+          <Typography type="body" weight="normal">
+            Price
+          </Typography>
+        </View>
         <SearchSheetGroup>
           <SearchSheetRow
             title="Minimum"
@@ -128,6 +129,23 @@ function PriceSheetContent({
             {error}
           </FieldError>
         ) : null}
+        <View className="flex-row gap-3 px-5 pb-6 pt-2">
+          <Button
+            variant="secondary"
+            className="min-h-12 flex-1"
+            onPress={dismiss}
+          >
+            <Button.Label>Cancel</Button.Label>
+          </Button>
+          <Button
+            variant="primary"
+            className="min-h-12 flex-1"
+            isDisabled={isInvalid}
+            onPress={handleSave}
+          >
+            <Button.Label>Save</Button.Label>
+          </Button>
+        </View>
       </View>
     </BottomSheet.Content>
   );

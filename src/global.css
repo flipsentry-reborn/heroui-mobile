@@ -49,16 +49,16 @@
 
     --muted: oklch(55.17% 0 0);
 
-    /* Match surface-secondary — Button variant="secondary" uses bg-default */
-    --default: oklch(95.24% 0.0012 253.83);
+    /* Match surface / ListGroup cards — Button variant="secondary" uses bg-default */
+    --default: oklch(100.00% 0.0008 253.83);
     --default-foreground: oklch(12% 0 0);
 
     /* Uber light: black primary */
     --accent: oklch(0% 0 0);
     --accent-foreground: oklch(100% 0 0);
 
-    /* Slightly cooler than surface so inputs read on ListGroup cards */
-    --field-background: oklch(95.24% 0.0012 253.83);
+    /* Primary canvas fill so inputs read on ListGroup / surface cards */
+    --field-background: oklch(97.02% 0.0015 253.83);
     --field-foreground: oklch(12% 0 0);
     --field-placeholder: var(--muted);
     --field-border: oklch(90.00% 0.0015 253.83);

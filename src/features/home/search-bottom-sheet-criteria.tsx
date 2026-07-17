@@ -45,7 +45,7 @@ function CustomSearchInput({
       value={value}
       onChangeText={onChange}
       placeholder="Empty"
-      variant="secondary"
+      variant="primary"
       isInvalid={isInvalid}
       className="h-8 min-h-8 w-40 px-2 py-0 text-sm text-foreground"
       onFocus={onFocus}

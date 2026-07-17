@@ -12,8 +12,9 @@
 @source "../node_modules/heroui-native-pro/lib";
 
 @theme {
-  --radius: 0.25rem;
-  --field-radius: 0.5rem;
+  --radius: 0.5rem;
+  /* Match ListGroup / Surface card corners (rounded-3xl). */
+  --field-radius: 1.5rem;
   /* HeroUI default is 0px + transparent border; we use a real border instead. */
   --field-border-width: 1px;
 
@@ -57,8 +58,8 @@
     --accent: oklch(0% 0 0);
     --accent-foreground: oklch(100% 0 0);
 
-    /* Primary canvas fill so inputs read on ListGroup / surface cards */
-    --field-background: oklch(97.02% 0.0015 253.83);
+    /* Match ListGroup / Surface cards (white) instead of page gray */
+    --field-background: oklch(100.00% 0.0008 253.83);
     --field-foreground: oklch(12% 0 0);
     --field-placeholder: var(--muted);
     --field-border: oklch(90.00% 0.0015 253.83);

@@ -12,6 +12,10 @@ import { SearchBottomSheet } from "@/features/home/search-bottom-sheet";
 import type { HomeState } from "@/mocks/data/home";
 import type { SubscriptionPlan } from "@/mocks/data/subscription";
 import { getHome } from "@/mocks/services/home";
+import {
+  formatLocationLabel,
+  getLocationDraft,
+} from "@/mocks/services/location";
 import { getSubscription } from "@/mocks/services/subscription";
 
 export function HomeScreen(): JSX.Element {
@@ -21,6 +25,9 @@ export function HomeScreen(): JSX.Element {
   const [state, setState] = useState<HomeState | null>(null);
   const [activePlan, setActivePlan] = useState<SubscriptionPlan | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [locationLabel, setLocationLabel] = useState(() =>
+    formatLocationLabel(getLocationDraft()),
+  );
 
   const load = useCallback(async () => {
     const [home, sub] = await Promise.all([getHome(), getSubscription()]);
@@ -35,6 +42,7 @@ export function HomeScreen(): JSX.Element {
   useFocusEffect(
     useCallback(() => {
       void load();
+      setLocationLabel(formatLocationLabel(getLocationDraft()));
       return () => {
         setCreateOpen(false);
       };
@@ -65,7 +73,10 @@ export function HomeScreen(): JSX.Element {
         />
 
         <View className="mx-3 mb-2">
-          <BrandButton className="min-h-12 w-full" onPress={() => setCreateOpen(true)}>
+          <BrandButton
+            className="min-h-12 w-full"
+            onPress={() => setCreateOpen(true)}
+          >
             <Ionicons name="add" size={18} color={accentForeground} />
             <BrandButton.Label>New Search</BrandButton.Label>
           </BrandButton>
@@ -75,6 +86,8 @@ export function HomeScreen(): JSX.Element {
       <SearchBottomSheet
         visible={createOpen}
         onClose={() => setCreateOpen(false)}
+        locationLabel={locationLabel}
+        onLocationLabelChange={setLocationLabel}
       />
     </View>
   );

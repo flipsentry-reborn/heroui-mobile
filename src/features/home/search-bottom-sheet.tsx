@@ -16,6 +16,7 @@ import {
 } from "@/features/home/search-bottom-sheet-criteria";
 import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import { SearchBottomSheetKeywordsSheet } from "@/features/home/search-bottom-sheet-keywords-sheet";
+import { SearchBottomSheetLocationSheet } from "@/features/home/search-bottom-sheet-location-sheet";
 import {
   DEFAULT_SEARCH_PLATFORMS,
   formatPlatformsLabel,
@@ -27,6 +28,10 @@ import { SearchBottomSheetSection } from "@/features/home/search-bottom-sheet-se
 import { SearchBottomSheetTypeSelect } from "@/features/home/search-bottom-sheet-type-select";
 import { SheetShell } from "@/features/home/sheet-shell";
 import type { HomePlatform, SearchType } from "@/mocks/data/home";
+import {
+  formatLocationLabel,
+  getLocationDraft,
+} from "@/mocks/services/location";
 
 function PlatformsRowValue({
   platforms,
@@ -196,18 +201,19 @@ interface SearchBottomSheetProps {
   visible: boolean;
   onClose: () => void;
   locationLabel?: string;
-  onLocationPress?: () => void;
+  onLocationLabelChange?: (label: string) => void;
 }
 
 export function SearchBottomSheet({
   visible,
   onClose,
   locationLabel = "Voorhees (30 mi)",
-  onLocationPress,
+  onLocationLabelChange,
 }: SearchBottomSheetProps): JSX.Element {
   const [priceOpen, setPriceOpen] = useState(false);
   const [keywordsOpen, setKeywordsOpen] = useState(false);
   const [platformsOpen, setPlatformsOpen] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [searchType, setSearchType] = useState<SearchType | null>(null);
@@ -231,7 +237,15 @@ export function SearchBottomSheet({
     setPriceOpen(false);
     setKeywordsOpen(false);
     setPlatformsOpen(false);
+    setLocationOpen(false);
     onClose();
+  };
+
+  const handleLocationOpenChange = (open: boolean) => {
+    setLocationOpen(open);
+    if (!open) {
+      onLocationLabelChange?.(formatLocationLabel(getLocationDraft()));
+    }
   };
 
   return (
@@ -239,7 +253,7 @@ export function SearchBottomSheet({
       <SheetShell visible={visible} onClose={handleClose}>
         <SearchSheetContent
           locationLabel={locationLabel}
-          onLocationPress={onLocationPress}
+          onLocationPress={() => setLocationOpen(true)}
           searchType={searchType}
           onSearchTypeChange={handleSearchTypeChange}
           customQuery={customQuery}
@@ -282,6 +296,11 @@ export function SearchBottomSheet({
         onOpenChange={setPlatformsOpen}
         platforms={selectedPlatforms}
         onPlatformsChange={setSelectedPlatforms}
+      />
+
+      <SearchBottomSheetLocationSheet
+        isOpen={visible && locationOpen}
+        onOpenChange={handleLocationOpenChange}
       />
     </>
   );

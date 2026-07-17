@@ -146,7 +146,7 @@ Configure weights in `src/global.css` `@theme`; load files in `src/app/_layout.t
 
 | Doc | Topic |
 |-----|--------|
-| `DESIGN.md` | Overall UI preferences and locked patterns |
+| `DESIGN.md` | UI preferences, copy rules, search filter labels (no “Any”) |
 | `FONTS.md` | Britti Sans setup |
 | `SUBSCRIPTION.md` | Plan cards / accents / reuse |
 

@@ -39,9 +39,53 @@ Accent is intentionally high-contrast black/white (Uber), used sparingly.
 
 ### Copy
 
-- No em dashes (`—` / `–`). Use commas, periods, or hyphens.
+- No em dashes (`—` / `–`) in prose. Use commas, periods, or hyphens.
 - Short helper lines under sections (`Typography type="body-xs" className="text-muted"`).
 - Mock toasts / alerts may say they are mock when useful.
+- **Never use the keyword “Any”** for open filters (competitor language). See **Search filter copy** below.
+
+---
+
+## Search filter copy
+
+House style for unconstrained / open-ended search criteria. Shared helper: `formatOpenRangeLabel` in `src/features/home/search-bottom-sheet-price-sheet.tsx` (also used by search cards). Criteria rows use `formatPriceRangeLabel` (same rules, NBSP hyphens when both ends are set).
+
+### Do not use
+
+| Avoid | Why |
+|-------|-----|
+| `Any`, `Any - Any`, `Any Make` | Competitor-style keyword; banned product-wide |
+| Soft / inventing a brand synonym for “Any” | Prefer explicit open-range forms below |
+
+### Open ranges (price, year, mileage, and similar)
+
+| Case | Display | Examples |
+|------|---------|----------|
+| Max only | `≤{max}` | `≤15k`, `≤2018`, `≤50k mi` |
+| Min only | `{min}+` | `15k+`, `2018+`, `10k+ mi` |
+| Both ends | `{min}-{max}` | `5k-15k`, `2016-2022`, `10k-50k mi` |
+| Neither (criteria summary) | `No limit` | Price / year / mileage row with nothing set |
+
+- Optional unit (e.g. ` mi`) is appended after the whole token: `≤50k mi`, `10k+ mi`, `10k-50k mi`.
+- Use ASCII hyphen `-` (or NBSP-hyphen in criteria), not em/en dashes.
+- Search **cards** and **criteria** value labels both follow this table.
+
+### Other empty / unconstrained labels
+
+| Context | Prefer | Avoid |
+|---------|--------|--------|
+| Car makes (no specific filter) | `All makes` | `Any`, `Any Make` |
+| Keywords / platforms / iPhone models (none selected) | `None` | `Any` |
+| Number field placeholders | `Min` / `Max` | `Any`, `Empty` (for min/max fields) |
+| Year wheel open option | `No min` / `No max` | `Any` |
+| Search type unset / custom query empty | `Empty` (editor empty, not a filter bound) | — |
+
+### Implementation checklist
+
+1. New open-ended range UI → call `formatOpenRangeLabel` (or `formatPriceRangeLabel` for criteria).
+2. Do not hardcode `Any` / `No min` / `No max` as chip or criteria **summaries** (wheels/placeholders may still say No min / No max / Min / Max).
+3. Makes “select all” row label and summary → `All makes`.
+4. If you add a new unconstrained filter, pick from the tables above; do not reintroduce `Any`.
 
 ---
 
@@ -183,7 +227,7 @@ Fitness-style setup in `src/app/_layout.tsx`:
 3. Primary buttons: `min-h-11`, `bg-accent`, `text-sm`, default radius.
 4. Load data only from `mocks/services`.
 5. Confirm fonts via theme classes; use `Fonts.*` only for raw `Text`.
-6. No em dashes; keep copy short.
+6. No em dashes in prose; keep copy short. Search filters: never `Any` — see **Search filter copy**.
 7. Match Notifications / Profile spacing (`mx-3` groups, `mx-5` labels).
 
 ---

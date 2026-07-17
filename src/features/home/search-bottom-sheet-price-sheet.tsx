@@ -22,8 +22,9 @@ export function sanitizePriceInput(text: string): string {
 }
 
 /**
- * Open-ended range display: ≤15k / 15k+ / 5k–15k.
+ * Open-ended range display: ≤15k / 15k+ / 5k-15k.
  * Pass already-formatted values (e.g. "15k", "2018").
+ * Copy rules: DESIGN.md → Search filter copy.
  */
 export function formatOpenRangeLabel(
   min: string,
@@ -32,7 +33,7 @@ export function formatOpenRangeLabel(
 ): string {
   const emptyLabel = options?.emptyLabel ?? "No limit";
   const unit = options?.unit ?? "";
-  const joiner = options?.joiner ?? "–";
+  const joiner = options?.joiner ?? "-";
   const hasMin = min !== "";
   const hasMax = max !== "";
   if (!hasMin && !hasMax) return emptyLabel;

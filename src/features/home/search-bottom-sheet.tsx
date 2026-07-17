@@ -2,16 +2,21 @@ import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
-import { BottomSheet, Typography, useThemeColor } from "heroui-native";
+import {
+  BottomSheet,
+  Typography,
+  useBottomSheet,
+  useThemeColor,
+} from "heroui-native";
 
 import { SearchBottomSheetCriteria } from "@/features/home/search-bottom-sheet-criteria";
 import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import { SearchBottomSheetPriceSheet } from "@/features/home/search-bottom-sheet-price-sheet";
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
 import { SearchBottomSheetSection } from "@/features/home/search-bottom-sheet-section";
+import { SheetShell } from "@/features/home/sheet-shell";
 
 function SearchSheetContent({
-  onClose,
   locationLabel,
   onLocationPress,
   minPrice,
@@ -20,7 +25,6 @@ function SearchSheetContent({
   onMinChange,
   onMaxChange,
 }: {
-  onClose: () => void;
   locationLabel: string;
   onLocationPress?: () => void;
   minPrice: string;
@@ -29,8 +33,10 @@ function SearchSheetContent({
   onMinChange: (value: string) => void;
   onMaxChange: (value: string) => void;
 }): JSX.Element {
+  const { onOpenChange } = useBottomSheet();
   const [muted] = useThemeColor(["muted"]);
   const snapPoints = useMemo(() => ["70%", "92%"], []);
+  const dismiss = () => onOpenChange(false);
 
   return (
     <BottomSheet.Content
@@ -43,7 +49,7 @@ function SearchSheetContent({
       handleComponent={null}
     >
       <View className="flex-1">
-        <SearchBottomSheetHeader onClose={onClose} onConfirm={onClose} />
+        <SearchBottomSheetHeader onClose={dismiss} onConfirm={dismiss} />
 
         <SearchBottomSheetSection>
           <SearchBottomSheetRow
@@ -95,31 +101,24 @@ export function SearchBottomSheet({
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
 
+  const handleClose = () => {
+    setPriceOpen(false);
+    onClose();
+  };
+
   return (
     <>
-      <BottomSheet
-        isOpen={visible}
-        onOpenChange={(open) => {
-          if (!open) {
-            setPriceOpen(false);
-            onClose();
-          }
-        }}
-      >
-        <BottomSheet.Portal>
-          <BottomSheet.Overlay />
-          <SearchSheetContent
-            onClose={onClose}
-            locationLabel={locationLabel}
-            onLocationPress={onLocationPress}
-            minPrice={minPrice}
-            maxPrice={maxPrice}
-            onPriceOpenChange={setPriceOpen}
-            onMinChange={setMinPrice}
-            onMaxChange={setMaxPrice}
-          />
-        </BottomSheet.Portal>
-      </BottomSheet>
+      <SheetShell visible={visible} onClose={handleClose}>
+        <SearchSheetContent
+          locationLabel={locationLabel}
+          onLocationPress={onLocationPress}
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          onPriceOpenChange={setPriceOpen}
+          onMinChange={setMinPrice}
+          onMaxChange={setMaxPrice}
+        />
+      </SheetShell>
 
       <SearchBottomSheetPriceSheet
         isOpen={visible && priceOpen}

@@ -1,16 +1,15 @@
-import type { JSX, ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps, JSX } from "react";
 import { View } from "react-native";
-import {
-  BottomSheet,
-  ListGroup,
-  PressableFeedback,
-  Separator,
-  Switch,
-  Typography,
-} from "heroui-native";
+import { BottomSheet, Switch, useBottomSheet } from "heroui-native";
 
+import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
+import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
+import { SearchSheetGroup } from "@/features/home/search-sheet-group";
+import { SheetShell } from "@/features/home/sheet-shell";
 import type { UserPreferences } from "@/mocks/data/settings";
+
+type IonName = ComponentProps<typeof Ionicons>["name"];
 
 type HidePatch = Partial<
   Pick<
@@ -26,57 +25,101 @@ type HidePatch = Partial<
 
 interface HideRow {
   key: string;
+  icon: IonName;
   title: string;
   description: string;
   isHidden: boolean;
   onChange: (hidden: boolean) => void;
 }
 
-function SheetShell({
-  visible,
-  onClose,
-  children,
+function HideListingsContent({
+  prefs,
+  onPatch,
 }: {
-  visible: boolean;
-  onClose: () => void;
-  children: ReactNode;
-}): JSX.Element | null {
-  const [isOpen, setIsOpen] = useState(false);
+  prefs: UserPreferences;
+  onPatch: (patch: HidePatch) => void;
+}): JSX.Element {
+  const { onOpenChange } = useBottomSheet();
+  const dismiss = () => onOpenChange(false);
 
-  useEffect(() => {
-    if (!visible) {
-      setIsOpen(false);
-      return;
-    }
-    const id = requestAnimationFrame(() => setIsOpen(true));
-    return () => cancelAnimationFrame(id);
-  }, [visible]);
-
-  if (!visible) return null;
+  const rows: HideRow[] = [
+    {
+      key: "spam",
+      icon: "warning-outline",
+      title: "Spam",
+      description: "Hide spam and scam listings",
+      isHidden: !prefs.showScams,
+      onChange: (hidden) => onPatch({ showScams: !hidden }),
+    },
+    {
+      key: "dealer",
+      icon: "storefront-outline",
+      title: "Dealer",
+      description: "Hide dealer and dealership listings",
+      isHidden: !prefs.showDealerships,
+      onChange: (hidden) =>
+        onPatch({ showDealers: !hidden, showDealerships: !hidden }),
+    },
+    {
+      key: "major",
+      icon: "car-outline",
+      title: "Major damage",
+      description: "Hide listings with major damage",
+      isHidden: !(prefs.showMajorDamaged ?? true),
+      onChange: (hidden) => onPatch({ showMajorDamaged: !hidden }),
+    },
+    {
+      key: "rebuilt",
+      icon: "construct-outline",
+      title: "Rebuilt",
+      description: "Hide rebuilt title listings",
+      isHidden: !(prefs.showRebuiltTitle ?? true),
+      onChange: (hidden) => onPatch({ showRebuiltTitle: !hidden }),
+    },
+    {
+      key: "salvage",
+      icon: "alert-circle-outline",
+      title: "Salvage",
+      description: "Hide salvage title listings",
+      isHidden: !(prefs.showSalvageTitle ?? true),
+      onChange: (hidden) => onPatch({ showSalvageTitle: !hidden }),
+    },
+  ];
 
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onOpenChange={(open) => {
-        setIsOpen(open);
-        if (!open) onClose();
-      }}
+    <BottomSheet.Content
+      backgroundClassName="rounded-t-[32px] bg-surface-secondary"
+      handleComponent={null}
+      contentContainerClassName="bg-surface-secondary p-0"
     >
-      <BottomSheet.Portal>
-        <BottomSheet.Overlay />
-        <BottomSheet.Content
-          backgroundClassName="bg-surface-secondary"
-          backgroundStyle={{
-            borderTopLeftRadius: 32,
-            borderTopRightRadius: 32,
-            borderCurve: "continuous",
-          }}
-          handleIndicatorClassName="bg-separator"
-        >
-          {children}
-        </BottomSheet.Content>
-      </BottomSheet.Portal>
-    </BottomSheet>
+      <View>
+        <SearchBottomSheetHeader
+          title="Hide listings"
+          onClose={dismiss}
+          onConfirm={dismiss}
+        />
+
+        <SearchSheetGroup>
+          {rows.map((row, index) => (
+            <SearchBottomSheetRow
+              key={row.key}
+              icon={row.icon}
+              title={row.title}
+              description={row.description}
+              showChevron={false}
+              isLast={index === rows.length - 1}
+              onPress={() => row.onChange(!row.isHidden)}
+              right={
+                <Switch
+                  isSelected={row.isHidden}
+                  onSelectedChange={row.onChange}
+                />
+              }
+            />
+          ))}
+        </SearchSheetGroup>
+      </View>
+    </BottomSheet.Content>
   );
 }
 
@@ -93,88 +136,9 @@ export function HideListingsSheet({
   prefs,
   onPatch,
 }: HideListingsSheetProps): JSX.Element | null {
-  const rows: HideRow[] = [
-    {
-      key: "spam",
-      title: "Spam",
-      description: "Hide spam and scam listings",
-      isHidden: !prefs.showScams,
-      onChange: (hidden) => onPatch({ showScams: !hidden }),
-    },
-    {
-      key: "dealer",
-      title: "Dealer",
-      description: "Hide dealer and dealership listings",
-      isHidden: !prefs.showDealerships,
-      onChange: (hidden) =>
-        onPatch({ showDealers: !hidden, showDealerships: !hidden }),
-    },
-    {
-      key: "major",
-      title: "Major damage",
-      description: "Hide listings with major damage",
-      isHidden: !(prefs.showMajorDamaged ?? true),
-      onChange: (hidden) => onPatch({ showMajorDamaged: !hidden }),
-    },
-    {
-      key: "rebuilt",
-      title: "Rebuilt",
-      description: "Hide rebuilt title listings",
-      isHidden: !(prefs.showRebuiltTitle ?? true),
-      onChange: (hidden) => onPatch({ showRebuiltTitle: !hidden }),
-    },
-    {
-      key: "salvage",
-      title: "Salvage",
-      description: "Hide salvage title listings",
-      isHidden: !(prefs.showSalvageTitle ?? true),
-      onChange: (hidden) => onPatch({ showSalvageTitle: !hidden }),
-    },
-  ];
-
   return (
     <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
-      <View className="gap-4 px-1 pb-2 pt-1">
-        <View className="gap-1 px-1">
-          <BottomSheet.Title>Hide listings</BottomSheet.Title>
-          <Typography type="body-sm" className="text-muted">
-            Turn on filters to hide listing types from your feed.
-          </Typography>
-        </View>
-
-        <ListGroup variant="transparent" className="bg-transparent p-0">
-          {rows.map((row, index) => (
-            <View key={row.key}>
-              {index > 0 ? <Separator className="mx-1" /> : null}
-              <PressableFeedback
-                animation={false}
-                onPress={() => row.onChange(!row.isHidden)}
-              >
-                <PressableFeedback.Scale>
-                  <ListGroup.Item disabled className="bg-transparent px-1 py-2">
-                    <ListGroup.ItemContent>
-                      <ListGroup.ItemTitle className="text-[15px] text-foreground">
-                        {row.title}
-                      </ListGroup.ItemTitle>
-                      <ListGroup.ItemDescription className="text-muted">
-                        {row.description}
-                      </ListGroup.ItemDescription>
-                    </ListGroup.ItemContent>
-                    <ListGroup.ItemSuffix>
-                      <Switch
-                        isSelected={row.isHidden}
-                        onSelectedChange={row.onChange}
-                      />
-                    </ListGroup.ItemSuffix>
-                  </ListGroup.Item>
-                </PressableFeedback.Scale>
-                <PressableFeedback.Highlight />
-                <PressableFeedback.Ripple />
-              </PressableFeedback>
-            </View>
-          ))}
-        </ListGroup>
-      </View>
+      <HideListingsContent prefs={prefs} onPatch={onPatch} />
     </SheetShell>
   );
 }

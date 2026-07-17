@@ -15,7 +15,8 @@ export default function TabsLayout(): JSX.Element {
         sceneStyle: { backgroundColor: background },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="index" options={{ href: null }} />
+      <Tabs.Screen name="home" options={{ title: "Home" }} />
       <Tabs.Screen name="feed" options={{ title: "Feed" }} />
       <Tabs.Screen name="settings" options={{ title: "Settings" }} />
       <Tabs.Screen name="help" options={{ title: "Help" }} />

@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+ import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
 import { Pressable, View } from "react-native";
 import { Select, Typography, useThemeColor } from "heroui-native";

@@ -1,7 +1,7 @@
+import { Redirect } from "expo-router";
 import type { JSX } from "react";
 
-import { HomeScreen } from "@/features/home/home-screen";
-
-export default function HomeTab(): JSX.Element {
-  return <HomeScreen />;
+/** App entry (`/`) opens Feed; Home stays available as its own tab. */
+export default function TabsIndex(): JSX.Element {
+  return <Redirect href="/feed" />;
 }

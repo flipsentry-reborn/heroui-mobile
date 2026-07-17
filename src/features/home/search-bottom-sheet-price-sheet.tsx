@@ -5,6 +5,7 @@ import {
   BottomSheet,
   FieldError,
   Input,
+  useBottomSheet,
   useBottomSheetAwareHandlers,
 } from "heroui-native";
 
@@ -13,6 +14,7 @@ import {
   SearchSheetGroup,
   SearchSheetRow,
 } from "@/features/home/search-sheet-group";
+import { SheetShell } from "@/features/home/sheet-shell";
 
 export function sanitizePriceInput(text: string): string {
   return text.replace(/[^0-9]/g, "");
@@ -64,19 +66,25 @@ function PriceSheetContent({
   max,
   onMinChange,
   onMaxChange,
-  onClose,
-  onSave,
+  onPersist,
 }: {
   min: string;
   max: string;
   onMinChange: (value: string) => void;
   onMaxChange: (value: string) => void;
-  onClose: () => void;
-  onSave: () => void;
+  onPersist: (min: string, max: string) => void;
 }): JSX.Element {
+  const { onOpenChange } = useBottomSheet();
   const snapPoints = useMemo(() => ["40%", "70%"], []);
   const error = getPriceRangeError(min, max);
   const isInvalid = error != null;
+  const dismiss = () => onOpenChange(false);
+
+  const handleSave = () => {
+    if (error != null) return;
+    onPersist(min, max);
+    dismiss();
+  };
 
   return (
     <BottomSheet.Content
@@ -91,8 +99,8 @@ function PriceSheetContent({
       <View>
         <SearchBottomSheetHeader
           title="Price"
-          onClose={onClose}
-          onConfirm={onSave}
+          onClose={dismiss}
+          onConfirm={handleSave}
         />
         <SearchSheetGroup>
           <SearchSheetRow
@@ -144,7 +152,7 @@ export function SearchBottomSheetPriceSheet({
   max,
   onMinChange,
   onMaxChange,
-}: SearchBottomSheetPriceSheetProps): JSX.Element {
+}: SearchBottomSheetPriceSheetProps): JSX.Element | null {
   const [draftMin, setDraftMin] = useState(min);
   const [draftMax, setDraftMax] = useState(max);
 
@@ -154,36 +162,18 @@ export function SearchBottomSheetPriceSheet({
     setDraftMax(max);
   }, [isOpen, min, max]);
 
-  const handleCancel = () => {
-    onOpenChange(false);
-  };
-
-  const handleSave = () => {
-    if (getPriceRangeError(draftMin, draftMax) != null) return;
-    onMinChange(draftMin);
-    onMaxChange(draftMax);
-    onOpenChange(false);
-  };
-
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onOpenChange={(open) => {
-        if (!open) handleCancel();
-        else onOpenChange(true);
-      }}
-    >
-      <BottomSheet.Portal>
-        <BottomSheet.Overlay />
-        <PriceSheetContent
-          min={draftMin}
-          max={draftMax}
-          onMinChange={setDraftMin}
-          onMaxChange={setDraftMax}
-          onClose={handleCancel}
-          onSave={handleSave}
-        />
-      </BottomSheet.Portal>
-    </BottomSheet>
+    <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
+      <PriceSheetContent
+        min={draftMin}
+        max={draftMax}
+        onMinChange={setDraftMin}
+        onMaxChange={setDraftMax}
+        onPersist={(nextMin, nextMax) => {
+          onMinChange(nextMin);
+          onMaxChange(nextMax);
+        }}
+      />
+    </SheetShell>
   );
 }

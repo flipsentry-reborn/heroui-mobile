@@ -9,7 +9,7 @@ import { PressableFeedback, Typography, useThemeColor } from "heroui-native";
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
 const TAB_ICONS: Record<string, { outline: IoniconName; filled: IoniconName }> = {
-  index: { outline: "home-outline", filled: "home" },
+  home: { outline: "home-outline", filled: "home" },
   feed: { outline: "sparkles-outline", filled: "sparkles" },
   settings: { outline: "settings-outline", filled: "settings" },
   help: { outline: "chatbubble-ellipses-outline", filled: "chatbubble-ellipses" },

@@ -87,10 +87,10 @@ function metaChips(group: SearchGroup): string[] {
 
 function statusBadgeColor(
   tone: ReturnType<typeof groupStatus>["tone"],
-): "success" | "warning" | "default" {
+): "success" | "warning" | "danger" {
   if (tone === "success") return "success";
   if (tone === "warning") return "warning";
-  return "default";
+  return "danger";
 }
 
 function MetaChipRow({ group }: { group: SearchGroup }): JSX.Element {
@@ -129,7 +129,7 @@ function PlatformRows({ group }: { group: SearchGroup }): JSX.Element {
                 Active
               </Badge>
             ) : (
-              <Badge color="default" variant="soft" size="sm">
+              <Badge color="danger" variant="soft" size="sm">
                 Paused
               </Badge>
             )}

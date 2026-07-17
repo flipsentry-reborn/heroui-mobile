@@ -10,6 +10,11 @@ import {
 } from "heroui-native";
 
 import {
+  DEFAULT_CAR_MAKES,
+  SearchBottomSheetCarMakesSheet,
+  type CarMakesSelection,
+} from "@/features/home/search-bottom-sheet-car-makes-sheet";
+import {
   isCustomSearchQueryValid,
   SearchBottomSheetCriteria,
 } from "@/features/home/search-bottom-sheet-criteria";
@@ -27,6 +32,7 @@ import { SearchBottomSheetPriceSheet } from "@/features/home/search-bottom-sheet
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
 import { SearchBottomSheetSection } from "@/features/home/search-bottom-sheet-section";
 import { SearchBottomSheetTypeSelect } from "@/features/home/search-bottom-sheet-type-select";
+import { SearchBottomSheetYearSheet } from "@/features/home/search-bottom-sheet-year-sheet";
 import { SheetShell } from "@/features/home/sheet-shell";
 import type { SearchType } from "@/mocks/data/home";
 
@@ -41,11 +47,19 @@ function SearchSheetContent({
   onCustomQueryInvalidChange,
   iphoneSelections,
   onIphoneModelsOpenChange,
+  carMakes,
+  onCarMakesOpenChange,
   minPrice,
   maxPrice,
   onPriceOpenChange,
   onMinChange,
   onMaxChange,
+  minYear,
+  maxYear,
+  onYearOpenChange,
+  minMileage,
+  maxMileage,
+  onMileageOpenChange,
   keywords,
   onKeywordsOpenChange,
   childSheetOpen,
@@ -60,11 +74,19 @@ function SearchSheetContent({
   onCustomQueryInvalidChange: (invalid: boolean) => void;
   iphoneSelections: IphoneModelSelection[];
   onIphoneModelsOpenChange: (open: boolean) => void;
+  carMakes: CarMakesSelection;
+  onCarMakesOpenChange: (open: boolean) => void;
   minPrice: string;
   maxPrice: string;
   onPriceOpenChange: (open: boolean) => void;
   onMinChange: (value: string) => void;
   onMaxChange: (value: string) => void;
+  minYear: string;
+  maxYear: string;
+  onYearOpenChange: (open: boolean) => void;
+  minMileage: string;
+  maxMileage: string;
+  onMileageOpenChange: (open: boolean) => void;
   keywords: KeywordsState;
   onKeywordsOpenChange: (open: boolean) => void;
   /** Nested price/keywords sheets own the keyboard — parent must not fight them. */
@@ -99,6 +121,7 @@ function SearchSheetContent({
       snapPoints={snapPoints}
       enableOverDrag={false}
       enableDynamicSizing={false}
+      enableContentPanningGesture={!childSheetOpen}
       keyboardBehavior={childSheetOpen ? undefined : "extend"}
       android_keyboardInputMode={childSheetOpen ? undefined : "adjustResize"}
       contentContainerClassName="h-full bg-surface-secondary p-0"
@@ -150,12 +173,26 @@ function SearchSheetContent({
             selections: iphoneSelections,
             onOpenChange: onIphoneModelsOpenChange,
           }}
+          carMakes={{
+            selection: carMakes,
+            onOpenChange: onCarMakesOpenChange,
+          }}
           price={{
             min: minPrice,
             max: maxPrice,
             onOpenChange: onPriceOpenChange,
             onMinChange,
             onMaxChange,
+          }}
+          year={{
+            min: minYear,
+            max: maxYear,
+            onOpenChange: onYearOpenChange,
+          }}
+          mileage={{
+            min: minMileage,
+            max: maxMileage,
+            onOpenChange: onMileageOpenChange,
           }}
           keywords={{
             value: keywords,
@@ -181,16 +218,25 @@ export function SearchBottomSheet({
   onLocationPress,
 }: SearchBottomSheetProps): JSX.Element {
   const [priceOpen, setPriceOpen] = useState(false);
+  const [yearOpen, setYearOpen] = useState(false);
+  const [mileageOpen, setMileageOpen] = useState(false);
   const [keywordsOpen, setKeywordsOpen] = useState(false);
   const [iphoneModelsOpen, setIphoneModelsOpen] = useState(false);
+  const [carMakesOpen, setCarMakesOpen] = useState(false);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [minYear, setMinYear] = useState("");
+  const [maxYear, setMaxYear] = useState("");
+  const [minMileage, setMinMileage] = useState("");
+  const [maxMileage, setMaxMileage] = useState("");
   const [searchType, setSearchType] = useState<SearchType | null>(null);
   const [customQuery, setCustomQuery] = useState("");
   const [customQueryInvalid, setCustomQueryInvalid] = useState(false);
   const [iphoneSelections, setIphoneSelections] = useState<
     IphoneModelSelection[]
   >([]);
+  const [carMakes, setCarMakes] =
+    useState<CarMakesSelection>(DEFAULT_CAR_MAKES);
   const [keywords, setKeywords] = useState<KeywordsState>(EMPTY_KEYWORDS);
 
   const handleSearchTypeChange = (type: SearchType) => {
@@ -203,12 +249,25 @@ export function SearchBottomSheet({
       setIphoneSelections([]);
       setIphoneModelsOpen(false);
     }
+    if (type !== "car") {
+      setCarMakes(DEFAULT_CAR_MAKES);
+      setCarMakesOpen(false);
+      setYearOpen(false);
+      setMileageOpen(false);
+      setMinYear("");
+      setMaxYear("");
+      setMinMileage("");
+      setMaxMileage("");
+    }
   };
 
   const handleClose = () => {
     setPriceOpen(false);
+    setYearOpen(false);
+    setMileageOpen(false);
     setKeywordsOpen(false);
     setIphoneModelsOpen(false);
+    setCarMakesOpen(false);
     onClose();
   };
 
@@ -226,14 +285,29 @@ export function SearchBottomSheet({
           onCustomQueryInvalidChange={setCustomQueryInvalid}
           iphoneSelections={iphoneSelections}
           onIphoneModelsOpenChange={setIphoneModelsOpen}
+          carMakes={carMakes}
+          onCarMakesOpenChange={setCarMakesOpen}
           minPrice={minPrice}
           maxPrice={maxPrice}
           onPriceOpenChange={setPriceOpen}
           onMinChange={setMinPrice}
           onMaxChange={setMaxPrice}
+          minYear={minYear}
+          maxYear={maxYear}
+          onYearOpenChange={setYearOpen}
+          minMileage={minMileage}
+          maxMileage={maxMileage}
+          onMileageOpenChange={setMileageOpen}
           keywords={keywords}
           onKeywordsOpenChange={setKeywordsOpen}
-          childSheetOpen={priceOpen || keywordsOpen || iphoneModelsOpen}
+          childSheetOpen={
+            priceOpen ||
+            yearOpen ||
+            mileageOpen ||
+            keywordsOpen ||
+            iphoneModelsOpen ||
+            carMakesOpen
+          }
         />
       </SheetShell>
 
@@ -244,6 +318,25 @@ export function SearchBottomSheet({
         max={maxPrice}
         onMinChange={setMinPrice}
         onMaxChange={setMaxPrice}
+      />
+
+      <SearchBottomSheetYearSheet
+        isOpen={visible && yearOpen}
+        onOpenChange={setYearOpen}
+        min={minYear}
+        max={maxYear}
+        onMinChange={setMinYear}
+        onMaxChange={setMaxYear}
+      />
+
+      <SearchBottomSheetPriceSheet
+        isOpen={visible && mileageOpen}
+        onOpenChange={setMileageOpen}
+        title="Mileage"
+        min={minMileage}
+        max={maxMileage}
+        onMinChange={setMinMileage}
+        onMaxChange={setMaxMileage}
       />
 
       <SearchBottomSheetKeywordsSheet
@@ -258,6 +351,13 @@ export function SearchBottomSheet({
         onOpenChange={setIphoneModelsOpen}
         selections={iphoneSelections}
         onSelectionsChange={setIphoneSelections}
+      />
+
+      <SearchBottomSheetCarMakesSheet
+        isOpen={visible && carMakesOpen}
+        onOpenChange={setCarMakesOpen}
+        selection={carMakes}
+        onSelectionChange={setCarMakes}
       />
     </>
   );

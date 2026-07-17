@@ -2,6 +2,10 @@ import type { JSX } from "react";
 import { Input, useBottomSheetAwareHandlers } from "heroui-native";
 
 import {
+  formatCarMakesLabel,
+  type CarMakesSelection,
+} from "@/features/home/search-bottom-sheet-car-makes-sheet";
+import {
   formatIphoneModelsLabel,
   type IphoneModelSelection,
 } from "@/features/home/search-bottom-sheet-iphone-models-sheet";
@@ -25,6 +29,18 @@ export interface SearchPriceState {
   onMaxChange: (value: string) => void;
 }
 
+export interface SearchYearState {
+  min: string;
+  max: string;
+  onOpenChange: (open: boolean) => void;
+}
+
+export interface SearchMileageState {
+  min: string;
+  max: string;
+  onOpenChange: (open: boolean) => void;
+}
+
 export interface SearchKeywordsState {
   value: KeywordsState;
   onOpenChange: (open: boolean) => void;
@@ -32,6 +48,11 @@ export interface SearchKeywordsState {
 
 export interface SearchIphoneModelsState {
   selections: IphoneModelSelection[];
+  onOpenChange: (open: boolean) => void;
+}
+
+export interface SearchCarMakesState {
+  selection: CarMakesSelection;
   onOpenChange: (open: boolean) => void;
 }
 
@@ -45,7 +66,10 @@ interface SearchBottomSheetCriteriaProps {
   onCustomQueryChange: (value: string) => void;
   customQueryInvalid?: boolean;
   iphoneModels: SearchIphoneModelsState;
+  carMakes: SearchCarMakesState;
   price: SearchPriceState;
+  year: SearchYearState;
+  mileage: SearchMileageState;
   keywords: SearchKeywordsState;
 }
 
@@ -84,16 +108,27 @@ export function SearchBottomSheetCriteria({
   onCustomQueryChange,
   customQueryInvalid = false,
   iphoneModels,
+  carMakes,
   price,
+  year,
+  mileage,
   keywords,
 }: SearchBottomSheetCriteriaProps): JSX.Element {
   const hasSearchType = searchType != null;
   const isCustom = searchType === "custom";
   const isIphone = searchType === "iphone";
+  const isCar = searchType === "car";
   const priceLabel = formatPriceRangeLabel(price.min, price.max);
   const hasPriceFilter = price.min !== "" || price.max !== "";
+  const yearLabel = formatPriceRangeLabel(year.min, year.max);
+  const hasYearFilter = year.min !== "" || year.max !== "";
+  const mileageLabel = formatPriceRangeLabel(mileage.min, mileage.max);
+  const hasMileageFilter = mileage.min !== "" || mileage.max !== "";
   const modelsLabel = formatIphoneModelsLabel(iphoneModels.selections);
   const hasModels = iphoneModels.selections.length > 0;
+  const makesLabel = formatCarMakesLabel(carMakes.selection);
+  const hasSpecificMakes =
+    !carMakes.selection.anyMake && carMakes.selection.selectedIds.length > 0;
   const keywordsLabel = formatKeywordsLabel(keywords.value);
   const hasKeywords = keywordsLabel !== "None";
 
@@ -126,6 +161,19 @@ export function SearchBottomSheetCriteria({
           }
         />
       ) : null}
+      {isCar ? (
+        <SearchSheetRow
+          title="Makes"
+          isLast={false}
+          onPress={() => carMakes.onOpenChange(true)}
+          right={
+            <SearchSheetValue
+              label={makesLabel}
+              emphasized={hasSpecificMakes}
+            />
+          }
+        />
+      ) : null}
       {!isIphone ? (
         <SearchSheetRow
           title="Price"
@@ -137,6 +185,29 @@ export function SearchBottomSheetCriteria({
               label={priceLabel}
               isDisabled={!hasSearchType}
               emphasized={hasSearchType && hasPriceFilter}
+            />
+          }
+        />
+      ) : null}
+      {isCar ? (
+        <SearchSheetRow
+          title="Year"
+          isLast={false}
+          onPress={() => year.onOpenChange(true)}
+          right={
+            <SearchSheetValue label={yearLabel} emphasized={hasYearFilter} />
+          }
+        />
+      ) : null}
+      {isCar ? (
+        <SearchSheetRow
+          title="Mileage"
+          isLast={false}
+          onPress={() => mileage.onOpenChange(true)}
+          right={
+            <SearchSheetValue
+              label={mileageLabel}
+              emphasized={hasMileageFilter}
             />
           }
         />

@@ -16,9 +16,16 @@ import {
   type FeedItem as FeedModel,
 } from "@/models/feed";
 
-const IMAGE_H_GRID = 194; // +10% then +5% height from 168
-const IMAGE_H_RAIL = 148; // +10% then +5% height from 128
-const RAIL_WIDTH = 172; // +10% from 156
+/**
+ * Image sizing is layout-split so For You shelves can grow without
+ * affecting category / grid feed cards:
+ * - grid  → IMAGE_H_GRID (2-col pages, detail similar, etc.)
+ * - rail  → IMAGE_H_RAIL + RAIL_WIDTH (For You horizontal shelves)
+ * - featured shelves also multiply rail by FEATURED_SCALE (~7%)
+ */
+const IMAGE_H_GRID = 168;
+const IMAGE_H_RAIL = 148;
+const RAIL_WIDTH = 172;
 /** Featured shelves (e.g. Top Rated) render ~7% larger. */
 const FEATURED_SCALE = 1.07;
 
@@ -69,7 +76,7 @@ export function FeedItem({
   return (
     <PressableFeedback
       onPress={() => onPress?.(feed.id)}
-      className={isRail ? "mr-2" : "mb-1.5 flex-1 px-0.5"}
+      className={isRail ? "mr-1.5" : "mb-1.5 flex-1 px-0.5"}
       style={isRail ? { width: railW } : undefined}
       animation={{ scale: { value: 0.98 } }}
     >

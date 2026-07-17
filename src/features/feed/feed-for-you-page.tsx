@@ -42,20 +42,20 @@ interface FeedForYouPageProps {
 
 function ShelfSkeleton(): JSX.Element {
   return (
-    <SkeletonGroup isLoading isSkeletonOnly className="mb-5">
-      <View className="mb-2 flex-row items-center justify-between px-3">
+    <SkeletonGroup isLoading isSkeletonOnly className="mb-2">
+      <View className="mb-1 flex-row items-center justify-between px-2.5">
         <SkeletonGroup.Item className="h-5 w-28 rounded-md" />
         <SkeletonGroup.Item className="h-4 w-4 rounded-md" />
       </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerClassName="px-3"
+        contentContainerClassName="px-2.5"
       >
         {[0, 1, 2].map((key) => (
-          <View key={key} className="mr-2 w-[156px]">
+          <View key={key} className="mr-1.5 w-[156px]">
             <SkeletonGroup.Item className="h-[128px] w-full rounded-xl" />
-            <View className="mt-1 gap-0.5 px-0.5">
+            <View className="mt-0.5 gap-0.5 px-0.5">
               <SkeletonGroup.Item className="h-4 w-16 rounded-md" />
               <SkeletonGroup.Item className="h-4 w-full rounded-md" />
             </View>
@@ -71,7 +71,7 @@ function ShelfRail({
   onPressItem,
   onToggleFavorite,
   featured = false,
-  contentClassName = "px-3",
+  contentClassName = "px-2.5",
 }: {
   items: FeedModel[];
   onPressItem?: (id: string) => void;
@@ -200,7 +200,7 @@ export function FeedForYouPage({
       >
         <ScrollView
           className="flex-1"
-          contentContainerClassName="pb-28 pt-2"
+          contentContainerClassName="pb-28 pt-1"
           showsVerticalScrollIndicator={false}
         >
           <ShelfSkeleton />
@@ -220,7 +220,7 @@ export function FeedForYouPage({
     >
       <Animated.ScrollView
         className="flex-1"
-        contentContainerClassName="pb-28 pt-2"
+        contentContainerClassName="pb-28 pt-1"
         showsVerticalScrollIndicator={false}
         layout={AccordionLayoutTransition}
         refreshControl={
@@ -238,12 +238,12 @@ export function FeedForYouPage({
             return (
               <Animated.View
                 key={shelf.key}
-                className="mb-2.5"
+                className="mb-1.5"
                 layout={AccordionLayoutTransition}
               >
                 <Surface
                   variant="default"
-                  className="w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl px-0 py-2"
+                  className="w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl px-0 py-1"
                 >
                   <Accordion
                     selectionMode="single"
@@ -254,7 +254,7 @@ export function FeedForYouPage({
                     <Accordion.Item value={shelf.key}>
                       {({ isExpanded }) => (
                         <>
-                          <Accordion.Trigger className="px-3 py-0.5">
+                          <Accordion.Trigger className="px-2.5 py-0">
                             <Typography
                               type="body"
                               weight="semibold"
@@ -268,7 +268,7 @@ export function FeedForYouPage({
                           {!isExpanded ? (
                             <Typography
                               type="body-sm"
-                              className="mt-1 px-3 pb-0.5 text-[14px] text-muted"
+                              className="mt-0.5 px-2.5 pb-0 text-[14px] text-muted"
                               numberOfLines={1}
                             >
                               {allChildrenAlphabetical
@@ -277,16 +277,16 @@ export function FeedForYouPage({
                             </Typography>
                           ) : null}
 
-                          <Accordion.Content className="pt-1">
+                          <Accordion.Content className="pt-0.5">
                             {allChildrenAlphabetical.map((child) => {
                               const items = shelves[child.key] ?? [];
                               if (items.length === 0 && !loading) return null;
 
                               return (
-                                <View key={child.key} className="mb-2.5">
+                                <View key={child.key} className="mb-1.5">
                                   <PressableFeedback
                                     onPress={() => openCategory(child.key)}
-                                    className="mb-1.5 flex-row items-center justify-between px-3 py-0.5"
+                                    className="mb-1 flex-row items-center justify-between px-2.5 py-0"
                                     animation={{ scale: { value: 0.99 } }}
                                     accessibilityRole="button"
                                     accessibilityLabel={`Open ${child.label}`}
@@ -328,7 +328,7 @@ export function FeedForYouPage({
           const header = (
             <PressableFeedback
               onPress={() => openCategory(shelf.key)}
-              className="mb-1.5 flex-row items-center justify-between px-3 py-0.5"
+              className="mb-1 flex-row items-center justify-between px-2.5 py-0"
               animation={{ scale: { value: 0.99 } }}
               accessibilityRole="button"
               accessibilityLabel={`Open ${shelf.label}`}
@@ -366,12 +366,12 @@ export function FeedForYouPage({
             return (
               <Animated.View
                 key={shelf.key}
-                className="mb-2.5"
+                className="mb-1.5"
                 layout={AccordionLayoutTransition}
               >
                 <Surface
                   variant="default"
-                  className="w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl px-0 py-2"
+                  className="w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl px-0 py-1"
                 >
                   {header}
                   {rail}
@@ -383,7 +383,7 @@ export function FeedForYouPage({
           return (
             <Animated.View
               key={shelf.key}
-              className="mb-2.5"
+              className="mb-1.5"
               layout={AccordionLayoutTransition}
             >
               {header}

@@ -1,14 +1,11 @@
 import type { JSX } from "react";
-import { useState } from "react";
 
 import { formatPriceRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
-import { SearchBottomSheetTypeSelect } from "@/features/home/search-bottom-sheet-type-select";
 import {
   SearchSheetGroup,
   SearchSheetRow,
   SearchSheetValue,
 } from "@/features/home/search-sheet-group";
-import type { SearchType } from "@/mocks/data/home";
 
 export interface SearchPriceState {
   min: string;
@@ -19,31 +16,19 @@ export interface SearchPriceState {
 }
 
 interface SearchBottomSheetCriteriaProps {
+  hasSearchType: boolean;
   price: SearchPriceState;
 }
 
 export function SearchBottomSheetCriteria({
+  hasSearchType,
   price,
 }: SearchBottomSheetCriteriaProps): JSX.Element {
-  const [searchType, setSearchType] = useState<SearchType | null>(null);
-  const hasSearchType = searchType != null;
   const priceLabel = formatPriceRangeLabel(price.min, price.max);
   const hasPriceFilter = price.min !== "" || price.max !== "";
 
   return (
     <SearchSheetGroup title="Criteria">
-      <SearchSheetRow
-        title="Search Type"
-        required
-        showSwap
-        isLast={false}
-        right={
-          <SearchBottomSheetTypeSelect
-            value={searchType}
-            onChange={setSearchType}
-          />
-        }
-      />
       <SearchSheetRow
         title="Price"
         isLast={false}

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps, JSX, ReactNode } from "react";
 import { Pressable, View } from "react-native";
-import { ListGroup, Separator } from "heroui-native";
+import { ListGroup, Separator, Typography, useThemeColor } from "heroui-native";
 import { withUniwind } from "uniwind";
 
 const StyledIonicons = withUniwind(Ionicons);
@@ -17,6 +17,8 @@ interface SearchBottomSheetRowProps {
   showChevron?: boolean;
   isLast?: boolean;
   iconClassName?: string;
+  required?: boolean;
+  showSwap?: boolean;
 }
 
 function RowBody({
@@ -26,6 +28,8 @@ function RowBody({
   right,
   showChevron,
   iconClassName,
+  required,
+  showSwap,
 }: {
   icon: IonName;
   title: string;
@@ -33,16 +37,30 @@ function RowBody({
   right?: ReactNode;
   showChevron: boolean;
   iconClassName: string;
+  required?: boolean;
+  showSwap?: boolean;
 }): JSX.Element {
+  const [muted, danger] = useThemeColor(["muted", "danger"]);
+
   return (
     <>
       <ListGroup.ItemPrefix>
         <StyledIonicons name={icon} size={20} className={iconClassName} />
       </ListGroup.ItemPrefix>
       <ListGroup.ItemContent>
-        <ListGroup.ItemTitle className="text-[15px] font-normal text-foreground">
-          {title}
-        </ListGroup.ItemTitle>
+        <View className="flex-row items-center gap-1">
+          <ListGroup.ItemTitle className="text-[15px] font-normal text-foreground">
+            {title}
+          </ListGroup.ItemTitle>
+          {showSwap ? (
+            <Ionicons name="swap-vertical" size={14} color={muted} />
+          ) : null}
+          {required ? (
+            <Typography type="body-sm" style={{ color: danger }}>
+              *
+            </Typography>
+          ) : null}
+        </View>
         {description ? (
           <ListGroup.ItemDescription className="text-xs text-muted">
             {description}
@@ -71,6 +89,8 @@ export function SearchBottomSheetRow({
   showChevron = true,
   isLast = false,
   iconClassName = "text-muted",
+  required,
+  showSwap,
 }: SearchBottomSheetRowProps): JSX.Element {
   const body = (
     <RowBody
@@ -80,6 +100,8 @@ export function SearchBottomSheetRow({
       right={right}
       showChevron={showChevron}
       iconClassName={iconClassName}
+      required={required}
+      showSwap={showSwap}
     />
   );
 

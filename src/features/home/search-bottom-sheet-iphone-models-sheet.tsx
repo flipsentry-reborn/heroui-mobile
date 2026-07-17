@@ -75,10 +75,12 @@ function CountBadge({ value }: { value: number }): JSX.Element {
 function ModelPriceInput({
   value,
   onChange,
+  placeholder,
   accessibilityLabel,
 }: {
   value: string;
   onChange: (value: string) => void;
+  placeholder: string;
   accessibilityLabel: string;
 }): JSX.Element {
   const { onFocus, onBlur } = useBottomSheetAwareHandlers();
@@ -87,7 +89,7 @@ function ModelPriceInput({
     <Input
       value={value}
       onChangeText={(text) => onChange(sanitizePriceInput(text))}
-      placeholder="Any"
+      placeholder={placeholder}
       keyboardType="number-pad"
       variant="primary"
       textAlign="center"
@@ -141,6 +143,7 @@ function ModelRow({
         <ModelPriceInput
           value={min}
           onChange={onMinChange}
+          placeholder="Min"
           accessibilityLabel={`${model.label} min price`}
         />
         <Typography type="body-xs" className="text-muted">
@@ -149,6 +152,7 @@ function ModelRow({
         <ModelPriceInput
           value={max}
           onChange={onMaxChange}
+          placeholder="Max"
           accessibilityLabel={`${model.label} max price`}
         />
       </View>

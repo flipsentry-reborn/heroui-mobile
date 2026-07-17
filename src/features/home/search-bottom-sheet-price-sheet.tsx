@@ -21,11 +21,29 @@ export function sanitizePriceInput(text: string): string {
   return text.replace(/[^0-9]/g, "");
 }
 
-/** Non-breaking spaces so "Any - Any" stays on one row in criteria. */
+/**
+ * Open-ended range display: ≤15k / 15k+ / 5k–15k.
+ * Pass already-formatted values (e.g. "15k", "2018").
+ */
+export function formatOpenRangeLabel(
+  min: string,
+  max: string,
+  options?: { emptyLabel?: string; unit?: string; joiner?: string },
+): string {
+  const emptyLabel = options?.emptyLabel ?? "No limit";
+  const unit = options?.unit ?? "";
+  const joiner = options?.joiner ?? "–";
+  const hasMin = min !== "";
+  const hasMax = max !== "";
+  if (!hasMin && !hasMax) return emptyLabel;
+  if (!hasMin) return `≤${max}${unit}`;
+  if (!hasMax) return `${min}+${unit}`;
+  return `${min}${joiner}${max}${unit}`;
+}
+
+/** Criteria row label — NBSP hyphens when both ends are set. */
 export function formatPriceRangeLabel(min: string, max: string): string {
-  const left = min === "" ? "Any" : min;
-  const right = max === "" ? "Any" : max;
-  return `${left}\u00A0-\u00A0${right}`;
+  return formatOpenRangeLabel(min, max, { joiner: "\u00A0-\u00A0" });
 }
 
 function getPriceRangeError(min: string, max: string): string | null {
@@ -41,11 +59,13 @@ function PriceFieldInput({
   onChange,
   isInvalid,
   maxLength,
+  placeholder,
 }: {
   value: string;
   onChange: (value: string) => void;
   isInvalid: boolean;
   maxLength?: number;
+  placeholder: string;
 }): JSX.Element {
   const { onFocus, onBlur } = useBottomSheetAwareHandlers();
 
@@ -58,7 +78,7 @@ function PriceFieldInput({
           maxLength != null ? next.slice(0, maxLength) : next,
         );
       }}
-      placeholder="Empty"
+      placeholder={placeholder}
       keyboardType="number-pad"
       variant="primary"
       isInvalid={isInvalid}
@@ -126,6 +146,7 @@ function PriceSheetContent({
                 onChange={onMinChange}
                 isInvalid={isInvalid}
                 maxLength={maxLength}
+                placeholder="Min"
               />
             }
           />
@@ -138,6 +159,7 @@ function PriceSheetContent({
                 onChange={onMaxChange}
                 isInvalid={isInvalid}
                 maxLength={maxLength}
+                placeholder="Max"
               />
             }
           />

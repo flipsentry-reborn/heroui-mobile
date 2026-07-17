@@ -17,9 +17,11 @@ const CURRENT_YEAR = new Date().getFullYear();
 const MIN_YEAR = 1980;
 const MAX_YEAR = CURRENT_YEAR + 1;
 
-function buildYearItems(): { value: string; label: string }[] {
+function buildYearItems(
+  openLabel: string,
+): { value: string; label: string }[] {
   const years: { value: string; label: string }[] = [
-    { value: "", label: "Any" },
+    { value: "", label: openLabel },
   ];
   for (let year = MAX_YEAR; year >= MIN_YEAR; year -= 1) {
     years.push({ value: String(year), label: String(year) });
@@ -27,7 +29,8 @@ function buildYearItems(): { value: string; label: string }[] {
   return years;
 }
 
-const YEAR_ITEMS = buildYearItems();
+const MIN_YEAR_ITEMS = buildYearItems("No min");
+const MAX_YEAR_ITEMS = buildYearItems("No max");
 
 function getYearRangeError(min: string, max: string): string | null {
   if (min === "" || max === "") return null;
@@ -109,8 +112,8 @@ function YearSheetContent({
               visibleCount={visibleCount}
               className="h-full"
             >
-              <WheelPicker name="min" items={YEAR_ITEMS} />
-              <WheelPicker name="max" items={YEAR_ITEMS} />
+              <WheelPicker name="min" items={MIN_YEAR_ITEMS} />
+              <WheelPicker name="max" items={MAX_YEAR_ITEMS} />
               <WheelPickerGroup.Indicator />
               <WheelPickerGroup.Mask color={surface} height="70%" />
             </WheelPickerGroup>

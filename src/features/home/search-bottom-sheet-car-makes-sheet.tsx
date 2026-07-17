@@ -31,7 +31,7 @@ export const DEFAULT_CAR_MAKES: CarMakesSelection = {
 };
 
 export function formatCarMakesLabel(selection: CarMakesSelection): string {
-  if (selection.anyMake || selection.selectedIds.length === 0) return "Any";
+  if (selection.anyMake || selection.selectedIds.length === 0) return "All makes";
   return String(selection.selectedIds.length);
 }
 
@@ -202,7 +202,7 @@ function CarMakesSheetContent({
             <Separator className="mx-4 bg-muted/40" />
 
             <MakeRow
-              label="Any"
+              label="All makes"
               selected={selection.anyMake || selection.selectedIds.length === 0}
               onToggle={selectAny}
             />

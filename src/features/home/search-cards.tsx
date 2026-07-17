@@ -23,6 +23,7 @@ import { withUniwind } from "uniwind";
 
 import PlatformIcon from "@/components/icons/PlatformIcon";
 import type { SearchGroup } from "@/mocks/data/home";
+import { formatOpenRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
 import {
   cityFromLocation,
   formatIntervalLabel,
@@ -66,20 +67,28 @@ function metaChips(group: SearchGroup): string[] {
   if (q) {
     if (q.minPrice != null || q.maxPrice != null) {
       chips.push(
-        `${q.minPrice != null ? formatPriceShort(q.minPrice) : "Any"}–${
-          q.maxPrice != null ? formatPriceShort(q.maxPrice) : "Any"
-        }`,
+        formatOpenRangeLabel(
+          q.minPrice != null ? formatPriceShort(q.minPrice) : "",
+          q.maxPrice != null ? formatPriceShort(q.maxPrice) : "",
+        ),
       );
     }
     if (q.minYear != null || q.maxYear != null) {
-      chips.push(`${q.minYear ?? "Any"}–${q.maxYear ?? "Any"}`);
+      chips.push(
+        formatOpenRangeLabel(
+          q.minYear != null ? String(q.minYear) : "",
+          q.maxYear != null ? String(q.maxYear) : "",
+        ),
+      );
     }
     if (q.minMileage != null || q.maxMileage != null) {
-      const min =
-        q.minMileage != null ? `${formatPriceShort(q.minMileage)} mi` : "Any";
-      const max =
-        q.maxMileage != null ? `${formatPriceShort(q.maxMileage)} mi` : "Any";
-      chips.push(`${min}–${max}`);
+      chips.push(
+        formatOpenRangeLabel(
+          q.minMileage != null ? formatPriceShort(q.minMileage) : "",
+          q.maxMileage != null ? formatPriceShort(q.maxMileage) : "",
+          { unit: " mi" },
+        ),
+      );
     }
   }
   return chips;

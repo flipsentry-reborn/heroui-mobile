@@ -4,7 +4,7 @@ import type { JSX } from "react";
 import { useCallback, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Typography, useThemeColor } from "heroui-native";
+import { Button, Typography, useThemeColor } from "heroui-native";
 
 import { BrandButton } from "@/components/ui/brand-button";
 import { HomePlanCreditsCard } from "@/features/home/home-plan-credits-card";
@@ -64,11 +64,18 @@ export function HomeScreen(): JSX.Element {
           onPress={() => router.push("/settings/subscription")}
         />
 
-        <View className="mx-3 mb-2">
+        <View className="mx-3 mb-2 gap-2">
           <BrandButton className="min-h-12 w-full" onPress={() => setCreateOpen(true)}>
             <Ionicons name="add" size={18} color={accentForeground} />
             <BrandButton.Label>New Search</BrandButton.Label>
           </BrandButton>
+          <Button
+            variant="secondary"
+            className="min-h-11 w-full"
+            onPress={() => router.push("/home-card-examples")}
+          >
+            <Button.Label>Compare card layouts</Button.Label>
+          </Button>
         </View>
       </ScrollView>
 

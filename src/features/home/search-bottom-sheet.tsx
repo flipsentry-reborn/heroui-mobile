@@ -129,7 +129,7 @@ function SearchSheetContent({
         <SearchBottomSheetSection>
           <SearchBottomSheetRow
             icon="swap-vertical"
-            iconClassName="text-amber-500"
+            iconClassName="text-emerald-500"
             title="Search Type"
             required
             showChevron={false}
@@ -158,8 +158,8 @@ function SearchSheetContent({
             onPress={onLocationPress}
           />
           <SearchBottomSheetRow
-            icon="apps"
-            iconClassName="text-violet-500"
+            icon="storefront"
+            iconClassName="text-yellow-500"
             title="Platforms"
             required
             showChevron={false}

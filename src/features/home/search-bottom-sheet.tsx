@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import {
   BottomSheet,
@@ -12,6 +12,7 @@ import {
 } from "heroui-native";
 
 import PlatformIcon from "@/components/icons/PlatformIcon";
+import { loadGroupForEdit } from "@/features/home/load-group-for-edit";
 import {
   DEFAULT_CAR_MAKES,
   SearchBottomSheetCarMakesSheet,
@@ -48,10 +49,11 @@ import {
 import { SheetShell } from "@/features/home/sheet-shell";
 import {
   buildDraftSettingRows,
+  creditSettingsIntoIntervalOptions,
   validateLocationDraft,
 } from "@/domain/search-rules";
 import { MOCK_CAR_MAKES } from "@/mocks/data/car";
-import type { HomePlatform, SearchType } from "@/mocks/data/home";
+import type { HomePlatform, SearchGroup, SearchType } from "@/mocks/data/home";
 import {
   isLocationSpeedSelected,
   locationsFixture,
@@ -60,6 +62,8 @@ import {
 import {
   formatLocationLabel,
   getLocationDraft,
+  resetLocationDraft,
+  setLocationDraft,
 } from "@/mocks/services/location";
 import { useStore } from "@/store/store";
 
@@ -122,6 +126,7 @@ function toHomePlatform(platform: string): HomePlatform {
 }
 
 function SearchSheetContent({
+  title,
   locationLabel,
   onLocationPress,
   selectedPlatforms,
@@ -152,6 +157,7 @@ function SearchSheetContent({
   errorMessage,
   onConfirm,
 }: {
+  title: string;
   locationLabel: string;
   /** Location and Platforms both open the location sheet. */
   onLocationPress?: () => void;
@@ -218,7 +224,7 @@ function SearchSheetContent({
       handleComponent={null}
     >
       <View>
-        <SearchBottomSheetHeader />
+        <SearchBottomSheetHeader title={title} />
 
         <SearchBottomSheetSection>
           <SearchBottomSheetRow
@@ -349,6 +355,8 @@ interface SearchBottomSheetProps {
   onClose: () => void;
   locationLabel?: string;
   onLocationLabelChange?: (label: string) => void;
+  /** When set, sheet runs in edit mode (prefill + update + slot credit-back). */
+  editingGroup?: SearchGroup | null;
 }
 
 export const SearchBottomSheet = observer(function SearchBottomSheet({
@@ -356,6 +364,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
   onClose,
   locationLabel = "Set location",
   onLocationLabelChange,
+  editingGroup = null,
 }: SearchBottomSheetProps): JSX.Element {
   const { searchStore, subscriptionStore } = useStore();
   const [priceOpen, setPriceOpen] = useState(false);
@@ -380,6 +389,15 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     useState<CarMakesSelection>(DEFAULT_CAR_MAKES);
   const [keywords, setKeywords] = useState<KeywordsState>(EMPTY_KEYWORDS);
   const [locationTick, setLocationTick] = useState(0);
+  const prefilledGroupIdRef = useRef<string | null>(null);
+
+  const isEditing = editingGroup != null;
+
+  const editIntervalOptions = useMemo(() => {
+    const base = subscriptionStore.intervalOptions;
+    if (editingGroup == null) return base;
+    return creditSettingsIntoIntervalOptions(base, editingGroup.settings);
+  }, [editingGroup, subscriptionStore.intervalOptions]);
 
   const draftSnapshot = useMemo(() => {
     void locationTick;
@@ -413,11 +431,11 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
         platforms: draft.platforms,
         locationSpeeds,
         centerId: draft.main.id,
-        intervalOptions: subscriptionStore.intervalOptions,
+        intervalOptions: editIntervalOptions,
       }) == null &&
       Object.values(draft.otherSpeeds).some(isLocationSpeedSelected)
     );
-  }, [draftSnapshot, subscriptionStore.intervalOptions]);
+  }, [draftSnapshot, editIntervalOptions]);
 
   /** Short location label on the Location row (platforms shown on Platforms row). */
   const locationRowLabel = useMemo(() => {
@@ -425,6 +443,31 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     if (draft.main == null) return "Set location";
     return `${draft.main.name} (${draft.radiusMiles} mi)`;
   }, [draftSnapshot]);
+
+  useEffect(() => {
+    if (!visible) {
+      prefilledGroupIdRef.current = null;
+      return;
+    }
+    if (editingGroup == null) return;
+    if (prefilledGroupIdRef.current === editingGroup.id) return;
+    prefilledGroupIdRef.current = editingGroup.id;
+    const prefill = loadGroupForEdit(editingGroup);
+    setLocationDraft(prefill.locationDraft);
+    setSearchType(prefill.searchType);
+    setCustomQuery(prefill.customQuery);
+    setIphoneSelections(prefill.iphoneSelections);
+    setCarMakes(prefill.carMakes);
+    setMinPrice(prefill.minPrice);
+    setMaxPrice(prefill.maxPrice);
+    setMinYear(prefill.minYear);
+    setMaxYear(prefill.maxYear);
+    setMinMileage(prefill.minMileage);
+    setMaxMileage(prefill.maxMileage);
+    setKeywords(EMPTY_KEYWORDS);
+    setLocationTick((value) => value + 1);
+    onLocationLabelChange?.(formatLocationLabel(prefill.locationDraft));
+  }, [visible, editingGroup, onLocationLabelChange]);
 
   const handleSearchTypeChange = (type: SearchType) => {
     setSearchType(type);
@@ -466,6 +509,11 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     setMaxYear("");
     setMinMileage("");
     setMaxMileage("");
+    // Edit prefill mutates the shared draft; restore defaults so create stays clean.
+    if (isEditing) {
+      resetLocationDraft();
+      setLocationTick((value) => value + 1);
+    }
     searchStore.clearError();
   };
 
@@ -528,7 +576,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
               MOCK_CAR_MAKES.find((make) => make.id === id)?.label ?? id,
           );
 
-    const created = await searchStore.createGroup({
+    const payload = {
       searchType,
       locationName:
         draft.main.displayName ?? draft.main.name ?? "Unknown location",
@@ -560,9 +608,14 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
           : searchType === "iphone"
             ? iphoneSelections.map((s) => s.id).join(", ")
             : undefined,
-    });
+    };
 
-    if (created != null) {
+    const saved =
+      editingGroup != null
+        ? await searchStore.updateGroup(editingGroup.id, payload)
+        : await searchStore.createGroup(payload);
+
+    if (saved != null) {
       handleClose();
     }
   };
@@ -571,6 +624,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     <>
       <SheetShell visible={visible} onClose={handleClose}>
         <SearchSheetContent
+          title={isEditing ? "Edit Search" : "New Search"}
           locationLabel={locationRowLabel || locationLabel}
           onLocationPress={() => setLocationOpen(true)}
           selectedPlatforms={selectedPlatforms}
@@ -665,6 +719,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
       <SearchBottomSheetLocationSheet
         isOpen={visible && locationOpen}
         onOpenChange={handleLocationOpenChange}
+        intervalOptions={editIntervalOptions}
       />
     </>
   );

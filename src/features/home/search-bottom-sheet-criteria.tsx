@@ -136,7 +136,7 @@ export function SearchBottomSheetCriteria({
   const hasKeywords = keywordsLabel !== "None";
 
   return (
-    <SearchSheetGroup title="Criteria">
+    <SearchSheetGroup title="Filters">
       {isCustom ? (
         <SearchSheetRow
           title="Search"

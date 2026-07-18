@@ -5,10 +5,11 @@ import type { JSX } from "react";
 import { useCallback, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Typography, useThemeColor } from "heroui-native";
+import { Typography, useThemeColor, useToast } from "heroui-native";
 
 import { BrandButton } from "@/components/ui/brand-button";
 import { HomePlanCreditsCard } from "@/features/home/home-plan-credits-card";
+import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import { SearchBottomSheet } from "@/features/home/search-bottom-sheet";
 import { SearchCards } from "@/features/home/search-cards";
 import type { SearchGroup } from "@/mocks/data/home";
@@ -16,14 +17,23 @@ import {
   formatLocationLabel,
   getLocationDraft,
 } from "@/mocks/services/location";
+import { cityFromLocation } from "@/mocks/services/home";
 import { useStore } from "@/store/store";
+
+function actionTitle(group: SearchGroup): string {
+  if (group.searchType === "car") return "Cars";
+  if (group.searchType === "iphone") return "Iphones";
+  return group.customLabel ?? cityFromLocation(group.locationName);
+}
 
 export const HomeScreen = observer(function HomeScreen(): JSX.Element {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { toast } = useToast();
   const { searchStore, subscriptionStore } = useStore();
   const [accentForeground] = useThemeColor(["accent-foreground"]);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<SearchGroup | null>(null);
   const [locationLabel, setLocationLabel] = useState(() =>
     formatLocationLabel(getLocationDraft()),
   );
@@ -34,16 +44,40 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
       void searchStore.loadSearchGroups();
       setLocationLabel(formatLocationLabel(getLocationDraft()));
       return () => {
-        setCreateOpen(false);
+        setSheetOpen(false);
+        setEditingGroup(null);
       };
     }, [searchStore, subscriptionStore]),
   );
 
   const handleDelete = useCallback(
-    async (group: SearchGroup) => {
-      await searchStore.deleteSearchGroup(group.id);
+    (group: SearchGroup) => {
+      showSearchActionProgress(toast, {
+        kind: "delete",
+        title: actionTitle(group),
+        onCommit: () => searchStore.deleteSearchGroup(group.id),
+      });
     },
-    [searchStore],
+    [searchStore, toast],
+  );
+
+  const handleEdit = useCallback((group: SearchGroup) => {
+    setEditingGroup(group);
+    setSheetOpen(true);
+  }, []);
+
+  const handleToggle = useCallback(
+    (group: SearchGroup, active: boolean) => {
+      showSearchActionProgress(toast, {
+        kind: active ? "start" : "pause",
+        title: actionTitle(group),
+        onCommit: async () => {
+          const updated = await searchStore.setGroupActive(group.id, active);
+          return updated != null;
+        },
+      });
+    },
+    [searchStore, toast],
   );
 
   const handleNewSearch = () => {
@@ -51,7 +85,13 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
       router.push("/settings/subscription");
       return;
     }
-    setCreateOpen(true);
+    setEditingGroup(null);
+    setSheetOpen(true);
+  };
+
+  const handleSheetClose = () => {
+    setSheetOpen(false);
+    setEditingGroup(null);
   };
 
   if (searchStore.loadingInitial) {
@@ -89,14 +129,20 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
           </BrandButton>
         </View>
 
-        <SearchCards groups={searchStore.searchGroups} onDelete={handleDelete} />
+        <SearchCards
+          groups={searchStore.searchGroups}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onToggle={handleToggle}
+        />
       </ScrollView>
 
       <SearchBottomSheet
-        visible={createOpen}
-        onClose={() => setCreateOpen(false)}
+        visible={sheetOpen}
+        onClose={handleSheetClose}
         locationLabel={locationLabel}
         onLocationLabelChange={setLocationLabel}
+        editingGroup={editingGroup}
       />
     </View>
   );

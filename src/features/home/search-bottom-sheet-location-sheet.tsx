@@ -36,6 +36,7 @@ import { SheetShell } from "@/features/home/sheet-shell";
 import {
   DEFAULT_RADIUS_MILES,
   isLocationSpeedSelected,
+  locationsFixture,
   type LocationPlatform,
   type LocationResult,
   type LocationRunSpeed,
@@ -261,12 +262,15 @@ function LocationSheetContent({
 interface SearchBottomSheetLocationSheetProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  /** When set (e.g. edit credit-back), overrides SubscriptionStore options. */
+  intervalOptions?: IntervalOption[];
 }
 
 export const SearchBottomSheetLocationSheet = observer(
   function SearchBottomSheetLocationSheet({
     isOpen,
     onOpenChange,
+    intervalOptions: intervalOptionsProp,
   }: SearchBottomSheetLocationSheetProps): JSX.Element | null {
     const { subscriptionStore } = useStore();
     const draft = useMemo(() => getLocationDraft(), []);
@@ -288,7 +292,8 @@ export const SearchBottomSheetLocationSheet = observer(
     const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
     const [showValidation, setShowValidation] = useState(false);
 
-    const intervalOptions = subscriptionStore.intervalOptions;
+    const intervalOptions =
+      intervalOptionsProp ?? subscriptionStore.intervalOptions;
 
     useEffect(() => {
       if (!isOpen) return;
@@ -344,6 +349,12 @@ export const SearchBottomSheetLocationSheet = observer(
           for (const place of results) {
             if (prev[place.id] != null) next[place.id] = prev[place.id];
           }
+          // Keep selected speeds for edit-prefilled places outside nearby.
+          for (const [id, speed] of Object.entries(prev)) {
+            if (isLocationSpeedSelected(speed) && next[id] == null) {
+              next[id] = speed;
+            }
+          }
           return next;
         });
         setNearbyLoading(false);
@@ -356,9 +367,21 @@ export const SearchBottomSheetLocationSheet = observer(
 
     const multiPlaces = useMemo(() => {
       if (main == null) return nearby;
-      const rest = nearby.filter((place) => place.id !== main.id);
+      const byId = new Map<string, LocationResult>();
+      byId.set(main.id, main);
+      for (const place of nearby) {
+        if (place.id !== main.id) byId.set(place.id, place);
+      }
+      for (const [id, speed] of Object.entries(otherSpeeds)) {
+        if (!isLocationSpeedSelected(speed) || byId.has(id)) continue;
+        const fromFixture = locationsFixture.find((place) => place.id === id);
+        if (fromFixture != null) {
+          byId.set(id, fromFixture);
+        }
+      }
+      const rest = [...byId.values()].filter((place) => place.id !== main.id);
       return [main, ...rest];
-    }, [main, nearby]);
+    }, [main, nearby, otherSpeeds]);
 
     const draftSpeeds = useMemo(
       () => toDraftSpeeds(multiPlaces, otherSpeeds),

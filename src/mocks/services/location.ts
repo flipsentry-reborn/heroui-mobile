@@ -7,6 +7,8 @@ import {
   type LocationResult,
 } from "@/mocks/data/locations";
 
+export { defaultLocationDraft };
+
 let draft: LocationDraft = normalizeDraft(
   structuredClone(defaultLocationDraft),
 );
@@ -85,6 +87,10 @@ export function getLocationDraft(): LocationDraft {
 export function setLocationDraft(next: LocationDraft): LocationDraft {
   draft = normalizeDraft(structuredClone(next));
   return structuredClone(draft);
+}
+
+export function resetLocationDraft(): LocationDraft {
+  return setLocationDraft(defaultLocationDraft);
 }
 
 export function formatLocationLabel(draftValue?: LocationDraft | null): string {

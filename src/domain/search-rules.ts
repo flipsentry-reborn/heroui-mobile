@@ -41,7 +41,7 @@ export function normalizeIntervalSeconds(
 export function formatIntervalLabel(seconds: number): string {
   if (seconds === 60) return "Instant";
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}-min`;
+  if (minutes < 60) return `${minutes} Min`;
   const hours = minutes / 60;
   return Number.isInteger(hours) ? `${hours}h` : `${hours.toFixed(1)}h`;
 }

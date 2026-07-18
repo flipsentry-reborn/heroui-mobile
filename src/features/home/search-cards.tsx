@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
 import { useEffect, useMemo } from "react";
 import { View } from "react-native";
@@ -13,7 +14,9 @@ import {
   Button,
   Chip,
   cn,
+  Menu,
   Separator,
+  SubMenu,
   Typography,
   useAccordion,
   useAccordionItem,
@@ -35,7 +38,10 @@ interface SearchCardsProps {
   groups: SearchGroup[];
   onEdit?: (group: SearchGroup) => void;
   onDelete?: (group: SearchGroup) => void;
+  onToggle?: (group: SearchGroup, active: boolean) => void;
 }
+
+const StyledIonicons = withUniwind(Ionicons);
 
 const StyledAnimatedView = withUniwind(Animated.View);
 
@@ -89,10 +95,8 @@ function metaChips(group: SearchGroup): string[] {
 
 function statusBadgeColor(
   tone: ReturnType<typeof groupStatus>["tone"],
-): "success" | "warning" | "danger" {
-  if (tone === "success") return "success";
-  if (tone === "warning") return "warning";
-  return "danger";
+): "success" | "warning" {
+  return tone === "success" ? "success" : "warning";
 }
 
 function MetaChipRow({ group }: { group: SearchGroup }): JSX.Element {
@@ -131,7 +135,7 @@ function PlatformRows({ group }: { group: SearchGroup }): JSX.Element {
                 Active
               </Badge>
             ) : (
-              <Badge color="danger" variant="soft" size="sm">
+              <Badge color="warning" variant="soft" size="sm">
                 Paused
               </Badge>
             )}
@@ -145,6 +149,187 @@ function PlatformRows({ group }: { group: SearchGroup }): JSX.Element {
   );
 }
 
+type FilterMenuItem = {
+  key: string;
+  title: string;
+  description: string;
+};
+
+function filterMenuItems(group: SearchGroup): FilterMenuItem[] {
+  const location = cityFromLocation(group.locationName);
+  const items: FilterMenuItem[] = [
+    {
+      key: "location",
+      title: "Location",
+      description: `${location} · ${group.radiusMiles} mi`,
+    },
+  ];
+
+  if (group.searchType === "car") {
+    const q = group.carQuery;
+    items.push(
+      {
+        key: "makes",
+        title: "Makes",
+        description:
+          q?.makes.length && q.makes.length > 0
+            ? q.makes.join(", ")
+            : "Any make",
+      },
+      {
+        key: "price",
+        title: "Price",
+        description:
+          q && (q.minPrice != null || q.maxPrice != null)
+            ? formatOpenRangeLabel(
+                q.minPrice != null ? formatPriceShort(q.minPrice) : "",
+                q.maxPrice != null ? formatPriceShort(q.maxPrice) : "",
+              )
+            : "Any price",
+      },
+      {
+        key: "year",
+        title: "Year",
+        description:
+          q && (q.minYear != null || q.maxYear != null)
+            ? formatOpenRangeLabel(
+                q.minYear != null ? String(q.minYear) : "",
+                q.maxYear != null ? String(q.maxYear) : "",
+              )
+            : "Any year",
+      },
+      {
+        key: "mileage",
+        title: "Mileage",
+        description:
+          q && (q.minMileage != null || q.maxMileage != null)
+            ? formatOpenRangeLabel(
+                q.minMileage != null ? formatPriceShort(q.minMileage) : "",
+                q.maxMileage != null ? formatPriceShort(q.maxMileage) : "",
+                { unit: " mi" },
+              )
+            : "Any mileage",
+      },
+    );
+    return items;
+  }
+
+  if (group.searchType === "iphone") {
+    items.push({
+      key: "models",
+      title: "Models",
+      description: group.customLabel ?? "Any model",
+    });
+    return items;
+  }
+
+  items.push({
+    key: "keywords",
+    title: "Keywords",
+    description: group.customLabel ?? "No keywords set",
+  });
+  return items;
+}
+
+function SearchCardActionsMenu({
+  group,
+  onEdit,
+  onDelete,
+  onToggle,
+}: {
+  group: SearchGroup;
+  onEdit?: (group: SearchGroup) => void;
+  onDelete?: (group: SearchGroup) => void;
+  onToggle?: (group: SearchGroup, active: boolean) => void;
+}): JSX.Element {
+  const isPaused = group.settings.every((s) => !s.isActive);
+  const filters = filterMenuItems(group);
+
+  return (
+    <Menu>
+      <Menu.Trigger asChild>
+        <Button size="sm" variant="secondary" className="w-full">
+          <StyledIonicons
+            name="ellipsis-horizontal"
+            size={16}
+            className="text-foreground"
+          />
+          <Button.Label>Actions</Button.Label>
+        </Button>
+      </Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Overlay />
+        <Menu.Content presentation="popover" width={240} placement="top">
+          <Menu.Group>
+            <Menu.Item id="edit" onPress={() => onEdit?.(group)}>
+              <StyledIonicons
+                name="create-outline"
+                size={18}
+                className="text-foreground"
+              />
+              <Menu.ItemTitle>Edit</Menu.ItemTitle>
+            </Menu.Item>
+            <Menu.Item
+              id="toggle"
+              onPress={() => onToggle?.(group, isPaused)}
+            >
+              <StyledIonicons
+                name={isPaused ? "play-outline" : "pause-outline"}
+                size={18}
+                className={isPaused ? "text-success" : "text-warning"}
+              />
+              <Menu.ItemTitle className={isPaused ? "text-success" : "text-warning"}>
+                {isPaused ? "Start" : "Pause"}
+              </Menu.ItemTitle>
+            </Menu.Item>
+          </Menu.Group>
+
+          <SubMenu>
+            <SubMenu.Trigger textValue="Filters">
+              <StyledIonicons
+                name="options-outline"
+                size={18}
+                className="text-foreground"
+              />
+              <Typography type="body" className="flex-1">
+                Filters
+              </Typography>
+              <SubMenu.TriggerIndicator />
+            </SubMenu.Trigger>
+            <SubMenu.Content>
+              {filters.map((filter) => (
+                <Menu.Item
+                  key={filter.key}
+                  className="items-start"
+                  onPress={() => onEdit?.(group)}
+                >
+                  <View className="flex-1">
+                    <Menu.ItemTitle>{filter.title}</Menu.ItemTitle>
+                    <Menu.ItemDescription>
+                      {filter.description}
+                    </Menu.ItemDescription>
+                  </View>
+                </Menu.Item>
+              ))}
+            </SubMenu.Content>
+          </SubMenu>
+
+          <Separator className="mx-2 my-1 opacity-75" />
+
+          <Menu.Item variant="danger" onPress={() => onDelete?.(group)}>
+            <StyledIonicons
+              name="trash-outline"
+              size={18}
+              className="text-danger"
+            />
+            <Menu.ItemTitle>Delete</Menu.ItemTitle>
+          </Menu.Item>
+        </Menu.Content>
+      </Menu.Portal>
+    </Menu>
+  );
+}
+
 function SearchDepthItem({
   group,
   index,
@@ -152,6 +337,7 @@ function SearchDepthItem({
   groupIds,
   onEdit,
   onDelete,
+  onToggle,
 }: {
   group: SearchGroup;
   index: number;
@@ -159,6 +345,7 @@ function SearchDepthItem({
   groupIds: string[];
   onEdit?: (group: SearchGroup) => void;
   onDelete?: (group: SearchGroup) => void;
+  onToggle?: (group: SearchGroup, active: boolean) => void;
 }): JSX.Element {
   const { value } = useAccordion();
   const { isExpanded } = useAccordionItem();
@@ -249,24 +436,12 @@ function SearchDepthItem({
         <Accordion.Content className="gap-2 px-3 pb-3 pt-0">
           <MetaChipRow group={group} />
           <PlatformRows group={group} />
-          <View className="flex-row gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              className="flex-1"
-              onPress={() => onEdit?.(group)}
-            >
-              <Button.Label>Edit</Button.Label>
-            </Button>
-            <Button
-              size="sm"
-              variant="danger-soft"
-              className="flex-1"
-              onPress={() => onDelete?.(group)}
-            >
-              <Button.Label>Delete</Button.Label>
-            </Button>
-          </View>
+          <SearchCardActionsMenu
+            group={group}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onToggle={onToggle}
+          />
         </Accordion.Content>
       </StyledAnimatedView>
       {showDivider ? (
@@ -286,6 +461,7 @@ export function SearchCards({
   groups,
   onEdit,
   onDelete,
+  onToggle,
 }: SearchCardsProps): JSX.Element {
   const groupIds = useMemo(() => groups.map((g) => g.id), [groups]);
 
@@ -324,6 +500,7 @@ export function SearchCards({
             groupIds={groupIds}
             onEdit={onEdit}
             onDelete={onDelete}
+            onToggle={onToggle}
           />
         </Accordion.Item>
       ))}

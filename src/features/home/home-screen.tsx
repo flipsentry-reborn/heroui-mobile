@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Typography, useThemeColor, useToast } from "heroui-native";
@@ -12,12 +12,16 @@ import { HomePlanCreditsCard } from "@/features/home/home-plan-credits-card";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import { SearchBottomSheet } from "@/features/home/search-bottom-sheet";
 import { SearchCards } from "@/features/home/search-cards";
+import {
+  SearchStatusSegment,
+  type SearchStatusFilter,
+} from "@/features/home/search-status-segment";
 import type { SearchGroup } from "@/mocks/data/home";
 import {
   formatLocationLabel,
   getLocationDraft,
 } from "@/mocks/services/location";
-import { cityFromLocation } from "@/mocks/services/home";
+import { cityFromLocation, isGroupPaused } from "@/mocks/services/home";
 import { useStore } from "@/store/store";
 
 function actionTitle(group: SearchGroup): string {
@@ -34,9 +38,26 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
   const [accentForeground] = useThemeColor(["accent-foreground"]);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<SearchGroup | null>(null);
+  const [statusFilter, setStatusFilter] =
+    useState<SearchStatusFilter>("all");
   const [locationLabel, setLocationLabel] = useState(() =>
     formatLocationLabel(getLocationDraft()),
   );
+
+  const { allGroups, activeGroups, pausedGroups } = useMemo(() => {
+    const all = searchStore.searchGroups;
+    const active: SearchGroup[] = [];
+    const paused: SearchGroup[] = [];
+    for (const group of all) {
+      if (isGroupPaused(group)) paused.push(group);
+      else active.push(group);
+    }
+    return {
+      allGroups: all,
+      activeGroups: active,
+      pausedGroups: paused,
+    };
+  }, [searchStore.searchGroups]);
 
   useFocusEffect(
     useCallback(() => {
@@ -110,6 +131,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-[110px] pt-2"
+        stickyHeaderIndices={allGroups.length > 0 ? [2] : undefined}
       >
         <HomePlanCreditsCard
           homePlan={searchStore.homePlan}
@@ -129,8 +151,28 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
           </BrandButton>
         </View>
 
+        {allGroups.length > 0 ? (
+          <SearchStatusSegment
+            value={statusFilter}
+            onValueChange={setStatusFilter}
+            allCount={allGroups.length}
+            activeCount={activeGroups.length}
+            pausedCount={pausedGroups.length}
+          />
+        ) : null}
+
         <SearchCards
-          groups={searchStore.searchGroups}
+          groups={allGroups}
+          statusFilter={statusFilter}
+          emptyMessage={
+            allGroups.length === 0
+              ? "No searches yet"
+              : statusFilter === "paused"
+                ? "No paused searches"
+                : statusFilter === "active"
+                  ? "No active searches"
+                  : "No searches yet"
+          }
           onEdit={handleEdit}
           onDelete={handleDelete}
           onToggle={handleToggle}

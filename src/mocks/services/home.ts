@@ -297,6 +297,10 @@ export function cityFromLocation(locationName: string): string {
   return locationName.split(",").slice(0, 2).join(",").trim() || "Unknown";
 }
 
+export function isGroupPaused(group: SearchGroup): boolean {
+  return group.settings.length === 0 || group.settings.every((s) => !s.isActive);
+}
+
 export function groupStatus(group: SearchGroup): {
   label: string;
   tone: "success" | "warning" | "danger";

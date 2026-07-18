@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import Animated, {
   FadeIn,
@@ -26,6 +26,7 @@ import { withUniwind } from "uniwind";
 
 import { BrandButton } from "@/components/ui/brand-button";
 import PlatformIcon from "@/components/icons/PlatformIcon";
+import type { SearchStatusFilter } from "@/features/home/search-status-segment";
 import type { SearchGroup } from "@/mocks/data/home";
 import { formatOpenRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
 import {
@@ -33,13 +34,26 @@ import {
   formatIntervalLabel,
   formatPriceShort,
   groupStatus,
+  isGroupPaused,
 } from "@/mocks/services/home";
 
 interface SearchCardsProps {
+  /** Full list — keep mounted so filter changes can layout-animate. */
   groups: SearchGroup[];
+  statusFilter?: SearchStatusFilter;
+  emptyMessage?: string;
   onEdit?: (group: SearchGroup) => void;
   onDelete?: (group: SearchGroup) => void;
   onToggle?: (group: SearchGroup, active: boolean) => void;
+}
+
+function matchesStatusFilter(
+  group: SearchGroup,
+  filter: SearchStatusFilter,
+): boolean {
+  if (filter === "all") return true;
+  const paused = isGroupPaused(group);
+  return filter === "paused" ? paused : !paused;
 }
 
 const StyledIonicons = withUniwind(Ionicons);
@@ -354,14 +368,17 @@ function SearchDepthItem({
   index,
   groupCount,
   groupIds,
+  isVisible,
   onEdit,
   onDelete,
   onToggle,
 }: {
   group: SearchGroup;
+  /** Index among currently visible cards; -1 when filtered out. */
   index: number;
   groupCount: number;
   groupIds: string[];
+  isVisible: boolean;
   onEdit?: (group: SearchGroup) => void;
   onDelete?: (group: SearchGroup) => void;
   onToggle?: (group: SearchGroup, active: boolean) => void;
@@ -372,11 +389,13 @@ function SearchDepthItem({
   const status = groupStatus(group);
 
   useEffect(() => {
-    scale.value = withTiming(isExpanded ? 1 : 0.97, { duration: 200 });
-  }, [isExpanded, scale]);
+    scale.value = withTiming(isExpanded && isVisible ? 1 : 0.97, {
+      duration: 200,
+    });
+  }, [isExpanded, isVisible, scale]);
 
   const depthStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: isVisible ? scale.value : 1 }],
   }));
 
   const expandedIds = useMemo(() => {
@@ -391,25 +410,39 @@ function SearchDepthItem({
   const isAfterSelected = prevId != null && expandedIds.has(prevId);
 
   const showDivider =
-    index < groupCount - 1 && !isExpanded && !isBeforeSelected;
+    isVisible &&
+    index >= 0 &&
+    index < groupCount - 1 &&
+    !isExpanded &&
+    !isBeforeSelected;
 
   return (
-    <Animated.View layout={DEPTH_LAYOUT_TRANSITION} style={depthStyle}>
+    <StyledAnimatedView
+      layout={DEPTH_LAYOUT_TRANSITION}
+      pointerEvents={isVisible ? "auto" : "none"}
+      style={depthStyle}
+      className={cn(!isVisible && "h-0 overflow-hidden opacity-0")}
+    >
       <StyledAnimatedView
         layout={DEPTH_LAYOUT_TRANSITION}
         className={cn(
           "overflow-hidden bg-surface",
-          index === 0 && !isExpanded && "rounded-t-2xl",
-          index === groupCount - 1 &&
+          isVisible && index === 0 && !isExpanded && "rounded-t-2xl",
+          isVisible &&
+            index === groupCount - 1 &&
             !isExpanded &&
             !isBeforeSelected &&
             "rounded-b-3xl",
-          isBeforeSelected && "rounded-b-2xl",
-          isExpanded && "rounded-2xl",
-          isAfterSelected && "rounded-t-2xl",
-          isExpanded && index === 0 && "mb-2",
-          isExpanded && index > 0 && index < groupCount - 1 && "my-2",
-          isExpanded && index === groupCount - 1 && "mt-2",
+          isVisible && isBeforeSelected && "rounded-b-2xl",
+          isVisible && isExpanded && "rounded-2xl",
+          isVisible && isAfterSelected && "rounded-t-2xl",
+          isVisible && isExpanded && index === 0 && "mb-2",
+          isVisible &&
+            isExpanded &&
+            index > 0 &&
+            index < groupCount - 1 &&
+            "my-2",
+          isVisible && isExpanded && index === groupCount - 1 && "mt-2",
         )}
       >
         <Accordion.Trigger className="gap-2 px-3 py-3">
@@ -472,57 +505,102 @@ function SearchDepthItem({
           <Separator />
         </StyledAnimatedView>
       ) : null}
-    </Animated.View>
+    </StyledAnimatedView>
   );
 }
 
 export function SearchCards({
   groups,
+  statusFilter = "all",
+  emptyMessage = "No searches yet",
   onEdit,
   onDelete,
   onToggle,
 }: SearchCardsProps): JSX.Element {
-  const groupIds = useMemo(() => groups.map((g) => g.id), [groups]);
+  const [expandedValue, setExpandedValue] = useState<string | undefined>();
+
+  const visibleIds = useMemo(
+    () =>
+      groups
+        .filter((group) => matchesStatusFilter(group, statusFilter))
+        .map((group) => group.id),
+    [groups, statusFilter],
+  );
+
+  useEffect(() => {
+    if (expandedValue != null && !visibleIds.includes(expandedValue)) {
+      setExpandedValue(undefined);
+    }
+  }, [expandedValue, visibleIds]);
 
   if (groups.length === 0) {
     return (
       <View className="mx-3 items-center rounded-3xl bg-surface px-4 py-8">
         <Typography type="body-sm" className="text-muted">
-          No searches yet
+          {emptyMessage}
         </Typography>
       </View>
     );
   }
 
   return (
-    <Accordion
-      selectionMode="single"
-      isCollapsible
-      hideSeparator
-      className="mx-3 w-auto overflow-visible"
-      animation={{
-        layout: {
-          value: DEPTH_LAYOUT_TRANSITION,
-        },
-      }}
-    >
-      {groups.map((group, index) => (
-        <Accordion.Item
-          key={group.id}
-          value={group.id}
-          className="overflow-visible"
-        >
-          <SearchDepthItem
-            group={group}
-            index={index}
-            groupCount={groups.length}
-            groupIds={groupIds}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onToggle={onToggle}
-          />
-        </Accordion.Item>
-      ))}
-    </Accordion>
+    <View>
+      {visibleIds.length === 0 ? (
+        <View className="mx-3 items-center rounded-3xl bg-surface px-4 py-8">
+          <Typography type="body-sm" className="text-muted">
+            {emptyMessage}
+          </Typography>
+        </View>
+      ) : null}
+      <Accordion
+        value={expandedValue}
+        onValueChange={(next: string | string[] | undefined) => {
+          const nextValue = Array.isArray(next) ? next[0] : next;
+          setExpandedValue(
+            typeof nextValue === "string" && nextValue.length > 0
+              ? nextValue
+              : undefined,
+          );
+        }}
+        selectionMode="single"
+        isCollapsible
+        hideSeparator
+        className={cn(
+          "mx-3 w-auto overflow-visible",
+          visibleIds.length === 0 && "h-0 overflow-hidden opacity-0",
+        )}
+        animation={{
+          layout: {
+            value: DEPTH_LAYOUT_TRANSITION,
+          },
+        }}
+      >
+        {groups.map((group) => {
+          const isVisible = visibleIds.includes(group.id);
+          const index = visibleIds.indexOf(group.id);
+          return (
+            <Accordion.Item
+              key={group.id}
+              value={group.id}
+              className={cn(
+                "overflow-visible",
+                !isVisible && "h-0 overflow-hidden",
+              )}
+            >
+              <SearchDepthItem
+                group={group}
+                index={index}
+                groupCount={visibleIds.length}
+                groupIds={visibleIds}
+                isVisible={isVisible}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onToggle={onToggle}
+              />
+            </Accordion.Item>
+          );
+        })}
+      </Accordion>
+    </View>
   );
 }

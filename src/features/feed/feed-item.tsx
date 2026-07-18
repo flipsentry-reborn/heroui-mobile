@@ -89,7 +89,7 @@ export function FeedItem({
       ? "text-[15px] leading-5"
       : "text-sm leading-5";
   const metaClass = isRail ? "text-[11px] leading-[14px]" : "text-xs";
-  const estClass = isRail ? "text-[11px] text-muted" : "text-xs text-muted";
+  const estClass = isRail ? "text-[10px] text-muted" : "text-[11px] text-muted";
   const platformSize = isRail ? 13 : 14;
 
   return (
@@ -148,7 +148,7 @@ export function FeedItem({
             featured ? "bg-transparent" : "bg-background"
           }`}
         >
-          <View className="flex-row items-baseline gap-1">
+          <View className="flex-row items-center gap-1">
             <Typography
               type="body-sm"
               weight="semibold"
@@ -163,7 +163,7 @@ export function FeedItem({
                 className={estClass}
                 numberOfLines={1}
               >
-                Est. {formatPrice(feed.valuation.fairPrice, feed.currencySymbol)}
+                → {formatPrice(feed.valuation.fairPrice, feed.currencySymbol)}
               </Typography>
             ) : null}
           </View>

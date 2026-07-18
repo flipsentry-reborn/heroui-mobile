@@ -84,8 +84,8 @@ export function FeedDetailStickyHeader({
               {priceLabel}
             </Typography>
             {estPriceLabel ? (
-              <Typography type="body-xs" className="min-w-0 flex-1 text-xs text-muted">
-                Est. {estPriceLabel}
+              <Typography type="body-xs" className="min-w-0 flex-1 text-[11px] text-muted">
+                → {estPriceLabel}
               </Typography>
             ) : (
               <View className="flex-1" />

@@ -233,8 +233,8 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
                 {formatPrice(item.price, item.currencySymbol)}
               </Typography>
               {item.valuation?.fairPrice != null ? (
-                <Typography type="body-xs" className="min-w-0 flex-1 text-xs text-muted">
-                  Est. {formatPrice(item.valuation.fairPrice, item.currencySymbol)}
+                <Typography type="body-xs" className="min-w-0 flex-1 text-[11px] text-muted">
+                  → {formatPrice(item.valuation.fairPrice, item.currencySymbol)}
                 </Typography>
               ) : (
                 <View className="flex-1" />

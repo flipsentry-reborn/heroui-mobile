@@ -11,7 +11,6 @@ import Animated, {
 } from "react-native-reanimated";
 import {
   Accordion,
-  Button,
   Chip,
   cn,
   Menu,
@@ -20,10 +19,12 @@ import {
   Typography,
   useAccordion,
   useAccordionItem,
+  useThemeColor,
 } from "heroui-native";
 import { Badge } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
+import { BrandButton } from "@/components/ui/brand-button";
 import PlatformIcon from "@/components/icons/PlatformIcon";
 import type { SearchGroup } from "@/mocks/data/home";
 import { formatOpenRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
@@ -95,8 +96,25 @@ function metaChips(group: SearchGroup): string[] {
 
 function statusBadgeColor(
   tone: ReturnType<typeof groupStatus>["tone"],
-): "success" | "warning" {
-  return tone === "success" ? "success" : "warning";
+): "success" | "warning" | "danger" {
+  if (tone === "success") return "success";
+  if (tone === "danger") return "danger";
+  return "warning";
+}
+
+/** Unique platforms for the card header (one icon each, not one per setting). */
+function uniquePlatforms(
+  settings: SearchGroup["settings"],
+): { platform: string; isActive: boolean }[] {
+  const seen = new Map<string, boolean>();
+  for (const setting of settings) {
+    const prev = seen.get(setting.platform);
+    seen.set(setting.platform, (prev ?? false) || setting.isActive);
+  }
+  return [...seen.entries()].map(([platform, isActive]) => ({
+    platform,
+    isActive,
+  }));
 }
 
 function MetaChipRow({ group }: { group: SearchGroup }): JSX.Element {
@@ -135,7 +153,7 @@ function PlatformRows({ group }: { group: SearchGroup }): JSX.Element {
                 Active
               </Badge>
             ) : (
-              <Badge color="warning" variant="soft" size="sm">
+              <Badge color="danger" variant="soft" size="sm">
                 Paused
               </Badge>
             )}
@@ -242,20 +260,21 @@ function SearchCardActionsMenu({
   onDelete?: (group: SearchGroup) => void;
   onToggle?: (group: SearchGroup, active: boolean) => void;
 }): JSX.Element {
+  const [accentForeground] = useThemeColor(["accent-foreground"]);
   const isPaused = group.settings.every((s) => !s.isActive);
   const filters = filterMenuItems(group);
 
   return (
     <Menu>
       <Menu.Trigger asChild>
-        <Button size="sm" variant="secondary" className="w-full">
-          <StyledIonicons
+        <BrandButton className="min-h-12 w-full">
+          <Ionicons
             name="ellipsis-horizontal"
-            size={16}
-            className="text-foreground"
+            size={18}
+            color={accentForeground}
           />
-          <Button.Label>Actions</Button.Label>
-        </Button>
+          <BrandButton.Label>Actions</BrandButton.Label>
+        </BrandButton>
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Overlay />
@@ -413,12 +432,12 @@ function SearchDepthItem({
             </View>
             <View className="flex-row items-center gap-2">
               <View className="flex-row items-center gap-1.5">
-                {group.settings.map((s) => (
+                {uniquePlatforms(group.settings).map((p) => (
                   <View
-                    key={s.id}
-                    className={s.isActive ? "opacity-100" : "opacity-35"}
+                    key={p.platform}
+                    className={p.isActive ? "opacity-100" : "opacity-35"}
                   >
-                    <PlatformIcon platform={s.platform} size={16} />
+                    <PlatformIcon platform={p.platform} size={16} />
                   </View>
                 ))}
               </View>

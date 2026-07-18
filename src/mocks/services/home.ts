@@ -299,11 +299,11 @@ export function cityFromLocation(locationName: string): string {
 
 export function groupStatus(group: SearchGroup): {
   label: string;
-  tone: "success" | "warning";
+  tone: "success" | "warning" | "danger";
 } {
   const total = group.settings.length;
   const active = group.settings.filter((s) => s.isActive).length;
   if (active === total && total > 0) return { label: "All Active", tone: "success" };
-  if (active === 0) return { label: "Paused", tone: "warning" };
+  if (active === 0) return { label: "Paused", tone: "danger" };
   return { label: `${active}/${total} Active`, tone: "warning" };
 }

@@ -19,6 +19,10 @@ interface SearchBottomSheetRowProps {
   iconClassName?: string;
   required?: boolean;
   showSwap?: boolean;
+  /** Non-interactive + muted until prerequisites (e.g. search type) are met. */
+  disabled?: boolean;
+  /** Skip the divider under this row (e.g. Location + Platforms grouped). */
+  hideSeparator?: boolean;
 }
 
 function RowBody({
@@ -91,6 +95,8 @@ export function SearchBottomSheetRow({
   iconClassName = "text-muted",
   required,
   showSwap,
+  disabled = false,
+  hideSeparator = false,
 }: SearchBottomSheetRowProps): JSX.Element {
   const body = (
     <RowBody
@@ -99,26 +105,30 @@ export function SearchBottomSheetRow({
       description={description}
       right={right}
       showChevron={showChevron}
-      iconClassName={iconClassName}
+      iconClassName={disabled ? "text-muted/50" : iconClassName}
       required={required}
       showSwap={showSwap}
     />
   );
 
+  const itemClassName = disabled ? "py-3.5 opacity-45" : "py-3.5";
+  const canPress = onPress != null && !disabled;
+  const showDivider = !isLast && !hideSeparator;
+
   return (
     <>
-      {onPress ? (
+      {canPress ? (
         <Pressable onPress={onPress}>
-          <ListGroup.Item disabled className="py-3.5">
+          <ListGroup.Item disabled className={itemClassName}>
             {body}
           </ListGroup.Item>
         </Pressable>
       ) : (
-        <ListGroup.Item disabled className="py-3.5">
+        <ListGroup.Item disabled className={itemClassName}>
           {body}
         </ListGroup.Item>
       )}
-      {!isLast ? <Separator className="ml-12 mr-4 bg-muted/40" /> : null}
+      {showDivider ? <Separator className="ml-12 mr-4 bg-muted/40" /> : null}
     </>
   );
 }

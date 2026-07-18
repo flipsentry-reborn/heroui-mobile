@@ -1,6 +1,6 @@
 # Subscription UI (reuse guide)
 
-HeroUI Pro-inspired plan cards for FlipSentry. UI is mock-only; swap data later for real FlipSentry tiers.
+Plan cards for FlipSentry tiers (**Starter / Hunter / Master**). UI is mock-only; slot capacities are enforced in `SEARCH_STORE.md` / `tier-slots.ts`.
 
 ## Files
 
@@ -23,17 +23,17 @@ Edit `subscriptionPlans` in `src/mocks/data/subscription.ts`:
 
 ```ts
 {
- id: "custom", // SubscriptionTier
- displayName: "Custom Heroes",
+ id: "hunter", // SubscriptionTier: starter | hunter | master
+ displayName: "Hunter",
  description: "Short pitch…",
- price: 249,
- billingPeriod: "month", // "month" | "week" → renders $249/month or $299/week
- priceNote: "Billed monthly · …",
- ctaLabel: "Get Custom Heroes",
- badge?: "Flexible", // optional chip next to title
- accent: "rose", // card glow + bolt colors
- featured?: true, // white primary CTA (Super)
- features: ["…"], // shown when card is expanded
+ price: 49,
+ billingPeriod: "month", // "month" | "week"
+ priceNote: "Billed monthly",
+ ctaLabel: "Get Hunter",
+ badge?: "Popular",
+ accent: "purple", // card glow + bolt colors
+ featured?: true, // solid white CTA (Master)
+ features: ["…"], // shown when card is expanded; include slot/speed lines
  renewalTitle: "…",
  renewalNote: "…",
 }
@@ -43,35 +43,35 @@ Edit `subscriptionPlans` in `src/mocks/data/subscription.ts`:
 
 | `billingPeriod` | Price label |
 |-----------------|-------------|
-| `"month"` | `$199/mo` |
-| `"week"` | `$299/wk` |
+| `"month"` | `$49/mo` |
+| `"week"` | `$N/wk` |
 
-Current fixtures: Web / Mobile / Custom = **monthly**, Super = **weekly**.
+Current fixtures: Starter / Hunter / Master = **monthly**.
 
 ### Accents (card color)
 
-Defined in `ACCENT` inside `subscription-screen.tsx`. Add a new key when you need another look:
-
 | Accent | Used by | Look |
 |--------|---------|------|
-| `teal` | Web Heroes | Cyan glow |
-| `purple` | Mobile Heroes | Purple → pink bolt |
-| `rose` | Custom Heroes | Rose / coral |
-| `gold` | Super Heroes | Amber / featured |
+| `teal` | Starter | Cyan glow |
+| `purple` | Hunter | Purple → pink bolt |
+| `gold` | Master | Amber / featured |
+| `rose` | (unused / reserved) | Rose / coral |
 
 To add a color:
 
 1. Extend `PlanAccent` in `subscription.ts`
 2. Add a matching entry in `ACCENT` in `subscription-screen.tsx` (`gradient`, `iconFrom`, `iconTo`, `glow`)
 
-## FlipSentry swap checklist
+## Slot tables
 
-When real product specs land:
+Editable in `src/mocks/data/tier-slots.ts`. Features on each plan are generated from those tables. See **`SEARCH_STORE.md`**.
 
-1. Rename plans / IDs in `subscriptionPlans` (keep or replace `web | mobile | custom | super`)
-2. Replace `features`, prices, `billingPeriod`, badges
-3. Keep card UI as-is - it maps over `plans` from the mock service
-4. Later, point `mocks/services/subscription.ts` at a real purchase API (not in this repo yet)
+## Checklist when prices change
+
+1. Edit `subscriptionPlans` in `src/mocks/data/subscription.ts`
+2. Keep `id` in `starter | hunter | master` so slot tables stay wired
+3. Card UI maps over `plans` from the mock service / store
+4. Later, point services at a real purchase API (not in this repo yet)
 
 ## UI behavior (do not reimplement)
 

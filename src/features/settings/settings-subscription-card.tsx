@@ -49,7 +49,7 @@ export function SettingsSubscriptionCard({
                 color: "#FFFFFF",
               }}
             >
-              Become a Hero.
+              Choose a plan.
             </Text>
           </View>
           <Text
@@ -60,7 +60,7 @@ export function SettingsSubscriptionCard({
               color: "rgba(255,255,255,0.65)",
             }}
           >
-            Unlock alerts, searches, and deal scores.
+            Unlock search slots, faster alerts, and deal scores.
           </Text>
           <Button
             variant="primary"
@@ -69,7 +69,7 @@ export function SettingsSubscriptionCard({
             onPress={onPress}
           >
             <Button.Label className="text-sm text-black">
-              Subscribe
+              View plans
             </Button.Label>
           </Button>
         </View>

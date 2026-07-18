@@ -18,6 +18,7 @@ import {
   applyAppearance,
   loadCachedAppearance,
 } from "@/lib/appearance";
+import { StoreProvider, store } from "@/store/store";
 
 import "../global.css";
 
@@ -89,30 +90,30 @@ export default function RootLayout(): JSX.Element | null {
     "BrittiSans-SemiBold": require("../../assets/fonts/BrittiSans-SemiBold.ttf"),
     "BrittiSans-Bold": require("../../assets/fonts/BrittiSans-Bold.ttf"),
   });
-  const [appearanceReady, setAppearanceReady] = useState(false);
+  const [bootReady, setBootReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    void loadCachedAppearance()
-      .then((cached) => {
-        if (!cancelled) {
-          applyAppearance(cached ?? "dark");
-          setAppearanceReady(true);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          applyAppearance("dark");
-          setAppearanceReady(true);
-        }
-      });
+    void (async () => {
+      try {
+        const cached = await loadCachedAppearance();
+        if (!cancelled) applyAppearance(cached ?? "dark");
+      } catch {
+        if (!cancelled) applyAppearance("dark");
+      }
+      try {
+        await store.hydrate();
+      } catch {
+        // Mock hydrate is best-effort; screens reload on focus.
+      }
+      if (!cancelled) setBootReady(true);
+    })();
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const ready =
-    appearanceReady && (fontsLoaded || fontError != null);
+  const ready = bootReady && (fontsLoaded || fontError != null);
 
   useEffect(() => {
     if (ready) {
@@ -131,7 +132,9 @@ export default function RootLayout(): JSX.Element | null {
           devInfo: { stylingPrinciples: false },
         }}
       >
-        <RootLayoutContent />
+        <StoreProvider>
+          <RootLayoutContent />
+        </StoreProvider>
       </HeroUINativeProvider>
     </GestureHandlerRootView>
   );

@@ -1,38 +1,222 @@
-import { homeFixture, type HomeState, type SearchGroup } from "@/mocks/data/home";
+import {
+  buildIntervalOptions,
+  computeRemainingSlotSettings,
+  countUsedSlotsByInterval,
+  formatIntervalLabel as formatIntervalLabelDomain,
+  sumSlotValues,
+} from "@/domain/search-rules";
+import {
+  homeGroupsFixture,
+  type CreditBucket,
+  type HomePlan,
+  type HomePlatform,
+  type HomeState,
+  type SearchGroup,
+  type SearchSetting,
+  type SearchType,
+} from "@/mocks/data/home";
+import {
+  getAllowedSlotSettings,
+  TIER_DISPLAY_NAMES,
+  totalSlotsForTier,
+} from "@/mocks/data/tier-slots";
+import { readJson, writeJson } from "@/lib/storage";
+import type { FlipSentryTier } from "@/models/subscription";
+import {
+  getPersistedSubscription,
+} from "@/mocks/services/subscription";
 
-let state: HomeState = structuredClone(homeFixture);
+const GROUPS_KEY = "@flipsentry/search-groups";
+
+let groups: SearchGroup[] = structuredClone(homeGroupsFixture);
+let hydrated = false;
 
 function delay(ms = 100): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-export async function getHome(): Promise<HomeState> {
+async function ensureHydrated(): Promise<void> {
+  if (hydrated) return;
+  const stored = await readJson<SearchGroup[]>(GROUPS_KEY);
+  if (stored != null && Array.isArray(stored)) {
+    groups = stored;
+  } else {
+    groups = structuredClone(homeGroupsFixture);
+    await writeJson(GROUPS_KEY, groups);
+  }
+  hydrated = true;
+}
+
+async function persistGroups(): Promise<void> {
+  await writeJson(GROUPS_KEY, groups);
+}
+
+function allSettings(): SearchSetting[] {
+  return groups.flatMap((g) => g.settings);
+}
+
+export function buildHomePlan(
+  tier: FlipSentryTier | null,
+  groupList: SearchGroup[],
+): HomePlan {
+  const effectiveTier: FlipSentryTier = tier ?? "hunter";
+  const allowed = getAllowedSlotSettings(effectiveTier);
+  const usedByInterval = countUsedSlotsByInterval(
+    groupList.flatMap((g) => g.settings),
+  );
+  const remaining = computeRemainingSlotSettings(allowed, usedByInterval);
+  const credits: CreditBucket[] = allowed.map((s) => ({
+    intervalSeconds: s.interval,
+    total: s.value,
+    remaining:
+      remaining.find((r) => r.interval === s.interval)?.value ?? 0,
+  }));
+  const usedSlots = sumSlotValues(allowed) - sumSlotValues(remaining);
+
+  return {
+    tier: effectiveTier,
+    displayName: TIER_DISPLAY_NAMES[effectiveTier],
+    maxSearches: totalSlotsForTier(effectiveTier),
+    usedSearches: usedSlots,
+    credits,
+  };
+}
+
+export async function listGroups(): Promise<SearchGroup[]> {
+  await ensureHydrated();
   await delay();
-  return structuredClone(state);
+  return structuredClone(groups);
+}
+
+export async function getHome(): Promise<HomeState> {
+  await ensureHydrated();
+  await delay();
+  const sub = await getPersistedSubscription();
+  const tier = sub.hasActiveSubscription ? sub.currentTier : null;
+  return {
+    plan: buildHomePlan(tier, groups),
+    groups: structuredClone(groups),
+  };
+}
+
+export interface CreateHomeSearchSettingInput {
+  platform: HomePlatform;
+  locationName: string;
+  runIntervalSeconds: number;
+}
+
+export interface CreateHomeSearchInput {
+  searchType: SearchType;
+  locationName: string;
+  radiusMiles: number;
+  settings: CreateHomeSearchSettingInput[];
+  carQuery?: SearchGroup["carQuery"];
+  customLabel?: string;
+  containsText?: string[];
+  excludeText?: string[];
+}
+
+export async function createGroup(
+  input: CreateHomeSearchInput,
+): Promise<SearchGroup> {
+  await ensureHydrated();
+  await delay(200);
+
+  if (input.settings.length === 0) {
+    throw new Error("Select at least one platform and location.");
+  }
+
+  const sub = await getPersistedSubscription();
+  const tier = sub.hasActiveSubscription ? sub.currentTier : null;
+  const allowed = getAllowedSlotSettings(tier);
+  const usedByInterval = countUsedSlotsByInterval(allSettings());
+  const remaining = computeRemainingSlotSettings(allowed, usedByInterval);
+  const draftUsage = countUsedSlotsByInterval(
+    input.settings.map((setting) => ({
+      runIntervalSeconds: setting.runIntervalSeconds,
+      isActive: true,
+    })),
+  );
+
+  for (const [interval, count] of draftUsage.entries()) {
+    const left = remaining.find((r) => r.interval === interval)?.value ?? 0;
+    if (count > left) {
+      throw new Error(
+        `Not enough ${formatIntervalLabelDomain(interval)} slots. Need ${count}, have ${left}.`,
+      );
+    }
+  }
+
+  const id = `g-${Date.now()}`;
+  const settings: SearchSetting[] = input.settings.map((setting, index) => ({
+    id: `${id}-${setting.platform}-${index}`,
+    platform: setting.platform,
+    locationName: setting.locationName,
+    isActive: true,
+    runIntervalSeconds: setting.runIntervalSeconds,
+  }));
+
+  const group: SearchGroup = {
+    id,
+    searchType: input.searchType,
+    locationName: input.locationName,
+    radiusMiles: input.radiusMiles,
+    carQuery: input.carQuery,
+    customLabel: input.customLabel,
+    settings,
+  };
+
+  groups = [group, ...groups];
+  await persistGroups();
+  return structuredClone(group);
 }
 
 export async function toggleGroupActive(
   groupId: string,
   active: boolean,
 ): Promise<SearchGroup | null> {
+  await ensureHydrated();
   await delay(150);
-  const group = state.groups.find((g) => g.id === groupId);
+  const group = groups.find((g) => g.id === groupId);
   if (!group) return null;
   group.settings = group.settings.map((s) => ({ ...s, isActive: active }));
+  await persistGroups();
   return structuredClone(group);
 }
 
 export async function deleteGroup(groupId: string): Promise<boolean> {
+  await ensureHydrated();
   await delay(150);
-  const before = state.groups.length;
-  state.groups = state.groups.filter((g) => g.id !== groupId);
-  state.plan.usedSearches = state.groups.length;
-  return state.groups.length < before;
+  const before = groups.length;
+  groups = groups.filter((g) => g.id !== groupId);
+  if (groups.length < before) {
+    await persistGroups();
+    return true;
+  }
+  return false;
+}
+
+/** Reset in-memory + storage (tests / logout). */
+export async function resetHomeMocks(): Promise<void> {
+  groups = structuredClone(homeGroupsFixture);
+  hydrated = true;
+  await persistGroups();
+}
+
+export function getSlotOptionsForGroups(
+  tier: FlipSentryTier | null,
+  groupList: SearchGroup[],
+) {
+  const allowed = getAllowedSlotSettings(tier);
+  const usedByInterval = countUsedSlotsByInterval(
+    groupList.flatMap((g) => g.settings),
+  );
+  const remaining = computeRemainingSlotSettings(allowed, usedByInterval);
+  return buildIntervalOptions(allowed, remaining);
 }
 
 export function formatIntervalLabel(seconds: number): string {
-  if (seconds === 60) return "Instant";
-  return `${Math.floor(seconds / 60)} min`;
+  return formatIntervalLabelDomain(seconds);
 }
 
 export function formatPriceShort(n: number): string {

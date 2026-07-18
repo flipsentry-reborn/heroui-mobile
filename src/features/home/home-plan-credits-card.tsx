@@ -27,7 +27,7 @@ export function HomePlanCreditsCard({
     subscriptionPlan != null
       ? PLAN_ACCENTS[subscriptionPlan.accent]
       : PLAN_ACCENTS.purple;
-  const title = subscriptionPlan?.displayName ?? "Become a Hero.";
+  const title = subscriptionPlan?.displayName ?? "Choose a plan";
 
   return (
     <Pressable

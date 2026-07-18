@@ -27,6 +27,11 @@ import {
 import { withUniwind } from "uniwind";
 
 import { sanitizePriceInput } from "@/features/home/search-bottom-sheet-price-sheet";
+import {
+  SHEET_BACKGROUND_CLASS_NAME,
+  SHEET_CONTENT_CLASS_NAME,
+  SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
+} from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
 import {
   getIphoneModelDefaults,
@@ -437,10 +442,10 @@ function IphoneModelsSheetContent({
       keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
-      className="overflow-hidden"
-      backgroundClassName="rounded-t-[32px] bg-surface-secondary"
+      className={SHEET_CONTENT_CLASS_NAME}
+      backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
       handleComponent={null}
-      contentContainerClassName="h-full p-0"
+      contentContainerClassName={SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME}
     >
       <View className="flex-1">
         <View className="flex-row items-center justify-between px-5 pb-1 pt-4">

@@ -57,14 +57,13 @@ export interface SearchCarMakesState {
 }
 
 export function isCustomSearchQueryValid(query: string): boolean {
-  return query.trim().length >= 1;
+  return query.trim().length >= 2;
 }
 
 interface SearchBottomSheetCriteriaProps {
   searchType: SearchType | null;
   customQuery: string;
   onCustomQueryChange: (value: string) => void;
-  customQueryInvalid?: boolean;
   iphoneModels: SearchIphoneModelsState;
   carMakes: SearchCarMakesState;
   price: SearchPriceState;
@@ -76,26 +75,25 @@ interface SearchBottomSheetCriteriaProps {
 function CustomSearchInput({
   value,
   onChange,
-  isInvalid,
 }: {
   value: string;
   onChange: (value: string) => void;
-  isInvalid: boolean;
 }): JSX.Element {
   const { onFocus, onBlur } = useBottomSheetAwareHandlers();
+  const isInvalid = !isCustomSearchQueryValid(value);
 
   return (
     <Input
       value={value}
       onChangeText={onChange}
-      placeholder="Empty"
+      placeholder="Required"
       variant="secondary"
       isInvalid={isInvalid}
       textAlign="right"
       className={`h-auto min-h-0 flex-1 border-0 bg-transparent px-0 py-0 text-[15px] shadow-none ios:outline-0 ios:focus:outline-transparent android:border-0 android:focus:border-transparent ${
         isInvalid ? "text-danger" : "text-foreground"
       }`}
-      placeholderColorClassName="text-muted"
+      placeholderColorClassName={isInvalid ? "text-danger" : "text-muted"}
       onFocus={onFocus}
       onBlur={onBlur}
     />
@@ -106,7 +104,6 @@ export function SearchBottomSheetCriteria({
   searchType,
   customQuery,
   onCustomQueryChange,
-  customQueryInvalid = false,
   iphoneModels,
   carMakes,
   price,
@@ -145,7 +142,6 @@ export function SearchBottomSheetCriteria({
             <CustomSearchInput
               value={customQuery}
               onChange={onCustomQueryChange}
-              isInvalid={customQueryInvalid}
             />
           }
         />

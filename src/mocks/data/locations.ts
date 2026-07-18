@@ -197,15 +197,20 @@ export function isLocationSpeedSelected(speed: LocationRunSpeed): boolean {
   return speed !== "none";
 }
 
+export type LocationPlatform = "facebook" | "offerUp" | "craigslist" | "kijiji";
+
 export interface LocationDraft {
   main: LocationResult | null;
   radiusMiles: number;
-  /** Per other-location id → speed. Missing keys default to `none`. */
+  /** Platforms chosen in the location sheet (create flow). */
+  platforms: LocationPlatform[];
+  /** Per location id (incl. center) → speed. Missing keys default to `none`. */
   otherSpeeds: Record<string, LocationRunSpeed>;
 }
 
 export const defaultLocationDraft: LocationDraft = {
   main: locationsFixture[0] ?? null,
   radiusMiles: DEFAULT_RADIUS_MILES,
+  platforms: ["facebook"],
   otherSpeeds: {},
 };

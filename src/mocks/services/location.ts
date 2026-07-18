@@ -1,11 +1,27 @@
 import {
   defaultLocationDraft,
+  isLocationSpeedSelected,
   locationsFixture,
   type LocationDraft,
+  type LocationPlatform,
   type LocationResult,
 } from "@/mocks/data/locations";
 
-let draft: LocationDraft = structuredClone(defaultLocationDraft);
+let draft: LocationDraft = normalizeDraft(
+  structuredClone(defaultLocationDraft),
+);
+
+function normalizeDraft(value: LocationDraft): LocationDraft {
+  return {
+    main: value.main ?? null,
+    radiusMiles: value.radiusMiles || defaultLocationDraft.radiusMiles,
+    platforms:
+      Array.isArray(value.platforms) && value.platforms.length > 0
+        ? value.platforms
+        : (["facebook"] as LocationPlatform[]),
+    otherSpeeds: value.otherSpeeds ?? {},
+  };
+}
 
 function delay(ms = 120): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -67,12 +83,25 @@ export function getLocationDraft(): LocationDraft {
 }
 
 export function setLocationDraft(next: LocationDraft): LocationDraft {
-  draft = structuredClone(next);
+  draft = normalizeDraft(structuredClone(next));
   return structuredClone(draft);
 }
 
 export function formatLocationLabel(draftValue?: LocationDraft | null): string {
   const value = draftValue ?? draft;
   if (value.main == null) return "Set location";
-  return `${value.main.name} (${value.radiusMiles} mi)`;
+  const selectedLocs = Object.values(value.otherSpeeds).filter(
+    isLocationSpeedSelected,
+  ).length;
+  const platformCount = value.platforms.length;
+  const parts = [
+    `${value.main.name} (${value.radiusMiles} mi)`,
+    platformCount > 0
+      ? `${platformCount} platform${platformCount === 1 ? "" : "s"}`
+      : null,
+    selectedLocs > 0
+      ? `${selectedLocs} loc${selectedLocs === 1 ? "" : "s"}`
+      : null,
+  ].filter(Boolean);
+  return parts.join(" · ");
 }

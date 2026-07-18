@@ -14,7 +14,9 @@ Port FlipSentry screens and flows into `heroui-mobile` so we can iterate on UI w
 | Visual language | Uber neutrals - oklch grayscale, dark white accent / light black accent (see `global.css`) |
 | Components | `heroui-native-pro` first → `heroui-native` OSS → minimal custom only |
 | Styling | Uniwind + `className` only — **never** `StyleSheet` / NativeWind / shadcn |
-| Data | Mock only via `src/mocks/*` |
+| Data | Mock only via `src/mocks/*` (+ AsyncStorage persistence) |
+| State | MobX stores (`src/store`) — split by domain; see **`SEARCH_STORE.md`** |
+| API façade | `src/api/agent.ts` mock only (no Axios) |
 | Reference | `mobile-app` = flows/screens reference only |
 
 UI preferences, settings type scale, buttons, and copy rules: **`DESIGN.md`**.
@@ -36,12 +38,12 @@ Config: `.cursor/mcp.json` (gitignored). Rules: `.cursor/rules/`.
 | Rule | Detail |
 |------|--------|
 | Expo Go first | Ship only what runs in Expo Go |
-| Mock always | Screens call `mocks/services/*` only - never axios / SignalR / real APIs |
-| Screens thin | `src/app` routes compose UI; little business logic |
-| Models on demand | Copy/adapt from `mobile-app/models` when a screen needs them |
+| Mock always | Screens → MobX stores → `agent` → `mocks/services/*` — never axios / SignalR / real APIs |
+| Screens thin | `src/app` routes compose UI; domain logic in stores + `src/domain/*` |
+| Models on demand | Copy/adapt from `mobile-app/models` into `src/models` when needed |
 | HeroUI only | Prefer `heroui-native-pro`, then `heroui-native`; no web `@heroui/react` for screens |
 | No StyleSheet | Never `StyleSheet.create` — use Uniwind `className` + HeroUI props (see `.cursor/rules/no-stylesheet.mdc`) |
-| No heavy state lib yet | Local state / light context is enough for mocked UI |
+| MobX (split) | Prefer focused stores (SearchStore, SubscriptionStore). Do not port god-stores from mobile-app |
 | Stubs for native gaps | Maps, etc. → placeholder PNG; wire real later in `mobile-app` |
 
 ## Folder structure
@@ -67,15 +69,19 @@ heroui-mobile/
 │ │ ├── home/
 │ │ └── settings/
 │ ├── mocks/
-│ │ ├── data/ # fixtures
-│ │ └── services/ # getFeed(), getUser(), … → Promise.resolve
+│ │ ├── data/ # fixtures (incl. tier-slots)
+│ │ └── services/ # AsyncStorage-backed mock APIs
 │ ├── models/ # from mobile-app/models as needed
-│ ├── lib/ # small helpers (money, dates)
+│ ├── domain/ # pure rules (search slots, etc.)
+│ ├── store/ # MobX root + domain stores
+│ ├── api/ # agent.ts mock façade
+│ ├── lib/ # small helpers (money, dates, storage)
 │ ├── constants/ # routes, category ids
 │ ├── assets/
 │ │ └── placeholders/ # empty.png for maps / media stubs
 │ └── global.css # HeroUI + Theme Builder tokens
 ├── assets/ # app icon / splash
+├── SEARCH_STORE.md # search stores + creation rules
 └── PORTING.md
 ```
 
@@ -94,10 +100,12 @@ heroui-mobile/
 
 ## Mocking rules
 
-- Every data read/write goes through `src/mocks/services/*`.
+- Preferred path: UI (`observer`) → `useStore()` → `agent` → `mocks/services/*`.
+- Services may persist with AsyncStorage (`src/lib/storage.ts`); seed from fixtures on first launch.
 - Services return typed fixtures from `src/mocks/data/*`.
 - Use delays (`setTimeout` / fake latency) only when useful for loading UI.
 - Never import from `mobile-app` API clients or env that hits backends.
+- Subscription tiers for slot rules: **starter / hunter / master** — see `SEARCH_STORE.md`.
 
 ## Models
 
@@ -130,7 +138,7 @@ heroui-mobile/
 - EAS/dev-client-only native map work 
 - Full 1:1 file copy of `mobile-app` 
 - NativeWind / old RN primitives component stack 
-- MobX stores from the old app 
+- Edit-search wizard / full CreateGroupStore (phase 2 — see `SEARCH_STORE.md`)
 
 ## Theme
 
@@ -149,6 +157,7 @@ Configure weights in `src/global.css` `@theme`; load files in `src/app/_layout.t
 | `DESIGN.md` | UI preferences, copy rules, search filter labels (no “Any”) |
 | `FONTS.md` | Britti Sans setup |
 | `SUBSCRIPTION.md` | Plan cards / accents / reuse |
+| `SEARCH_STORE.md` | MobX SearchStore, slot tables, creation rules |
 
 ## Related repos
 

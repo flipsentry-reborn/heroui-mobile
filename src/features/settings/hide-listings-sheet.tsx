@@ -5,6 +5,11 @@ import { BottomSheet, Switch, Typography } from "heroui-native";
 
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
 import { SearchSheetGroup } from "@/features/home/search-sheet-group";
+import {
+  SHEET_BACKGROUND_CLASS_NAME,
+  SHEET_CONTENT_CLASS_NAME,
+  SHEET_CONTENT_CONTAINER_CLASS_NAME,
+} from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
 import type { UserPreferences } from "@/mocks/data/settings";
 
@@ -84,10 +89,10 @@ function HideListingsContent({
 
   return (
     <BottomSheet.Content
-      className="overflow-hidden"
-      backgroundClassName="rounded-t-[32px] bg-surface-secondary"
+      className={SHEET_CONTENT_CLASS_NAME}
+      backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
       handleComponent={null}
-      contentContainerClassName="p-0"
+      contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
     >
       <View>
         <View className="items-center px-8 pt-3 pb-2">

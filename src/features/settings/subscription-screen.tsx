@@ -37,6 +37,7 @@ import {
   mockRestorePurchases,
   mockSubscribe,
 } from "@/mocks/services/subscription";
+import { store } from "@/store/store";
 
 const FEATURE_STAGGER_MS = 70;
 const FEATURE_ENTER_MS = 380;
@@ -321,6 +322,8 @@ export function SubscriptionScreen(): JSX.Element {
     try {
       const next = await mockSubscribe(tier);
       setCurrentTier(next.currentTier);
+      await store.subscriptionStore.load();
+      await store.searchStore.loadSearchGroups();
       toast.show({
         variant: "success",
         label: "Subscribed",
@@ -388,7 +391,6 @@ export function SubscriptionScreen(): JSX.Element {
           contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* HeroUI Pro pricing header - Britti Sans (heroSans) + zinc hierarchy */}
           <View className="mb-3 items-center gap-3 px-2 pt-1">
             <View className="items-center">
               <Text
@@ -401,7 +403,7 @@ export function SubscriptionScreen(): JSX.Element {
                   textAlign: "center",
                 }}
               >
-                Become a Hero.
+                Find deals faster.
               </Text>
               <Text
                 style={{
@@ -413,7 +415,7 @@ export function SubscriptionScreen(): JSX.Element {
                   textAlign: "center",
                 }}
               >
-                Ship with confidence.
+                Pick your plan.
               </Text>
             </View>
             <Text
@@ -426,7 +428,8 @@ export function SubscriptionScreen(): JSX.Element {
                 paddingHorizontal: 8,
               }}
             >
-              Pick your stack. Start building products you're proud to ship.
+              More search slots and quicker alerts as you scale from Starter to
+              Master.
             </Text>
           </View>
 

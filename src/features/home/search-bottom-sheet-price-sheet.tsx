@@ -15,6 +15,11 @@ import {
   SearchSheetGroup,
   SearchSheetRow,
 } from "@/features/home/search-sheet-group";
+import {
+  SHEET_BACKGROUND_CLASS_NAME,
+  SHEET_CONTENT_CLASS_NAME,
+  SHEET_CONTENT_CONTAINER_CLASS_NAME,
+} from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
 
 export function sanitizePriceInput(text: string): string {
@@ -126,10 +131,10 @@ function PriceSheetContent({
       snapPoints={snapPoints}
       keyboardBehavior="extend"
       android_keyboardInputMode="adjustResize"
-      className="overflow-hidden"
-      backgroundClassName="rounded-t-[32px] bg-surface-secondary"
+      className={SHEET_CONTENT_CLASS_NAME}
+      backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
       handleComponent={null}
-      contentContainerClassName="p-0"
+      contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
     >
       <View>
         <View className="items-center px-5 pt-4 pb-1">

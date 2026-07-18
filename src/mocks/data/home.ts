@@ -1,3 +1,8 @@
+/**
+ * Home UI view model for search groups.
+ * Slot / tier rules live in domain + SubscriptionStore; this is the persisted list shape.
+ */
+
 export type HomePlatform = "facebook" | "offerUp" | "craigslist" | "kijiji";
 export type SearchType = "car" | "iphone" | "custom";
 
@@ -36,9 +41,9 @@ export interface CreditBucket {
 }
 
 export interface HomePlan {
-  tier: "hunter";
-  displayName: "Hunter";
-  maxSearches: 8;
+  tier: "starter" | "hunter" | "master";
+  displayName: string;
+  maxSearches: number;
   usedSearches: number;
   credits: CreditBucket[];
 }
@@ -58,137 +63,83 @@ function setting(
   return { id, platform, locationName, isActive, runIntervalSeconds };
 }
 
-/** Hunter plan · mix of car, iPhone, and custom searches (mock). */
+/**
+ * Hunter seed (15 slots: 180×10 + 300×5).
+ * Active settings use 10 slots → 5 remaining for create demos.
+ */
+export const homeGroupsFixture: SearchGroup[] = [
+  {
+    id: "g1",
+    searchType: "car",
+    locationName: "Atlanta, GA, USA",
+    radiusMiles: 35,
+    carQuery: {
+      makes: ["Honda", "Toyota"],
+      minPrice: 5000,
+      maxPrice: 18000,
+      minYear: 2016,
+      maxYear: 2022,
+      maxMileage: 90000,
+    },
+    settings: [
+      setting("g1-fb", "facebook", "Atlanta, GA", true, 180),
+      setting("g1-ou", "offerUp", "Atlanta, GA", true, 180),
+      setting("g1-cl", "craigslist", "Marietta, GA", true, 300),
+    ],
+  },
+  {
+    id: "g2",
+    searchType: "iphone",
+    locationName: "Atlanta, GA, USA",
+    radiusMiles: 25,
+    customLabel: "iPhone 13–15 Pro",
+    settings: [
+      setting("g2-fb", "facebook", "Atlanta, GA", true, 180),
+      setting("g2-ou", "offerUp", "Decatur, GA", true, 180),
+    ],
+  },
+  {
+    id: "g3",
+    searchType: "car",
+    locationName: "Miami, FL, USA",
+    radiusMiles: 40,
+    carQuery: {
+      makes: ["BMW", "Mercedes-Benz"],
+      minPrice: 12000,
+      maxPrice: 35000,
+      minYear: 2015,
+      maxMileage: 70000,
+    },
+    settings: [
+      setting("g3-fb", "facebook", "Miami, FL", true, 180),
+      setting("g3-ou", "offerUp", "Fort Lauderdale, FL", true, 300),
+      setting("g3-cl", "craigslist", "Miami, FL", true, 300),
+    ],
+  },
+  {
+    id: "g4",
+    searchType: "custom",
+    locationName: "Atlanta, GA, USA",
+    radiusMiles: 20,
+    customLabel: "Cameras & lenses",
+    settings: [
+      setting("g4-fb", "facebook", "Atlanta, GA", true, 180),
+      setting("g4-ou", "offerUp", "Buckhead, GA", true, 180),
+    ],
+  },
+];
+
+/** @deprecated Prefer building plan from SubscriptionStore + groups. */
 export const homeFixture: HomeState = {
   plan: {
     tier: "hunter",
     displayName: "Hunter",
-    maxSearches: 8,
-    usedSearches: 8,
+    maxSearches: 15,
+    usedSearches: 10,
     credits: [
-      { intervalSeconds: 60, total: 3, remaining: 2 },
-      { intervalSeconds: 300, total: 3, remaining: 3 },
-      { intervalSeconds: 900, total: 2, remaining: 1 },
+      { intervalSeconds: 180, total: 10, remaining: 3 },
+      { intervalSeconds: 300, total: 5, remaining: 2 },
     ],
   },
-  groups: [
-    {
-      id: "g1",
-      searchType: "car",
-      locationName: "Atlanta, GA, USA",
-      radiusMiles: 35,
-      carQuery: {
-        makes: ["Honda", "Toyota"],
-        minPrice: 5000,
-        maxPrice: 18000,
-        minYear: 2016,
-        maxYear: 2022,
-        maxMileage: 90000,
-      },
-      settings: [
-        setting("g1-fb", "facebook", "Atlanta, GA", true, 60),
-        setting("g1-ou", "offerUp", "Atlanta, GA", true, 300),
-        setting("g1-cl", "craigslist", "Marietta, GA", true, 900),
-      ],
-    },
-    {
-      id: "g2",
-      searchType: "iphone",
-      locationName: "Atlanta, GA, USA",
-      radiusMiles: 25,
-      customLabel: "iPhone 13–15 Pro",
-      settings: [
-        setting("g2-fb", "facebook", "Atlanta, GA", true, 60),
-        setting("g2-ou", "offerUp", "Decatur, GA", true, 300),
-        setting("g2-cl", "craigslist", "Atlanta, GA", false, 900),
-      ],
-    },
-    {
-      id: "g3",
-      searchType: "car",
-      locationName: "Miami, FL, USA",
-      radiusMiles: 40,
-      carQuery: {
-        makes: ["BMW", "Mercedes-Benz"],
-        minPrice: 12000,
-        maxPrice: 35000,
-        minYear: 2015,
-        maxMileage: 70000,
-      },
-      settings: [
-        setting("g3-fb", "facebook", "Miami, FL", true, 60),
-        setting("g3-ou", "offerUp", "Fort Lauderdale, FL", true, 60),
-        setting("g3-cl", "craigslist", "Miami, FL", true, 300),
-        setting("g3-kj", "kijiji", "Miami, FL", false, 900),
-      ],
-    },
-    {
-      id: "g4",
-      searchType: "custom",
-      locationName: "Atlanta, GA, USA",
-      radiusMiles: 20,
-      customLabel: "Cameras & lenses",
-      settings: [
-        setting("g4-fb", "facebook", "Atlanta, GA", true, 300),
-        setting("g4-ou", "offerUp", "Buckhead, GA", true, 900),
-      ],
-    },
-    {
-      id: "g5",
-      searchType: "car",
-      locationName: "Denver, CO, USA",
-      radiusMiles: 60,
-      carQuery: {
-        makes: ["Subaru", "Jeep"],
-        minPrice: 10000,
-        maxPrice: 28000,
-        minYear: 2017,
-      },
-      settings: [
-        setting("g5-fb", "facebook", "Denver, CO", true, 60),
-        setting("g5-ou", "offerUp", "Aurora, CO", true, 300),
-      ],
-    },
-    {
-      id: "g6",
-      searchType: "iphone",
-      locationName: "Austin, TX, USA",
-      radiusMiles: 30,
-      customLabel: "Unlocked iPhones",
-      settings: [
-        setting("g6-fb", "facebook", "Austin, TX", true, 60),
-        setting("g6-cl", "craigslist", "Austin, TX", true, 300),
-        setting("g6-ou", "offerUp", "Round Rock, TX", false, 900),
-      ],
-    },
-    {
-      id: "g7",
-      searchType: "custom",
-      locationName: "Chicago, IL, USA",
-      radiusMiles: 35,
-      customLabel: "Bikes & outdoor",
-      settings: [
-        setting("g7-fb", "facebook", "Chicago, IL", false, 300),
-        setting("g7-cl", "craigslist", "Chicago, IL", false, 900),
-      ],
-    },
-    {
-      id: "g8",
-      searchType: "car",
-      locationName: "Nashville, TN, USA",
-      radiusMiles: 40,
-      carQuery: {
-        makes: ["Nissan", "Hyundai"],
-        minPrice: 4000,
-        maxPrice: 15000,
-        minYear: 2014,
-        maxYear: 2021,
-      },
-      settings: [
-        setting("g8-fb", "facebook", "Nashville, TN", true, 60),
-        setting("g8-ou", "offerUp", "Nashville, TN", false, 300),
-        setting("g8-cl", "craigslist", "Murfreesboro, TN", true, 900),
-      ],
-    },
-  ],
+  groups: homeGroupsFixture,
 };

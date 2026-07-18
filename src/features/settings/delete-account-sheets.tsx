@@ -14,6 +14,11 @@ import {
 } from "heroui-native";
 import { ProgressButton } from "heroui-native-pro";
 
+import {
+  SHEET_BACKGROUND_CLASS_NAME,
+  SHEET_CONTENT_CLASS_NAME,
+  SHEET_CONTENT_CONTAINER_CLASS_NAME,
+} from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
 import { mockDeleteAccount } from "@/mocks/services/settings";
 
@@ -63,10 +68,10 @@ function DeleteAccountContent({
   if (step === "confirm") {
     return (
       <BottomSheet.Content
-        className="overflow-hidden"
-        backgroundClassName="rounded-t-[32px] bg-surface-secondary"
+        className={SHEET_CONTENT_CLASS_NAME}
+        backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
         handleComponent={null}
-        contentContainerClassName="p-0"
+        contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
       >
         <View>
           <View className="items-center px-8 pt-3 pb-2">
@@ -103,10 +108,10 @@ function DeleteAccountContent({
 
   return (
     <BottomSheet.Content
-      className="overflow-hidden"
-      backgroundClassName="rounded-t-[32px] bg-surface-secondary"
+      className={SHEET_CONTENT_CLASS_NAME}
+      backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
       handleComponent={null}
-      contentContainerClassName="p-0"
+      contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
     >
       <View>
         <View className="items-center px-8 pt-3 pb-2">

@@ -8,12 +8,16 @@ alwaysApply: true
 ## Scope
 
 - Work in **heroui-mobile** only for implementation.
-- **mobile-app** is screen/flow reference only - do not copy NativeWind, shadcn, MobX, or API clients.
+- **mobile-app** is screen/flow reference only - do not copy NativeWind, shadcn, or real Axios/API clients.
 
-## Data
+## Data & state
 
-- UI + mock only. All reads/writes go through `src/mocks/services/*` and fixtures in `src/mocks/data/*`.
+- UI + mock only. Preferred path: screens → MobX `src/store/*` → `src/api/agent.ts` → `src/mocks/services/*` + fixtures in `src/mocks/data/*`.
+- Persist mock domain data with AsyncStorage via `src/lib/storage.ts` when it must survive reload (searches, subscription).
+- Pure rules (slot math, intervals) live in `src/domain/*` — not in screens.
 - Never use Axios, SignalR, Adapty, or real backends in this repo.
+- MobX is allowed; keep stores **split by domain** (e.g. SearchStore vs SubscriptionStore). Do not port god-stores from mobile-app.
+- Search / slot rules: see `SEARCH_STORE.md` (Starter / Hunter / Master tables).
 
 ## Theme
 

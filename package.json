@@ -48,6 +48,8 @@
     "heroui-native-pro": "^1.0.0-beta.6",
     "maplibre-gl": "^5.24.0",
     "marked": "^18.0.6",
+    "mobx": "^6.16.1",
+    "mobx-react-lite": "^4.1.1",
     "motion": "^12.42.2",
     "react": "19.2.3",
     "react-aria-components": "^1.19.0",

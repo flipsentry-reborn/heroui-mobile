@@ -14,6 +14,11 @@ import {
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
+import {
+  SHEET_BACKGROUND_CLASS_NAME,
+  SHEET_CONTENT_CLASS_NAME,
+  SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
+} from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
 import { MOCK_CAR_MAKES } from "@/mocks/data/car";
 
@@ -152,9 +157,10 @@ function CarMakesSheetContent({
       keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
-      backgroundClassName="rounded-t-[32px] bg-surface-secondary"
+      className={SHEET_CONTENT_CLASS_NAME}
+      backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
       handleComponent={null}
-      contentContainerClassName="h-full bg-surface-secondary p-0"
+      contentContainerClassName={SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME}
     >
       <View className="flex-1">
         <View className="flex-row items-center justify-between px-5 pb-1 pt-4">

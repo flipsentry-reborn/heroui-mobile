@@ -77,13 +77,13 @@ House style for unconstrained / open-ended search criteria. Shared helper: `form
 | Car makes (no specific filter) | `All makes` | `Any`, `Any Make` |
 | Keywords / platforms / iPhone models (none selected) | `None` | `Any` |
 | Number field placeholders | `Min` / `Max` | `Any`, `Empty` (for min/max fields) |
-| Year wheel open option | `No min` / `No max` | `Any` |
+| Year wheel open option | `Min` / `Max` | `Any`, `No min`, `No max` |
 | Search type unset / custom query empty | `Empty` (editor empty, not a filter bound) | — |
 
 ### Implementation checklist
 
 1. New open-ended range UI → call `formatOpenRangeLabel` (or `formatPriceRangeLabel` for criteria).
-2. Do not hardcode `Any` / `No min` / `No max` as chip or criteria **summaries** (wheels/placeholders may still say No min / No max / Min / Max).
+2. Do not hardcode `Any` / `No min` / `No max` as chip or criteria **summaries** (wheels/placeholders use `Min` / `Max`).
 3. Makes “select all” row label and summary → `All makes`.
 4. If you add a new unconstrained filter, pick from the tables above; do not reintroduce `Any`.
 
@@ -172,7 +172,7 @@ Full reuse guide: **`SUBSCRIPTION.md`**.
 | `heroui-native-pro` first, then `heroui-native` | Web `@heroui/react` / `@heroui-pro/react` on screens |
 | MCP: `list_components` → `get_component_docs` before building | Guessing compound APIs |
 | Uniwind `className` | NativeWind / StyleSheet for colors |
-| Local state / light context | MobX from `mobile-app` |
+| Split MobX stores (`src/store`) + `agent` mock | God-stores / Axios clients from `mobile-app` |
 | `onPress` | `onClick` |
 
 Rules: `.cursor/rules/flipsentry-ui-port.mdc`, `.cursor/rules/heroui-native-screens.mdc`.
@@ -183,8 +183,8 @@ Rules: `.cursor/rules/flipsentry-ui-port.mdc`, `.cursor/rules/heroui-native-scre
 
 | Prefer | Avoid |
 |--------|--------|
-| `src/mocks/services/*` + `src/mocks/data/*` | Axios, SignalR, Adapty, real backends |
-| Typed fixtures, optional fake latency | Importing `mobile-app` API clients |
+| Stores → `agent` → `src/mocks/services/*` + fixtures | Axios, SignalR, Adapty, real backends |
+| Typed fixtures, AsyncStorage for durable mocks | Importing `mobile-app` API clients |
 | Syncing related mocks (e.g. subscribe → settings flags) | Divergent “truth” across services |
 
 `mobile-app` is **screen/flow reference only** — do not copy its styling stack.

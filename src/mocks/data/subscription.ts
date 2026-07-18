@@ -1,165 +1,110 @@
-export type SubscriptionTier = "web" | "mobile" | "custom" | "super";
+import type { FlipSentryTier } from "@/models/subscription";
+import { TIER_SLOT_TABLES, totalSlotsForTier } from "@/mocks/data/tier-slots";
+import { formatIntervalLabel } from "@/domain/search-rules";
+
+export type SubscriptionTier = FlipSentryTier;
 
 export type PlanAccent = "teal" | "purple" | "rose" | "gold";
 
 export type BillingPeriod = "month" | "week";
 
 export interface SubscriptionPlan {
- id: SubscriptionTier;
- displayName: string;
- description: string;
- price: number;
- billingPeriod: BillingPeriod;
- priceNote: string;
- ctaLabel: string;
- badge?: string;
- accent: PlanAccent;
- features: string[];
- renewalTitle: string;
- renewalNote: string;
- /** Featured plan uses solid white CTA (HeroUI Super Heroes). */
- featured?: boolean;
+  id: SubscriptionTier;
+  displayName: string;
+  description: string;
+  price: number;
+  billingPeriod: BillingPeriod;
+  priceNote: string;
+  ctaLabel: string;
+  badge?: string;
+  accent: PlanAccent;
+  features: string[];
+  renewalTitle: string;
+  renewalNote: string;
+  featured?: boolean;
 }
 
-export interface SubscriptionState {
- currentTier: SubscriptionTier | null;
- hasActiveSubscription: boolean;
- hasActiveTrial: boolean;
- plans: SubscriptionPlan[];
+export interface SubscriptionPersistedState {
+  currentTier: SubscriptionTier | null;
+  hasActiveSubscription: boolean;
+  hasActiveTrial: boolean;
 }
 
-/**
- * Placeholder plans - HeroUI Pro-inspired copy.
- * Swap `displayName`, `features`, prices, and accents for FlipSentry later.
- * See `SUBSCRIPTION.md`.
- */
+export interface SubscriptionState extends SubscriptionPersistedState {
+  plans: SubscriptionPlan[];
+}
+
+function slotFeatureLines(tier: SubscriptionTier): string[] {
+  const slots = TIER_SLOT_TABLES[tier];
+  const total = totalSlotsForTier(tier);
+  const speedLines = slots.map(
+    (s) => `${s.value}× ${formatIntervalLabel(s.interval)} alerts`,
+  );
+  return [`${total} active search slots`, ...speedLines, "Access to all platforms"];
+}
+
 export const subscriptionPlans: SubscriptionPlan[] = [
- {
- id: "web",
- displayName: "Web Heroes",
- description: "Get access to React library components and features",
- price: 199,
- billingPeriod: "month",
- priceNote: "Per seat",
- ctaLabel: "Get Web Heroes",
- accent: "teal",
- features: [
- "Pro React components",
- "Premium templates",
- "Pro AI (Skills and MCPs)",
- "500 AI credits per seat included",
- "Premium design systems",
- "Pro theme builder",
- "Private Discord channel",
- "Prioritized issues",
- "Priority support",
- "Shared themes and rules",
- "Usage analytics and reports",
- "Centralized team billing",
- ],
- renewalTitle: "Optional updates renewal at $69/yr/seat",
- renewalNote:
- "Get another year of updates, or keep using your current version. No pressure.",
- },
- {
- id: "mobile",
- displayName: "Mobile Heroes",
- description: "Get access to React Native library components and features",
- price: 199,
- billingPeriod: "month",
- priceNote: "Per seat",
- ctaLabel: "Get Mobile Heroes",
- accent: "purple",
- features: [
- "Pro React Native components",
- "Premium templates",
- "Pro AI (Skills and MCPs)",
- "500 AI credits per seat included",
- "Premium design systems",
- "Pro theme builder",
- "Private Discord channel",
- "Prioritized issues",
- "Priority support",
- "Shared themes and rules",
- "Usage analytics and reports",
- "Centralized team billing",
- ],
- renewalTitle: "Optional updates renewal at $69/yr/seat",
- renewalNote:
- "Get another year of updates, or keep using your current version. No pressure.",
- },
- {
- id: "custom",
- displayName: "Custom Heroes",
- description:
- "Tailored access for teams that need more than a single stack - without going all-in on Super",
- price: 249,
- billingPeriod: "month",
- priceNote: "Per seat",
- ctaLabel: "Get Custom Heroes",
- badge: "Flexible",
- accent: "rose",
- features: [
- "Choose React or React Native Pro components",
- "Premium templates",
- "Pro AI (Skills and MCPs)",
- "750 AI credits per seat included",
- "Premium design systems",
- "Pro theme builder",
- "Private Discord channel",
- "Prioritized issues",
- "Priority support",
- "Shared themes and rules",
- "Usage analytics and reports",
- "Centralized team billing",
- ],
- renewalTitle: "Optional updates renewal at $79/yr/seat",
- renewalNote:
- "Get another year of updates, or keep using your current version. No pressure.",
- },
- {
- id: "super",
- displayName: "Super Heroes",
- description: "The full system. React and React Native, together",
- price: 299,
- billingPeriod: "week",
- priceNote: "Per seat",
- ctaLabel: "Get Super Heroes",
- badge: "Best value",
- accent: "gold",
- featured: true,
- features: [
- "All Pro components (React + React Native)",
- "Premium templates",
- "Pro AI (Skills and MCPs)",
- "1000 AI credits per seat included",
- "Premium design systems",
- "Pro theme builder",
- "Private Discord channels",
- "Prioritized issues",
- "Priority support",
- "Shared themes and rules",
- "Usage analytics and reports",
- "Centralized team billing",
- ],
- renewalTitle: "Optional updates renewal at $99/yr/seat",
- renewalNote:
- "Get another year of updates, or keep using your current version. No pressure.",
- },
+  {
+    id: "starter",
+    displayName: "Starter",
+    description: "For casual flippers. Steady 5-min alerts across all platforms.",
+    price: 29,
+    billingPeriod: "month",
+    priceNote: "Billed monthly",
+    ctaLabel: "Get Starter",
+    accent: "teal",
+    features: slotFeatureLines("starter"),
+    renewalTitle: "Cancel anytime",
+    renewalNote: "Keep your searches until the period ends. No pressure.",
+  },
+  {
+    id: "hunter",
+    displayName: "Hunter",
+    description: "For growing flippers. Faster 3-min alerts and more slots.",
+    price: 49,
+    billingPeriod: "month",
+    priceNote: "Billed monthly",
+    ctaLabel: "Get Hunter",
+    badge: "Popular",
+    accent: "purple",
+    features: slotFeatureLines("hunter"),
+    renewalTitle: "Cancel anytime",
+    renewalNote: "Keep your searches until the period ends. No pressure.",
+  },
+  {
+    id: "master",
+    displayName: "Master",
+    description: "For car flippers who need Instant alerts and max coverage.",
+    price: 79,
+    billingPeriod: "month",
+    priceNote: "Billed monthly",
+    ctaLabel: "Get Master",
+    badge: "Best value",
+    accent: "gold",
+    featured: true,
+    features: slotFeatureLines("master"),
+    renewalTitle: "Cancel anytime",
+    renewalNote: "Keep your searches until the period ends. No pressure.",
+  },
 ];
 
+/** Default mock: Hunter subscribed so home credits / create rules are demoable. */
+export const initialSubscriptionPersisted: SubscriptionPersistedState = {
+  currentTier: "hunter",
+  hasActiveSubscription: true,
+  hasActiveTrial: false,
+};
+
 export const initialSubscriptionState: SubscriptionState = {
- currentTier: null,
- hasActiveSubscription: false,
- hasActiveTrial: false,
- plans: subscriptionPlans,
+  ...initialSubscriptionPersisted,
+  plans: subscriptionPlans,
 };
 
 export function formatMoney(n: number): string {
- return `$${n}`;
+  return `$${n}`;
 }
 
 export function formatPlanPrice(plan: SubscriptionPlan): string {
- const suffix = plan.billingPeriod === "week" ? "/wk" : "/mo";
- return `${formatMoney(plan.price)}${suffix}`;
+  const suffix = plan.billingPeriod === "week" ? "/wk" : "/mo";
+  return `${formatMoney(plan.price)}${suffix}`;
 }

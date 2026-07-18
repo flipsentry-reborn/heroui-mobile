@@ -11,6 +11,11 @@ import {
 } from "heroui-native";
 import { WheelPicker, WheelPickerGroup } from "heroui-native-pro";
 
+import {
+  SHEET_BACKGROUND_CLASS_NAME,
+  SHEET_CONTENT_CLASS_NAME,
+  SHEET_CONTENT_CONTAINER_CLASS_NAME,
+} from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -29,8 +34,8 @@ function buildYearItems(
   return years;
 }
 
-const MIN_YEAR_ITEMS = buildYearItems("No min");
-const MAX_YEAR_ITEMS = buildYearItems("No max");
+const MIN_YEAR_ITEMS = buildYearItems("Min");
+const MAX_YEAR_ITEMS = buildYearItems("Max");
 
 function getYearRangeError(min: string, max: string): string | null {
   if (min === "" || max === "") return null;
@@ -81,9 +86,10 @@ function YearSheetContent({
 
   return (
     <BottomSheet.Content
-      backgroundClassName="rounded-t-[32px] bg-surface-secondary"
+      className={SHEET_CONTENT_CLASS_NAME}
+      backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
       handleComponent={null}
-      contentContainerClassName="bg-surface-secondary p-0"
+      contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
       enableContentPanningGesture={false}
       enableOverDrag={false}
     >

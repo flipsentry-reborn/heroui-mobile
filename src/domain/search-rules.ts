@@ -109,6 +109,42 @@ export function buildIntervalOptions(
   }));
 }
 
+/**
+ * While editing a group, add its current active settings back into remaining
+ * so the user can keep / reallocate those slots without them counting twice.
+ */
+export function creditSettingsIntoIntervalOptions(
+  options: IntervalOption[],
+  settings: Array<{ runIntervalSeconds: number; isActive?: boolean }>,
+): IntervalOption[] {
+  if (options.length === 0 || settings.length === 0) return options;
+  const credit = countUsedSlotsByInterval(settings);
+  if (credit.size === 0) return options;
+  return options.map((option) => {
+    const add = credit.get(option.interval) ?? 0;
+    if (add === 0) return option;
+    return {
+      ...option,
+      remaining: Math.min(option.allowed, option.remaining + add),
+    };
+  });
+}
+
+/** Active settings from all groups except `excludeGroupId`. */
+export function countUsedSlotsExcludingGroup(
+  groups: Array<{
+    id: string;
+    settings: Array<{ runIntervalSeconds: number; isActive?: boolean }>;
+  }>,
+  excludeGroupId: string,
+): Map<number, number> {
+  return countUsedSlotsByInterval(
+    groups
+      .filter((group) => group.id !== excludeGroupId)
+      .flatMap((group) => group.settings),
+  );
+}
+
 export function canCreateSearch(remainingSlots: number): boolean {
   return remainingSlots > 0;
 }

@@ -26,6 +26,12 @@ export function sanitizePriceInput(text: string): string {
   return text.replace(/[^0-9]/g, "");
 }
 
+/** Display helper — HeroUI Input has no built-in grouping; format digits with commas. */
+export function formatGroupedDigits(digits: string): string {
+  if (digits === "") return "";
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 /**
  * Open-ended range display: ≤15k / 15k+ / 5k-15k.
  * Pass already-formatted values (e.g. "15k", "2018").
@@ -66,18 +72,28 @@ function PriceFieldInput({
   isInvalid,
   maxLength,
   placeholder,
+  groupThousands = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   isInvalid: boolean;
   maxLength?: number;
   placeholder: string;
+  groupThousands?: boolean;
 }): JSX.Element {
   const { onFocus, onBlur } = useBottomSheetAwareHandlers();
+  const displayValue = groupThousands ? formatGroupedDigits(value) : value;
+  // maxLength applies to digits; when grouping, allow room for commas in the field.
+  const inputMaxLength =
+    maxLength == null
+      ? undefined
+      : groupThousands
+        ? maxLength + Math.floor(Math.max(0, maxLength - 1) / 3)
+        : maxLength;
 
   return (
     <Input
-      value={value}
+      value={displayValue}
       onChangeText={(text) => {
         const next = sanitizePriceInput(text);
         onChange(
@@ -89,7 +105,7 @@ function PriceFieldInput({
       variant="primary"
       isInvalid={isInvalid}
       textAlign="center"
-      maxLength={maxLength}
+      maxLength={inputMaxLength}
       className="h-8 min-h-8 w-40 px-2 py-0 text-sm text-foreground"
       onFocus={onFocus}
       onBlur={onBlur}
@@ -105,6 +121,7 @@ function PriceSheetContent({
   onMaxChange,
   onPersist,
   maxLength,
+  groupThousands = false,
 }: {
   title: string;
   min: string;
@@ -113,6 +130,7 @@ function PriceSheetContent({
   onMaxChange: (value: string) => void;
   onPersist: (min: string, max: string) => void;
   maxLength?: number;
+  groupThousands?: boolean;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const snapPoints = useMemo(() => ["92%"], []);
@@ -153,6 +171,7 @@ function PriceSheetContent({
                 isInvalid={isInvalid}
                 maxLength={maxLength}
                 placeholder="Min"
+                groupThousands={groupThousands}
               />
             }
           />
@@ -166,6 +185,7 @@ function PriceSheetContent({
                 isInvalid={isInvalid}
                 maxLength={maxLength}
                 placeholder="Max"
+                groupThousands={groupThousands}
               />
             }
           />
@@ -207,6 +227,8 @@ interface SearchBottomSheetPriceSheetProps {
   /** Sheet title — reuse for Year / Mileage ranges. */
   title?: string;
   maxLength?: number;
+  /** Show thousand separators in the inputs (e.g. mileage 99,000). */
+  groupThousands?: boolean;
 }
 
 export function SearchBottomSheetPriceSheet({
@@ -218,6 +240,7 @@ export function SearchBottomSheetPriceSheet({
   onMaxChange,
   title = "Price",
   maxLength,
+  groupThousands = false,
 }: SearchBottomSheetPriceSheetProps): JSX.Element | null {
   const [draftMin, setDraftMin] = useState(min);
   const [draftMax, setDraftMax] = useState(max);
@@ -237,6 +260,7 @@ export function SearchBottomSheetPriceSheet({
         onMinChange={setDraftMin}
         onMaxChange={setDraftMax}
         maxLength={maxLength}
+        groupThousands={groupThousands}
         onPersist={(nextMin, nextMax) => {
           onMinChange(nextMin);
           onMaxChange(nextMax);

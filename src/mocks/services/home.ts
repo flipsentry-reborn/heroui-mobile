@@ -2,6 +2,7 @@ import {
   buildIntervalOptions,
   computeRemainingSlotSettings,
   countUsedSlotsByInterval,
+  countUsedSlotsExcludingGroup,
   formatIntervalLabel as formatIntervalLabelDomain,
   sumSlotValues,
 } from "@/domain/search-rules";
@@ -116,23 +117,16 @@ export interface CreateHomeSearchInput {
   excludeText?: string[];
 }
 
-export async function createGroup(
-  input: CreateHomeSearchInput,
-): Promise<SearchGroup> {
-  await ensureHydrated();
-  await delay(200);
+export type UpdateHomeSearchInput = CreateHomeSearchInput;
 
-  if (input.settings.length === 0) {
-    throw new Error("Select at least one platform and location.");
-  }
-
-  const sub = await getPersistedSubscription();
-  const tier = sub.hasActiveSubscription ? sub.currentTier : null;
-  const allowed = getAllowedSlotSettings(tier);
-  const usedByInterval = countUsedSlotsByInterval(allSettings());
+function assertDraftFitsRemaining(
+  draftSettings: CreateHomeSearchSettingInput[],
+  usedByInterval: Map<number, number>,
+  allowed: ReturnType<typeof getAllowedSlotSettings>,
+): void {
   const remaining = computeRemainingSlotSettings(allowed, usedByInterval);
   const draftUsage = countUsedSlotsByInterval(
-    input.settings.map((setting) => ({
+    draftSettings.map((setting) => ({
       runIntervalSeconds: setting.runIntervalSeconds,
       isActive: true,
     })),
@@ -146,6 +140,26 @@ export async function createGroup(
       );
     }
   }
+}
+
+export async function createGroup(
+  input: CreateHomeSearchInput,
+): Promise<SearchGroup> {
+  await ensureHydrated();
+  await delay(200);
+
+  if (input.settings.length === 0) {
+    throw new Error("Select at least one platform and location.");
+  }
+
+  const sub = await getPersistedSubscription();
+  const tier = sub.hasActiveSubscription ? sub.currentTier : null;
+  const allowed = getAllowedSlotSettings(tier);
+  assertDraftFitsRemaining(
+    input.settings,
+    countUsedSlotsByInterval(allSettings()),
+    allowed,
+  );
 
   const id = `g-${Date.now()}`;
   const settings: SearchSetting[] = input.settings.map((setting, index) => ({
@@ -169,6 +183,58 @@ export async function createGroup(
   groups = [group, ...groups];
   await persistGroups();
   return structuredClone(group);
+}
+
+export async function updateGroup(
+  id: string,
+  input: UpdateHomeSearchInput,
+): Promise<SearchGroup> {
+  await ensureHydrated();
+  await delay(200);
+
+  const index = groups.findIndex((group) => group.id === id);
+  if (index < 0) {
+    throw new Error("Search not found.");
+  }
+  if (input.settings.length === 0) {
+    throw new Error("Select at least one platform and location.");
+  }
+
+  const existing = groups[index];
+  const wasPaused =
+    existing.settings.length > 0 &&
+    existing.settings.every((setting) => !setting.isActive);
+
+  const sub = await getPersistedSubscription();
+  const tier = sub.hasActiveSubscription ? sub.currentTier : null;
+  const allowed = getAllowedSlotSettings(tier);
+  assertDraftFitsRemaining(
+    input.settings,
+    countUsedSlotsExcludingGroup(groups, id),
+    allowed,
+  );
+
+  const settings: SearchSetting[] = input.settings.map((setting, settingIndex) => ({
+    id: `${id}-${setting.platform}-${settingIndex}`,
+    platform: setting.platform,
+    locationName: setting.locationName,
+    isActive: !wasPaused,
+    runIntervalSeconds: setting.runIntervalSeconds,
+  }));
+
+  const updated: SearchGroup = {
+    id,
+    searchType: input.searchType,
+    locationName: input.locationName,
+    radiusMiles: input.radiusMiles,
+    carQuery: input.carQuery,
+    customLabel: input.customLabel,
+    settings,
+  };
+
+  groups = groups.map((group, i) => (i === index ? updated : group));
+  await persistGroups();
+  return structuredClone(updated);
 }
 
 export async function toggleGroupActive(

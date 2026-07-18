@@ -1,12 +1,15 @@
 import { makeAutoObservable, runInAction } from "mobx";
 
-import agent, { type CreateHomeSearchInput } from "@/api/agent";
+import agent, {
+  type CreateHomeSearchInput,
+  type UpdateHomeSearchInput,
+} from "@/api/agent";
 import { buildHomePlan } from "@/mocks/services/home";
 import type { HomePlan, SearchGroup } from "@/mocks/data/home";
 import type SubscriptionStore from "@/store/subscriptionStore";
 
 /**
- * Owns search groups list + create/delete/toggle.
+ * Owns search groups list + create/update/delete/toggle.
  * Slot capacity lives on SubscriptionStore; this store refreshes it after mutations.
  */
 export default class SearchStore {
@@ -79,6 +82,35 @@ export default class SearchStore {
       runInAction(() => {
         this.lastError =
           error instanceof Error ? error.message : "Failed to create search";
+      });
+      return null;
+    } finally {
+      runInAction(() => {
+        this.submitting = false;
+      });
+    }
+  }
+
+  async updateGroup(
+    id: string,
+    input: UpdateHomeSearchInput,
+  ): Promise<SearchGroup | null> {
+    if (this.submitting) return null;
+    this.submitting = true;
+    this.lastError = null;
+    try {
+      const group = await agent.GroupSearch.update(id, input);
+      runInAction(() => {
+        this.searchGroups = this.searchGroups.map((item) =>
+          item.id === id ? group : item,
+        );
+      });
+      await this.subscriptionStore?.refreshStatus(this.searchGroups);
+      return group;
+    } catch (error) {
+      runInAction(() => {
+        this.lastError =
+          error instanceof Error ? error.message : "Failed to update search";
       });
       return null;
     } finally {

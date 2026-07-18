@@ -13,7 +13,10 @@ import {
   formatKeywordsLabel,
   type KeywordsState,
 } from "@/features/home/search-bottom-sheet-keywords-sheet";
-import { formatPriceRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
+import {
+  formatGroupedDigits,
+  formatPriceRangeLabel,
+} from "@/features/home/search-bottom-sheet-price-sheet";
 import {
   SearchSheetGroup,
   SearchSheetRow,
@@ -119,7 +122,10 @@ export function SearchBottomSheetCriteria({
   const hasPriceFilter = price.min !== "" || price.max !== "";
   const yearLabel = formatPriceRangeLabel(year.min, year.max);
   const hasYearFilter = year.min !== "" || year.max !== "";
-  const mileageLabel = formatPriceRangeLabel(mileage.min, mileage.max);
+  const mileageLabel = formatPriceRangeLabel(
+    formatGroupedDigits(mileage.min),
+    formatGroupedDigits(mileage.max),
+  );
   const hasMileageFilter = mileage.min !== "" || mileage.max !== "";
   const modelsLabel = formatIphoneModelsLabel(iphoneModels.selections);
   const hasModels = iphoneModels.selections.length > 0;

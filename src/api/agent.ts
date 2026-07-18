@@ -11,7 +11,9 @@ import {
   deleteGroup,
   listGroups,
   toggleGroupActive,
+  updateGroup,
   type CreateHomeSearchInput,
+  type UpdateHomeSearchInput,
 } from "@/mocks/services/home";
 import {
   getSubscription,
@@ -24,6 +26,10 @@ const GroupSearch = {
   list: (): Promise<SearchGroup[]> => listGroups(),
   create: (input: CreateHomeSearchInput): Promise<SearchGroup> =>
     createGroup(input),
+  update: (
+    id: string,
+    input: UpdateHomeSearchInput,
+  ): Promise<SearchGroup> => updateGroup(id, input),
   delete: (id: string): Promise<boolean> => deleteGroup(id),
   setActive: (id: string, isActive: boolean): Promise<SearchGroup | null> =>
     toggleGroupActive(id, isActive),
@@ -44,4 +50,4 @@ const agent = {
 };
 
 export default agent;
-export type { CreateHomeSearchInput };
+export type { CreateHomeSearchInput, UpdateHomeSearchInput };

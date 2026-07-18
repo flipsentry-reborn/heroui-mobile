@@ -638,6 +638,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
         max={maxMileage}
         onMinChange={setMinMileage}
         onMaxChange={setMaxMileage}
+        groupThousands
       />
 
       <SearchBottomSheetKeywordsSheet

@@ -383,20 +383,20 @@ function KeywordsSheetContent({
               hideSeparator
               isCollapsible
             >
-              <Accordion.Item value="guide">
+              <Accordion.Item value="pro-tip">
                 <Accordion.Trigger>
                   <View className="flex-row items-center gap-2.5">
                     <StyledIonicons
                       name="sparkles"
                       size={16}
-                      className="text-violet-400"
+                      className="text-sky-400"
                     />
                     <Typography
                       type="body-sm"
                       weight="semibold"
                       className="text-foreground"
                     >
-                      Guide
+                      Pro Tip
                     </Typography>
                   </View>
                   <Accordion.Indicator />

@@ -151,15 +151,18 @@ export function intervalSecondsToRunSpeed(
   return null;
 }
 
-/** Speeds offered for a tier (always includes `none`). */
+/**
+ * Speeds offered for a tier (always includes `none`).
+ * Instant is always listed (upsell) even when the plan has no 60s slots —
+ * `availableSpeedsForLocation` marks it disabled in that case.
+ */
 export function filterSpeedsForTier(
   intervalOptions: IntervalOption[],
 ): DraftRunSpeed[] {
   const allowed = new Set(
     intervalOptions.map((o) => intervalSecondsToRunSpeed(o.interval)),
   );
-  const speeds: DraftRunSpeed[] = [];
-  if (allowed.has("instant")) speeds.push("instant");
+  const speeds: DraftRunSpeed[] = ["instant"];
   if (allowed.has("3min")) speeds.push("3min");
   if (allowed.has("5min")) speeds.push("5min");
   speeds.push("none");

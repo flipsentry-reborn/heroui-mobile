@@ -6,12 +6,22 @@ import { View } from "react-native";
 import {
   BottomSheet,
   Button,
-  FieldError,
   Typography,
   useBottomSheet,
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
+import {
+  availableSpeedsForLocation,
+  canAssignLocationSpeed,
+  type DraftLocationSpeed,
+  type IntervalOption,
+  validateLocationDraft,
+} from "@/domain/search-rules";
+import {
+  LocationErrorInfoDialog,
+  type LocationFooterError,
+} from "@/features/home/location-error-info-dialog";
 import { LocationMainSearch } from "@/features/home/location-main-search";
 import { LocationMap } from "@/features/home/location-map";
 import { LocationOtherList } from "@/features/home/location-other-list";
@@ -23,12 +33,6 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import {
-  availableSpeedsForLocation,
-  canAssignLocationSpeed,
-  type DraftLocationSpeed,
-  validateLocationDraft,
-} from "@/domain/search-rules";
 import {
   DEFAULT_RADIUS_MILES,
   isLocationSpeedSelected,
@@ -73,6 +77,7 @@ function LocationSheetContent({
   rowErrors,
   listError,
   platformsError,
+  intervalOptions,
   canSave,
   onQueryChange,
   onSelectMain,
@@ -99,6 +104,7 @@ function LocationSheetContent({
   rowErrors: Record<string, string>;
   listError: string | null;
   platformsError: string | null;
+  intervalOptions: IntervalOption[];
   canSave: boolean;
   onQueryChange: (value: string) => void;
   onSelectMain: (place: LocationResult) => void;
@@ -109,6 +115,7 @@ function LocationSheetContent({
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const snapPoints = useMemo(() => ["92%"], []);
+  const [infoReason, setInfoReason] = useState<string | null>(null);
   const dismiss = () => onOpenChange(false);
 
   const handleSave = () => {
@@ -118,28 +125,35 @@ function LocationSheetContent({
   };
 
   const footerErrors = useMemo(() => {
-    const messages: string[] = [];
+    const errors: LocationFooterError[] = [];
     const seen = new Set<string>();
-    const push = (message: string | null | undefined) => {
-      if (message == null || message.length === 0 || seen.has(message)) return;
-      seen.add(message);
-      messages.push(message);
+    const push = (
+      reason: string | null | undefined,
+      message?: string,
+      id?: string,
+    ) => {
+      if (reason == null || reason.length === 0) return;
+      const display = message ?? reason;
+      const key = id ?? display;
+      if (seen.has(key)) return;
+      seen.add(key);
+      errors.push({ id: key, message: display, reason });
     };
 
     push(platformsError);
     push(listError);
     for (const [id, message] of Object.entries(rowErrors)) {
       const place = multiPlaces.find((item) => item.id === id);
-      push(place != null ? `${place.name}: ${message}` : message);
+      push(
+        message,
+        place != null ? `${place.name}: ${message}` : message,
+        `row:${id}`,
+      );
     }
-    if (
-      messages.length === 0 &&
-      main != null &&
-      !canSave
-    ) {
+    if (errors.length === 0 && main != null && !canSave) {
       push("Finish platforms and at least one location speed to save.");
     }
-    return messages;
+    return errors;
   }, [
     platformsError,
     listError,
@@ -215,15 +229,12 @@ function LocationSheetContent({
           )}
         </StyledBottomSheetScrollView>
 
-        {footerErrors.length > 0 ? (
-          <View className="gap-1 px-5 pb-1 pt-1">
-            {footerErrors.map((message) => (
-              <FieldError key={message} isInvalid>
-                {message}
-              </FieldError>
-            ))}
-          </View>
-        ) : null}
+        <LocationErrorInfoDialog
+          errors={footerErrors}
+          intervalOptions={intervalOptions}
+          infoReason={infoReason}
+          onInfoReasonChange={setInfoReason}
+        />
 
         <View className="flex-row gap-3 px-5 pb-6 pt-2">
           <Button
@@ -561,6 +572,7 @@ export const SearchBottomSheetLocationSheet = observer(
           rowErrors={rowErrors}
           listError={listError}
           platformsError={platformsError}
+          intervalOptions={intervalOptions}
           canSave={canSave}
           onQueryChange={handleQueryChange}
           onSelectMain={handleSelectMain}

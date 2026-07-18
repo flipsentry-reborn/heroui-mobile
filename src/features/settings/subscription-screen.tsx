@@ -18,12 +18,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Button,
   ScrollShadow,
-  Skeleton,
   useThemeColor,
   useToast,
 } from "heroui-native";
 
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
+import { SubscriptionPlansSkeleton } from "@/features/settings/settings-skeletons";
 import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
 import { PLAN_ACCENTS } from "@/features/settings/subscription-theme";
 import { Fonts } from "@/lib/fonts";
@@ -354,19 +354,6 @@ export function SubscriptionScreen(): JSX.Element {
     }
   };
 
-  if (loading) {
-    return (
-      <View
-        className="flex-1 gap-4 bg-background px-4"
-        style={{ paddingTop: insets.top + 16 }}
-      >
-        <Skeleton className="h-56 rounded-3xl" />
-        <Skeleton className="h-56 rounded-3xl" />
-        <Skeleton className="h-56 rounded-3xl" />
-      </View>
-    );
-  }
-
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <View className="px-3 pb-1 pt-1">
@@ -433,30 +420,36 @@ export function SubscriptionScreen(): JSX.Element {
             </Text>
           </View>
 
-          {subscriptionPlans.map((plan) => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              busy={busy}
-              isCurrent={currentTier === plan.id}
-              expanded={expandedId === plan.id}
-              onToggle={() =>
-                setExpandedId((id) => (id === plan.id ? null : plan.id))
-              }
-              onSelect={() => void handleSubscribe(plan.id)}
-            />
-          ))}
+          {loading ? (
+            <SubscriptionPlansSkeleton />
+          ) : (
+            <>
+              {subscriptionPlans.map((plan) => (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  busy={busy}
+                  isCurrent={currentTier === plan.id}
+                  expanded={expandedId === plan.id}
+                  onToggle={() =>
+                    setExpandedId((id) => (id === plan.id ? null : plan.id))
+                  }
+                  onSelect={() => void handleSubscribe(plan.id)}
+                />
+              ))}
 
-          <Button
-            variant="ghost"
-            className="mt-1 self-center"
-            isDisabled={busy}
-            onPress={() => void handleRestore()}
-          >
-            <Button.Label className="font-normal text-muted">
-              Restore purchases
-            </Button.Label>
-          </Button>
+              <Button
+                variant="ghost"
+                className="mt-1 self-center"
+                isDisabled={busy}
+                onPress={() => void handleRestore()}
+              >
+                <Button.Label className="font-normal text-muted">
+                  Restore purchases
+                </Button.Label>
+              </Button>
+            </>
+          )}
         </ScrollView>
       </ScrollShadow>
     </View>

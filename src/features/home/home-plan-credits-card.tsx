@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
 import { Pressable, Text, View } from "react-native";
-import { Chip } from "heroui-native";
+import { Chip, SkeletonGroup } from "heroui-native";
 
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
 import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
@@ -15,6 +15,31 @@ interface HomePlanCreditsCardProps {
   homePlan: HomePlan;
   subscriptionPlan: SubscriptionPlan | null;
   onPress: () => void;
+}
+
+/** Plan / credits placeholder while home + subscription hydrate. */
+export function HomePlanCreditsCardSkeleton(): JSX.Element {
+  return (
+    <SkeletonGroup
+      isLoading
+      isSkeletonOnly
+      className="mx-3 mb-3 gap-2.5 rounded-3xl bg-surface p-[15px]"
+    >
+      <View className="flex-row items-center gap-2">
+        <SkeletonGroup.Item className="size-6 rounded-md" />
+        <SkeletonGroup.Item className="h-5 flex-1 rounded-md" />
+      </View>
+      <View className="gap-1">
+        <SkeletonGroup.Item className="h-7 w-24 rounded-md" />
+        <SkeletonGroup.Item className="h-3 w-20 rounded-md" />
+      </View>
+      <View className="flex-row flex-wrap gap-1.5">
+        <SkeletonGroup.Item className="h-6 w-20 rounded-full" />
+        <SkeletonGroup.Item className="h-6 w-16 rounded-full" />
+        <SkeletonGroup.Item className="h-6 w-24 rounded-full" />
+      </View>
+    </SkeletonGroup>
+  );
 }
 
 /** Search credits on the subscription plan accent background. */

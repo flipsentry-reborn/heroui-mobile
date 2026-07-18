@@ -17,6 +17,8 @@
   --field-radius: 1.5rem;
   /* HeroUI default is 0px + transparent border; we use a real border instead. */
   --field-border-width: 1px;
+  /* Sold / Pending title accent — matches mobile-app `#ff7c74` (not theme danger/pink). */
+  --color-sold-status: #ff7c74;
 
   /*
    * App fonts = Britti Sans (HeroUI Pro heroSans).

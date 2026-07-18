@@ -31,6 +31,11 @@ import {
   useSimilarNearbyFilters,
 } from "@/features/feed/feed-detail-similar-nearby";
 import { FeedDetailStickyHeader } from "@/features/feed/feed-detail-sticky-header";
+import {
+  formatSoldPendingTitlePrefix,
+  SOLD_STATUS_COLOR,
+  SOLD_STATUS_TEXT_CLASS,
+} from "@/features/feed/sold-status";
 import { getLocalComps } from "@/mocks/services/feed";
 import {
   getOrderedStatusBadges,
@@ -84,6 +89,7 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
   const description = item.description || "No description provided.";
   const longDesc = description.length > 160;
   const showSimilarNearby = isCarListing(item) && !item.isSold && !item.isPending;
+  const soldPendingPrefix = formatSoldPendingTitlePrefix(item);
 
   const syncStickyVisibility = useCallback(() => {
     stickyAnchorRef.current?.measureInWindow((_x, y) => {
@@ -161,6 +167,7 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
       {stickyVisible ? (
         <FeedDetailStickyHeader
           title={item.title}
+          soldPendingPrefix={soldPendingPrefix ?? undefined}
           imageUrl={thumbUrl}
           priceLabel={formatPrice(item.price, item.currencySymbol)}
           estPriceLabel={
@@ -221,6 +228,16 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
               className="text-[15px] leading-5 text-foreground"
               numberOfLines={2}
             >
+              {soldPendingPrefix ? (
+                <Typography
+                  type="body-sm"
+                  weight="semibold"
+                  className={`text-[15px] leading-5 ${SOLD_STATUS_TEXT_CLASS}`}
+                  style={{ color: SOLD_STATUS_COLOR }}
+                >
+                  {soldPendingPrefix}{" "}
+                </Typography>
+              ) : null}
               {item.title}
             </Typography>
 

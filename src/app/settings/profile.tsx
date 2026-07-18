@@ -7,7 +7,6 @@ import {
   Avatar,
   Chip,
   PressableFeedback,
-  Skeleton,
   Typography,
   useThemeColor,
   useToast,
@@ -18,6 +17,7 @@ import {
   SettingsRow,
   SettingsSection,
 } from "@/features/settings/settings-section";
+import { ProfileScreenSkeleton } from "@/features/settings/settings-skeletons";
 import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
 import { PLAN_ACCENTS } from "@/features/settings/subscription-theme";
 import { Fonts } from "@/lib/fonts";
@@ -87,10 +87,8 @@ export default function ProfileScreen(): JSX.Element {
 
   if (!profile) {
     return (
-      <View className="flex-1 gap-3 bg-background p-4">
-        <Skeleton className="h-28 rounded-2xl" />
-        <Skeleton className="h-24 rounded-2xl" />
-        <Skeleton className="h-24 rounded-2xl" />
+      <View className="flex-1 bg-background">
+        <ProfileScreenSkeleton />
       </View>
     );
   }

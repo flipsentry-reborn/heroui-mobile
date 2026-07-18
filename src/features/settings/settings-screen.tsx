@@ -8,7 +8,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Button,
   ScrollShadow,
-  Skeleton,
   Typography,
   useThemeColor,
   useToast,
@@ -19,6 +18,7 @@ import { withUniwind } from "uniwind";
 import { DeleteAccountSheets } from "@/features/settings/delete-account-sheets";
 import { HideListingsSheet } from "@/features/settings/hide-listings-sheet";
 import { SettingsProfileHeader } from "@/features/settings/settings-profile-header";
+import { SettingsScreenSkeleton } from "@/features/settings/settings-skeletons";
 import { SettingsSubscriptionCard } from "@/features/settings/settings-subscription-card";
 import {
   SettingsRow,
@@ -157,20 +157,6 @@ export function SettingsScreen(): JSX.Element {
 
   const distanceUnit = prefs?.distanceUnit ?? "mi";
 
-  if (!state) {
-    return (
-      <View
-        className="flex-1 bg-background px-3"
-        style={{ paddingTop: insets.top + 48 }}
-      >
-        <Skeleton className="mb-4 h-[88px] rounded-2xl" />
-        <Skeleton className="mb-3 h-14 rounded-2xl" />
-        <Skeleton className="mb-3 h-14 rounded-2xl" />
-        <Skeleton className="h-28 rounded-2xl" />
-      </View>
-    );
-  }
-
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <View className="px-5 pb-3 pt-2">
@@ -190,6 +176,10 @@ export function SettingsScreen(): JSX.Element {
           showsVerticalScrollIndicator={false}
           contentContainerClassName="pb-[110px] pt-2"
         >
+          {!state ? (
+            <SettingsScreenSkeleton />
+          ) : (
+            <>
           <SettingsProfileHeader
             profile={state.profile}
             planLabel={planLabel}
@@ -316,6 +306,8 @@ export function SettingsScreen(): JSX.Element {
               </Button>
             </View>
           </SettingsSection>
+            </>
+          )}
         </ScrollView>
       </ScrollShadow>
 

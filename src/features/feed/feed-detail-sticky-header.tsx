@@ -6,11 +6,17 @@ import { Typography, useThemeColor } from "heroui-native";
 
 import { ValuationBadge } from "@/features/feed/feed-badge";
 import { FeedDetailScoreBar } from "@/features/feed/feed-detail-score-bar";
+import {
+  SOLD_STATUS_COLOR,
+  SOLD_STATUS_TEXT_CLASS,
+} from "@/features/feed/sold-status";
 
 const THUMB_SIZE = 88;
 
 interface FeedDetailStickyHeaderProps {
   title: string;
+  /** e.g. "Sold in 7h 0m" — coral prefix before the listing title. */
+  soldPendingPrefix?: string;
   imageUrl?: string;
   priceLabel: string;
   estPriceLabel?: string;
@@ -22,6 +28,7 @@ interface FeedDetailStickyHeaderProps {
 
 export function FeedDetailStickyHeader({
   title,
+  soldPendingPrefix,
   imageUrl,
   priceLabel,
   estPriceLabel,
@@ -72,6 +79,16 @@ export function FeedDetailStickyHeader({
             className="text-[14px] leading-5 text-foreground"
             numberOfLines={1}
           >
+            {soldPendingPrefix ? (
+              <Typography
+                type="body-sm"
+                weight="semibold"
+                className={`text-[14px] leading-5 ${SOLD_STATUS_TEXT_CLASS}`}
+                style={{ color: SOLD_STATUS_COLOR }}
+              >
+                {soldPendingPrefix}{" "}
+              </Typography>
+            ) : null}
             {title}
           </Typography>
 

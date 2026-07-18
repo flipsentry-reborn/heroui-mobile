@@ -2,16 +2,22 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Typography, useThemeColor, useToast } from "heroui-native";
+import { useThemeColor, useToast } from "heroui-native";
 
 import { BrandButton } from "@/components/ui/brand-button";
-import { HomePlanCreditsCard } from "@/features/home/home-plan-credits-card";
+import {
+  HomePlanCreditsCard,
+  HomePlanCreditsCardSkeleton,
+} from "@/features/home/home-plan-credits-card";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import { SearchBottomSheet } from "@/features/home/search-bottom-sheet";
-import { SearchCards } from "@/features/home/search-cards";
+import {
+  SearchCards,
+  SearchCardsListSkeleton,
+} from "@/features/home/search-cards";
 import {
   SearchStatusSegment,
   type SearchStatusFilter,
@@ -37,12 +43,15 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
   const { searchStore, subscriptionStore } = useStore();
   const [accentForeground] = useThemeColor(["accent-foreground"]);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetMounted, setSheetMounted] = useState(false);
   const [editingGroup, setEditingGroup] = useState<SearchGroup | null>(null);
   const [statusFilter, setStatusFilter] =
     useState<SearchStatusFilter>("all");
   const [locationLabel, setLocationLabel] = useState(() =>
     formatLocationLabel(getLocationDraft()),
   );
+  /** Lightweight first paint — heavy cards mount after skeleton can commit. */
+  const [contentReady, setContentReady] = useState(false);
 
   const { allGroups, activeGroups, pausedGroups } = useMemo(() => {
     const all = searchStore.searchGroups;
@@ -58,6 +67,19 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
       pausedGroups: paused,
     };
   }, [searchStore.searchGroups]);
+
+  const showSkeleton = !searchStore.hasLoaded || !contentReady;
+
+  useEffect(() => {
+    if (!searchStore.hasLoaded) {
+      setContentReady(false);
+      return;
+    }
+    const frame = requestAnimationFrame(() => {
+      setContentReady(true);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [searchStore.hasLoaded]);
 
   useFocusEffect(
     useCallback(() => {
@@ -82,11 +104,6 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
     [searchStore, toast],
   );
 
-  const handleEdit = useCallback((group: SearchGroup) => {
-    setEditingGroup(group);
-    setSheetOpen(true);
-  }, []);
-
   const handleToggle = useCallback(
     (group: SearchGroup, active: boolean) => {
       showSearchActionProgress(toast, {
@@ -107,23 +124,20 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
       return;
     }
     setEditingGroup(null);
+    setSheetMounted(true);
     setSheetOpen(true);
   };
+
+  const handleEditAndOpen = useCallback((group: SearchGroup) => {
+    setEditingGroup(group);
+    setSheetMounted(true);
+    setSheetOpen(true);
+  }, []);
 
   const handleSheetClose = () => {
     setSheetOpen(false);
     setEditingGroup(null);
   };
-
-  if (searchStore.loadingInitial) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <Typography type="body-sm" className="text-muted">
-          Loading searches...
-        </Typography>
-      </View>
-    );
-  }
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -131,18 +145,25 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-[110px] pt-2"
-        stickyHeaderIndices={allGroups.length > 0 ? [2] : undefined}
+        stickyHeaderIndices={
+          !showSkeleton && allGroups.length > 0 ? [2] : undefined
+        }
       >
-        <HomePlanCreditsCard
-          homePlan={searchStore.homePlan}
-          subscriptionPlan={subscriptionStore.activePlan}
-          onPress={() => router.push("/settings/subscription")}
-        />
+        {showSkeleton ? (
+          <HomePlanCreditsCardSkeleton />
+        ) : (
+          <HomePlanCreditsCard
+            homePlan={searchStore.homePlan}
+            subscriptionPlan={subscriptionStore.activePlan}
+            onPress={() => router.push("/settings/subscription")}
+          />
+        )}
 
         <View className="mx-3 mb-3">
           <BrandButton
             className="min-h-12 w-full"
             onPress={handleNewSearch}
+            isDisabled={showSkeleton}
           >
             <Ionicons name="add" size={18} color={accentForeground} />
             <BrandButton.Label>
@@ -151,7 +172,9 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
           </BrandButton>
         </View>
 
-        {allGroups.length > 0 ? (
+        {showSkeleton ? <SearchCardsListSkeleton /> : null}
+
+        {!showSkeleton && allGroups.length > 0 ? (
           <SearchStatusSegment
             value={statusFilter}
             onValueChange={setStatusFilter}
@@ -161,31 +184,35 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
           />
         ) : null}
 
-        <SearchCards
-          groups={allGroups}
-          statusFilter={statusFilter}
-          emptyMessage={
-            allGroups.length === 0
-              ? "No searches yet"
-              : statusFilter === "paused"
-                ? "No paused searches"
-                : statusFilter === "active"
-                  ? "No active searches"
-                  : "No searches yet"
-          }
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onToggle={handleToggle}
-        />
+        {!showSkeleton ? (
+          <SearchCards
+            groups={allGroups}
+            statusFilter={statusFilter}
+            emptyMessage={
+              allGroups.length === 0
+                ? "No searches yet"
+                : statusFilter === "paused"
+                  ? "No paused searches"
+                  : statusFilter === "active"
+                    ? "No active searches"
+                    : "No searches yet"
+            }
+            onEdit={handleEditAndOpen}
+            onDelete={handleDelete}
+            onToggle={handleToggle}
+          />
+        ) : null}
       </ScrollView>
 
-      <SearchBottomSheet
-        visible={sheetOpen}
-        onClose={handleSheetClose}
-        locationLabel={locationLabel}
-        onLocationLabelChange={setLocationLabel}
-        editingGroup={editingGroup}
-      />
+      {sheetMounted ? (
+        <SearchBottomSheet
+          visible={sheetOpen}
+          onClose={handleSheetClose}
+          locationLabel={locationLabel}
+          onLocationLabelChange={setLocationLabel}
+          editingGroup={editingGroup}
+        />
+      ) : null}
     </View>
   );
 });

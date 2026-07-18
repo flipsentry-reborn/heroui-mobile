@@ -9,6 +9,10 @@ import {
   StatusBadge,
   ValuationBadge,
 } from "@/features/feed/feed-badge";
+import {
+  SOLD_STATUS_COLOR,
+  SOLD_STATUS_TEXT_CLASS,
+} from "@/features/feed/sold-status";
 import { formatOdometerCompact } from "@/lib/distance-utils";
 import { getDistanceUnitSync } from "@/mocks/services/settings";
 import {
@@ -178,7 +182,8 @@ export function FeedItem({
               <Typography
                 type="body-sm"
                 weight="semibold"
-                className={`${titleClass} text-[#ff7c74]`}
+                className={`${titleClass} ${SOLD_STATUS_TEXT_CLASS}`}
+                style={{ color: SOLD_STATUS_COLOR }}
               >
                 Sold{" "}
               </Typography>
@@ -186,7 +191,8 @@ export function FeedItem({
               <Typography
                 type="body-sm"
                 weight="semibold"
-                className={`${titleClass} text-[#ff7c74]`}
+                className={`${titleClass} ${SOLD_STATUS_TEXT_CLASS}`}
+                style={{ color: SOLD_STATUS_COLOR }}
               >
                 Pending{" "}
               </Typography>

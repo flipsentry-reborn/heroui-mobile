@@ -78,6 +78,10 @@ type ExtraListing = {
   condition: string;
   isFavorite?: boolean;
   favoritedMinsAgo?: number;
+  isSold?: boolean;
+  isSoldMinsAgo?: number;
+  isPending?: boolean;
+  isPendingMinsAgo?: number;
   vehicleSpecifications?: FeedItem["vehicleSpecifications"];
   valuation?: FeedItem["valuation"];
   seller?: FeedItem["seller"];
@@ -131,6 +135,20 @@ function extraListing(item: ExtraListing): FeedItem {
         : item.isFavorite
           ? created
           : null,
+    isSold: item.isSold ?? false,
+    isSoldAt:
+      item.isSold && item.isSoldMinsAgo != null
+        ? minsAgo(item.isSoldMinsAgo)
+        : item.isSold
+          ? created
+          : undefined,
+    isPending: item.isPending ?? false,
+    isPendingAt:
+      item.isPending && item.isPendingMinsAgo != null
+        ? minsAgo(item.isPendingMinsAgo)
+        : item.isPending
+          ? created
+          : undefined,
     isSpamReported: false,
     spamReportedAt: null,
     isDeleted: false,
@@ -172,6 +190,7 @@ export type FeedCategoryKey =
   | "all"
   | "best-picks"
   | "price-drop"
+  | "sold"
   | "saved"
   | "car"
   | "iphone"
@@ -203,6 +222,7 @@ export const FEED_CATEGORIES: {
   { key: "couch", label: "Couch" },
   { key: "iphone", label: "iPhones" },
   { key: "xbox", label: "Xbox" },
+  { key: "sold", label: "Sold" },
   { key: "saved", label: "Saved" },
 ];
 
@@ -231,6 +251,7 @@ export const FOR_YOU_SHELVES: {
   { key: "best-picks", label: "Top Rated", badge: "AI", featured: true },
   { key: "price-drop", label: "Price Dropped", badge: "Beta" },
   { key: "your-searches", label: "Your Searches", isAccordion: true },
+  { key: "sold", label: "Sold" },
   { key: "saved", label: "Saved" },
 ];
 
@@ -334,6 +355,8 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  seenAt: [],
  isFavorite: false,
  favoritedAt: null,
+ isSold: true,
+ isSoldAt: new Date(now - 1000 * 60 * 20).toISOString(),
  isSpamReported: false,
  spamReportedAt: null,
  isDeleted: false,
@@ -410,6 +433,8 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  seenAt: [],
  isFavorite: false,
  favoritedAt: null,
+ isPending: true,
+ isPendingAt: new Date(now - 1000 * 60 * 30).toISOString(),
  isSpamReported: false,
  spamReportedAt: null,
  isDeleted: false,
@@ -525,6 +550,8 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  seenAt: [],
  isFavorite: false,
  favoritedAt: null,
+ isSold: true,
+ isSoldAt: new Date(now - 1000 * 60 * 40).toISOString(),
  isSpamReported: false,
  spamReportedAt: null,
  isDeleted: false,
@@ -594,6 +621,8 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  seenAt: [],
  isFavorite: false,
  favoritedAt: null,
+ isPending: true,
+ isPendingAt: new Date(now - 1000 * 60 * 90).toISOString(),
  isSpamReported: false,
  spamReportedAt: null,
  isDeleted: false,
@@ -714,6 +743,8 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  condition: "Used - Like New",
  iphoneBatteryHealth: 98,
  iphoneStorageGb: 256,
+ isSold: true,
+ isSoldMinsAgo: 25,
  isMotivated: true,
  motivatedKeywordTexts: ["need gone"],
  seller: {
@@ -893,6 +924,8 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  condition: "Used - Good",
  iphoneBatteryHealth: 91,
  iphoneStorageGb: 64,
+ isSold: true,
+ isSoldMinsAgo: 90,
  valuation: {
  calculated: true,
  valuationType: "iphone" as const,

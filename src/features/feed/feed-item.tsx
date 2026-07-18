@@ -73,10 +73,29 @@ export function FeedItem({
     ? Math.round(IMAGE_H_RAIL * scale)
     : IMAGE_H_GRID;
 
+  /** Rail (For You) slightly compact; grid category pages keep fuller type. */
+  const priceClass = isRail
+    ? featured
+      ? "text-[14px] leading-[18px]"
+      : "text-[13px] leading-[18px]"
+    : featured
+      ? "text-[16px] leading-5"
+      : "text-[15px] leading-5";
+  const titleClass = isRail
+    ? featured
+      ? "text-[13px] leading-[17px]"
+      : "text-[12px] leading-4"
+    : featured
+      ? "text-[15px] leading-5"
+      : "text-sm leading-5";
+  const metaClass = isRail ? "text-[11px] leading-[14px]" : "text-xs";
+  const estClass = isRail ? "text-[11px] text-muted" : "text-xs text-muted";
+  const platformSize = isRail ? 13 : 14;
+
   return (
     <PressableFeedback
       onPress={() => onPress?.(feed.id)}
-      className={isRail ? "mr-1.5" : "mb-1.5 flex-1 px-0.5"}
+      className={isRail ? "mr-2" : "mb-1.5 flex-1 px-0.5"}
       style={isRail ? { width: railW } : undefined}
       animation={{ scale: { value: 0.98 } }}
     >
@@ -129,13 +148,11 @@ export function FeedItem({
             featured ? "bg-transparent" : "bg-background"
           }`}
         >
-          <View className="flex-row items-baseline gap-1.5">
+          <View className="flex-row items-baseline gap-1">
             <Typography
               type="body-sm"
               weight="semibold"
-              className={`${
-                featured ? "text-[16px]" : "text-[15px]"
-              } leading-5 text-foreground`}
+              className={`${priceClass} text-foreground`}
               numberOfLines={1}
             >
               {formatPrice(feed.price, feed.currencySymbol)}
@@ -143,7 +160,7 @@ export function FeedItem({
             {feed.valuation?.fairPrice != null ? (
               <Typography
                 type="body-xs"
-                className="text-xs text-muted"
+                className={estClass}
                 numberOfLines={1}
               >
                 Est. {formatPrice(feed.valuation.fairPrice, feed.currencySymbol)}
@@ -153,12 +170,27 @@ export function FeedItem({
 
           <Typography
             type="body-sm"
-            className={`${
-              featured ? "text-[15px]" : "text-sm"
-            } font-normal leading-5 text-foreground`}
+            className={`${titleClass} font-normal text-foreground`}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
+            {feed.isSold ? (
+              <Typography
+                type="body-sm"
+                weight="semibold"
+                className={`${titleClass} text-[#ff7c74]`}
+              >
+                Sold{" "}
+              </Typography>
+            ) : feed.isPending ? (
+              <Typography
+                type="body-sm"
+                weight="semibold"
+                className={`${titleClass} text-[#ff7c74]`}
+              >
+                Pending{" "}
+              </Typography>
+            ) : null}
             {feed.title}
           </Typography>
 
@@ -166,21 +198,24 @@ export function FeedItem({
             {mileageText ? (
               <Typography
                 type="body-xs"
-                className="shrink-0 text-xs text-muted"
+                className={`shrink-0 text-muted ${metaClass}`}
                 numberOfLines={1}
               >
                 {mileageText}
               </Typography>
             ) : null}
             {mileageText && primaryLocation ? (
-              <Typography type="body-xs" className="text-xs text-muted">
+              <Typography
+                type="body-xs"
+                className={`text-muted ${metaClass}`}
+              >
                 ·
               </Typography>
             ) : null}
             {primaryLocation ? (
               <Typography
                 type="body-xs"
-                className="min-w-0 flex-1 text-xs text-muted"
+                className={`min-w-0 flex-1 text-muted ${metaClass}`}
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
@@ -189,7 +224,7 @@ export function FeedItem({
             ) : (
               <View className="min-w-0 flex-1" />
             )}
-            <PlatformIcon platform={feed.platform} size={14} />
+            <PlatformIcon platform={feed.platform} size={platformSize} />
           </View>
         </Card.Body>
       </Card>

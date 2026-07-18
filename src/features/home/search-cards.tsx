@@ -46,16 +46,9 @@ const DEPTH_LAYOUT_TRANSITION = LinearTransition.springify()
   .mass(2);
 
 function groupTitle(group: SearchGroup): string {
-  if (group.searchType === "custom") {
-    return group.customLabel ?? "Custom search";
-  }
-  if (group.searchType === "iphone") {
-    return group.customLabel ?? "iPhone";
-  }
-  const makes = group.carQuery?.makes ?? [];
-  if (makes.length === 0) return "Vehicles";
-  if (makes.length <= 2) return makes.join(", ");
-  return `${makes.slice(0, 2).join(", ")} +${makes.length - 2}`;
+  if (group.searchType === "car") return "Cars";
+  if (group.searchType === "iphone") return "Iphones";
+  return group.customLabel ?? "Custom search";
 }
 
 function metaChips(group: SearchGroup): string[] {

@@ -8,19 +8,51 @@ export type GetLocalCompsParams = {
   days?: number;
 };
 
+export type SoldStatusFilter = "all" | "sold" | "pending";
+
 export type GetFeedParams = {
   /** System key (all, car, …) or user search id (pinball, group-pinball). */
   category?: string;
   query?: string;
   limit?: number;
+  /** Sold page: Sold / Pending chip filter. */
+  soldStatus?: SoldStatusFilter;
+  /** Sold page: only listings sold/pending within this many days. */
+  maxDays?: number | null;
 };
 
 function delay(ms = 450): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function matchesSoldStatus(
+  item: FeedItem,
+  status: SoldStatusFilter = "all",
+): boolean {
+  if (status === "sold") return !!item.isSold;
+  if (status === "pending") return !!item.isPending;
+  return !!item.isSold || !!item.isPending;
+}
+
+function matchesMaxDays(item: FeedItem, maxDays: number | null | undefined): boolean {
+  if (maxDays == null) return true;
+  const cutoff = Date.now() - maxDays * 24 * 60 * 60 * 1000;
+  const stamps: number[] = [];
+  if (item.isSold && item.isSoldAt) {
+    stamps.push(new Date(item.isSoldAt).getTime());
+  }
+  if (item.isPending && item.isPendingAt) {
+    stamps.push(new Date(item.isPendingAt).getTime());
+  }
+  if (stamps.length === 0 && item.creationTime) {
+    stamps.push(new Date(item.creationTime).getTime());
+  }
+  return stamps.some((t) => Number.isFinite(t) && t >= cutoff);
+}
+
 function matchesCategory(item: FeedItem, category: string): boolean {
   if (category === "for-you" || category === "all") return true;
+  if (category === "sold") return !!item.isSold || !!item.isPending;
   if (category === "saved") return item.isFavorite;
   if (category === "best-picks") {
     return (item.valuation?.buySignal ?? 0) >= 60;
@@ -54,9 +86,15 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
   await delay();
   const category = params.category ?? "all";
   const query = (params.query ?? "").trim().toLowerCase();
+  const soldStatus = params.soldStatus ?? "all";
+  const maxDays = params.maxDays;
 
   const items = MOCK_FEED_ITEMS.filter((item) => {
     if (!matchesCategory(item, category)) return false;
+    if (category === "sold") {
+      if (!matchesSoldStatus(item, soldStatus)) return false;
+      if (!matchesMaxDays(item, maxDays)) return false;
+    }
     if (!query) return true;
     return (
       item.title.toLowerCase().includes(query) ||

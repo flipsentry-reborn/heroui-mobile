@@ -81,9 +81,8 @@ export function CommunityActivityRow({
                 @{hunter.handle}
                 {" · "}
                 {hunter.city}
-                {hunter.distanceMiles != null && hunter.distanceMiles > 0
-                  ? ` · ${hunter.distanceMiles} mi`
-                  : ""}
+                {" · "}
+                {hunter.lastOnlineLabel}
               </Typography>
               <View className="mt-0.5 flex-row flex-wrap gap-1.5">
                 <Chip size="sm" variant="soft" color="accent">

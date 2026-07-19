@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 import { Button, SkeletonGroup, Typography } from "heroui-native";
 import { withUniwind } from "uniwind";
 
-import { CommunityHunterFeedVariantsGallery } from "@/features/community/community-hunter-feed-variants";
+import { CommunityAccordionContentVariantsGallery } from "@/features/community/community-accordion-content-variants";
 import {
   communityHunterHref,
   communityItemHref,
@@ -18,9 +18,9 @@ import {
 
 const StyledSafeAreaView = withUniwind(SafeAreaView);
 
-export function CommunityVariantsScreen(): JSX.Element {
+export function CommunityAccordionVariantsScreen(): JSX.Element {
   const router = useRouter();
-  const [feeds, setFeeds] = useState<CommunityHunterFeed[]>([]);
+  const [feed, setFeed] = useState<CommunityHunterFeed | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export function CommunityVariantsScreen(): JSX.Element {
     void (async () => {
       const rows = await getCommunityHunterFeeds();
       if (alive) {
-        setFeeds(rows);
+        setFeed(rows[0] ?? null);
         setLoading(false);
       }
     })();
@@ -59,19 +59,18 @@ export function CommunityVariantsScreen(): JSX.Element {
         </Button>
         <View className="min-w-0 flex-1">
           <Typography type="body" weight="semibold">
-            Hunter feed layouts
+            Accordion interiors
           </Typography>
           <Typography type="body-xs" className="text-muted">
-            39 layouts · 1 sample each (some are 2-user rows)
+            10 content variants · same card shell
           </Typography>
         </View>
       </View>
 
-      {loading ? (
+      {loading || !feed ? (
         <SkeletonGroup isLoading isSkeletonOnly className="gap-3 px-3 pt-2">
-          <SkeletonGroup.Item className="h-5 w-40 rounded-md" />
-          <SkeletonGroup.Item className="h-36 w-full rounded-2xl" />
-          <SkeletonGroup.Item className="h-36 w-full rounded-2xl" />
+          <SkeletonGroup.Item className="h-28 w-full rounded-2xl" />
+          <SkeletonGroup.Item className="h-28 w-full rounded-2xl" />
         </SkeletonGroup>
       ) : (
         <ScrollView
@@ -79,8 +78,8 @@ export function CommunityVariantsScreen(): JSX.Element {
           showsVerticalScrollIndicator={false}
           contentContainerClassName="pb-16 pt-2"
         >
-          <CommunityHunterFeedVariantsGallery
-            feeds={feeds}
+          <CommunityAccordionContentVariantsGallery
+            feed={feed}
             onPressListing={onPressListing}
             onPressHunter={onPressHunter}
           />

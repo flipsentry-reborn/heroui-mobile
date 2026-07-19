@@ -5,6 +5,10 @@ import { SkeletonGroup, Switch, Typography } from "heroui-native";
 import { EmptyState } from "heroui-native-pro";
 
 import { CommunityHunterAvatar } from "@/features/community/community-hunter-avatar";
+import {
+  CommunityActiveBadge,
+  isHunterOnline,
+} from "@/features/community/community-presence-badge";
 import { FeedItem } from "@/features/feed/feed-item";
 import type { CommunityHunter } from "@/mocks/data/community";
 import {
@@ -101,8 +105,15 @@ export function CommunityProfilePage({
         <Typography type="body-xs" className="text-muted">
           @{hunter.handle} · {hunter.city}
         </Typography>
+        {isHunterOnline(hunter) ? (
+          <CommunityActiveBadge />
+        ) : (
+          <Typography type="body-xs" className="text-muted">
+            Last online · {hunter.lastOnlineLabel}
+          </Typography>
+        )}
         <Typography type="body-xs" className="text-muted">
-          {hunter.clicksYesterday} clicks yesterday
+          {hunter.clicksYesterday} clicks yesterday · {hunter.huntsFocus}
         </Typography>
       </View>
 
@@ -122,9 +133,9 @@ export function CommunityProfilePage({
           </View>
           <View className="flex-row items-center justify-between py-1">
             <View className="mr-3 flex-1">
-              <Typography type="body-sm">Appear in Nearby</Typography>
+              <Typography type="body-sm">Appear in Similar nearby</Typography>
               <Typography type="body-xs" className="text-muted">
-                Show up for hunters in your radius
+                Show up for similar hunters near you
               </Typography>
             </View>
             <Switch isSelected={appearNearby} onSelectedChange={setAppearNearby} />

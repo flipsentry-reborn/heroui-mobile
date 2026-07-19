@@ -5,11 +5,16 @@ export interface CommunityHunter {
   displayName: string;
   handle: string;
   city: string;
-  /** Null = outside local radius / global-only. */
+  /** Used for Similar nearby filtering only — not shown in UI. */
   distanceMiles: number | null;
   clicksYesterday: number;
   showActivity: boolean;
   initials: string;
+  /** Human-readable last-online label for UI. */
+  lastOnlineLabel: string;
+  /** What they usually hunt. */
+  huntsFocus: string;
+  memberSince: string;
 }
 
 export interface CommunityClickEvent {
@@ -47,6 +52,9 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     clicksYesterday: 5,
     showActivity: true,
     initials: "YO",
+    lastOnlineLabel: "Online now",
+    huntsFocus: "Cars & phones",
+    memberSince: "2024",
   },
   {
     id: "hunter-jordan",
@@ -57,6 +65,9 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     clicksYesterday: 8,
     showActivity: true,
     initials: "JL",
+    lastOnlineLabel: "12m ago",
+    huntsFocus: "Cars",
+    memberSince: "2023",
   },
   {
     id: "hunter-sam",
@@ -67,6 +78,9 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     clicksYesterday: 4,
     showActivity: true,
     initials: "SR",
+    lastOnlineLabel: "1h ago",
+    huntsFocus: "Phones",
+    memberSince: "2024",
   },
   {
     id: "hunter-alex",
@@ -77,6 +91,9 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     clicksYesterday: 11,
     showActivity: true,
     initials: "AK",
+    lastOnlineLabel: "Online now",
+    huntsFocus: "Cars",
+    memberSince: "2022",
   },
   {
     id: "hunter-casey",
@@ -87,6 +104,9 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     clicksYesterday: 3,
     showActivity: false,
     initials: "CN",
+    lastOnlineLabel: "3h ago",
+    huntsFocus: "Furniture",
+    memberSince: "2025",
   },
   {
     id: "hunter-morgan",
@@ -97,6 +117,9 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     clicksYesterday: 9,
     showActivity: true,
     initials: "MB",
+    lastOnlineLabel: "25m ago",
+    huntsFocus: "Cars",
+    memberSince: "2023",
   },
   {
     id: "hunter-riley",
@@ -107,6 +130,9 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     clicksYesterday: 6,
     showActivity: true,
     initials: "RC",
+    lastOnlineLabel: "2h ago",
+    huntsFocus: "Phones",
+    memberSince: "2024",
   },
   {
     id: "hunter-quinn",
@@ -117,6 +143,9 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     clicksYesterday: 2,
     showActivity: true,
     initials: "QO",
+    lastOnlineLabel: "Yesterday",
+    huntsFocus: "Bikes",
+    memberSince: "2025",
   },
   {
     id: "hunter-drew",
@@ -127,6 +156,9 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     clicksYesterday: 1,
     showActivity: true,
     initials: "DP",
+    lastOnlineLabel: "4h ago",
+    huntsFocus: "Cars",
+    memberSince: "2024",
   },
   {
     id: "hunter-sky",
@@ -137,6 +169,9 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     clicksYesterday: 1,
     showActivity: true,
     initials: "SN",
+    lastOnlineLabel: "Online now",
+    huntsFocus: "Electronics",
+    memberSince: "2023",
   },
   {
     id: "hunter-blake",
@@ -147,6 +182,9 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     clicksYesterday: 1,
     showActivity: true,
     initials: "BT",
+    lastOnlineLabel: "6h ago",
+    huntsFocus: "Cars",
+    memberSince: "2025",
   },
   {
     id: "hunter-jamie",
@@ -157,6 +195,9 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     clicksYesterday: 1,
     showActivity: true,
     initials: "JC",
+    lastOnlineLabel: "45m ago",
+    huntsFocus: "Phones",
+    memberSince: "2024",
   },
   {
     id: "hunter-avery",
@@ -167,6 +208,9 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     clicksYesterday: 1,
     showActivity: true,
     initials: "AB",
+    lastOnlineLabel: "Yesterday",
+    huntsFocus: "Furniture",
+    memberSince: "2022",
   },
 ];
 

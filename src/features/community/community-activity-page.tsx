@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { Button, SkeletonGroup, Typography } from "heroui-native";
 import { EmptyState } from "heroui-native-pro";
 
-import { CommunityHunterAccordion } from "@/features/community/community-hunter-accordion";
+import { CommunityHunterFeedCard } from "@/features/community/community-hunter-feed-card";
 import { CommunityHuntersRail } from "@/features/community/community-hunters-rail";
 import { CommunityTrendingRail } from "@/features/community/community-trending-rail";
 import type { CommunityHunter } from "@/mocks/data/community";
@@ -75,8 +75,8 @@ export function CommunityActivityPage({
           ))}
         </ScrollView>
         <SkeletonGroup.Item className="mt-5 h-5 w-36 rounded-md" />
-        <SkeletonGroup.Item className="mt-2 h-16 w-full rounded-xl" />
-        <SkeletonGroup.Item className="mt-2 h-16 w-full rounded-xl" />
+        <SkeletonGroup.Item className="mt-2 h-40 w-full rounded-xl" />
+        <SkeletonGroup.Item className="mt-2 h-40 w-full rounded-xl" />
       </SkeletonGroup>
     );
   }
@@ -103,17 +103,23 @@ export function CommunityActivityPage({
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <View className="mb-3 px-3">
+      <View className="mb-3 gap-2 px-3">
+        <Button
+          variant="secondary"
+          size="sm"
+          onPress={() => router.push("/community/accordion-variants")}
+        >
+          Compare accordion interiors (10)
+        </Button>
         <Button
           variant="secondary"
           size="sm"
           onPress={() => router.push("/community/variants")}
         >
-          Compare hunter layouts (10)
+          Compare hunter layouts (39)
         </Button>
       </View>
 
-      {/* 1 — Listings */}
       {trending.length > 0 ? (
         <View className="mb-5">
           <Typography type="body-sm" className="mb-2 px-3 text-muted">
@@ -126,7 +132,6 @@ export function CommunityActivityPage({
         </View>
       ) : null}
 
-      {/* 2 — People nearby */}
       <View className="mb-5">
         <Typography type="body-sm" className="mb-2 px-3 text-muted">
           Active nearby
@@ -137,17 +142,19 @@ export function CommunityActivityPage({
         />
       </View>
 
-      {/* 3 — Accordion by hunter */}
       {feeds.length > 0 ? (
-        <View className="mb-2">
-          <Typography type="body-sm" className="mb-2 px-3 text-muted">
+        <View className="mb-2 gap-4 px-3">
+          <Typography type="body-sm" className="text-muted">
             Recent by hunter · delayed 24h
           </Typography>
-          <CommunityHunterAccordion
-            feeds={feeds}
-            onPressListing={onPressListing}
-            onPressHunter={onPressHunter}
-          />
+          {feeds.map((feed) => (
+            <CommunityHunterFeedCard
+              key={feed.hunter.id}
+              feed={feed}
+              onPressListing={onPressListing}
+              onPressHunter={onPressHunter}
+            />
+          ))}
         </View>
       ) : null}
     </ScrollView>

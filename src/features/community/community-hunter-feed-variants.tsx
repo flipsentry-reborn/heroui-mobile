@@ -3,6 +3,7 @@ import type { JSX, ReactNode } from "react";
 import { View } from "react-native";
 import {
   Accordion,
+  Alert,
   Card,
   Chip,
   ListGroup,
@@ -11,10 +12,11 @@ import {
   Surface,
   Typography,
 } from "heroui-native";
-import { Badge, Timeline } from "heroui-native-pro";
+import { Badge, FlipCard, Timeline, Widget } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
 import { CommunityHunterAvatar } from "@/features/community/community-hunter-avatar";
+import { COMMUNITY_FEED_VARIANTS_WAVE2 } from "@/features/community/community-hunter-feed-variants-wave2";
 import {
   formatDaysAgo,
   type CommunityHunterFeed,
@@ -616,6 +618,497 @@ function VariantStackedColumns({
   );
 }
 
+/** V11 — FlipCard: product front, hunter back */
+function VariantFlipCard({
+  feeds,
+  onPressListing,
+  onPressHunter,
+}: VariantFeedProps): JSX.Element {
+  const feed = feeds[0];
+  const row = feed ? latest(feed) : null;
+  if (!feed || !row) return <View />;
+
+  return (
+    <View className="px-3">
+      <FlipCard className="h-44">
+        <FlipCard.Front className="overflow-hidden rounded-2xl bg-surface">
+          <PressableFeedback
+            onPress={() => onPressListing(row.feedItem.id)}
+            className="h-full"
+          >
+            <StyledImage
+              source={{ uri: listingImage(feed) }}
+              className="h-full w-full"
+              contentFit="cover"
+            />
+            <View className="absolute bottom-0 left-0 right-0 bg-background/80 px-3 py-2">
+              <Typography type="body-sm" weight="semibold" numberOfLines={1}>
+                {formatPrice(row.feedItem.price, row.feedItem.currencySymbol)}
+                {" · tap to flip"}
+              </Typography>
+            </View>
+          </PressableFeedback>
+        </FlipCard.Front>
+        <FlipCard.Back className="overflow-hidden rounded-2xl bg-surface">
+          <PressableFeedback
+            onPress={() => onPressHunter(feed.hunter.id)}
+            className="h-full items-center justify-center gap-2 p-4"
+          >
+            <CommunityHunterAvatar hunter={feed.hunter} size="lg" />
+            <Typography type="body" weight="semibold">
+              {feed.hunter.displayName}
+            </Typography>
+            <Typography type="body-xs" className="text-muted">
+              @{feed.hunter.handle} · {feed.clicks.length} clicks
+            </Typography>
+            <Typography type="body-xs" className="text-accent">
+              See profile
+            </Typography>
+          </PressableFeedback>
+        </FlipCard.Back>
+      </FlipCard>
+    </View>
+  );
+}
+
+/** V12 — Widget KPI shell with product inside */
+function VariantWidget({
+  feeds,
+  onPressListing,
+  onPressHunter,
+}: VariantFeedProps): JSX.Element {
+  const feed = feeds[0];
+  const row = feed ? latest(feed) : null;
+  if (!feed || !row) return <View />;
+
+  return (
+    <View className="px-3">
+      <Widget>
+        <Widget.Header>
+          <View>
+            <Widget.Title>{feed.hunter.displayName}</Widget.Title>
+            <Widget.Description>
+              {feed.hunter.city}
+              {feed.hunter.distanceMiles != null
+                ? ` · ${feed.hunter.distanceMiles} mi`
+                : ""}
+            </Widget.Description>
+          </View>
+          <Widget.Legend>
+            <Widget.LegendItem colorClassName="bg-accent">
+              {feed.clicks.length} clicks
+            </Widget.LegendItem>
+          </Widget.Legend>
+        </Widget.Header>
+        <Widget.Content>
+          <PressableFeedback
+            onPress={() => onPressListing(row.feedItem.id)}
+            className="flex-row items-center gap-3"
+          >
+            <StyledImage
+              source={{ uri: listingImage(feed) }}
+              className="h-16 w-16 rounded-xl bg-surface-secondary"
+              contentFit="cover"
+            />
+            <View className="min-w-0 flex-1 gap-0.5">
+              <Typography type="body-sm" numberOfLines={2}>
+                {row.feedItem.title}
+              </Typography>
+              <Typography type="body-xs" weight="semibold">
+                {formatPrice(row.feedItem.price, row.feedItem.currencySymbol)}
+              </Typography>
+            </View>
+          </PressableFeedback>
+        </Widget.Content>
+        <Widget.Footer>
+          <PressableFeedback onPress={() => onPressHunter(feed.hunter.id)}>
+            <Widget.Description>See all activity →</Widget.Description>
+          </PressableFeedback>
+        </Widget.Footer>
+      </Widget>
+    </View>
+  );
+}
+
+/** V13 — Alert notification style */
+function VariantAlert({
+  feeds,
+  onPressListing,
+  onPressHunter,
+}: VariantFeedProps): JSX.Element {
+  const feed = feeds[0];
+  const row = feed ? latest(feed) : null;
+  if (!feed || !row) return <View />;
+
+  return (
+    <View className="px-3">
+      <Alert status="accent" className="gap-3">
+        <Alert.Indicator>
+          <CommunityHunterAvatar hunter={feed.hunter} size="sm" />
+        </Alert.Indicator>
+        <Alert.Content className="min-w-0 flex-1">
+          <PressableFeedback onPress={() => onPressHunter(feed.hunter.id)}>
+            <Alert.Title>{feed.hunter.displayName} clicked a deal</Alert.Title>
+          </PressableFeedback>
+          <Alert.Description>
+            {formatDaysAgo(row.event.daysAgo)} · delayed 24h
+          </Alert.Description>
+          <PressableFeedback
+            onPress={() => onPressListing(row.feedItem.id)}
+            className="mt-2 flex-row items-center gap-2"
+          >
+            <StyledImage
+              source={{ uri: listingImage(feed) }}
+              className="h-12 w-12 rounded-lg bg-surface"
+              contentFit="cover"
+            />
+            <Typography type="body-xs" className="flex-1" numberOfLines={2}>
+              {row.feedItem.title}
+              {" · "}
+              {formatPrice(row.feedItem.price, row.feedItem.currencySymbol)}
+            </Typography>
+          </PressableFeedback>
+        </Alert.Content>
+      </Alert>
+    </View>
+  );
+}
+
+/** V14 — Chip meta cloud + wide product band */
+function VariantChipCloud({
+  feeds,
+  onPressListing,
+  onPressHunter,
+}: VariantFeedProps): JSX.Element {
+  const feed = feeds[0];
+  const row = feed ? latest(feed) : null;
+  if (!feed || !row) return <View />;
+
+  return (
+    <View className="gap-2 px-3">
+      <PressableFeedback
+        onPress={() => onPressHunter(feed.hunter.id)}
+        className="flex-row items-center gap-2"
+      >
+        <CommunityHunterAvatar hunter={feed.hunter} size="md" />
+        <Typography type="body-sm" weight="semibold" className="flex-1" numberOfLines={1}>
+          {feed.hunter.displayName}
+        </Typography>
+      </PressableFeedback>
+      <View className="flex-row flex-wrap gap-1.5">
+        <Chip size="sm" variant="secondary">
+          <Chip.Label>@{feed.hunter.handle}</Chip.Label>
+        </Chip>
+        <Chip size="sm" variant="secondary">
+          <Chip.Label>{feed.hunter.city}</Chip.Label>
+        </Chip>
+        {feed.hunter.distanceMiles != null ? (
+          <Chip size="sm" variant="soft">
+            <Chip.Label>{feed.hunter.distanceMiles} mi</Chip.Label>
+          </Chip>
+        ) : null}
+        <Chip size="sm" variant="soft" color="accent">
+          <Chip.Label>{feed.clicks.length} clicks</Chip.Label>
+        </Chip>
+      </View>
+      <PressableFeedback onPress={() => onPressListing(row.feedItem.id)}>
+        <StyledImage
+          source={{ uri: listingImage(feed) }}
+          className="h-32 w-full rounded-2xl bg-surface-secondary"
+          contentFit="cover"
+        />
+        <Typography type="body-xs" className="mt-1.5 text-muted" numberOfLines={1}>
+          {row.feedItem.title}
+          {" · "}
+          {formatPrice(row.feedItem.price, row.feedItem.currencySymbol)}
+        </Typography>
+      </PressableFeedback>
+    </View>
+  );
+}
+
+/** V15 — Magazine: product bleed with overlapping avatar */
+function VariantOverlapMagazine({
+  feeds,
+  onPressListing,
+  onPressHunter,
+}: VariantFeedProps): JSX.Element {
+  const feed = feeds[0];
+  const row = feed ? latest(feed) : null;
+  if (!feed || !row) return <View />;
+
+  return (
+    <View className="px-3 pb-2">
+      <PressableFeedback onPress={() => onPressListing(row.feedItem.id)}>
+        <StyledImage
+          source={{ uri: listingImage(feed) }}
+          className="h-44 w-full rounded-2xl bg-surface-secondary"
+          contentFit="cover"
+        />
+      </PressableFeedback>
+      <View className="-mt-7 flex-row items-end gap-3 px-3">
+        <PressableFeedback onPress={() => onPressHunter(feed.hunter.id)}>
+          <View className="rounded-full border-2 border-background">
+            <CommunityHunterAvatar hunter={feed.hunter} size="lg" />
+          </View>
+        </PressableFeedback>
+        <View className="mb-1 min-w-0 flex-1">
+          <Typography type="body-sm" weight="semibold" numberOfLines={1}>
+            {feed.hunter.displayName}
+          </Typography>
+          <Typography type="body-xs" className="text-muted" numberOfLines={1}>
+            {formatPrice(row.feedItem.price, row.feedItem.currencySymbol)}
+            {" · "}
+            {formatDaysAgo(row.event.daysAgo)}
+          </Typography>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** V16 — Price hero: giant price, thin product strip */
+function VariantPriceHero({
+  feeds,
+  onPressListing,
+  onPressHunter,
+}: VariantFeedProps): JSX.Element {
+  const feed = feeds[0];
+  const row = feed ? latest(feed) : null;
+  if (!feed || !row) return <View />;
+
+  return (
+    <Surface className="mx-3 overflow-hidden rounded-2xl p-0">
+      <View className="flex-row">
+        <PressableFeedback
+          onPress={() => onPressListing(row.feedItem.id)}
+          className="w-[38%] items-center justify-center bg-accent px-2 py-5"
+        >
+          <Typography type="body-xs" className="text-accent-foreground opacity-70">
+            clicked at
+          </Typography>
+          <Typography
+            type="body"
+            weight="semibold"
+            className="text-center text-2xl text-accent-foreground"
+          >
+            {formatPrice(row.feedItem.price, row.feedItem.currencySymbol)}
+          </Typography>
+        </PressableFeedback>
+        <View className="min-w-0 flex-1 gap-2 p-3">
+          <PressableFeedback
+            onPress={() => onPressHunter(feed.hunter.id)}
+            className="flex-row items-center gap-2"
+          >
+            <CommunityHunterAvatar hunter={feed.hunter} size="sm" />
+            <Typography type="body-sm" weight="semibold" numberOfLines={1}>
+              {feed.hunter.displayName}
+            </Typography>
+          </PressableFeedback>
+          <PressableFeedback onPress={() => onPressListing(row.feedItem.id)}>
+            <StyledImage
+              source={{ uri: listingImage(feed) }}
+              className="h-16 w-full rounded-xl bg-surface-secondary"
+              contentFit="cover"
+            />
+            <Typography type="body-xs" className="mt-1 text-muted" numberOfLines={2}>
+              {row.feedItem.title}
+            </Typography>
+          </PressableFeedback>
+        </View>
+      </View>
+    </Surface>
+  );
+}
+
+/** V17 — Circular product spotlight */
+function VariantRoundSpotlight({
+  feeds,
+  onPressListing,
+  onPressHunter,
+}: VariantFeedProps): JSX.Element {
+  const feed = feeds[0];
+  const row = feed ? latest(feed) : null;
+  if (!feed || !row) return <View />;
+
+  return (
+    <View className="items-center gap-3 px-3 py-2">
+      <PressableFeedback onPress={() => onPressListing(row.feedItem.id)}>
+        <StyledImage
+          source={{ uri: listingImage(feed) }}
+          className="h-36 w-36 rounded-full border-4 border-surface bg-surface-secondary"
+          contentFit="cover"
+        />
+      </PressableFeedback>
+      <PressableFeedback
+        onPress={() => onPressHunter(feed.hunter.id)}
+        className="items-center gap-1"
+      >
+        <CommunityHunterAvatar hunter={feed.hunter} size="md" />
+        <Typography type="body-sm" weight="semibold">
+          {feed.hunter.displayName}
+        </Typography>
+        <Typography type="body-xs" className="text-muted">
+          {formatPrice(row.feedItem.price, row.feedItem.currencySymbol)}
+          {" · "}
+          {feed.clicks.length} clicks
+        </Typography>
+      </PressableFeedback>
+    </View>
+  );
+}
+
+/** V18 — Story rings: 2 users in one row */
+function VariantStoryPair({
+  feeds,
+  onPressListing,
+  onPressHunter,
+}: VariantFeedProps): JSX.Element {
+  return (
+    <View className="flex-row gap-3 px-3">
+      {feeds.map((feed) => {
+        const row = latest(feed);
+        if (!row) return null;
+        return (
+          <View key={feed.hunter.id} className="min-w-0 flex-1 items-center gap-2">
+            <PressableFeedback onPress={() => onPressListing(row.feedItem.id)}>
+              <View className="rounded-full border-2 border-accent p-0.5">
+                <StyledImage
+                  source={{ uri: listingImage(feed) }}
+                  className="h-20 w-20 rounded-full bg-surface-secondary"
+                  contentFit="cover"
+                />
+              </View>
+            </PressableFeedback>
+            <PressableFeedback
+              onPress={() => onPressHunter(feed.hunter.id)}
+              className="items-center"
+            >
+              <Typography type="body-xs" weight="semibold" numberOfLines={1}>
+                {feed.hunter.displayName.split(" ")[0]}
+              </Typography>
+              <Typography type="body-xs" className="text-muted">
+                {formatPrice(row.feedItem.price, row.feedItem.currencySymbol)}
+              </Typography>
+            </PressableFeedback>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+/** V19 — Caption / pull-quote centered */
+function VariantCaption({
+  feeds,
+  onPressListing,
+  onPressHunter,
+}: VariantFeedProps): JSX.Element {
+  const feed = feeds[0];
+  const row = feed ? latest(feed) : null;
+  if (!feed || !row) return <View />;
+
+  return (
+    <Surface className="mx-3 items-center gap-3 rounded-2xl px-4 py-5">
+      <Typography type="body-xs" className="text-muted">
+        recent click
+      </Typography>
+      <PressableFeedback onPress={() => onPressHunter(feed.hunter.id)}>
+        <Typography type="body" weight="semibold" className="text-center text-lg">
+          “{feed.hunter.displayName.split(" ")[0]} checked this”
+        </Typography>
+      </PressableFeedback>
+      <Separator className="w-12 bg-muted/40" />
+      <PressableFeedback
+        onPress={() => onPressListing(row.feedItem.id)}
+        className="w-full items-center gap-2"
+      >
+        <StyledImage
+          source={{ uri: listingImage(feed) }}
+          className="h-28 w-full rounded-xl bg-surface-secondary"
+          contentFit="cover"
+        />
+        <Typography type="body-sm" className="text-center" numberOfLines={2}>
+          {row.feedItem.title}
+        </Typography>
+        <Typography type="body-xs" className="text-muted">
+          {formatPrice(row.feedItem.price, row.feedItem.currencySymbol)}
+          {" · "}
+          {formatDaysAgo(row.event.daysAgo)}
+        </Typography>
+      </PressableFeedback>
+    </Surface>
+  );
+}
+
+/** V20 — Duel / vs scoreboard (2 users) */
+function VariantDuel({
+  feeds,
+  onPressListing,
+  onPressHunter,
+}: VariantFeedProps): JSX.Element {
+  const a = feeds[0];
+  const b = feeds[1];
+  if (!a || !b) return <View />;
+  const rowA = latest(a);
+  const rowB = latest(b);
+  if (!rowA || !rowB) return <View />;
+
+  return (
+    <Surface className="mx-3 overflow-hidden rounded-2xl p-0">
+      <View className="flex-row">
+        <PressableFeedback
+          onPress={() => onPressListing(rowA.feedItem.id)}
+          className="min-w-0 flex-1 items-center gap-2 p-3"
+        >
+          <PressableFeedback onPress={() => onPressHunter(a.hunter.id)}>
+            <CommunityHunterAvatar hunter={a.hunter} size="md" />
+          </PressableFeedback>
+          <Typography type="body-xs" weight="semibold" numberOfLines={1}>
+            {a.hunter.displayName.split(" ")[0]}
+          </Typography>
+          <StyledImage
+            source={{ uri: listingImage(a) }}
+            className="h-20 w-full rounded-xl bg-surface-secondary"
+            contentFit="cover"
+          />
+          <Typography type="body-xs" className="text-muted">
+            {a.clicks.length} clicks
+          </Typography>
+        </PressableFeedback>
+
+        <View className="items-center justify-center px-1">
+          <View className="rounded-full bg-accent px-2 py-1">
+            <Typography type="body-xs" weight="semibold" className="text-accent-foreground">
+              VS
+            </Typography>
+          </View>
+        </View>
+
+        <PressableFeedback
+          onPress={() => onPressListing(rowB.feedItem.id)}
+          className="min-w-0 flex-1 items-center gap-2 p-3"
+        >
+          <PressableFeedback onPress={() => onPressHunter(b.hunter.id)}>
+            <CommunityHunterAvatar hunter={b.hunter} size="md" />
+          </PressableFeedback>
+          <Typography type="body-xs" weight="semibold" numberOfLines={1}>
+            {b.hunter.displayName.split(" ")[0]}
+          </Typography>
+          <StyledImage
+            source={{ uri: listingImage(b) }}
+            className="h-20 w-full rounded-xl bg-surface-secondary"
+            contentFit="cover"
+          />
+          <Typography type="body-xs" className="text-muted">
+            {b.clicks.length} clicks
+          </Typography>
+        </PressableFeedback>
+      </View>
+    </Surface>
+  );
+}
+
 export const COMMUNITY_FEED_VARIANTS: {
   id: string;
   title: string;
@@ -694,6 +1187,77 @@ export const COMMUNITY_FEED_VARIANTS: {
     users: 1,
     Component: VariantStackedColumns,
   },
+  {
+    id: "11",
+    title: "FlipCard",
+    hint: "1 user · product front / hunter back (tap)",
+    users: 1,
+    Component: VariantFlipCard,
+  },
+  {
+    id: "12",
+    title: "Widget KPI",
+    hint: "1 user · Widget shell + product content",
+    users: 1,
+    Component: VariantWidget,
+  },
+  {
+    id: "13",
+    title: "Alert ping",
+    hint: "1 user · Alert notification + product",
+    users: 1,
+    Component: VariantAlert,
+  },
+  {
+    id: "14",
+    title: "Chip cloud",
+    hint: "1 user · meta chips + wide product band",
+    users: 1,
+    Component: VariantChipCloud,
+  },
+  {
+    id: "15",
+    title: "Overlap magazine",
+    hint: "1 user · bleed image + overlapping avatar",
+    users: 1,
+    Component: VariantOverlapMagazine,
+  },
+  {
+    id: "16",
+    title: "Price hero",
+    hint: "1 user · giant price block + product",
+    users: 1,
+    Component: VariantPriceHero,
+  },
+  {
+    id: "17",
+    title: "Round spotlight",
+    hint: "1 user · circular product + centered hunter",
+    users: 1,
+    Component: VariantRoundSpotlight,
+  },
+  {
+    id: "18",
+    title: "Story pair",
+    hint: "1 row · 2 users · story rings",
+    users: 2,
+    Component: VariantStoryPair,
+  },
+  {
+    id: "19",
+    title: "Caption quote",
+    hint: "1 user · pull-quote + product",
+    users: 1,
+    Component: VariantCaption,
+  },
+  {
+    id: "20",
+    title: "Duel VS",
+    hint: "1 row · 2 users · scoreboard",
+    users: 2,
+    Component: VariantDuel,
+  },
+  ...COMMUNITY_FEED_VARIANTS_WAVE2,
 ];
 
 function pickSample(

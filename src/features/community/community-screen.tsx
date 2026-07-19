@@ -62,7 +62,7 @@ export function CommunityScreen(): JSX.Element {
               <Segment.Label>Activity</Segment.Label>
             </Segment.Item>
             <Segment.Item value="people">
-              <Segment.Label>People</Segment.Label>
+              <Segment.Label>Similar nearby</Segment.Label>
             </Segment.Item>
             <Segment.Item value="you">
               <Segment.Label>You</Segment.Label>

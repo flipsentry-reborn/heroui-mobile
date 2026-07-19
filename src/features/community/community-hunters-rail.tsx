@@ -3,6 +3,10 @@ import { ScrollView, View } from "react-native";
 import { PressableFeedback, Typography } from "heroui-native";
 
 import { CommunityHunterAvatar } from "@/features/community/community-hunter-avatar";
+import {
+  CommunityActiveBadge,
+  isHunterOnline,
+} from "@/features/community/community-presence-badge";
 import type { CommunityHunter } from "@/mocks/data/community";
 
 interface CommunityHuntersRailProps {
@@ -25,7 +29,7 @@ export function CommunityHuntersRail({
         <PressableFeedback
           key={hunter.id}
           onPress={() => onPressHunter(hunter.id)}
-          className="w-[72px] items-center gap-1.5"
+          className="w-[76px] items-center gap-1.5"
           animation={{ scale: { value: 0.96 } }}
         >
           <CommunityHunterAvatar hunter={hunter} size="lg" />
@@ -36,9 +40,17 @@ export function CommunityHuntersRail({
           >
             {hunter.displayName.split(" ")[0]}
           </Typography>
-          <Typography type="body-xs" className="text-center text-muted" numberOfLines={1}>
-            {hunter.distanceMiles != null ? `${hunter.distanceMiles} mi` : ""}
-          </Typography>
+          {isHunterOnline(hunter) ? (
+            <CommunityActiveBadge />
+          ) : (
+            <Typography
+              type="body-xs"
+              className="text-center text-muted"
+              numberOfLines={1}
+            >
+              {hunter.lastOnlineLabel}
+            </Typography>
+          )}
         </PressableFeedback>
       ))}
       {hunters.length === 0 ? (

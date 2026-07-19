@@ -21,7 +21,7 @@ import {
 import { withUniwind } from "uniwind";
 
 import {
-  CommunityActiveBadge,
+  CommunityOnlineDot,
   isHunterOnline,
 } from "@/features/community/community-presence-badge";
 import {
@@ -215,11 +215,6 @@ function CommunityFeedDepthItem({
               {" · "}
               {formatDaysAgo(row.event.daysAgo)}
             </Typography>
-            {isHunterOnline(hunter) ? (
-              <View className="mt-0.5 self-start">
-                <CommunityActiveBadge />
-              </View>
-            ) : null}
           </View>
           <Accordion.Indicator />
         </Accordion.Trigger>
@@ -229,7 +224,7 @@ function CommunityFeedDepthItem({
             <Kpi label="Clicks" value={String(hunter.clicksYesterday)} />
             {isHunterOnline(hunter) ? (
               <View className="min-w-0 flex-1 items-center gap-0.5 py-1">
-                <CommunityActiveBadge />
+                <CommunityOnlineDot />
                 <Typography type="body-xs" className="text-[10px] text-muted">
                   Last online
                 </Typography>

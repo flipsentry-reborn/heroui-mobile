@@ -17,10 +17,7 @@ import {
 import { withUniwind } from "uniwind";
 
 import { CommunityHunterAvatar } from "@/features/community/community-hunter-avatar";
-import {
-  CommunityActiveBadge,
-  isHunterOnline,
-} from "@/features/community/community-presence-badge";
+import { isHunterOnline } from "@/features/community/community-presence-badge";
 import { FeedItem } from "@/features/feed/feed-item";
 import type { CommunityHunter } from "@/mocks/data/community";
 import {
@@ -133,13 +130,11 @@ export function CommunityProfilePage({
             @{hunter.handle} · {hunter.city}
           </Typography>
           <View className="mt-1 flex-row flex-wrap items-center gap-2">
-            {isHunterOnline(hunter) ? (
-              <CommunityActiveBadge />
-            ) : (
+            {!isHunterOnline(hunter) ? (
               <Typography type="body-xs" className="text-muted">
                 Last online · {hunter.lastOnlineLabel}
               </Typography>
-            )}
+            ) : null}
             <Typography type="body-xs" className="text-muted">
               {hunter.clicksYesterday} clicks yesterday
             </Typography>

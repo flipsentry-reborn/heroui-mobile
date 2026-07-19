@@ -3,25 +3,29 @@ import { Badge } from "heroui-native-pro";
 
 import type { CommunityHunter } from "@/mocks/data/community";
 
-/** Same Active badge pattern as search cards (`Badge` success soft). */
 export function isHunterOnline(hunter: CommunityHunter): boolean {
   return hunter.lastOnlineLabel === "Online now";
 }
 
-export function CommunityActiveBadge(): JSX.Element {
-  return (
-    <Badge color="success" variant="soft" size="sm">
-      Active
-    </Badge>
-  );
+/** Green status bubble only — no “Active” label (soft text was hard to see). */
+export function CommunityOnlineDot({
+  size = "sm",
+}: {
+  size?: "sm" | "md" | "lg";
+}): JSX.Element {
+  return <Badge color="success" size={size} />;
 }
 
-/** Active when online; otherwise muted last-online label (caller renders text). */
+/** @deprecated Use CommunityOnlineDot — kept for older imports. */
+export function CommunityActiveBadge(): JSX.Element {
+  return <CommunityOnlineDot />;
+}
+
 export function CommunityPresenceBadge({
   hunter,
 }: {
   hunter: CommunityHunter;
 }): JSX.Element | null {
   if (!isHunterOnline(hunter)) return null;
-  return <CommunityActiveBadge />;
+  return <CommunityOnlineDot />;
 }

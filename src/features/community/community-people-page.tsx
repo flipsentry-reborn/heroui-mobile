@@ -10,10 +10,6 @@ import {
 import { EmptyState } from "heroui-native-pro";
 
 import { CommunityHunterAvatar } from "@/features/community/community-hunter-avatar";
-import {
-  CommunityActiveBadge,
-  isHunterOnline,
-} from "@/features/community/community-presence-badge";
 import { CommunitySectionHeader } from "@/features/community/community-section-header";
 import type { CommunityHunter } from "@/mocks/data/community";
 import { getCommunityHunters } from "@/mocks/services/community";
@@ -114,7 +110,6 @@ export function CommunityPeoplePage({
                 {hunter.clicksYesterday} clicks yesterday
               </Typography>
             </View>
-            {isHunterOnline(hunter) ? <CommunityActiveBadge /> : null}
           </PressableFeedback>
           {index < hunters.length - 1 ? (
             <Separator className="ml-[76px] bg-muted/25" />

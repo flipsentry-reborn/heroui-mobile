@@ -15,7 +15,6 @@ import {
   cn,
   Menu,
   Separator,
-  SkeletonGroup,
   SubMenu,
   Typography,
   useAccordion,
@@ -66,78 +65,6 @@ const DEPTH_LAYOUT_TRANSITION = LinearTransition.springify()
   .damping(70)
   .stiffness(1000)
   .mass(2);
-
-/** Collapsed card placeholders for the home list while groups hydrate. */
-export function SearchCardsListSkeleton({
-  count = 3,
-}: {
-  count?: number;
-}): JSX.Element {
-  return (
-    <SkeletonGroup
-      isLoading
-      isSkeletonOnly
-      className="mx-3 overflow-hidden rounded-3xl bg-surface"
-    >
-      {Array.from({ length: count }, (_, index) => (
-        <View key={index}>
-          <View className="gap-2 px-3 py-3">
-            <View className="flex-row items-center gap-2">
-              <SkeletonGroup.Item className="h-5 flex-1 rounded-md" />
-              <SkeletonGroup.Item className="h-5 w-14 rounded-full" />
-            </View>
-            <View className="flex-row items-center gap-2">
-              <View className="flex-row items-center gap-1.5">
-                <SkeletonGroup.Item className="size-4 rounded-md" />
-                <SkeletonGroup.Item className="size-4 rounded-md" />
-                <SkeletonGroup.Item className="size-4 rounded-md" />
-              </View>
-              <SkeletonGroup.Item className="h-3 flex-1 rounded-md" />
-            </View>
-          </View>
-          {index < count - 1 ? (
-            <View className="px-3 pb-3">
-              <Separator className="bg-muted/30" />
-            </View>
-          ) : null}
-        </View>
-      ))}
-    </SkeletonGroup>
-  );
-}
-
-/** Expanded body placeholders: chips, platform rows, actions. */
-function SearchCardContentSkeleton({
-  rowCount = 2,
-}: {
-  rowCount?: number;
-}): JSX.Element {
-  return (
-    <SkeletonGroup isLoading isSkeletonOnly className="gap-2">
-      <View className="flex-row flex-wrap gap-1.5">
-        <SkeletonGroup.Item className="h-5 w-16 rounded-full" />
-        <SkeletonGroup.Item className="h-5 w-12 rounded-full" />
-        <SkeletonGroup.Item className="h-5 w-20 rounded-full" />
-      </View>
-      <View>
-        {Array.from({ length: rowCount }, (_, index) => (
-          <View key={index}>
-            <View className="flex-row items-center py-2">
-              <SkeletonGroup.Item className="mr-2.5 size-6 rounded-md" />
-              <SkeletonGroup.Item className="mr-2 h-4 flex-1 rounded-md" />
-              <SkeletonGroup.Item className="mr-2 h-3 w-10 rounded-md" />
-              <SkeletonGroup.Item className="h-5 w-14 rounded-full" />
-            </View>
-            {index < rowCount - 1 ? (
-              <Separator className="bg-muted/30" />
-            ) : null}
-          </View>
-        ))}
-      </View>
-      <SkeletonGroup.Item className="h-12 w-full rounded-2xl" />
-    </SkeletonGroup>
-  );
-}
 
 function groupTitle(group: SearchGroup): string {
   if (group.searchType === "car") return "Cars";
@@ -465,22 +392,12 @@ function SearchDepthItem({
   const { isExpanded } = useAccordionItem();
   const scale = useSharedValue(isExpanded ? 1 : 0.97);
   const status = groupStatus(group);
-  const [isContentReady, setIsContentReady] = useState(false);
 
   useEffect(() => {
     scale.value = withTiming(isExpanded && isVisible ? 1 : 0.97, {
       duration: 200,
     });
   }, [isExpanded, isVisible, scale]);
-
-  useEffect(() => {
-    if (!isExpanded || !isVisible || isContentReady) return;
-    // Paint skeleton first, then reveal content on the next frame.
-    const frame = requestAnimationFrame(() => {
-      setIsContentReady(true);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [isExpanded, isVisible, isContentReady]);
 
   const depthStyle = useAnimatedStyle(() => ({
     transform: [{ scale: isVisible ? scale.value : 1 }],
@@ -574,22 +491,14 @@ function SearchDepthItem({
           <Accordion.Indicator />
         </Accordion.Trigger>
         <Accordion.Content className="gap-2 px-3 pb-3 pt-0">
-          {isContentReady ? (
-            <>
-              <MetaChipRow group={group} />
-              <PlatformRows group={group} />
-              <SearchCardActionsMenu
-                group={group}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onToggle={onToggle}
-              />
-            </>
-          ) : (
-            <SearchCardContentSkeleton
-              rowCount={Math.max(1, Math.min(group.settings.length, 3))}
-            />
-          )}
+          <MetaChipRow group={group} />
+          <PlatformRows group={group} />
+          <SearchCardActionsMenu
+            group={group}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onToggle={onToggle}
+          />
         </Accordion.Content>
       </StyledAnimatedView>
       {showDivider ? (

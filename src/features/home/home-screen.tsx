@@ -2,22 +2,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColor, useToast } from "heroui-native";
 
 import { BrandButton } from "@/components/ui/brand-button";
-import {
-  HomePlanCreditsCard,
-  HomePlanCreditsCardSkeleton,
-} from "@/features/home/home-plan-credits-card";
+import { HomePlanCreditsCard } from "@/features/home/home-plan-credits-card";
+import { HomeScreenSkeleton } from "@/features/home/home-skeletons";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import { SearchBottomSheet } from "@/features/home/search-bottom-sheet";
-import {
-  SearchCards,
-  SearchCardsListSkeleton,
-} from "@/features/home/search-cards";
+import { SearchCards } from "@/features/home/search-cards";
 import {
   SearchStatusSegment,
   type SearchStatusFilter,
@@ -50,8 +45,6 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
   const [locationLabel, setLocationLabel] = useState(() =>
     formatLocationLabel(getLocationDraft()),
   );
-  /** Lightweight first paint — heavy cards mount after skeleton can commit. */
-  const [contentReady, setContentReady] = useState(false);
 
   const { allGroups, activeGroups, pausedGroups } = useMemo(() => {
     const all = searchStore.searchGroups;
@@ -68,18 +61,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
     };
   }, [searchStore.searchGroups]);
 
-  const showSkeleton = !searchStore.hasLoaded || !contentReady;
-
-  useEffect(() => {
-    if (!searchStore.hasLoaded) {
-      setContentReady(false);
-      return;
-    }
-    const frame = requestAnimationFrame(() => {
-      setContentReady(true);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [searchStore.hasLoaded]);
+  const showSkeleton = !searchStore.hasLoaded;
 
   useFocusEffect(
     useCallback(() => {
@@ -150,58 +132,57 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
         }
       >
         {showSkeleton ? (
-          <HomePlanCreditsCardSkeleton />
+          <HomeScreenSkeleton />
         ) : (
-          <HomePlanCreditsCard
-            homePlan={searchStore.homePlan}
-            subscriptionPlan={subscriptionStore.activePlan}
-            onPress={() => router.push("/settings/subscription")}
-          />
+          <>
+            <HomePlanCreditsCard
+              homePlan={searchStore.homePlan}
+              subscriptionPlan={subscriptionStore.activePlan}
+              onPress={() => router.push("/settings/subscription")}
+            />
+
+            <View className="mx-3 mb-3">
+              <BrandButton
+                className="min-h-12 w-full"
+                onPress={handleNewSearch}
+              >
+                <Ionicons name="add" size={18} color={accentForeground} />
+                <BrandButton.Label>
+                  {searchStore.canCreateSearch
+                    ? "New Search"
+                    : "Upgrade for slots"}
+                </BrandButton.Label>
+              </BrandButton>
+            </View>
+
+            {allGroups.length > 0 ? (
+              <SearchStatusSegment
+                value={statusFilter}
+                onValueChange={setStatusFilter}
+                allCount={allGroups.length}
+                activeCount={activeGroups.length}
+                pausedCount={pausedGroups.length}
+              />
+            ) : null}
+
+            <SearchCards
+              groups={allGroups}
+              statusFilter={statusFilter}
+              emptyMessage={
+                allGroups.length === 0
+                  ? "No searches yet"
+                  : statusFilter === "paused"
+                    ? "No paused searches"
+                    : statusFilter === "active"
+                      ? "No active searches"
+                      : "No searches yet"
+              }
+              onEdit={handleEditAndOpen}
+              onDelete={handleDelete}
+              onToggle={handleToggle}
+            />
+          </>
         )}
-
-        <View className="mx-3 mb-3">
-          <BrandButton
-            className="min-h-12 w-full"
-            onPress={handleNewSearch}
-            isDisabled={showSkeleton}
-          >
-            <Ionicons name="add" size={18} color={accentForeground} />
-            <BrandButton.Label>
-              {searchStore.canCreateSearch ? "New Search" : "Upgrade for slots"}
-            </BrandButton.Label>
-          </BrandButton>
-        </View>
-
-        {showSkeleton ? <SearchCardsListSkeleton /> : null}
-
-        {!showSkeleton && allGroups.length > 0 ? (
-          <SearchStatusSegment
-            value={statusFilter}
-            onValueChange={setStatusFilter}
-            allCount={allGroups.length}
-            activeCount={activeGroups.length}
-            pausedCount={pausedGroups.length}
-          />
-        ) : null}
-
-        {!showSkeleton ? (
-          <SearchCards
-            groups={allGroups}
-            statusFilter={statusFilter}
-            emptyMessage={
-              allGroups.length === 0
-                ? "No searches yet"
-                : statusFilter === "paused"
-                  ? "No paused searches"
-                  : statusFilter === "active"
-                    ? "No active searches"
-                    : "No searches yet"
-            }
-            onEdit={handleEditAndOpen}
-            onDelete={handleDelete}
-            onToggle={handleToggle}
-          />
-        ) : null}
       </ScrollView>
 
       {sheetMounted ? (

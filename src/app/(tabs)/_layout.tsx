@@ -19,7 +19,7 @@ export default function TabsLayout(): JSX.Element {
       <Tabs.Screen name="home" options={{ title: "Home" }} />
       <Tabs.Screen name="feed" options={{ title: "Feed" }} />
       <Tabs.Screen name="settings" options={{ title: "Settings" }} />
-      <Tabs.Screen name="help" options={{ title: "Help" }} />
+      <Tabs.Screen name="community" options={{ title: "Community" }} />
     </Tabs>
   );
 }

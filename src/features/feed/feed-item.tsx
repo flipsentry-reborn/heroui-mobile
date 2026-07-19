@@ -41,6 +41,11 @@ interface FeedItemProps {
   layout?: "grid" | "rail";
   /** Slightly larger rail cards for featured shelves. */
   featured?: boolean;
+  /** Small label on the image (e.g. Community “2 days ago”). */
+  imageCornerLabel?: string;
+  imageCornerSide?: "left" | "right";
+  /** Hide the favorite star (e.g. Community profile grid). */
+  hideFavorite?: boolean;
 }
 
 function formatPrice(price: number, symbol: string): string {
@@ -56,6 +61,9 @@ export function FeedItem({
   onToggleFavorite,
   layout = "grid",
   featured = false,
+  imageCornerLabel,
+  imageCornerSide = "right",
+  hideFavorite = false,
 }: FeedItemProps): JSX.Element {
   const [surfaceSecondary] = useThemeColor(["surface-secondary"]);
   const imageUrl =
@@ -117,25 +125,31 @@ export function FeedItem({
             transition={180}
           />
 
-          <PressableFeedback
-            accessibilityLabel={feed.isFavorite ? "Unfavorite" : "Favorite"}
-            onPress={() => onToggleFavorite?.(feed.id)}
-            className={
-              feed.isFavorite
-                ? "absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-white/20"
-                : "absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-white/10"
-            }
-            animation={{ scale: { value: 0.9 } }}
-          >
-            <Ionicons
-              name={feed.isFavorite ? "star" : "star-outline"}
-              size={13}
-              color={feed.isFavorite ? "#166534" : "rgba(255,255,255,0.85)"}
-            />
-          </PressableFeedback>
+          {!hideFavorite ? (
+            <PressableFeedback
+              accessibilityLabel={feed.isFavorite ? "Unfavorite" : "Favorite"}
+              onPress={() => onToggleFavorite?.(feed.id)}
+              className={
+                feed.isFavorite
+                  ? "absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-white/20"
+                  : "absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-white/10"
+              }
+              animation={{ scale: { value: 0.9 } }}
+            >
+              <Ionicons
+                name={feed.isFavorite ? "star" : "star-outline"}
+                size={13}
+                color={feed.isFavorite ? "#166534" : "rgba(255,255,255,0.85)"}
+              />
+            </PressableFeedback>
+          ) : null}
 
           {(feed.valuation?.calculated || statusBadges.length > 0) && (
-            <View className="absolute bottom-[5px] left-[5px] right-[5px] flex-row flex-wrap gap-[3px]">
+            <View
+              className={`absolute bottom-[5px] left-[5px] flex-row flex-wrap gap-[3px] ${
+                imageCornerLabel ? "right-16" : "right-[5px]"
+              }`}
+            >
               {feed.valuation?.calculated ? (
                 <ValuationBadge buySignal={feed.valuation.buySignal} />
               ) : null}
@@ -144,6 +158,18 @@ export function FeedItem({
               ))}
             </View>
           )}
+
+          {imageCornerLabel ? (
+            <View
+              className={`absolute bottom-[5px] rounded-md bg-black/55 px-1.5 py-0.5 ${
+                imageCornerSide === "left" ? "left-[5px]" : "right-[5px]"
+              }`}
+            >
+              <Typography type="body-xs" className="text-[10px] text-white">
+                {imageCornerLabel}
+              </Typography>
+            </View>
+          ) : null}
         </View>
 
         {/* Exactly 3 rows: price, title (ellipsis), meta */}

@@ -77,6 +77,14 @@ function RootLayoutContent(): JSX.Element {
             gestureEnabled: true,
           }}
         />
+        <Stack.Screen
+          name="community"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+            gestureEnabled: true,
+          }}
+        />
       </Stack>
       <StatusBar style={isDark ? "light" : "dark"} />
     </ThemeProvider>

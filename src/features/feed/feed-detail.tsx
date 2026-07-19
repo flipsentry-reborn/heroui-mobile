@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import Animated, {
@@ -69,9 +69,16 @@ interface FeedDetailProps {
   item: FeedItem;
   onBack: () => void;
   onToggleFavorite: () => void;
+  /** Optional block under the gallery (e.g. Community “Clicked by”). */
+  afterGallery?: ReactNode;
 }
 
-export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps): JSX.Element {
+export function FeedDetail({
+  item,
+  onBack,
+  onToggleFavorite,
+  afterGallery,
+}: FeedDetailProps): JSX.Element {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { toast } = useToast();
@@ -219,6 +226,8 @@ export function FeedDetail({ item, onBack, onToggleFavorite }: FeedDetailProps):
             </View>
           ) : null}
         </View>
+
+        {afterGallery}
 
         <View className="gap-6 px-4 pt-4">
           <View className="gap-2">

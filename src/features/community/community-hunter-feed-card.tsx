@@ -5,12 +5,10 @@ import {
   Accordion,
   Button,
   PressableFeedback,
-  Surface,
   Typography,
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
-import { CommunityHunterAvatar } from "@/features/community/community-hunter-avatar";
 import {
   CommunityActiveBadge,
   isHunterOnline,
@@ -35,7 +33,10 @@ interface CommunityHunterFeedCardProps {
   onPressHunter: (hunterId: string) => void;
 }
 
-/** Product-first card; simple accordion: Clicks / Last online / City. */
+/**
+ * Spotify track row — square thumb, title / artist meta, expand for stats.
+ * No card chrome; sits flush in the list.
+ */
 export function CommunityHunterFeedCard({
   feed,
   onPressListing,
@@ -51,97 +52,81 @@ export function CommunityHunterFeedCard({
   const cityShort = hunter.city.split(",")[0] ?? hunter.city;
 
   return (
-    <Surface className="overflow-hidden rounded-2xl p-0">
-      <Accordion selectionMode="single" variant="default" hideSeparator>
-        <Accordion.Item value={`${hunter.id}-details`}>
-          <View className="flex-row">
-            <PressableFeedback
-              onPress={() => onPressListing(row.feedItem.id)}
-              className="w-[38%]"
-            >
-              <StyledImage
-                source={{ uri: imageUrl }}
-                className="h-[108px] w-full bg-surface-secondary"
-                contentFit="cover"
-              />
-            </PressableFeedback>
+    <Accordion selectionMode="single" variant="default" hideSeparator>
+      <Accordion.Item value={`${hunter.id}-details`}>
+        <View className="flex-row items-center gap-3 px-4 py-2">
+          <PressableFeedback
+            onPress={() => onPressListing(row.feedItem.id)}
+            animation={{ scale: { value: 0.97 } }}
+          >
+            <StyledImage
+              source={{ uri: imageUrl }}
+              className="h-14 w-14 rounded-md bg-surface-secondary"
+              contentFit="cover"
+            />
+          </PressableFeedback>
 
-            <View className="w-[62%] justify-between gap-1 px-2.5 py-2">
-              <PressableFeedback onPress={() => onPressHunter(hunter.id)}>
-                <View className="flex-row items-center gap-1.5">
-                  <CommunityHunterAvatar hunter={hunter} size="sm" />
-                  <View className="min-w-0 flex-1">
-                    <Typography
-                      type="body-xs"
-                      weight="semibold"
-                      numberOfLines={1}
-                    >
-                      {hunter.displayName}
-                    </Typography>
-                    <Typography
-                      type="body-xs"
-                      className="text-[11px] text-muted"
-                      numberOfLines={1}
-                    >
-                      @{hunter.handle}
-                    </Typography>
-                  </View>
-                </View>
-              </PressableFeedback>
-
-              <PressableFeedback onPress={() => onPressListing(row.feedItem.id)}>
-                <Typography type="body-xs" numberOfLines={1}>
-                  {row.feedItem.title}
-                </Typography>
-                <Typography type="body-xs" className="text-[11px] text-muted">
-                  {formatPrice(row.feedItem.price, row.feedItem.currencySymbol)}
-                  {" · "}
-                  {formatDaysAgo(row.event.daysAgo)}
-                </Typography>
-                {isHunterOnline(hunter) ? (
-                  <View className="mt-1 self-start">
-                    <CommunityActiveBadge />
-                  </View>
-                ) : null}
-              </PressableFeedback>
-
-              <Accordion.Trigger className="items-center justify-end gap-1 py-0">
-                <Accordion.Indicator />
-              </Accordion.Trigger>
-            </View>
-          </View>
-
-          <Accordion.Content className="px-3 pb-2 pt-0.5">
-            <View className="gap-1.5 rounded-xl bg-surface-secondary/60 px-2 py-2">
-              <View className="flex-row gap-1">
-                <Kpi
-                  label="Clicks"
-                  value={String(hunter.clicksYesterday)}
-                />
-                <Kpi label="Last online" value={hunter.lastOnlineLabel} />
-                <Kpi label="City" value={cityShort} />
+          <PressableFeedback
+            onPress={() => onPressListing(row.feedItem.id)}
+            className="min-w-0 flex-1 gap-0.5"
+          >
+            <Typography type="body-sm" weight="semibold" numberOfLines={1}>
+              {row.feedItem.title}
+            </Typography>
+            <Typography type="body-xs" className="text-muted" numberOfLines={1}>
+              {hunter.displayName}
+              {" · "}
+              {formatPrice(row.feedItem.price, row.feedItem.currencySymbol)}
+              {" · "}
+              {formatDaysAgo(row.event.daysAgo)}
+            </Typography>
+            {isHunterOnline(hunter) ? (
+              <View className="mt-0.5 self-start">
+                <CommunityActiveBadge />
               </View>
+            ) : null}
+          </PressableFeedback>
 
-              <Button
-                variant="primary"
-                size="sm"
-                className="h-7"
-                onPress={() => onPressHunter(hunter.id)}
-              >
-                See profile
-              </Button>
+          <Accordion.Trigger className="items-center justify-center py-0 pl-1">
+            <Accordion.Indicator />
+          </Accordion.Trigger>
+        </View>
+
+        <Accordion.Content className="px-4 pb-3 pt-0">
+          <View className="gap-2 rounded-xl bg-surface-secondary/50 px-3 py-2.5">
+            <View className="flex-row gap-2">
+              <Kpi label="Clicks" value={String(hunter.clicksYesterday)} />
+              {isHunterOnline(hunter) ? (
+                <View className="min-w-0 flex-1 items-center gap-0.5 py-1">
+                  <CommunityActiveBadge />
+                  <Typography type="body-xs" className="text-[10px] text-muted">
+                    Last online
+                  </Typography>
+                </View>
+              ) : (
+                <Kpi label="Last online" value={hunter.lastOnlineLabel} />
+              )}
+              <Kpi label="City" value={cityShort} />
             </View>
-          </Accordion.Content>
-        </Accordion.Item>
-      </Accordion>
-    </Surface>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-8"
+              onPress={() => onPressHunter(hunter.id)}
+            >
+              See profile
+            </Button>
+          </View>
+        </Accordion.Content>
+      </Accordion.Item>
+    </Accordion>
   );
 }
 
 function Kpi({ label, value }: { label: string; value: string }): JSX.Element {
   return (
-    <View className="min-w-0 flex-1 items-center rounded-md bg-surface px-1 py-1.5">
-      <Typography type="body-xs" weight="semibold" numberOfLines={1}>
+    <View className="min-w-0 flex-1 items-center gap-0.5 py-1">
+      <Typography type="body-sm" weight="semibold" numberOfLines={1}>
         {value}
       </Typography>
       <Typography type="body-xs" className="text-[10px] text-muted">

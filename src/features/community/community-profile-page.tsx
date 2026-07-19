@@ -1,8 +1,20 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import type { JSX } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
-import { SkeletonGroup, Switch, Typography } from "heroui-native";
-import { EmptyState } from "heroui-native-pro";
+import {
+  PressableFeedback,
+  SkeletonGroup,
+  Switch,
+  Typography,
+} from "heroui-native";
+import {
+  EmptyState,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "heroui-native-pro";
+import { withUniwind } from "uniwind";
 
 import { CommunityHunterAvatar } from "@/features/community/community-hunter-avatar";
 import {
@@ -18,6 +30,18 @@ import {
   type CommunityActivityRow as ActivityRow,
 } from "@/mocks/services/community";
 
+const StyledImage = withUniwind(Image);
+const StyledIonicons = withUniwind(Ionicons);
+
+type ActivityLayout = "row" | "grid";
+
+function formatPrice(price: number, symbol: string): string {
+  const formatted = Math.round(price)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${symbol}${formatted}`;
+}
+
 interface CommunityProfilePageProps {
   hunterId: string;
   /** When true, show privacy toggles (You tab). */
@@ -26,6 +50,7 @@ interface CommunityProfilePageProps {
   onPressHunter?: (hunterId: string) => void;
 }
 
+/** Artist-style profile · Last clicks with row / 2-col grid toggle. */
 export function CommunityProfilePage({
   hunterId,
   isSelf = false,
@@ -37,6 +62,7 @@ export function CommunityProfilePage({
   const [refreshing, setRefreshing] = useState(false);
   const [showActivity, setShowActivity] = useState(true);
   const [appearNearby, setAppearNearby] = useState(true);
+  const [layout, setLayout] = useState<ActivityLayout>("row");
 
   const load = useCallback(async () => {
     const [h, a] = await Promise.all([
@@ -68,10 +94,10 @@ export function CommunityProfilePage({
 
   if (loading) {
     return (
-      <SkeletonGroup isLoading isSkeletonOnly className="items-center px-3 pt-6">
-        <SkeletonGroup.Item className="mb-3 h-16 w-16 rounded-full" />
-        <SkeletonGroup.Item className="mb-2 h-5 w-36 rounded-md" />
-        <SkeletonGroup.Item className="h-4 w-48 rounded-md" />
+      <SkeletonGroup isLoading isSkeletonOnly className="px-4 pt-6">
+        <SkeletonGroup.Item className="mb-4 h-20 w-20 rounded-full" />
+        <SkeletonGroup.Item className="mb-2 h-8 w-48 rounded-md" />
+        <SkeletonGroup.Item className="h-4 w-40 rounded-md" />
       </SkeletonGroup>
     );
   }
@@ -92,34 +118,41 @@ export function CommunityProfilePage({
     <ScrollView
       className="flex-1"
       showsVerticalScrollIndicator={false}
-      contentContainerClassName="pb-[110px] pt-4"
+      contentContainerClassName="pb-[110px] pt-2"
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <View className="mb-5 items-center gap-2 px-3">
+      <View className="mb-6 gap-3 px-4">
         <CommunityHunterAvatar hunter={hunter} size="lg" />
-        <Typography type="body" weight="semibold">
-          {isSelf ? "Your profile" : hunter.displayName}
-        </Typography>
-        <Typography type="body-xs" className="text-muted">
-          @{hunter.handle} · {hunter.city}
-        </Typography>
-        {isHunterOnline(hunter) ? (
-          <CommunityActiveBadge />
-        ) : (
-          <Typography type="body-xs" className="text-muted">
-            Last online · {hunter.lastOnlineLabel}
+        <View className="gap-1">
+          <Typography type="h2" weight="bold">
+            {isSelf ? "Your profile" : hunter.displayName}
           </Typography>
-        )}
-        <Typography type="body-xs" className="text-muted">
-          {hunter.clicksYesterday} clicks yesterday · {hunter.huntsFocus}
-        </Typography>
+          <Typography type="body-xs" color="muted">
+            @{hunter.handle} · {hunter.city}
+          </Typography>
+          <View className="mt-1 flex-row flex-wrap items-center gap-2">
+            {isHunterOnline(hunter) ? (
+              <CommunityActiveBadge />
+            ) : (
+              <Typography type="body-xs" className="text-muted">
+                Last online · {hunter.lastOnlineLabel}
+              </Typography>
+            )}
+            <Typography type="body-xs" className="text-muted">
+              {hunter.clicksYesterday} clicks yesterday
+            </Typography>
+          </View>
+          <Typography type="body-xs" className="text-muted">
+            {hunter.huntsFocus}
+          </Typography>
+        </View>
       </View>
 
       {isSelf ? (
-        <View className="mx-3 mb-5 gap-3 rounded-2xl bg-surface px-4 py-3">
-          <Typography type="body-xs" className="text-muted">
+        <View className="mx-4 mb-8 gap-3 rounded-2xl bg-surface px-4 py-3">
+          <Typography type="body-sm" weight="semibold">
             Privacy
           </Typography>
           <View className="flex-row items-center justify-between py-1">
@@ -143,9 +176,43 @@ export function CommunityProfilePage({
         </View>
       ) : null}
 
-      <Typography type="body-sm" className="mb-2 px-3 text-muted">
-        {isSelf ? "Your activity · delayed 24h" : "Activity · delayed 24h"}
-      </Typography>
+      <View className="mb-3 flex-row items-end justify-between gap-3 px-4">
+        <View className="min-w-0 flex-1 gap-0.5">
+          <Typography type="h3" weight="bold">
+            Last clicks
+          </Typography>
+          <Typography type="body-xs" color="muted">
+            {isSelf ? "Your activity · delayed 24h" : "Activity · delayed 24h"}
+          </Typography>
+        </View>
+        {!activityHidden && activity.length > 0 ? (
+          <ToggleButtonGroup
+            size="sm"
+            selectionMode="single"
+            disallowEmptySelection
+            selectedKeys={new Set([layout])}
+            onSelectionChange={(keys) => {
+              const next = [...keys][0];
+              if (next === "row" || next === "grid") setLayout(next);
+            }}
+          >
+            <ToggleButton id="row" isIconOnly accessibilityLabel="List rows">
+              <StyledIonicons
+                name="list-outline"
+                size={16}
+                className="text-foreground"
+              />
+            </ToggleButton>
+            <ToggleButton id="grid" isIconOnly accessibilityLabel="Grid">
+              <StyledIonicons
+                name="grid-outline"
+                size={16}
+                className="text-foreground"
+              />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        ) : null}
+      </View>
 
       {activityHidden ? (
         <EmptyState className="px-6 py-8">
@@ -165,7 +232,7 @@ export function CommunityProfilePage({
             </EmptyState.Description>
           </EmptyState.Header>
         </EmptyState>
-      ) : (
+      ) : layout === "grid" ? (
         <View className="flex-row flex-wrap px-0.5 pt-1">
           {activity.map((row) => (
             <View key={row.event.id} className="mb-1.5 w-1/2 px-0.5">
@@ -179,6 +246,45 @@ export function CommunityProfilePage({
               />
             </View>
           ))}
+        </View>
+      ) : (
+        <View>
+          {activity.map((row) => {
+            const imageUrl =
+              row.feedItem.images.imageUrlHostedByUs ||
+              row.feedItem.images.mainImageUrl.imageUrl;
+            return (
+              <PressableFeedback
+                key={row.event.id}
+                onPress={() => onPressListing(row.feedItem.id)}
+                className="flex-row items-center gap-3 px-4 py-2"
+                animation={{ scale: { value: 0.98 } }}
+              >
+                <StyledImage
+                  source={{ uri: imageUrl }}
+                  className="h-12 w-12 rounded-md bg-surface-secondary"
+                  contentFit="cover"
+                />
+                <View className="min-w-0 flex-1 gap-0.5">
+                  <Typography type="body-sm" weight="semibold" numberOfLines={1}>
+                    {row.feedItem.title}
+                  </Typography>
+                  <Typography
+                    type="body-xs"
+                    className="text-muted"
+                    numberOfLines={1}
+                  >
+                    {formatPrice(
+                      row.feedItem.price,
+                      row.feedItem.currencySymbol,
+                    )}
+                    {" · "}
+                    {formatDaysAgo(row.event.daysAgo)}
+                  </Typography>
+                </View>
+              </PressableFeedback>
+            );
+          })}
         </View>
       )}
     </ScrollView>

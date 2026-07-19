@@ -20,9 +20,16 @@ const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 type CommunityTab = "activity" | "people" | "you";
 
+function greetingForHour(hour: number): string {
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 export function CommunityScreen(): JSX.Element {
   const router = useRouter();
   const [tab, setTab] = useState<CommunityTab>("activity");
+  const greeting = greetingForHour(new Date().getHours());
 
   const openListing = useCallback(
     (feedItemId: string) => {
@@ -43,14 +50,16 @@ export function CommunityScreen(): JSX.Element {
   );
 
   return (
-    <StyledSafeAreaView
-      edges={["top"]}
-      className="flex-1 bg-background"
-    >
-      <View className="px-3 pb-2 pt-1">
-        <Typography type="body" weight="semibold" className="mb-2">
-          Community
-        </Typography>
+    <StyledSafeAreaView edges={["top"]} className="flex-1 bg-background">
+      <View className="gap-3 px-4 pb-3 pt-2">
+        <View className="gap-0.5">
+          <Typography type="body-xs" color="muted">
+            {greeting}
+          </Typography>
+          <Typography type="h2" weight="bold">
+            Community
+          </Typography>
+        </View>
         <Segment
           value={tab}
           onValueChange={(v) => setTab(v as CommunityTab)}

@@ -14,7 +14,7 @@ interface CommunityHuntersRailProps {
   onPressHunter: (hunterId: string) => void;
 }
 
-/** Horizontal “Active nearby” hunter chips. */
+/** Spotify “favorite artists” — large circles, name under. */
 export function CommunityHuntersRail({
   hunters,
   onPressHunter,
@@ -23,18 +23,19 @@ export function CommunityHuntersRail({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerClassName="gap-3 px-3"
+      contentContainerClassName="gap-5 px-4"
     >
       {hunters.map((hunter) => (
         <PressableFeedback
           key={hunter.id}
           onPress={() => onPressHunter(hunter.id)}
-          className="w-[76px] items-center gap-1.5"
+          className="w-[88px] items-center gap-2"
           animation={{ scale: { value: 0.96 } }}
         >
           <CommunityHunterAvatar hunter={hunter} size="lg" />
           <Typography
-            type="body-xs"
+            type="body-sm"
+            weight="semibold"
             className="w-full text-center"
             numberOfLines={1}
           >

@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import type { JSX } from "react";
 import { ScrollView, View } from "react-native";
-import { Chip, PressableFeedback, Typography } from "heroui-native";
+import { PressableFeedback, Typography } from "heroui-native";
 import { withUniwind } from "uniwind";
 
 import type { CommunityTrendingRow } from "@/mocks/services/community";
@@ -20,6 +20,7 @@ interface CommunityTrendingRailProps {
   onPressListing: (feedItemId: string) => void;
 }
 
+/** Spotify “album shelf” — large square covers, title under art. */
 export function CommunityTrendingRail({
   rows,
   onPressListing,
@@ -28,7 +29,7 @@ export function CommunityTrendingRail({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerClassName="px-3"
+      contentContainerClassName="gap-4 px-4"
     >
       {rows.map((row) => {
         const { feedItem, trending } = row;
@@ -39,33 +40,22 @@ export function CommunityTrendingRail({
           <PressableFeedback
             key={feedItem.id}
             onPress={() => onPressListing(feedItem.id)}
-            className="mr-2 w-[148px]"
+            className="w-[148px]"
             animation={{ scale: { value: 0.97 } }}
           >
-            <View className="overflow-hidden rounded-xl bg-surface">
-              <View className="relative">
-                <StyledImage
-                  source={{ uri: imageUrl }}
-                  className="h-28 w-full bg-surface-secondary"
-                  contentFit="cover"
-                />
-                <View className="absolute left-1.5 top-1.5">
-                  <Chip size="sm" variant="secondary" className="bg-black/55">
-                    <Chip.Label className="text-[10px] text-white">
-                      {trending.clickCount} clicks
-                    </Chip.Label>
-                  </Chip>
-                </View>
-              </View>
-              <View className="gap-0.5 px-2 py-1.5">
-                <Typography type="body-xs" numberOfLines={2}>
-                  {feedItem.title}
-                </Typography>
-                <Typography type="body-sm" weight="semibold">
-                  {formatPrice(feedItem.price, feedItem.currencySymbol)}
-                </Typography>
-              </View>
-            </View>
+            <StyledImage
+              source={{ uri: imageUrl }}
+              className="mb-2 h-[148px] w-[148px] rounded-md bg-surface-secondary"
+              contentFit="cover"
+            />
+            <Typography type="body-sm" weight="semibold" numberOfLines={2}>
+              {feedItem.title}
+            </Typography>
+            <Typography type="body-xs" className="mt-0.5 text-muted" numberOfLines={1}>
+              {formatPrice(feedItem.price, feedItem.currencySymbol)}
+              {" · "}
+              {trending.clickCount} clicks
+            </Typography>
           </PressableFeedback>
         );
       })}

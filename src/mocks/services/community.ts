@@ -101,10 +101,15 @@ export async function getCommunityHunterFeeds(): Promise<CommunityHunterFeed[]> 
 /** Nearby hunters with activity — for the Active nearby rail. */
 export async function getActiveNearbyHunters(): Promise<CommunityHunter[]> {
   await delay(120);
-  return buildHunterFeeds()
-    .map((f) => f.hunter)
-    .filter((h) => h.distanceMiles != null && h.distanceMiles <= LOCAL_RADIUS_MI)
-    .slice(0, 12);
+  return COMMUNITY_HUNTERS.filter(
+    (h) =>
+      h.id !== CURRENT_HUNTER_ID &&
+      h.showActivity &&
+      h.distanceMiles != null &&
+      h.distanceMiles <= LOCAL_RADIUS_MI,
+  )
+    .sort((a, b) => b.clicksYesterday - a.clicksYesterday)
+    .slice(0, 16);
 }
 
 export async function getCommunityTrending(): Promise<CommunityTrendingRow[]> {

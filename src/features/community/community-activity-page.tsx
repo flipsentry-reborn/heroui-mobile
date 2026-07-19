@@ -2,11 +2,12 @@ import type { JSX } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Button, SkeletonGroup, Typography } from "heroui-native";
+import { LinkButton, SkeletonGroup } from "heroui-native";
 import { EmptyState } from "heroui-native-pro";
 
+import { CommunityActiveNearbySection } from "@/features/community/community-active-nearby-section";
 import { CommunityHunterFeedCard } from "@/features/community/community-hunter-feed-card";
-import { CommunityHuntersRail } from "@/features/community/community-hunters-rail";
+import { CommunitySectionHeader } from "@/features/community/community-section-header";
 import { CommunityTrendingRail } from "@/features/community/community-trending-rail";
 import type { CommunityHunter } from "@/mocks/data/community";
 import {
@@ -64,19 +65,25 @@ export function CommunityActivityPage({
 
   if (loading) {
     return (
-      <SkeletonGroup isLoading isSkeletonOnly className="px-3 pt-3">
-        <SkeletonGroup.Item className="mb-3 h-5 w-40 rounded-md" />
+      <SkeletonGroup isLoading isSkeletonOnly className="px-4 pt-3">
+        <SkeletonGroup.Item className="mb-3 h-7 w-48 rounded-md" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {[0, 1, 2].map((k) => (
             <SkeletonGroup.Item
               key={k}
-              className="mr-2 h-[160px] w-[140px] rounded-xl"
+              className="mr-4 h-[148px] w-[148px] rounded-md"
             />
           ))}
         </ScrollView>
-        <SkeletonGroup.Item className="mt-5 h-5 w-36 rounded-md" />
-        <SkeletonGroup.Item className="mt-2 h-40 w-full rounded-xl" />
-        <SkeletonGroup.Item className="mt-2 h-40 w-full rounded-xl" />
+        <SkeletonGroup.Item className="mt-8 h-7 w-40 rounded-md" />
+        <View className="mt-3 flex-row gap-5">
+          {[0, 1, 2].map((k) => (
+            <SkeletonGroup.Item key={k} className="h-16 w-16 rounded-full" />
+          ))}
+        </View>
+        <SkeletonGroup.Item className="mt-8 h-7 w-44 rounded-md" />
+        <SkeletonGroup.Item className="mt-3 h-14 w-full rounded-md" />
+        <SkeletonGroup.Item className="mt-2 h-14 w-full rounded-md" />
       </SkeletonGroup>
     );
   }
@@ -98,33 +105,14 @@ export function CommunityActivityPage({
     <ScrollView
       className="flex-1"
       showsVerticalScrollIndicator={false}
-      contentContainerClassName="pb-[110px] pt-2"
+      contentContainerClassName="pb-[110px] pt-1"
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <View className="mb-3 gap-2 px-3">
-        <Button
-          variant="secondary"
-          size="sm"
-          onPress={() => router.push("/community/accordion-variants")}
-        >
-          Compare accordion interiors (10)
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          onPress={() => router.push("/community/variants")}
-        >
-          Compare hunter layouts (39)
-        </Button>
-      </View>
-
       {trending.length > 0 ? (
-        <View className="mb-5">
-          <Typography type="body-sm" className="mb-2 px-3 text-muted">
-            Trending yesterday
-          </Typography>
+        <View className="mb-8">
+          <CommunitySectionHeader title="Trending yesterday" />
           <CommunityTrendingRail
             rows={trending}
             onPressListing={onPressListing}
@@ -132,31 +120,52 @@ export function CommunityActivityPage({
         </View>
       ) : null}
 
-      <View className="mb-5">
-        <Typography type="body-sm" className="mb-2 px-3 text-muted">
-          Active nearby
-        </Typography>
-        <CommunityHuntersRail
+      <View className="mb-8">
+        <CommunityActiveNearbySection
           hunters={nearby}
           onPressHunter={onPressHunter}
         />
       </View>
 
       {feeds.length > 0 ? (
-        <View className="mb-2 gap-4 px-3">
-          <Typography type="body-sm" className="text-muted">
-            Recent by hunter · delayed 24h
-          </Typography>
-          {feeds.map((feed) => (
-            <CommunityHunterFeedCard
-              key={feed.hunter.id}
-              feed={feed}
-              onPressListing={onPressListing}
-              onPressHunter={onPressHunter}
-            />
-          ))}
+        <View className="mb-6">
+          <CommunitySectionHeader
+            title="Recently clicked"
+            subtitle="Delayed 24h · expand a row for hunter stats"
+          />
+          <View>
+            {feeds.map((feed) => (
+              <CommunityHunterFeedCard
+                key={feed.hunter.id}
+                feed={feed}
+                onPressListing={onPressListing}
+                onPressHunter={onPressHunter}
+              />
+            ))}
+          </View>
         </View>
       ) : null}
+
+      <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1 px-4 pt-2">
+        <LinkButton
+          size="sm"
+          onPress={() => router.push("/community/accordion-variants")}
+        >
+          Accordion layouts
+        </LinkButton>
+        <LinkButton
+          size="sm"
+          onPress={() => router.push("/community/variants")}
+        >
+          Card layouts
+        </LinkButton>
+        <LinkButton
+          size="sm"
+          onPress={() => router.push("/community/nearby-bg-variants")}
+        >
+          Nearby bg variants
+        </LinkButton>
+      </View>
     </ScrollView>
   );
 }

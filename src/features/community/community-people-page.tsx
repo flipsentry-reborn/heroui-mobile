@@ -2,7 +2,6 @@ import type { JSX } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import {
-  ListGroup,
   PressableFeedback,
   Separator,
   SkeletonGroup,
@@ -15,6 +14,7 @@ import {
   CommunityActiveBadge,
   isHunterOnline,
 } from "@/features/community/community-presence-badge";
+import { CommunitySectionHeader } from "@/features/community/community-section-header";
 import type { CommunityHunter } from "@/mocks/data/community";
 import { getCommunityHunters } from "@/mocks/services/community";
 
@@ -22,6 +22,7 @@ interface CommunityPeoplePageProps {
   onPressHunter: (hunterId: string) => void;
 }
 
+/** Spotify library / artist list — large avatar, bold name, muted meta. */
 export function CommunityPeoplePage({
   onPressHunter,
 }: CommunityPeoplePageProps): JSX.Element {
@@ -54,9 +55,15 @@ export function CommunityPeoplePage({
 
   if (loading) {
     return (
-      <SkeletonGroup isLoading isSkeletonOnly className="px-3 pt-2">
+      <SkeletonGroup isLoading isSkeletonOnly className="px-4 pt-2">
         {[0, 1, 2, 3].map((k) => (
-          <SkeletonGroup.Item key={k} className="mb-2 h-14 w-full rounded-xl" />
+          <View key={k} className="mb-4 flex-row items-center gap-3">
+            <SkeletonGroup.Item className="h-14 w-14 rounded-full" />
+            <View className="flex-1 gap-2">
+              <SkeletonGroup.Item className="h-4 w-36 rounded-md" />
+              <SkeletonGroup.Item className="h-3 w-48 rounded-md" />
+            </View>
+          </View>
         ))}
       </SkeletonGroup>
     );
@@ -79,53 +86,41 @@ export function CommunityPeoplePage({
     <ScrollView
       className="flex-1"
       showsVerticalScrollIndicator={false}
-      contentContainerClassName="pb-[110px] px-3 pt-1"
+      contentContainerClassName="pb-[110px] pt-1"
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <Typography type="body-xs" className="mb-2 px-1 text-muted">
-        Hunters near you · similar activity
-      </Typography>
-      <ListGroup>
-        {hunters.map((hunter, index) => (
-          <View key={hunter.id}>
-            <PressableFeedback
-              onPress={() => onPressHunter(hunter.id)}
-              animation={false}
-            >
-              <PressableFeedback.Scale>
-                <ListGroup.Item disabled className="py-2.5">
-                  <ListGroup.ItemPrefix>
-                    <CommunityHunterAvatar hunter={hunter} size="md" />
-                  </ListGroup.ItemPrefix>
-                  <ListGroup.ItemContent>
-                    <ListGroup.ItemTitle className="text-[15px] font-normal">
-                      {hunter.displayName}
-                    </ListGroup.ItemTitle>
-                    <ListGroup.ItemDescription className="text-xs text-muted">
-                      {hunter.city}
-                      {" · "}
-                      {isHunterOnline(hunter)
-                        ? "Online"
-                        : hunter.lastOnlineLabel}
-                      {" · "}
-                      {hunter.clicksYesterday} clicks yesterday
-                    </ListGroup.ItemDescription>
-                  </ListGroup.ItemContent>
-                  <ListGroup.ItemSuffix>
-                    {isHunterOnline(hunter) ? <CommunityActiveBadge /> : null}
-                  </ListGroup.ItemSuffix>
-                </ListGroup.Item>
-              </PressableFeedback.Scale>
-              <PressableFeedback.Highlight />
-            </PressableFeedback>
-            {index < hunters.length - 1 ? (
-              <Separator className="ml-14 bg-muted/30" />
-            ) : null}
-          </View>
-        ))}
-      </ListGroup>
+      <CommunitySectionHeader
+        title="Similar nearby"
+        subtitle="Hunters near you with similar activity"
+      />
+
+      {hunters.map((hunter, index) => (
+        <View key={hunter.id}>
+          <PressableFeedback
+            onPress={() => onPressHunter(hunter.id)}
+            className="flex-row items-center gap-3 px-4 py-2.5"
+            animation={{ scale: { value: 0.98 } }}
+          >
+            <CommunityHunterAvatar hunter={hunter} size="lg" />
+            <View className="min-w-0 flex-1 gap-0.5">
+              <Typography type="body-sm" weight="semibold" numberOfLines={1}>
+                {hunter.displayName}
+              </Typography>
+              <Typography type="body-xs" className="text-muted" numberOfLines={1}>
+                {hunter.city}
+                {" · "}
+                {hunter.clicksYesterday} clicks yesterday
+              </Typography>
+            </View>
+            {isHunterOnline(hunter) ? <CommunityActiveBadge /> : null}
+          </PressableFeedback>
+          {index < hunters.length - 1 ? (
+            <Separator className="ml-[76px] bg-muted/25" />
+          ) : null}
+        </View>
+      ))}
     </ScrollView>
   );
 }

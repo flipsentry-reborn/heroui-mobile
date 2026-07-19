@@ -32,6 +32,10 @@ export interface SearchGroup {
   carQuery?: CarQuery;
   customLabel?: string;
   settings: SearchSetting[];
+  /** ISO timestamp — set on create. */
+  createdAt: string;
+  /** ISO timestamp — bumped on edit / pause / start. */
+  updatedAt: string;
 }
 
 export interface CreditBucket {
@@ -86,6 +90,8 @@ export const homeGroupsFixture: SearchGroup[] = [
       setting("g1-ou", "offerUp", "Atlanta, GA", true, 180),
       setting("g1-cl", "craigslist", "Marietta, GA", true, 300),
     ],
+    createdAt: "2026-07-10T14:00:00.000Z",
+    updatedAt: "2026-07-18T16:00:00.000Z",
   },
   {
     id: "g2",
@@ -97,6 +103,8 @@ export const homeGroupsFixture: SearchGroup[] = [
       setting("g2-fb", "facebook", "Atlanta, GA", true, 180),
       setting("g2-ou", "offerUp", "Decatur, GA", true, 180),
     ],
+    createdAt: "2026-07-12T10:00:00.000Z",
+    updatedAt: "2026-07-17T12:00:00.000Z",
   },
   {
     id: "g3",
@@ -115,6 +123,8 @@ export const homeGroupsFixture: SearchGroup[] = [
       setting("g3-ou", "offerUp", "Fort Lauderdale, FL", true, 300),
       setting("g3-cl", "craigslist", "Miami, FL", true, 300),
     ],
+    createdAt: "2026-07-08T09:00:00.000Z",
+    updatedAt: "2026-07-15T11:00:00.000Z",
   },
   {
     id: "g4",
@@ -126,6 +136,8 @@ export const homeGroupsFixture: SearchGroup[] = [
       setting("g4-fb", "facebook", "Atlanta, GA", true, 180),
       setting("g4-ou", "offerUp", "Buckhead, GA", true, 180),
     ],
+    createdAt: "2026-07-14T08:00:00.000Z",
+    updatedAt: "2026-07-19T09:00:00.000Z",
   },
 ];
 

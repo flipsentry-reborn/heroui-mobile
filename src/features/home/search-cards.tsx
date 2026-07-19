@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import Animated, {
   FadeIn,
@@ -26,9 +26,11 @@ import { withUniwind } from "uniwind";
 
 import { BrandButton } from "@/components/ui/brand-button";
 import PlatformIcon from "@/components/icons/PlatformIcon";
-import type { SearchStatusFilter } from "@/features/home/search-status-segment";
-import type { SearchGroup } from "@/mocks/data/home";
+import { SEARCH_PLATFORMS } from "@/features/home/search-bottom-sheet-platforms-sheet";
 import { formatOpenRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
+import type { SearchEditSection } from "@/features/home/search-edit-section";
+import type { SearchStatusFilter } from "@/features/home/search-status-segment";
+import type { HomePlatform, SearchGroup } from "@/mocks/data/home";
 import {
   cityFromLocation,
   formatIntervalLabel,
@@ -42,7 +44,7 @@ interface SearchCardsProps {
   groups: SearchGroup[];
   statusFilter?: SearchStatusFilter;
   emptyMessage?: string;
-  onEdit?: (group: SearchGroup) => void;
+  onEdit?: (group: SearchGroup, section?: SearchEditSection) => void;
   onDelete?: (group: SearchGroup) => void;
   onToggle?: (group: SearchGroup, active: boolean) => void;
 }
@@ -182,9 +184,10 @@ function PlatformRows({ group }: { group: SearchGroup }): JSX.Element {
 }
 
 type FilterMenuItem = {
-  key: string;
+  key: SearchEditSection;
   title: string;
-  description: string;
+  description?: string;
+  platforms?: HomePlatform[];
 };
 
 const MAX_FILTER_MAKES_SHOWN = 4;
@@ -195,6 +198,13 @@ function formatMakesFilterDescription(makes: string[] | undefined): string {
   return `${makes.slice(0, MAX_FILTER_MAKES_SHOWN).join(", ")}, More...`;
 }
 
+function platformsForFilterMenu(
+  settings: SearchGroup["settings"],
+): HomePlatform[] {
+  const selected = new Set(uniquePlatforms(settings).map((p) => p.platform));
+  return SEARCH_PLATFORMS.map((p) => p.id).filter((id) => selected.has(id));
+}
+
 function filterMenuItems(group: SearchGroup): FilterMenuItem[] {
   const location = cityFromLocation(group.locationName);
   const items: FilterMenuItem[] = [
@@ -202,6 +212,11 @@ function filterMenuItems(group: SearchGroup): FilterMenuItem[] {
       key: "location",
       title: "Location",
       description: `${location} · ${group.radiusMiles} mi`,
+    },
+    {
+      key: "platforms",
+      title: "Platforms",
+      platforms: platformsForFilterMenu(group.settings),
     },
   ];
 
@@ -252,10 +267,15 @@ function filterMenuItems(group: SearchGroup): FilterMenuItem[] {
   }
 
   if (group.searchType === "iphone") {
+    const modelCount =
+      group.customLabel
+        ?.split(",")
+        .map((part) => part.trim())
+        .filter(Boolean).length ?? 0;
     items.push({
       key: "models",
       title: "Models",
-      description: group.customLabel ?? "Any model",
+      description: modelCount > 0 ? String(modelCount) : "Any model",
     });
     return items;
   }
@@ -275,7 +295,7 @@ function SearchCardActionsMenu({
   onToggle,
 }: {
   group: SearchGroup;
-  onEdit?: (group: SearchGroup) => void;
+  onEdit?: (group: SearchGroup, section?: SearchEditSection) => void;
   onDelete?: (group: SearchGroup) => void;
   onToggle?: (group: SearchGroup, active: boolean) => void;
 }): JSX.Element {
@@ -296,7 +316,7 @@ function SearchCardActionsMenu({
         </BrandButton>
       </Menu.Trigger>
       <Menu.Portal>
-        <Menu.Overlay />
+        <Menu.Overlay className="bg-backdrop" />
         <Menu.Content presentation="popover" width={240} placement="top">
           <Menu.Group>
             <Menu.Item id="edit" onPress={() => onEdit?.(group)}>
@@ -335,19 +355,45 @@ function SearchCardActionsMenu({
               <SubMenu.TriggerIndicator />
             </SubMenu.Trigger>
             <SubMenu.Content>
-              {filters.map((filter) => (
-                <Menu.Item
-                  key={filter.key}
-                  className="items-start"
-                  onPress={() => onEdit?.(group)}
-                >
-                  <View className="flex-1">
-                    <Menu.ItemTitle>{filter.title}</Menu.ItemTitle>
-                    <Menu.ItemDescription>
-                      {filter.description}
-                    </Menu.ItemDescription>
-                  </View>
-                </Menu.Item>
+              {filters.map((filter, index) => (
+                <Fragment key={filter.key}>
+                  {index > 0 ? (
+                    <Separator className="mx-2 my-1 opacity-75" />
+                  ) : null}
+                  <Menu.Item
+                    className="items-center"
+                    onPress={() => onEdit?.(group, filter.key)}
+                  >
+                    {filter.key === "platforms" ? (
+                      <>
+                        <Menu.ItemTitle className="flex-1">
+                          {filter.title}
+                        </Menu.ItemTitle>
+                        {filter.platforms != null &&
+                        filter.platforms.length > 0 ? (
+                          <View className="flex-row items-center gap-1.5">
+                            {filter.platforms.map((platform) => (
+                              <PlatformIcon
+                                key={platform}
+                                platform={platform}
+                                size={18}
+                              />
+                            ))}
+                          </View>
+                        ) : (
+                          <Menu.ItemDescription>None</Menu.ItemDescription>
+                        )}
+                      </>
+                    ) : (
+                      <View className="flex-1">
+                        <Menu.ItemTitle>{filter.title}</Menu.ItemTitle>
+                        <Menu.ItemDescription>
+                          {filter.description}
+                        </Menu.ItemDescription>
+                      </View>
+                    )}
+                  </Menu.Item>
+                </Fragment>
               ))}
             </SubMenu.Content>
           </SubMenu>
@@ -384,7 +430,7 @@ function SearchDepthItem({
   groupCount: number;
   groupIds: string[];
   isVisible: boolean;
-  onEdit?: (group: SearchGroup) => void;
+  onEdit?: (group: SearchGroup, section?: SearchEditSection) => void;
   onDelete?: (group: SearchGroup) => void;
   onToggle?: (group: SearchGroup, active: boolean) => void;
 }): JSX.Element {

@@ -13,6 +13,7 @@ import { HomeScreenSkeleton } from "@/features/home/home-skeletons";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import { SearchBottomSheet } from "@/features/home/search-bottom-sheet";
 import { SearchCards } from "@/features/home/search-cards";
+import type { SearchEditSection } from "@/features/home/search-edit-section";
 import {
   SearchStatusSegment,
   type SearchStatusFilter,
@@ -40,6 +41,9 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetMounted, setSheetMounted] = useState(false);
   const [editingGroup, setEditingGroup] = useState<SearchGroup | null>(null);
+  const [editSection, setEditSection] = useState<SearchEditSection | null>(
+    null,
+  );
   const [statusFilter, setStatusFilter] =
     useState<SearchStatusFilter>("all");
   const [locationLabel, setLocationLabel] = useState(() =>
@@ -71,6 +75,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
       return () => {
         setSheetOpen(false);
         setEditingGroup(null);
+        setEditSection(null);
       };
     }, [searchStore, subscriptionStore]),
   );
@@ -106,19 +111,25 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
       return;
     }
     setEditingGroup(null);
+    setEditSection(null);
     setSheetMounted(true);
     setSheetOpen(true);
   };
 
-  const handleEditAndOpen = useCallback((group: SearchGroup) => {
-    setEditingGroup(group);
-    setSheetMounted(true);
-    setSheetOpen(true);
-  }, []);
+  const handleEditAndOpen = useCallback(
+    (group: SearchGroup, section?: SearchEditSection) => {
+      setEditingGroup(group);
+      setEditSection(section ?? null);
+      setSheetMounted(true);
+      setSheetOpen(true);
+    },
+    [],
+  );
 
   const handleSheetClose = () => {
     setSheetOpen(false);
     setEditingGroup(null);
+    setEditSection(null);
   };
 
   return (
@@ -192,6 +203,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
           locationLabel={locationLabel}
           onLocationLabelChange={setLocationLabel}
           editingGroup={editingGroup}
+          initialSection={editSection}
         />
       ) : null}
     </View>

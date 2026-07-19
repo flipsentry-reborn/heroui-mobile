@@ -153,7 +153,7 @@ function KeywordChip({
         </Chip>
       </Menu.Trigger>
       <Menu.Portal>
-        <Menu.Overlay />
+        <Menu.Overlay className="bg-backdrop" />
         <Menu.Content presentation="popover" width={160} placement="top">
           <Menu.Item onPress={onEdit}>
             <StyledIonicons

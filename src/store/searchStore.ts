@@ -4,7 +4,7 @@ import agent, {
   type CreateHomeSearchInput,
   type UpdateHomeSearchInput,
 } from "@/api/agent";
-import { buildHomePlan } from "@/mocks/services/home";
+import { buildHomePlan, sortSearchGroups } from "@/mocks/services/home";
 import type { HomePlan, SearchGroup } from "@/mocks/data/home";
 import type SubscriptionStore from "@/store/subscriptionStore";
 
@@ -51,7 +51,7 @@ export default class SearchStore {
     try {
       const groups = await agent.GroupSearch.list();
       runInAction(() => {
-        this.searchGroups = groups;
+        this.searchGroups = sortSearchGroups(groups);
         this.hasLoaded = true;
       });
       await this.subscriptionStore?.refreshStatus(groups);
@@ -74,7 +74,7 @@ export default class SearchStore {
     try {
       const group = await agent.GroupSearch.create(input);
       runInAction(() => {
-        this.searchGroups = [group, ...this.searchGroups];
+        this.searchGroups = sortSearchGroups([group, ...this.searchGroups]);
       });
       await this.subscriptionStore?.refreshStatus(this.searchGroups);
       return group;
@@ -101,8 +101,8 @@ export default class SearchStore {
     try {
       const group = await agent.GroupSearch.update(id, input);
       runInAction(() => {
-        this.searchGroups = this.searchGroups.map((item) =>
-          item.id === id ? group : item,
+        this.searchGroups = sortSearchGroups(
+          this.searchGroups.map((item) => (item.id === id ? group : item)),
         );
       });
       await this.subscriptionStore?.refreshStatus(this.searchGroups);
@@ -137,8 +137,8 @@ export default class SearchStore {
     const updated = await agent.GroupSearch.setActive(id, isActive);
     if (updated == null) return null;
     runInAction(() => {
-      this.searchGroups = this.searchGroups.map((g) =>
-        g.id === id ? updated : g,
+      this.searchGroups = sortSearchGroups(
+        this.searchGroups.map((g) => (g.id === id ? updated : g)),
       );
     });
     await this.subscriptionStore?.refreshStatus(this.searchGroups);

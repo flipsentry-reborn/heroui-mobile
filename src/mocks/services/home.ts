@@ -36,13 +36,46 @@ function delay(ms = 100): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function timeMs(value: string | undefined): number {
+  if (value == null || value.length === 0) return 0;
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+/** Active first, then newest `updatedAt`, then newest `createdAt`. */
+export function sortSearchGroups(groupList: SearchGroup[]): SearchGroup[] {
+  return [...groupList].sort((a, b) => {
+    const aPaused = isGroupPaused(a);
+    const bPaused = isGroupPaused(b);
+    if (aPaused !== bPaused) return aPaused ? 1 : -1;
+    const updatedDiff = timeMs(b.updatedAt) - timeMs(a.updatedAt);
+    if (updatedDiff !== 0) return updatedDiff;
+    return timeMs(b.createdAt) - timeMs(a.createdAt);
+  });
+}
+
+function normalizeGroup(group: SearchGroup, index: number): SearchGroup {
+  const fallback = new Date(Date.now() - index * 60_000).toISOString();
+  const createdAt = group.createdAt ?? fallback;
+  return {
+    ...group,
+    createdAt,
+    updatedAt: group.updatedAt ?? createdAt,
+  };
+}
+
 async function ensureHydrated(): Promise<void> {
   if (hydrated) return;
   const stored = await readJson<SearchGroup[]>(GROUPS_KEY);
   if (stored != null && Array.isArray(stored)) {
-    groups = stored;
+    groups = sortSearchGroups(stored.map(normalizeGroup));
+    await writeJson(GROUPS_KEY, groups);
   } else {
-    groups = structuredClone(homeGroupsFixture);
+    groups = sortSearchGroups(structuredClone(homeGroupsFixture));
     await writeJson(GROUPS_KEY, groups);
   }
   hydrated = true;
@@ -86,7 +119,7 @@ export function buildHomePlan(
 export async function listGroups(): Promise<SearchGroup[]> {
   await ensureHydrated();
   await delay();
-  return structuredClone(groups);
+  return structuredClone(sortSearchGroups(groups));
 }
 
 export async function getHome(): Promise<HomeState> {
@@ -96,7 +129,7 @@ export async function getHome(): Promise<HomeState> {
   const tier = sub.hasActiveSubscription ? sub.currentTier : null;
   return {
     plan: buildHomePlan(tier, groups),
-    groups: structuredClone(groups),
+    groups: structuredClone(sortSearchGroups(groups)),
   };
 }
 
@@ -162,6 +195,7 @@ export async function createGroup(
   );
 
   const id = `g-${Date.now()}`;
+  const createdAt = nowIso();
   const settings: SearchSetting[] = input.settings.map((setting, index) => ({
     id: `${id}-${setting.platform}-${index}`,
     platform: setting.platform,
@@ -178,9 +212,11 @@ export async function createGroup(
     carQuery: input.carQuery,
     customLabel: input.customLabel,
     settings,
+    createdAt,
+    updatedAt: createdAt,
   };
 
-  groups = [group, ...groups];
+  groups = sortSearchGroups([group, ...groups]);
   await persistGroups();
   return structuredClone(group);
 }
@@ -230,9 +266,13 @@ export async function updateGroup(
     carQuery: input.carQuery,
     customLabel: input.customLabel,
     settings,
+    createdAt: existing.createdAt ?? nowIso(),
+    updatedAt: nowIso(),
   };
 
-  groups = groups.map((group, i) => (i === index ? updated : group));
+  groups = sortSearchGroups(
+    groups.map((group, i) => (i === index ? updated : group)),
+  );
   await persistGroups();
   return structuredClone(updated);
 }
@@ -246,6 +286,9 @@ export async function toggleGroupActive(
   const group = groups.find((g) => g.id === groupId);
   if (!group) return null;
   group.settings = group.settings.map((s) => ({ ...s, isActive: active }));
+  group.updatedAt = nowIso();
+  if (group.createdAt == null) group.createdAt = group.updatedAt;
+  groups = sortSearchGroups(groups);
   await persistGroups();
   return structuredClone(group);
 }

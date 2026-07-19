@@ -41,6 +41,7 @@ import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
 import { SearchBottomSheetSection } from "@/features/home/search-bottom-sheet-section";
 import { SearchBottomSheetTypeSelect } from "@/features/home/search-bottom-sheet-type-select";
 import { SearchBottomSheetYearSheet } from "@/features/home/search-bottom-sheet-year-sheet";
+import type { SearchEditSection } from "@/features/home/search-edit-section";
 import {
   SHEET_BACKGROUND_CLASS_NAME,
   SHEET_CONTENT_CLASS_NAME,
@@ -357,6 +358,8 @@ interface SearchBottomSheetProps {
   onLocationLabelChange?: (label: string) => void;
   /** When set, sheet runs in edit mode (prefill + update + slot credit-back). */
   editingGroup?: SearchGroup | null;
+  /** When set with edit, open this nested sheet after the parent mounts. */
+  initialSection?: SearchEditSection | null;
 }
 
 export const SearchBottomSheet = observer(function SearchBottomSheet({
@@ -365,6 +368,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
   locationLabel = "Set location",
   onLocationLabelChange,
   editingGroup = null,
+  initialSection = null,
 }: SearchBottomSheetProps): JSX.Element {
   const { searchStore, subscriptionStore } = useStore();
   const [priceOpen, setPriceOpen] = useState(false);
@@ -390,6 +394,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
   const [keywords, setKeywords] = useState<KeywordsState>(EMPTY_KEYWORDS);
   const [locationTick, setLocationTick] = useState(0);
   const prefilledGroupIdRef = useRef<string | null>(null);
+  const openedSectionKeyRef = useRef<string | null>(null);
 
   const isEditing = editingGroup != null;
 
@@ -447,6 +452,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
   useEffect(() => {
     if (!visible) {
       prefilledGroupIdRef.current = null;
+      openedSectionKeyRef.current = null;
       return;
     }
     if (editingGroup == null) return;
@@ -468,6 +474,44 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     setLocationTick((value) => value + 1);
     onLocationLabelChange?.(formatLocationLabel(prefill.locationDraft));
   }, [visible, editingGroup, onLocationLabelChange]);
+
+  useEffect(() => {
+    if (!visible || initialSection == null || editingGroup == null) return;
+    const sectionKey = `${editingGroup.id}:${initialSection}`;
+    if (openedSectionKeyRef.current === sectionKey) return;
+    openedSectionKeyRef.current = sectionKey;
+
+    const openSection = (section: SearchEditSection) => {
+      switch (section) {
+        case "location":
+        case "platforms":
+          setLocationOpen(true);
+          break;
+        case "makes":
+          setCarMakesOpen(true);
+          break;
+        case "price":
+          setPriceOpen(true);
+          break;
+        case "year":
+          setYearOpen(true);
+          break;
+        case "mileage":
+          setMileageOpen(true);
+          break;
+        case "models":
+          setIphoneModelsOpen(true);
+          break;
+        case "keywords":
+          setKeywordsOpen(true);
+          break;
+      }
+    };
+
+    // Wait a frame so the parent edit sheet can mount before nesting.
+    const id = requestAnimationFrame(() => openSection(initialSection));
+    return () => cancelAnimationFrame(id);
+  }, [visible, initialSection, editingGroup]);
 
   const handleSearchTypeChange = (type: SearchType) => {
     setSearchType(type);
@@ -650,6 +694,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
           keywords={keywords}
           onKeywordsOpenChange={setKeywordsOpen}
           childSheetOpen={
+            locationOpen ||
             priceOpen ||
             yearOpen ||
             mileageOpen ||

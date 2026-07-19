@@ -6,7 +6,7 @@ import { LinkButton, SkeletonGroup } from "heroui-native";
 import { EmptyState } from "heroui-native-pro";
 
 import { CommunityActiveNearbySection } from "@/features/community/community-active-nearby-section";
-import { CommunityHunterFeedCard } from "@/features/community/community-hunter-feed-card";
+import { CommunityHunterFeedDepthList } from "@/features/community/community-hunter-feed-card";
 import { CommunitySectionHeader } from "@/features/community/community-section-header";
 import { CommunityTrendingRail } from "@/features/community/community-trending-rail";
 import type { CommunityHunter } from "@/mocks/data/community";
@@ -133,16 +133,11 @@ export function CommunityActivityPage({
             title="Recently clicked"
             subtitle="Delayed 24h · expand a row for hunter stats"
           />
-          <View>
-            {feeds.map((feed) => (
-              <CommunityHunterFeedCard
-                key={feed.hunter.id}
-                feed={feed}
-                onPressListing={onPressListing}
-                onPressHunter={onPressHunter}
-              />
-            ))}
-          </View>
+          <CommunityHunterFeedDepthList
+            feeds={feeds}
+            onPressListing={onPressListing}
+            onPressHunter={onPressHunter}
+          />
         </View>
       ) : null}
 

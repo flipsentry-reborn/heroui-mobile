@@ -7,7 +7,11 @@ import { EmptyState } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
 import { FeedDetail } from "@/features/feed/feed-detail";
-import { getFeedById, toggleFavorite } from "@/mocks/services/feed";
+import {
+  getFeedById,
+  peekFeedById,
+  toggleFavorite,
+} from "@/mocks/services/feed";
 import type { FeedItem } from "@/models/feed";
 
 const StyledIonicons = withUniwind(Ionicons);
@@ -15,16 +19,27 @@ const StyledIonicons = withUniwind(Ionicons);
 export default function ListingDetailScreen(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const [item, setItem] = useState<FeedItem | null>(null);
-  const [loading, setLoading] = useState(true);
+  const listingId = String(id ?? "");
+  // Seed sync so the open transition paints content, not a skeleton flash.
+  const [item, setItem] = useState<FeedItem | null>(() =>
+    peekFeedById(listingId),
+  );
+  const [loading, setLoading] = useState(() => peekFeedById(listingId) == null);
   const [missing, setMissing] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
-    setMissing(false);
+    const cached = peekFeedById(listingId);
+    if (cached) {
+      setItem(cached);
+      setMissing(false);
+      setLoading(false);
+    } else {
+      setLoading(true);
+      setMissing(false);
+    }
     void (async () => {
-      const data = await getFeedById(String(id ?? ""));
+      const data = await getFeedById(listingId);
       if (!alive) return;
       setItem(data);
       setMissing(!data);
@@ -33,7 +48,7 @@ export default function ListingDetailScreen(): JSX.Element {
     return () => {
       alive = false;
     };
-  }, [id]);
+  }, [listingId]);
 
   const handleFavorite = useCallback(async () => {
     if (!item) return;

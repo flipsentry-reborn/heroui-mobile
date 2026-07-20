@@ -109,10 +109,21 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
   return items;
 }
 
-export async function getFeedById(id: string): Promise<FeedItem | null> {
-  await delay(200);
+/** Sync lookup for instant first paint on detail open (no artificial lag). */
+export function peekFeedById(id: string): FeedItem | null {
   const item = MOCK_FEED_ITEMS.find((f) => f.id === id);
-  return item ? { ...item, images: { ...item.images, marketplaceImages: [...item.images.marketplaceImages] } } : null;
+  if (!item) return null;
+  return {
+    ...item,
+    images: {
+      ...item.images,
+      marketplaceImages: [...item.images.marketplaceImages],
+    },
+  };
+}
+
+export async function getFeedById(id: string): Promise<FeedItem | null> {
+  return peekFeedById(id);
 }
 
 export async function toggleFavorite(id: string): Promise<FeedItem | null> {

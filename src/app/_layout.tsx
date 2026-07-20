@@ -76,16 +76,14 @@ function RootLayoutContent(): JSX.Element {
               contentStyle: { backgroundColor: background },
             }}
           />
-          <Stack.Screen
-            name="listing/[id]"
-            options={{
-              // Twitter/X-style: cross-fade, not horizontal slide
-              animation: "fade",
-              animationDuration: 220,
-              gestureEnabled: true,
-              animationMatchesGesture: true,
-            }}
-          />
+            <Stack.Screen
+              name="listing/[id]"
+              options={{
+                // Short push so open feels immediate (content is seeded sync)
+                animation: "slide_from_right",
+                gestureEnabled: true
+              }}
+            />
           <Stack.Screen
             name="settings"
             options={{

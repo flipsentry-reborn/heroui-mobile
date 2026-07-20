@@ -40,7 +40,6 @@ import { SearchBottomSheetPriceSheet } from "@/features/home/search-bottom-sheet
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
 import { SearchBottomSheetSection } from "@/features/home/search-bottom-sheet-section";
 import { SearchBottomSheetTypeSelect } from "@/features/home/search-bottom-sheet-type-select";
-import { SearchBottomSheetYearSheet } from "@/features/home/search-bottom-sheet-year-sheet";
 import type { SearchEditSection } from "@/features/home/search-edit-section";
 import {
   SHEET_BACKGROUND_CLASS_NAME,
@@ -51,6 +50,7 @@ import { SheetShell } from "@/features/home/sheet-shell";
 import {
   buildDraftSettingRows,
   creditSettingsIntoIntervalOptions,
+  getSearchYearRangeError,
   validateLocationDraft,
 } from "@/domain/search-rules";
 import { MOCK_CAR_MAKES } from "@/mocks/data/car";
@@ -718,13 +718,16 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
         onMaxChange={setMaxPrice}
       />
 
-      <SearchBottomSheetYearSheet
+      <SearchBottomSheetPriceSheet
         isOpen={visible && yearOpen}
         onOpenChange={setYearOpen}
+        title="Year"
         min={minYear}
         max={maxYear}
         onMinChange={setMinYear}
         onMaxChange={setMaxYear}
+        maxLength={4}
+        getRangeError={getSearchYearRangeError}
       />
 
       <SearchBottomSheetPriceSheet

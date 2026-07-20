@@ -432,3 +432,36 @@ export function formatPlatformLabel(platform: string): string {
       return platform;
   }
 }
+
+/** Allowed vehicle year filter range (search criteria). */
+export const MIN_SEARCH_YEAR = 1950;
+export const MAX_SEARCH_YEAR = 2027;
+
+/**
+ * Validates an open-ended year range. Incomplete years (under 4 digits) are
+ * ignored for bounds checks so typing does not flash errors.
+ */
+export function getSearchYearRangeError(
+  min: string,
+  max: string,
+): string | null {
+  const checkBound = (value: string): string | null => {
+    if (value === "" || value.length < 4) return null;
+    const year = Number(value);
+    if (year < MIN_SEARCH_YEAR || year > MAX_SEARCH_YEAR) {
+      return `Year must be between ${MIN_SEARCH_YEAR} and ${MAX_SEARCH_YEAR}`;
+    }
+    return null;
+  };
+
+  const minBoundError = checkBound(min);
+  if (minBoundError != null) return minBoundError;
+  const maxBoundError = checkBound(max);
+  if (maxBoundError != null) return maxBoundError;
+
+  if (min === "" || max === "") return null;
+  if (Number(min) > Number(max)) {
+    return "Minimum year cannot be greater than maximum year";
+  }
+  return null;
+}

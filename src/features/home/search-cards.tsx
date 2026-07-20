@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { JSX } from "react";
+import type { ComponentProps, JSX } from "react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import Animated, {
@@ -188,6 +188,8 @@ type FilterMenuItem = {
   title: string;
   description?: string;
   platforms?: HomePlatform[];
+  icon?: ComponentProps<typeof Ionicons>["name"];
+  iconClassName?: string;
 };
 
 const MAX_FILTER_MAKES_SHOWN = 4;
@@ -212,11 +214,15 @@ function filterMenuItems(group: SearchGroup): FilterMenuItem[] {
       key: "location",
       title: "Location",
       description: `${location} · ${group.radiusMiles} mi`,
+      icon: "navigate",
+      iconClassName: "text-sky-500",
     },
     {
       key: "platforms",
       title: "Platforms",
       platforms: platformsForFilterMenu(group.settings),
+      icon: "storefront",
+      iconClassName: "text-yellow-500",
     },
   ];
 
@@ -317,7 +323,7 @@ function SearchCardActionsMenu({
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Overlay className="bg-backdrop" />
-        <Menu.Content presentation="popover" width={240} placement="top">
+        <Menu.Content presentation="popover" width={260} placement="top">
           <Menu.Group>
             <Menu.Item id="edit" onPress={() => onEdit?.(group)}>
               <StyledIonicons
@@ -364,33 +370,44 @@ function SearchCardActionsMenu({
                     className="items-center"
                     onPress={() => onEdit?.(group, filter.key)}
                   >
+                    {filter.icon != null ? (
+                      <StyledIonicons
+                        name={filter.icon}
+                        size={18}
+                        className={filter.iconClassName ?? "text-foreground"}
+                      />
+                    ) : null}
+                    <Menu.ItemTitle
+                      className={
+                        filter.key === "platforms" ? "flex-1" : "shrink-0"
+                      }
+                    >
+                      {filter.title}
+                    </Menu.ItemTitle>
                     {filter.key === "platforms" ? (
-                      <>
-                        <Menu.ItemTitle className="flex-1">
-                          {filter.title}
-                        </Menu.ItemTitle>
-                        {filter.platforms != null &&
-                        filter.platforms.length > 0 ? (
-                          <View className="flex-row items-center gap-1.5">
-                            {filter.platforms.map((platform) => (
-                              <PlatformIcon
-                                key={platform}
-                                platform={platform}
-                                size={18}
-                              />
-                            ))}
-                          </View>
-                        ) : (
-                          <Menu.ItemDescription>None</Menu.ItemDescription>
-                        )}
-                      </>
+                      filter.platforms != null &&
+                      filter.platforms.length > 0 ? (
+                        <View className="flex-row items-center gap-1.5">
+                          {filter.platforms.map((platform) => (
+                            <PlatformIcon
+                              key={platform}
+                              platform={platform}
+                              size={18}
+                            />
+                          ))}
+                        </View>
+                      ) : (
+                        <Menu.ItemDescription>None</Menu.ItemDescription>
+                      )
                     ) : (
-                      <View className="flex-1">
-                        <Menu.ItemTitle>{filter.title}</Menu.ItemTitle>
-                        <Menu.ItemDescription>
-                          {filter.description}
-                        </Menu.ItemDescription>
-                      </View>
+                      <Menu.ItemDescription
+                        className="min-w-0 flex-1 text-right text-xs"
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.7}
+                      >
+                        {filter.description}
+                      </Menu.ItemDescription>
                     )}
                   </Menu.Item>
                 </Fragment>

@@ -192,7 +192,6 @@ function SearchSheetContent({
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const [muted] = useThemeColor(["muted"]);
-  const snapPoints = useMemo(() => ["92%"], []);
   const dismiss = () => onOpenChange(false);
   const hasSearchType = searchType != null;
 
@@ -214,7 +213,6 @@ function SearchSheetContent({
 
   return (
     <BottomSheet.Content
-      snapPoints={snapPoints}
       enableContentPanningGesture={!childSheetOpen}
       keyboardBehavior={childSheetOpen ? undefined : "extend"}
       keyboardBlurBehavior={childSheetOpen ? undefined : "restore"}
@@ -330,8 +328,8 @@ function SearchSheetContent({
 
         <View className="flex-row gap-3 px-5 pb-6 pt-0">
           <Button
-            variant="secondary"
-            className="min-h-12 flex-1"
+            variant="tertiary"
+            className="min-h-12 flex-1 rounded-lg bg-surface"
             onPress={dismiss}
             isDisabled={submitting}
           >
@@ -339,7 +337,7 @@ function SearchSheetContent({
           </Button>
           <Button
             variant="primary"
-            className="min-h-12 flex-1"
+            className="min-h-12 flex-1 rounded-lg"
             onPress={handleConfirm}
             isDisabled={submitting || searchType == null || !locationReady}
           >

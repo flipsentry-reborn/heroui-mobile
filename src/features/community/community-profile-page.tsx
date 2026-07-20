@@ -9,11 +9,7 @@ import {
   Switch,
   Typography,
 } from "heroui-native";
-import {
-  EmptyState,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "heroui-native-pro";
+import { EmptyState, Segment } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
 import { CommunityHunterAvatar } from "@/features/community/community-hunter-avatar";
@@ -47,7 +43,7 @@ interface CommunityProfilePageProps {
   onPressHunter?: (hunterId: string) => void;
 }
 
-/** Artist-style profile · Last clicks with row / 2-col grid toggle. */
+/** Artist-style profile · Last clicks with row / grid Segment. */
 export function CommunityProfilePage({
   hunterId,
   isSelf = false,
@@ -181,31 +177,39 @@ export function CommunityProfilePage({
           </Typography>
         </View>
         {!activityHidden && activity.length > 0 ? (
-          <ToggleButtonGroup
-            size="sm"
-            selectionMode="single"
-            disallowEmptySelection
-            selectedKeys={new Set([layout])}
-            onSelectionChange={(keys) => {
-              const next = [...keys][0];
-              if (next === "row" || next === "grid") setLayout(next);
+          <Segment
+            value={layout}
+            onValueChange={(v) => {
+              if (v === "row" || v === "grid") setLayout(v);
             }}
+            size="sm"
           >
-            <ToggleButton id="row" isIconOnly accessibilityLabel="List rows">
-              <StyledIonicons
-                name="list-outline"
-                size={16}
-                className="text-foreground"
-              />
-            </ToggleButton>
-            <ToggleButton id="grid" isIconOnly accessibilityLabel="Grid">
-              <StyledIonicons
-                name="grid-outline"
-                size={16}
-                className="text-foreground"
-              />
-            </ToggleButton>
-          </ToggleButtonGroup>
+            <Segment.Group className="rounded-lg">
+              <Segment.Indicator className="rounded-md" />
+              <Segment.Item
+                value="row"
+                accessibilityLabel="List rows"
+                className="rounded-md"
+              >
+                <StyledIonicons
+                  name="list-outline"
+                  size={16}
+                  className="text-foreground"
+                />
+              </Segment.Item>
+              <Segment.Item
+                value="grid"
+                accessibilityLabel="Grid"
+                className="rounded-md"
+              >
+                <StyledIonicons
+                  name="grid-outline"
+                  size={16}
+                  className="text-foreground"
+                />
+              </Segment.Item>
+            </Segment.Group>
+          </Segment>
         ) : null}
       </View>
 

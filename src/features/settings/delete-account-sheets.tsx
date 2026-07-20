@@ -87,7 +87,8 @@ function DeleteAccountContent({
 
             <View className="flex-row gap-3">
               <Button
-                className="min-h-12 flex-1 rounded-lg"
+                variant="tertiary"
+                className="min-h-12 flex-1 rounded-lg bg-surface"
                 onPress={dismiss}
               >
                 <Button.Label>Cancel</Button.Label>
@@ -171,7 +172,8 @@ function DeleteAccountContent({
           </ProgressButton>
 
           <Button
-            className="min-h-12 w-full rounded-lg"
+            variant="tertiary"
+            className="min-h-12 w-full rounded-lg bg-surface"
             isDisabled={deleting}
             onPress={() => {
               setAcknowledged(false);

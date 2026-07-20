@@ -308,7 +308,7 @@ function SearchCardActionsMenu({
       <Menu.Trigger asChild>
         <BrandButton className="min-h-12 w-full">
           <Ionicons
-            name="ellipsis-horizontal"
+            name="menu-outline"
             size={18}
             color={accentForeground}
           />

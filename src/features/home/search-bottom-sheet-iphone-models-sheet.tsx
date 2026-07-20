@@ -537,14 +537,14 @@ function IphoneModelsSheetContent({
           <View className="flex-row gap-3">
             <Button
               variant="tertiary"
-              className="min-h-12 flex-1 rounded-lg bg-surface"
+              className="min-h-12 flex-1 rounded-2xl bg-surface"
               onPress={dismiss}
             >
               <Button.Label>Cancel</Button.Label>
             </Button>
             <Button
               variant="primary"
-              className="min-h-12 flex-1 rounded-lg"
+              className="min-h-12 flex-1 rounded-2xl"
               isDisabled={selectedCount === 0}
               onPress={handleSave}
             >

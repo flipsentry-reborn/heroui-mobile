@@ -238,14 +238,14 @@ function CarMakesSheetContent({
         <View className="flex-row gap-3 px-5 pb-6 pt-2">
           <Button
             variant="tertiary"
-            className="min-h-12 flex-1 rounded-lg bg-surface"
+            className="min-h-12 flex-1 rounded-2xl bg-surface"
             onPress={dismiss}
           >
             <Button.Label>Cancel</Button.Label>
           </Button>
           <Button
             variant="primary"
-            className="min-h-12 flex-1 rounded-lg"
+            className="min-h-12 flex-1 rounded-2xl"
             onPress={handleSave}
           >
             <Button.Label>Save</Button.Label>

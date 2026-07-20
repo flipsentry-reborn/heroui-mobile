@@ -238,7 +238,7 @@ function CommunityFeedDepthItem({
             <Button
               variant="secondary"
               size="sm"
-              className="h-8 flex-1 rounded-lg"
+              className="h-8 flex-1 rounded-2xl"
               onPress={() => onPressListing(row.feedItem.id)}
             >
               View listing
@@ -246,7 +246,7 @@ function CommunityFeedDepthItem({
             <Button
               variant="primary"
               size="sm"
-              className="h-8 flex-1 rounded-lg"
+              className="h-8 flex-1 rounded-2xl"
               onPress={() => onPressHunter(hunter.id)}
             >
               See profile

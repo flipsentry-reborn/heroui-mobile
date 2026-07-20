@@ -329,7 +329,7 @@ function SearchSheetContent({
         <View className="flex-row gap-3 px-5 pb-6 pt-0">
           <Button
             variant="tertiary"
-            className="min-h-12 flex-1 rounded-lg bg-surface"
+            className="min-h-12 flex-1 rounded-2xl bg-surface"
             onPress={dismiss}
             isDisabled={submitting}
           >
@@ -337,7 +337,7 @@ function SearchSheetContent({
           </Button>
           <Button
             variant="primary"
-            className="min-h-12 flex-1 rounded-lg"
+            className="min-h-12 flex-1 rounded-2xl"
             onPress={handleConfirm}
             isDisabled={submitting || searchType == null || !locationReady}
           >

@@ -184,12 +184,12 @@ export function CommunityProfilePage({
             }}
             size="sm"
           >
-            <Segment.Group className="rounded-lg">
-              <Segment.Indicator className="rounded-md" />
+            <Segment.Group className="rounded-2xl">
+              <Segment.Indicator className="rounded-xl" />
               <Segment.Item
                 value="row"
                 accessibilityLabel="List rows"
-                className="rounded-md"
+                className="rounded-xl"
               >
                 <StyledIonicons
                   name="list-outline"
@@ -200,7 +200,7 @@ export function CommunityProfilePage({
               <Segment.Item
                 value="grid"
                 accessibilityLabel="Grid"
-                className="rounded-md"
+                className="rounded-xl"
               >
                 <StyledIonicons
                   name="grid-outline"

@@ -290,7 +290,7 @@ export function SettingsScreen(): JSX.Element {
               <Button
                 variant="danger-soft"
                 feedbackVariant="none"
-                className="min-h-11 w-full rounded-lg"
+                className="min-h-11 w-full rounded-2xl"
                 onPress={() => setDeleteOpen(true)}
               >
                 <StyledIonicons name="trash-outline" size={15} className="text-danger" />
@@ -299,7 +299,7 @@ export function SettingsScreen(): JSX.Element {
               <Button
                 variant="primary"
                 feedbackVariant="none"
-                className="min-h-11 w-full rounded-lg bg-accent"
+                className="min-h-11 w-full rounded-2xl bg-accent"
                 onPress={handleLogout}
               >
                 <StyledIonicons

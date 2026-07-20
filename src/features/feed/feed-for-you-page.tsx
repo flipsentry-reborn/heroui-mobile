@@ -54,7 +54,7 @@ function ShelfSkeleton(): JSX.Element {
       >
         {[0, 1, 2].map((key) => (
           <View key={key} className="mr-2 w-[156px]">
-            <SkeletonGroup.Item className="h-[128px] w-full rounded-xl" />
+            <SkeletonGroup.Item className="h-[128px] w-full rounded-lg" />
             <View className="mt-1 gap-0.5 px-0.5">
               <SkeletonGroup.Item className="h-4 w-16 rounded-md" />
               <SkeletonGroup.Item className="h-4 w-full rounded-md" />

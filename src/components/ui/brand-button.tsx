@@ -16,7 +16,7 @@ export function BrandButton({
  return (
  <Button
  variant="primary"
- className={`rounded-lg bg-accent ${className ?? ""}`}
+ className={`rounded-2xl bg-accent ${className ?? ""}`}
  {...rest}
  >
  {children}

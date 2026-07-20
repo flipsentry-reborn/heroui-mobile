@@ -113,7 +113,7 @@ export function FeedItem({
     >
       <Card
         variant="transparent"
-        className={`${isRail ? "" : "flex-1 "}gap-0 overflow-hidden rounded-xl border-0 ${
+        className={`${isRail ? "" : "flex-1 "}gap-0 overflow-hidden rounded-lg border-0 ${
           featured ? "bg-transparent" : "bg-background"
         } p-0`}
       >

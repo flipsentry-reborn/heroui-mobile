@@ -77,15 +77,15 @@ export function CommunityScreen(): JSX.Element {
           onValueChange={(v) => selectTab(v as CommunityTab)}
           size="sm"
         >
-          <Segment.Group className="rounded-lg">
-            <Segment.Indicator className="rounded-md" />
-            <Segment.Item value="activity" className="rounded-md">
+          <Segment.Group className="rounded-2xl">
+            <Segment.Indicator className="rounded-xl" />
+            <Segment.Item value="activity" className="rounded-xl">
               <Segment.Label>Activity</Segment.Label>
             </Segment.Item>
-            <Segment.Item value="people" className="rounded-md">
+            <Segment.Item value="people" className="rounded-xl">
               <Segment.Label>Similar nearby</Segment.Label>
             </Segment.Item>
-            <Segment.Item value="you" className="rounded-md">
+            <Segment.Item value="you" className="rounded-xl">
               <Segment.Label>You</Segment.Label>
             </Segment.Item>
           </Segment.Group>

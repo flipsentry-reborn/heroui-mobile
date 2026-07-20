@@ -12,9 +12,10 @@
 @source "../node_modules/heroui-native-pro/lib";
 
 @theme {
-  --radius: 0.5rem;
+  /* Scales all rounded-* tokens (boxier than HeroUI default 0.5rem). */
+  --radius: 0.25rem;
   /* Match ListGroup / Surface card corners (rounded-3xl). */
-  --field-radius: 1.5rem;
+  --field-radius: 0.75rem;
   /* HeroUI default is 0px + transparent border; we use a real border instead. */
   --field-border-width: 1px;
   /* Sold / Pending title accent — matches mobile-app `#ff7c74` (not theme danger/pink). */

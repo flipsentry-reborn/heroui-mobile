@@ -35,8 +35,8 @@ function FeedSkeleton(): JSX.Element {
     >
       {[0, 1, 2, 3, 4, 5].map((key) => (
         <View key={key} className="mb-1.5 w-1/2 px-0.5">
-          <View className="overflow-hidden rounded-xl">
-            <SkeletonGroup.Item className="h-[168px] w-full rounded-xl" />
+          <View className="overflow-hidden rounded-lg">
+            <SkeletonGroup.Item className="h-[168px] w-full rounded-lg" />
             <View className="gap-0.5 px-1.5 pb-1.5 pt-1">
               <View className="flex-row items-center gap-1.5">
                 <SkeletonGroup.Item className="h-4 w-14 rounded-md" />

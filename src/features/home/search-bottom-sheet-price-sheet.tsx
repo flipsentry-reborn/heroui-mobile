@@ -18,7 +18,7 @@ import {
 import {
   SHEET_BACKGROUND_CLASS_NAME,
   SHEET_CONTENT_CLASS_NAME,
-  SHEET_CONTENT_CONTAINER_CLASS_NAME,
+  SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
 
@@ -133,7 +133,7 @@ function PriceSheetContent({
   groupThousands?: boolean;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
-  const snapPoints = useMemo(() => ["92%"], []);
+  const snapPoints = useMemo(() => ["40%", "70%"], []);
   const error = getPriceRangeError(min, max);
   const isInvalid = error != null;
   const dismiss = () => onOpenChange(false);
@@ -150,11 +150,12 @@ function PriceSheetContent({
       enableDynamicSizing={false}
       enableOverDrag={false}
       keyboardBehavior="extend"
+      keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
       className={SHEET_CONTENT_CLASS_NAME}
       backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
       handleComponent={null}
-      contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
+      contentContainerClassName={SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME}
     >
       <View>
         <View className="items-center px-5 pt-4 pb-1">

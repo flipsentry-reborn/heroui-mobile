@@ -316,7 +316,7 @@ function KeywordsSheetContent({
   const [titleExcluderDraft, setTitleExcluderDraft] = useState("");
   const [descriptionIncluderDraft, setDescriptionIncluderDraft] = useState("");
   const [descriptionExcluderDraft, setDescriptionExcluderDraft] = useState("");
-  const snapPoints = useMemo(() => ["92%"], []);
+  const snapPoints = useMemo(() => ["65%", "92%"], []);
   const dismiss = () => onOpenChange(false);
 
   const patch = (partial: Partial<KeywordsState>) => {
@@ -353,8 +353,8 @@ function KeywordsSheetContent({
   return (
     <BottomSheet.Content
       snapPoints={snapPoints}
-      enableOverDrag={false}
       enableDynamicSizing={false}
+      enableOverDrag={false}
       keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"

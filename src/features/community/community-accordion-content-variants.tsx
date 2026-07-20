@@ -159,7 +159,7 @@ function SeeProfile({
   onPress: () => void;
 }): JSX.Element {
   return (
-    <Button variant="primary" size="sm" className="h-7" onPress={onPress}>
+    <Button variant="primary" size="sm" className="h-7 rounded-lg" onPress={onPress}>
       See profile
     </Button>
   );
@@ -337,7 +337,7 @@ function A6({
           <Button
             variant="secondary"
             size="sm"
-            className="h-7 flex-1"
+            className="h-7 flex-1 rounded-lg"
             onPress={() => onPressListing(row.feedItem.id)}
           >
             View listing
@@ -345,7 +345,7 @@ function A6({
           <Button
             variant="primary"
             size="sm"
-            className="h-7 flex-1"
+            className="h-7 flex-1 rounded-lg"
             onPress={() => onPressHunter(feed.hunter.id)}
           >
             See profile

@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Typography } from "heroui-native";
+import { cn, Typography } from "heroui-native";
 import { Segment } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
@@ -20,6 +20,8 @@ const StyledSafeAreaView = withUniwind(SafeAreaView);
 
 type CommunityTab = "activity" | "people" | "you";
 
+type VisitedTabs = Record<CommunityTab, boolean>;
+
 function greetingForHour(hour: number): string {
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
@@ -29,7 +31,17 @@ function greetingForHour(hour: number): string {
 export function CommunityScreen(): JSX.Element {
   const router = useRouter();
   const [tab, setTab] = useState<CommunityTab>("activity");
+  const [visited, setVisited] = useState<VisitedTabs>({
+    activity: true,
+    people: false,
+    you: false,
+  });
   const greeting = greetingForHour(new Date().getHours());
+
+  const selectTab = useCallback((next: CommunityTab) => {
+    setTab(next);
+    setVisited((prev) => (prev[next] ? prev : { ...prev, [next]: true }));
+  }, []);
 
   const openListing = useCallback(
     (feedItemId: string) => {
@@ -41,12 +53,12 @@ export function CommunityScreen(): JSX.Element {
   const openHunter = useCallback(
     (hunterId: string) => {
       if (hunterId === CURRENT_HUNTER_ID) {
-        setTab("you");
+        selectTab("you");
         return;
       }
       router.push(communityHunterHref(hunterId));
     },
-    [router],
+    [router, selectTab],
   );
 
   return (
@@ -62,40 +74,46 @@ export function CommunityScreen(): JSX.Element {
         </View>
         <Segment
           value={tab}
-          onValueChange={(v) => setTab(v as CommunityTab)}
+          onValueChange={(v) => selectTab(v as CommunityTab)}
           size="sm"
         >
-          <Segment.Group>
-            <Segment.Indicator />
-            <Segment.Item value="activity">
+          <Segment.Group className="rounded-lg">
+            <Segment.Indicator className="rounded-md" />
+            <Segment.Item value="activity" className="rounded-md">
               <Segment.Label>Activity</Segment.Label>
             </Segment.Item>
-            <Segment.Item value="people">
+            <Segment.Item value="people" className="rounded-md">
               <Segment.Label>Similar nearby</Segment.Label>
             </Segment.Item>
-            <Segment.Item value="you">
+            <Segment.Item value="you" className="rounded-md">
               <Segment.Label>You</Segment.Label>
             </Segment.Item>
           </Segment.Group>
         </Segment>
       </View>
 
-      {tab === "activity" ? (
-        <CommunityActivityPage
-          onPressListing={openListing}
-          onPressHunter={openHunter}
-        />
+      {visited.activity ? (
+        <View className={cn("flex-1", tab !== "activity" && "hidden")}>
+          <CommunityActivityPage
+            onPressListing={openListing}
+            onPressHunter={openHunter}
+          />
+        </View>
       ) : null}
-      {tab === "people" ? (
-        <CommunityPeoplePage onPressHunter={openHunter} />
+      {visited.people ? (
+        <View className={cn("flex-1", tab !== "people" && "hidden")}>
+          <CommunityPeoplePage onPressHunter={openHunter} />
+        </View>
       ) : null}
-      {tab === "you" ? (
-        <CommunityProfilePage
-          hunterId={CURRENT_HUNTER_ID}
-          isSelf
-          onPressListing={openListing}
-          onPressHunter={openHunter}
-        />
+      {visited.you ? (
+        <View className={cn("flex-1", tab !== "you" && "hidden")}>
+          <CommunityProfilePage
+            hunterId={CURRENT_HUNTER_ID}
+            isSelf
+            onPressListing={openListing}
+            onPressHunter={openHunter}
+          />
+        </View>
       ) : null}
     </StyledSafeAreaView>
   );

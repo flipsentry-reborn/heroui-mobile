@@ -78,9 +78,9 @@ export function SettingsScreenSkeleton(): JSX.Element {
 
       <View className="mb-4 gap-2">
         <SkeletonGroup.Item className="mx-5 h-3 w-20 rounded-md" />
-        <View className="mx-3 gap-2 rounded-2xl bg-surface p-3">
-          <SkeletonGroup.Item className="h-11 w-full rounded-xl" />
-          <SkeletonGroup.Item className="h-11 w-full rounded-xl" />
+        <View className="mx-3 gap-2">
+          <SkeletonGroup.Item className="h-11 w-full rounded-lg" />
+          <SkeletonGroup.Item className="h-11 w-full rounded-lg" />
         </View>
       </View>
     </SkeletonGroup>

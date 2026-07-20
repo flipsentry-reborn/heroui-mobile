@@ -87,14 +87,14 @@ function DeleteAccountContent({
 
             <View className="flex-row gap-3">
               <Button
-                className="min-h-12 flex-1"
+                className="min-h-12 flex-1 rounded-lg"
                 onPress={dismiss}
               >
                 <Button.Label>Cancel</Button.Label>
               </Button>
               <Button
                 variant="danger"
-                className="min-h-12 flex-1"
+                className="min-h-12 flex-1 rounded-lg"
                 onPress={() => setStep("hold")}
               >
                 <Button.Label>Delete Account</Button.Label>
@@ -158,7 +158,7 @@ function DeleteAccountContent({
             holdDuration={2000}
             isDisabled={!acknowledged || deleting}
             onComplete={handleHoldComplete}
-            className="w-full"
+            className="w-full rounded-lg"
           >
             <ProgressButton.Label>
               {deleting ? "Deleting…" : "Hold to delete account"}
@@ -171,7 +171,7 @@ function DeleteAccountContent({
           </ProgressButton>
 
           <Button
-            className="min-h-12 w-full"
+            className="min-h-12 w-full rounded-lg"
             isDisabled={deleting}
             onPress={() => {
               setAcknowledged(false);

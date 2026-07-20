@@ -18,6 +18,9 @@ interface FeedCategoryTabsProps {
 
 /**
  * Equal-width tabs (Twitter-style) — no ScrollView; each trigger takes flex-1.
+ *
+ * Selected underline is a trigger border (not Tabs.Indicator). Indicator stays
+ * opacity 0 until onLayout measurements land, which flashed late on cold start.
  */
 export function FeedCategoryTabs({
   activeTab,
@@ -30,33 +33,36 @@ export function FeedCategoryTabs({
       variant="secondary"
       className="w-full gap-0"
     >
-      <Tabs.List
-        className="w-full flex-row border-0 border-b-0"
-        style={{ borderBottomWidth: 0, borderWidth: 0 }}
-      >
-        <Tabs.Indicator />
-        {FEED_TABS.map((tab) => (
-          <Tabs.Trigger
-            key={tab.key}
-            value={tab.key}
-            className="min-h-11 flex-1 items-center justify-center px-2 py-2.5"
-          >
-            {({ isSelected }) => (
-              <Badge.Anchor className={tab.badge ? "pr-6" : undefined}>
-                <Tabs.Label
-                  className={
-                    isSelected
-                      ? "text-center text-[15px] font-semibold tracking-tight text-foreground"
-                      : "text-center text-[15px] font-medium tracking-tight text-muted"
-                  }
-                >
-                  {tab.label}
-                </Tabs.Label>
-                {tab.badge ? <FeedCategoryBadge label={tab.badge} /> : null}
-              </Badge.Anchor>
-            )}
-          </Tabs.Trigger>
-        ))}
+      <Tabs.List className="w-full flex-row border-0 border-b-0">
+        {FEED_TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <Tabs.Trigger
+              key={tab.key}
+              value={tab.key}
+              className={
+                isActive
+                  ? "min-h-11 flex-1 items-center justify-center border-b-2 border-accent px-2 py-2.5"
+                  : "min-h-11 flex-1 items-center justify-center border-b-2 border-transparent px-2 py-2.5"
+              }
+            >
+              {({ isSelected }) => (
+                <Badge.Anchor className={tab.badge ? "pr-6" : undefined}>
+                  <Tabs.Label
+                    className={
+                      isSelected
+                        ? "text-center text-[15px] font-semibold tracking-tight text-foreground"
+                        : "text-center text-[15px] font-medium tracking-tight text-muted"
+                    }
+                  >
+                    {tab.label}
+                  </Tabs.Label>
+                  {tab.badge ? <FeedCategoryBadge label={tab.badge} /> : null}
+                </Badge.Anchor>
+              )}
+            </Tabs.Trigger>
+          );
+        })}
       </Tabs.List>
     </Tabs>
   );

@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import {
   DarkTheme,
@@ -11,6 +12,7 @@ import * as SplashScreen from "expo-splash-screen";
 import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
 import { HeroUINativeProvider, useThemeColor } from "heroui-native";
+import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useUniwind } from "uniwind";
 
@@ -53,39 +55,55 @@ function RootLayoutContent(): JSX.Element {
     void SystemUI.setBackgroundColorAsync(background);
   }, [background]);
 
+  // Root + stack container must share theme bg — otherwise pop/gesture reveals black/white under screens.
+  const rootStyle = useMemo(
+    () => ({ flex: 1 as const, backgroundColor: background }),
+    [background],
+  );
+
   return (
     <ThemeProvider value={navigationTheme}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: background },
-        }}
-      >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="listing/[id]"
-          options={{
-            animation: "slide_from_right",
-            gestureEnabled: true,
-          }}
-        />
-        <Stack.Screen
-          name="settings"
-          options={{
+      <View style={rootStyle}>
+        <Stack
+          screenOptions={{
             headerShown: false,
-            animation: "slide_from_right",
-            gestureEnabled: true,
+            contentStyle: { backgroundColor: background },
           }}
-        />
-        <Stack.Screen
-          name="community"
-          options={{
-            headerShown: false,
-            animation: "slide_from_right",
-            gestureEnabled: true,
-          }}
-        />
-      </Stack>
+        >
+          <Stack.Screen
+            name="(tabs)"
+            options={{
+              contentStyle: { backgroundColor: background },
+            }}
+          />
+          <Stack.Screen
+            name="listing/[id]"
+            options={{
+              // Twitter/X-style: cross-fade, not horizontal slide
+              animation: "fade",
+              animationDuration: 220,
+              gestureEnabled: true,
+              animationMatchesGesture: true,
+            }}
+          />
+          <Stack.Screen
+            name="settings"
+            options={{
+              headerShown: false,
+              animation: "slide_from_right",
+              gestureEnabled: true,
+            }}
+          />
+          <Stack.Screen
+            name="community"
+            options={{
+              headerShown: false,
+              animation: "slide_from_right",
+              gestureEnabled: true,
+            }}
+          />
+        </Stack>
+      </View>
       <StatusBar style={isDark ? "light" : "dark"} />
     </ThemeProvider>
   );
@@ -93,6 +111,7 @@ function RootLayoutContent(): JSX.Element {
 
 export default function RootLayout(): JSX.Element | null {
   const [fontsLoaded, fontError] = useFonts({
+    ...Ionicons.font,
     "BrittiSans-Regular": require("../../assets/fonts/BrittiSans-Regular.ttf"),
     "BrittiSans-Medium": require("../../assets/fonts/BrittiSans-Medium.ttf"),
     "BrittiSans-SemiBold": require("../../assets/fonts/BrittiSans-SemiBold.ttf"),
@@ -133,6 +152,8 @@ export default function RootLayout(): JSX.Element | null {
     return null;
   }
 
+  // GestureHandlerRootView must wrap HeroUINativeProvider so BottomSheet /
+  // Dialog portals (PortalHost siblings of app content) still get gestures.
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <HeroUINativeProvider

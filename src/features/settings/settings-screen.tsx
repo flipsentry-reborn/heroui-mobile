@@ -282,11 +282,15 @@ export function SettingsScreen(): JSX.Element {
             />
           </SettingsSection>
 
-          <SettingsSection title="Danger zone">
-            <View className="w-full gap-2 p-3">
+          <View className="mb-4 gap-2">
+            <Typography type="body-xs" className="mx-5 text-muted">
+              Danger zone
+            </Typography>
+            <View className="mx-3 gap-2">
               <Button
                 variant="danger-soft"
-                className="min-h-11 w-full"
+                feedbackVariant="none"
+                className="min-h-11 w-full rounded-lg"
                 onPress={() => setDeleteOpen(true)}
               >
                 <StyledIonicons name="trash-outline" size={15} className="text-danger" />
@@ -294,7 +298,8 @@ export function SettingsScreen(): JSX.Element {
               </Button>
               <Button
                 variant="primary"
-                className="min-h-11 w-full bg-accent"
+                feedbackVariant="none"
+                className="min-h-11 w-full rounded-lg bg-accent"
                 onPress={handleLogout}
               >
                 <StyledIonicons
@@ -305,7 +310,7 @@ export function SettingsScreen(): JSX.Element {
                 <Button.Label className="text-sm text-accent-foreground">Logout</Button.Label>
               </Button>
             </View>
-          </SettingsSection>
+          </View>
             </>
           )}
         </ScrollView>

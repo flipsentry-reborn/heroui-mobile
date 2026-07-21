@@ -395,6 +395,10 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
   const openedSectionKeyRef = useRef<string | null>(null);
 
   const isEditing = editingGroup != null;
+  /** Actions → Filters → section: hide Edit Search until that filter sheet closes. */
+  const isSectionShortcut = initialSection != null;
+  const [revealParentAfterShortcut, setRevealParentAfterShortcut] =
+    useState(false);
 
   const editIntervalOptions = useMemo(() => {
     const base = subscriptionStore.intervalOptions;
@@ -451,6 +455,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     if (!visible) {
       prefilledGroupIdRef.current = null;
       openedSectionKeyRef.current = null;
+      setRevealParentAfterShortcut(false);
       return;
     }
     if (editingGroup == null) return;
@@ -474,41 +479,42 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
   }, [visible, editingGroup, onLocationLabelChange]);
 
   useEffect(() => {
+    if (!visible || initialSection == null) {
+      setRevealParentAfterShortcut(false);
+    }
+  }, [visible, initialSection]);
+
+  useEffect(() => {
     if (!visible || initialSection == null || editingGroup == null) return;
     const sectionKey = `${editingGroup.id}:${initialSection}`;
     if (openedSectionKeyRef.current === sectionKey) return;
     openedSectionKeyRef.current = sectionKey;
+    setRevealParentAfterShortcut(false);
 
-    const openSection = (section: SearchEditSection) => {
-      switch (section) {
-        case "location":
-        case "platforms":
-          setLocationOpen(true);
-          break;
-        case "makes":
-          setCarMakesOpen(true);
-          break;
-        case "price":
-          setPriceOpen(true);
-          break;
-        case "year":
-          setYearOpen(true);
-          break;
-        case "mileage":
-          setMileageOpen(true);
-          break;
-        case "models":
-          setIphoneModelsOpen(true);
-          break;
-        case "keywords":
-          setKeywordsOpen(true);
-          break;
-      }
-    };
-
-    // Wait a frame so the parent edit sheet can mount before nesting.
-    const id = requestAnimationFrame(() => openSection(initialSection));
-    return () => cancelAnimationFrame(id);
+    switch (initialSection) {
+      case "location":
+      case "platforms":
+        setLocationOpen(true);
+        break;
+      case "makes":
+        setCarMakesOpen(true);
+        break;
+      case "price":
+        setPriceOpen(true);
+        break;
+      case "year":
+        setYearOpen(true);
+        break;
+      case "mileage":
+        setMileageOpen(true);
+        break;
+      case "models":
+        setIphoneModelsOpen(true);
+        break;
+      case "keywords":
+        setKeywordsOpen(true);
+        break;
+    }
   }, [visible, initialSection, editingGroup]);
 
   const handleSearchTypeChange = (type: SearchType) => {
@@ -564,11 +570,24 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     onClose();
   };
 
+  /** After Filters → section closes, reveal Edit Search underneath. */
+  const closeShortcutThenRevealParent = (setOpen: (open: boolean) => void) => {
+    return (open: boolean) => {
+      setOpen(open);
+      if (!open && isSectionShortcut) {
+        setRevealParentAfterShortcut(true);
+      }
+    };
+  };
+
   const handleLocationOpenChange = (open: boolean) => {
     setLocationOpen(open);
     if (!open) {
       onLocationLabelChange?.(formatLocationLabel(getLocationDraft()));
       setLocationTick((value) => value + 1);
+      if (isSectionShortcut) {
+        setRevealParentAfterShortcut(true);
+      }
     }
   };
 
@@ -664,7 +683,13 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
 
   return (
     <>
-      <SheetShell visible={visible} onClose={handleClose}>
+      <SheetShell
+        // Filters shortcut: open filter first; show Edit Search only after it closes.
+        visible={
+          visible && (!isSectionShortcut || revealParentAfterShortcut)
+        }
+        onClose={handleClose}
+      >
         <SearchSheetContent
           title={isEditing ? "Edit Search" : "New Search"}
           locationLabel={locationRowLabel || locationLabel}
@@ -711,7 +736,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
 
       <SearchBottomSheetPriceSheet
         isOpen={visible && priceOpen}
-        onOpenChange={setPriceOpen}
+        onOpenChange={closeShortcutThenRevealParent(setPriceOpen)}
         min={minPrice}
         max={maxPrice}
         onMinChange={setMinPrice}
@@ -720,7 +745,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
 
       <SearchBottomSheetPriceSheet
         isOpen={visible && yearOpen}
-        onOpenChange={setYearOpen}
+        onOpenChange={closeShortcutThenRevealParent(setYearOpen)}
         title="Year"
         min={minYear}
         max={maxYear}
@@ -732,7 +757,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
 
       <SearchBottomSheetPriceSheet
         isOpen={visible && mileageOpen}
-        onOpenChange={setMileageOpen}
+        onOpenChange={closeShortcutThenRevealParent(setMileageOpen)}
         title="Mileage"
         min={minMileage}
         max={maxMileage}
@@ -743,21 +768,21 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
 
       <SearchBottomSheetKeywordsSheet
         isOpen={visible && keywordsOpen}
-        onOpenChange={setKeywordsOpen}
+        onOpenChange={closeShortcutThenRevealParent(setKeywordsOpen)}
         keywords={keywords}
         onKeywordsChange={setKeywords}
       />
 
       <SearchBottomSheetIphoneModelsSheet
         isOpen={visible && iphoneModelsOpen}
-        onOpenChange={setIphoneModelsOpen}
+        onOpenChange={closeShortcutThenRevealParent(setIphoneModelsOpen)}
         selections={iphoneSelections}
         onSelectionsChange={setIphoneSelections}
       />
 
       <SearchBottomSheetCarMakesSheet
         isOpen={visible && carMakesOpen}
-        onOpenChange={setCarMakesOpen}
+        onOpenChange={closeShortcutThenRevealParent(setCarMakesOpen)}
         selection={carMakes}
         onSelectionChange={setCarMakes}
       />

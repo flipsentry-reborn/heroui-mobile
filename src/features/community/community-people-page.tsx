@@ -107,7 +107,9 @@ export function CommunityPeoplePage({
               <Typography type="body-xs" className="text-muted" numberOfLines={1}>
                 {hunter.city}
                 {" · "}
-                {hunter.clicksYesterday} clicks yesterday · racing you
+                {hunter.clicksYesterday} yesterday
+                {" · "}
+                {hunter.clicksTotal} total
               </Typography>
             </View>
           </PressableFeedback>

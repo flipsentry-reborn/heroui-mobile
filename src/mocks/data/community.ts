@@ -8,6 +8,8 @@ export interface CommunityHunter {
   /** Used for Similar nearby filtering only — not shown in UI. */
   distanceMiles: number | null;
   clicksYesterday: number;
+  /** Lifetime visible clicks (mock). */
+  clicksTotal: number;
   showActivity: boolean;
   initials: string;
   /** Human-readable last-online label for UI. */
@@ -50,6 +52,7 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     city: "Voorhees, NJ",
     distanceMiles: 0,
     clicksYesterday: 5,
+    clicksTotal: 142,
     showActivity: true,
     initials: "YO",
     lastOnlineLabel: "Online now",
@@ -63,6 +66,7 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     city: "Atlanta, GA",
     distanceMiles: 12,
     clicksYesterday: 8,
+    clicksTotal: 218,
     showActivity: true,
     initials: "JL",
     lastOnlineLabel: "12m ago",
@@ -76,6 +80,7 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     city: "Marietta, GA",
     distanceMiles: 18,
     clicksYesterday: 4,
+    clicksTotal: 96,
     showActivity: true,
     initials: "SR",
     lastOnlineLabel: "1h ago",
@@ -89,6 +94,7 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     city: "Decatur, GA",
     distanceMiles: 22,
     clicksYesterday: 11,
+    clicksTotal: 341,
     showActivity: true,
     initials: "AK",
     lastOnlineLabel: "Online now",
@@ -102,6 +108,7 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     city: "Philadelphia, PA",
     distanceMiles: 28,
     clicksYesterday: 3,
+    clicksTotal: 47,
     showActivity: false,
     initials: "CN",
     lastOnlineLabel: "3h ago",
@@ -115,6 +122,7 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     city: "Roswell, GA",
     distanceMiles: 14,
     clicksYesterday: 9,
+    clicksTotal: 189,
     showActivity: true,
     initials: "MB",
     lastOnlineLabel: "25m ago",
@@ -128,6 +136,7 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     city: "Sandy Springs, GA",
     distanceMiles: 16,
     clicksYesterday: 6,
+    clicksTotal: 124,
     showActivity: true,
     initials: "RC",
     lastOnlineLabel: "2h ago",
@@ -141,6 +150,7 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     city: "Alpharetta, GA",
     distanceMiles: 24,
     clicksYesterday: 2,
+    clicksTotal: 38,
     showActivity: true,
     initials: "QO",
     lastOnlineLabel: "Yesterday",
@@ -154,6 +164,7 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     city: "Brookhaven, GA",
     distanceMiles: 19,
     clicksYesterday: 1,
+    clicksTotal: 55,
     showActivity: true,
     initials: "DP",
     lastOnlineLabel: "4h ago",
@@ -167,6 +178,7 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     city: "Smyrna, GA",
     distanceMiles: 21,
     clicksYesterday: 1,
+    clicksTotal: 203,
     showActivity: true,
     initials: "SN",
     lastOnlineLabel: "Online now",
@@ -180,6 +192,7 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     city: "Dunwoody, GA",
     distanceMiles: 17,
     clicksYesterday: 1,
+    clicksTotal: 29,
     showActivity: true,
     initials: "BT",
     lastOnlineLabel: "6h ago",
@@ -193,6 +206,7 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     city: "Johns Creek, GA",
     distanceMiles: 26,
     clicksYesterday: 1,
+    clicksTotal: 71,
     showActivity: true,
     initials: "JC",
     lastOnlineLabel: "45m ago",
@@ -206,6 +220,7 @@ export const COMMUNITY_HUNTERS: CommunityHunter[] = [
     city: "Kennesaw, GA",
     distanceMiles: 31,
     clicksYesterday: 1,
+    clicksTotal: 156,
     showActivity: true,
     initials: "AB",
     lastOnlineLabel: "Yesterday",

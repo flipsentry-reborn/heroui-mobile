@@ -316,7 +316,8 @@ function KeywordsSheetContent({
   const [titleExcluderDraft, setTitleExcluderDraft] = useState("");
   const [descriptionIncluderDraft, setDescriptionIncluderDraft] = useState("");
   const [descriptionExcluderDraft, setDescriptionExcluderDraft] = useState("");
-  const snapPoints = useMemo(() => ["65%", "92%"], []);
+  // Tall form + sticky footer — open near full height so Cancel/Save are on-screen.
+  const snapPoints = useMemo(() => ["92%"], []);
   const dismiss = () => onOpenChange(false);
 
   const patch = (partial: Partial<KeywordsState>) => {
@@ -364,7 +365,7 @@ function KeywordsSheetContent({
       contentContainerClassName={SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME}
     >
       <View className="flex-1">
-        <View className="items-center px-5 pb-1 pt-4">
+        <View className="shrink-0 items-center px-5 pb-1 pt-4">
           <Typography type="body" weight="normal">
             Keywords
           </Typography>
@@ -373,7 +374,7 @@ function KeywordsSheetContent({
         <StyledBottomSheetScrollView
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          className="flex-1"
+          className="min-h-0 flex-1"
           contentContainerClassName="pb-2 pt-2"
         >
           <View className="mb-3 px-3">
@@ -441,7 +442,7 @@ function KeywordsSheetContent({
           />
         </StyledBottomSheetScrollView>
 
-        <View className="flex-row gap-3 px-5 pb-6 pt-2">
+        <View className="shrink-0 flex-row gap-3 px-5 pb-6 pt-2">
           <Button
             variant="tertiary"
             className="min-h-12 flex-1 rounded-2xl bg-surface"

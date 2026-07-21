@@ -41,6 +41,17 @@ export interface FeedSellerInfo {
  ratingCount?: number;
 }
 
+/** Sibling trim / sub-model fair prices for the same make+model (cars only). */
+export interface VehicleTrimEstimate {
+  id: string;
+  trim: string;
+  fairPrice: number;
+  /** This listing’s trim. */
+  isCurrent?: boolean;
+  /** Short expand detail (e.g. comps / mileage band). */
+  note?: string;
+}
+
 export interface ListingValuation {
  calculated: boolean;
  valuationType?: "car" | "iphone";
@@ -66,6 +77,8 @@ export interface ListingValuation {
  iphoneModel?: string;
  storageGb?: number;
  batteryHealth?: number;
+ /** Other trims of the same model with estimated prices (cars). */
+ trimEstimates?: VehicleTrimEstimate[];
 }
 
 export interface FeedItem {

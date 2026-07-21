@@ -31,6 +31,7 @@ import {
   useSimilarNearbyFilters,
 } from "@/features/feed/feed-detail-similar-nearby";
 import { FeedDetailStickyHeader } from "@/features/feed/feed-detail-sticky-header";
+import { FeedDetailTrimEstimates } from "@/features/feed/feed-detail-trim-estimates";
 import {
   formatSoldPendingTitlePrefix,
   SOLD_STATUS_COLOR,
@@ -281,6 +282,13 @@ export function FeedDetail({
               />
             ) : null}
           </View>
+
+          {isCarListing(item) && item.valuation != null ? (
+            <FeedDetailTrimEstimates
+              valuation={item.valuation}
+              currencySymbol={item.currencySymbol}
+            />
+          ) : null}
 
           <FeedDetailMetaSection item={item} />
           <View

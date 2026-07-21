@@ -4,12 +4,10 @@ import type { JSX } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, Pressable, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { SearchField, useThemeColor } from "heroui-native";
+import { SearchField, Typography, useThemeColor } from "heroui-native";
 
-import {
-  FeedCategoryTabs,
-  type FeedTabKey,
-} from "@/features/feed/feed-category-tabs";
+import { FeedCategoryTabs } from "@/features/feed/feed-category-tabs";
+import type { FeedCategoryKey } from "@/mocks/data/feed";
 
 const LOGO = require("../../../assets/images/flipsentry-logo-text-transparent.png");
 const LOGO_WIDTH = 132;
@@ -18,18 +16,26 @@ const LOGO_HEIGHT = 30;
 interface FeedHeaderProps {
   searchText: string;
   onSearchChange: (value: string) => void;
-  activeTab?: FeedTabKey;
-  onTabSelect: (key: FeedTabKey) => void;
+  activeCategory: FeedCategoryKey;
+  onCategorySelect: (key: FeedCategoryKey) => void;
+  quickFilterActive?: boolean;
+  onQuickFilterPress: () => void;
 }
 
 export function FeedHeader({
   searchText,
   onSearchChange,
-  activeTab = "for-you",
-  onTabSelect,
+  activeCategory,
+  onCategorySelect,
+  quickFilterActive = false,
+  onQuickFilterPress,
 }: FeedHeaderProps): JSX.Element {
   const insets = useSafeAreaInsets();
-  const [foreground, muted] = useThemeColor(["foreground", "muted"]);
+  const [foreground, muted, accentForeground] = useThemeColor([
+    "foreground",
+    "muted",
+    "accent-foreground",
+  ]);
   const inputRef = useRef<TextInput>(null);
   const openingRef = useRef(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -122,6 +128,34 @@ export function FeedHeader({
               </View>
               <View className="flex-1" />
               <Pressable
+                onPress={onQuickFilterPress}
+                accessibilityRole="button"
+                accessibilityLabel="Quick Filter"
+                accessibilityState={{ selected: quickFilterActive }}
+                className={
+                  quickFilterActive
+                    ? "mr-1.5 h-8 flex-row items-center gap-1 rounded-field border border-accent bg-accent px-2.5"
+                    : "mr-1.5 h-8 flex-row items-center gap-1 rounded-field border border-border bg-surface-secondary px-2.5"
+                }
+              >
+                <Ionicons
+                  name="options-outline"
+                  size={14}
+                  color={quickFilterActive ? accentForeground : muted}
+                />
+                <Typography
+                  type="body-sm"
+                  weight="medium"
+                  className={
+                    quickFilterActive
+                      ? "text-[12px] text-accent-foreground"
+                      : "text-[12px] text-muted"
+                  }
+                >
+                  Filters
+                </Typography>
+              </Pressable>
+              <Pressable
                 onPress={openSearch}
                 accessibilityRole="button"
                 accessibilityLabel="Search listings"
@@ -134,7 +168,12 @@ export function FeedHeader({
         </View>
       </View>
 
-      <FeedCategoryTabs activeTab={activeTab} onSelect={onTabSelect} />
+      {quickFilterActive ? null : (
+        <FeedCategoryTabs
+          activeCategory={activeCategory}
+          onSelect={onCategorySelect}
+        />
+      )}
     </View>
   );
 }

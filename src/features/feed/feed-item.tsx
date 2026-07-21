@@ -28,8 +28,9 @@ import {
  * - featured shelves also multiply rail by FEATURED_SCALE (~7%)
  */
 const IMAGE_H_GRID = 168;
-const IMAGE_H_RAIL = 148;
-const RAIL_WIDTH = 172;
+/** Wider rail cards for For You shelves (not square). */
+const IMAGE_H_RAIL = 142;
+const RAIL_WIDTH = 200;
 /** Featured shelves (e.g. Top Rated) render ~7% larger. */
 const FEATURED_SCALE = 1.07;
 
@@ -101,13 +102,16 @@ export function FeedItem({
       ? "text-[15px] leading-5"
       : "text-sm leading-5";
   const metaClass = isRail ? "text-[11px] leading-[14px]" : "text-xs";
-  const estClass = isRail ? "text-[10px] text-muted" : "text-[11px] text-muted";
+  const estClass = isRail
+    ? "text-[10px] text-muted"
+    : "text-[11px] text-muted";
+  const dimClass = "text-muted";
   const platformSize = isRail ? 13 : 14;
 
   return (
     <PressableFeedback
       onPress={() => onPress?.(feed.id)}
-      className={isRail ? "mr-2" : "mb-1.5 flex-1 px-0.5"}
+      className={isRail ? "mr-1.5" : "mb-0.5 flex-1 px-0.5"}
       style={isRail ? { width: railW } : undefined}
       animation={{ scale: { value: 0.98 } }}
     >
@@ -139,7 +143,7 @@ export function FeedItem({
               <Ionicons
                 name={feed.isFavorite ? "star" : "star-outline"}
                 size={13}
-                color={feed.isFavorite ? "#166534" : "rgba(255,255,255,0.85)"}
+                color="rgba(255,255,255,0.95)"
               />
             </PressableFeedback>
           ) : null}
@@ -181,7 +185,7 @@ export function FeedItem({
           <View className="flex-row items-center gap-1">
             <Typography
               type="body-sm"
-              weight="semibold"
+              weight="bold"
               className={`${priceClass} text-foreground`}
               numberOfLines={1}
             >
@@ -230,7 +234,7 @@ export function FeedItem({
             {mileageText ? (
               <Typography
                 type="body-xs"
-                className={`shrink-0 text-muted ${metaClass}`}
+                className={`shrink-0 ${dimClass} ${metaClass}`}
                 numberOfLines={1}
               >
                 {mileageText}
@@ -239,7 +243,7 @@ export function FeedItem({
             {mileageText && primaryLocation ? (
               <Typography
                 type="body-xs"
-                className={`text-muted ${metaClass}`}
+                className={`${dimClass} ${metaClass}`}
               >
                 ·
               </Typography>
@@ -247,7 +251,7 @@ export function FeedItem({
             {primaryLocation ? (
               <Typography
                 type="body-xs"
-                className={`min-w-0 flex-1 text-muted ${metaClass}`}
+                className={`min-w-0 flex-1 ${dimClass} ${metaClass}`}
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >

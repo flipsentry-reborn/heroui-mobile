@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import type { JSX } from "react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import Animated from "react-native-reanimated";
 import {
@@ -22,6 +22,7 @@ import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import { FeedItem } from "@/features/feed/feed-item";
 import { feedCategoryHref } from "@/features/feed/feed-nav";
 import {
+  FEED_CATEGORIES,
   FOR_YOU_ALL_CHILDREN,
   FOR_YOU_SHELVES,
   type FeedCategoryKey,
@@ -33,11 +34,18 @@ const StyledIonicons = withUniwind(Ionicons);
 
 const SHELF_LIMIT = 6;
 
+const FEED_CATEGORY_KEYS = new Set(FEED_CATEGORIES.map((c) => c.key));
+
 type ShelfState = Record<string, FeedModel[]>;
 
 interface FeedForYouPageProps {
   query: string;
+  /** Bumps when favorites change elsewhere so shelves stay in sync. */
+  syncToken?: number;
   onPressItem?: (id: string) => void;
+  /** When set (pager mode), switch to that category tab instead of stacking. */
+  onOpenCategory?: (key: FeedCategoryKey) => void;
+  onFavoriteChange?: () => void;
 }
 
 function ShelfSkeleton(): JSX.Element {
@@ -83,6 +91,8 @@ function ShelfRail({
     <ScrollView
       horizontal
       nestedScrollEnabled
+      directionalLockEnabled
+      disableIntervalMomentum
       showsHorizontalScrollIndicator={false}
       contentContainerClassName={contentClassName}
       decelerationRate="fast"
@@ -103,7 +113,10 @@ function ShelfRail({
 
 export function FeedForYouPage({
   query,
+  syncToken = 0,
   onPressItem,
+  onOpenCategory,
+  onFavoriteChange,
 }: FeedForYouPageProps): JSX.Element {
   const router = useRouter();
   const [accent, background] = useThemeColor(["accent", "background"]);
@@ -111,13 +124,21 @@ export function FeedForYouPage({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const hasLoaded = useRef(false);
+  const skipNextSync = useRef(true);
 
   const openCategory = useCallback(
     (key: string) => {
       if (key === "for-you" || key === "your-searches") return;
+      if (
+        onOpenCategory &&
+        FEED_CATEGORY_KEYS.has(key as FeedCategoryKey)
+      ) {
+        onOpenCategory(key as FeedCategoryKey);
+        return;
+      }
       router.push(feedCategoryHref(key));
     },
-    [router],
+    [onOpenCategory, router],
   );
 
   const shelfKeys = useMemo(() => {
@@ -171,6 +192,15 @@ export function FeedForYouPage({
     }, [load]),
   );
 
+  useEffect(() => {
+    if (skipNextSync.current) {
+      skipNextSync.current = false;
+      return;
+    }
+    void load({ silent: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- syncToken-only
+  }, [syncToken]);
+
   const handleToggleFavorite = useCallback(async (id: string) => {
     const updated = await toggleFavorite(id);
     if (!updated) return;
@@ -181,7 +211,8 @@ export function FeedForYouPage({
       }
       return next;
     });
-  }, []);
+    onFavoriteChange?.();
+  }, [onFavoriteChange]);
 
   const onToggleFavorite = useCallback(
     (id: string) => {
@@ -334,13 +365,22 @@ export function FeedForYouPage({
               accessibilityLabel={`Open ${shelf.label}`}
             >
               <Badge.Anchor className={shelf.badge ? "pr-7" : undefined}>
-                <Typography
-                  type="body"
-                  weight="semibold"
-                  className="text-[16px] text-foreground"
-                >
-                  {shelf.label}
-                </Typography>
+                <View className="flex-row items-center gap-0.5">
+                  <Typography
+                    type="body"
+                    weight="semibold"
+                    className="text-[16px] text-foreground"
+                  >
+                    {shelf.label}
+                  </Typography>
+                  {shelf.key === "price-drop" ? (
+                    <StyledIonicons
+                      name="arrow-down"
+                      size={16}
+                      className="text-foreground"
+                    />
+                  ) : null}
+                </View>
                 {shelf.badge ? (
                   <FeedCategoryBadge label={shelf.badge} />
                 ) : null}

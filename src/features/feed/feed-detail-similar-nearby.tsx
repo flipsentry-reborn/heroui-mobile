@@ -13,7 +13,7 @@ function SimilarNearbySkeleton(): JSX.Element {
   return (
     <SkeletonGroup isLoading isSkeletonOnly className="flex-row flex-wrap px-0.5">
       {[0, 1, 2, 3].map((key) => (
-        <View key={key} className="mb-1.5 w-1/2 px-0.5">
+        <View key={key} className="mb-0.5 w-1/2 px-0.5">
           <View className="overflow-hidden rounded-lg">
             <SkeletonGroup.Item className="h-[168px] w-full rounded-lg" />
             <View className="gap-0.5 px-1.5 pb-1.5 pt-1">

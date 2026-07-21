@@ -216,8 +216,8 @@ export const FEED_CATEGORIES: {
 }[] = [
   { key: "for-you", label: "For You" },
   { key: "all", label: "All" },
-  { key: "best-picks", label: "Top Rated", badge: "AI" },
-  { key: "price-drop", label: "Price Dropped", badge: "Beta" },
+  { key: "best-picks", label: "Best's", badge: "AI" },
+  { key: "price-drop", label: "Price", badge: "Beta" },
   { key: "car", label: "Cars" },
   { key: "couch", label: "Couch" },
   { key: "iphone", label: "iPhones" },
@@ -248,8 +248,8 @@ export const FOR_YOU_SHELVES: {
   featured?: boolean;
 }[] = [
   { key: "all", label: "All" },
-  { key: "best-picks", label: "Top Rated", badge: "AI", featured: true },
-  { key: "price-drop", label: "Price Dropped", badge: "Beta" },
+  { key: "best-picks", label: "Best's", badge: "AI", featured: true },
+  { key: "price-drop", label: "Price", badge: "Beta" },
   { key: "your-searches", label: "Your Searches", isAccordion: true },
   { key: "sold", label: "Sold" },
   { key: "saved", label: "Saved" },

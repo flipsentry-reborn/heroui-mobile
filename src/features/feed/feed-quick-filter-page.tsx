@@ -7,7 +7,7 @@ import { withUniwind } from "uniwind";
 
 const StyledIonicons = withUniwind(Ionicons);
 
-/** Quick Filter tab placeholder. */
+/** Quick Filter page (opened from feed header top-right). */
 export function FeedQuickFilterPage(): JSX.Element {
   return (
     <View className="flex-1 items-center justify-center bg-background px-6">

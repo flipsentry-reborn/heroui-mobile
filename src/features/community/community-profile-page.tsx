@@ -150,16 +150,16 @@ export function CommunityProfilePage({
             <View className="mr-3 flex-1">
               <Typography type="body-sm">Show my activity</Typography>
               <Typography type="body-xs" className="text-muted">
-                Others see your clicks after 24h
+                Rivals see your clicks after 24h
               </Typography>
             </View>
             <Switch isSelected={showActivity} onSelectedChange={setShowActivity} />
           </View>
           <View className="flex-row items-center justify-between py-1">
             <View className="mr-3 flex-1">
-              <Typography type="body-sm">Appear in Similar nearby</Typography>
+              <Typography type="body-sm">Appear in Competitors nearby</Typography>
               <Typography type="body-xs" className="text-muted">
-                Show up for similar hunters near you
+                Let rivals near you see that you hunt the same deals
               </Typography>
             </View>
             <Switch isSelected={appearNearby} onSelectedChange={setAppearNearby} />
@@ -173,7 +173,9 @@ export function CommunityProfilePage({
             Last clicks
           </Typography>
           <Typography type="body-xs" color="muted">
-            {isSelf ? "Your activity · delayed 24h" : "Activity · delayed 24h"}
+            {isSelf
+              ? "Your moves · delayed 24h"
+              : "Their moves · delayed 24h"}
           </Typography>
         </View>
         {!activityHidden && activity.length > 0 ? (

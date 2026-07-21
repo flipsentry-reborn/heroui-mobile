@@ -52,7 +52,7 @@ export function CommunityHuntersRail({
       {hunters.length === 0 ? (
         <View className="px-1 py-4">
           <Typography type="body-xs" className="text-muted">
-            No nearby hunters yet
+            No rivals nearby yet
           </Typography>
         </View>
       ) : null}

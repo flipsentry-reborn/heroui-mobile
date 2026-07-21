@@ -8,14 +8,11 @@ import { EmptyState } from "heroui-native-pro";
 import { CommunityActiveNearbySection } from "@/features/community/community-active-nearby-section";
 import { CommunityHunterFeedDepthList } from "@/features/community/community-hunter-feed-card";
 import { CommunitySectionHeader } from "@/features/community/community-section-header";
-import { CommunityTrendingRail } from "@/features/community/community-trending-rail";
 import type { CommunityHunter } from "@/mocks/data/community";
 import {
   getActiveNearbyHunters,
   getCommunityHunterFeeds,
-  getCommunityTrending,
   type CommunityHunterFeed,
-  type CommunityTrendingRow,
 } from "@/mocks/services/community";
 
 interface CommunityActivityPageProps {
@@ -28,19 +25,16 @@ export function CommunityActivityPage({
   onPressHunter,
 }: CommunityActivityPageProps): JSX.Element {
   const router = useRouter();
-  const [trending, setTrending] = useState<CommunityTrendingRow[]>([]);
   const [nearby, setNearby] = useState<CommunityHunter[]>([]);
   const [feeds, setFeeds] = useState<CommunityHunterFeed[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    const [t, n, f] = await Promise.all([
-      getCommunityTrending(),
+    const [n, f] = await Promise.all([
       getActiveNearbyHunters(),
       getCommunityHunterFeeds(),
     ]);
-    setTrending(t.slice(0, 5));
     setNearby(n);
     setFeeds(f);
   }, []);
@@ -66,17 +60,8 @@ export function CommunityActivityPage({
   if (loading) {
     return (
       <SkeletonGroup isLoading isSkeletonOnly className="px-4 pt-3">
-        <SkeletonGroup.Item className="mb-3 h-7 w-48 rounded-md" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {[0, 1, 2].map((k) => (
-            <SkeletonGroup.Item
-              key={k}
-              className="mr-4 h-[148px] w-[148px] rounded-md"
-            />
-          ))}
-        </ScrollView>
-        <SkeletonGroup.Item className="mt-8 h-7 w-40 rounded-md" />
-        <View className="mt-3 flex-row gap-5">
+        <SkeletonGroup.Item className="mb-3 h-7 w-40 rounded-md" />
+        <View className="mt-1 flex-row gap-5">
           {[0, 1, 2].map((k) => (
             <SkeletonGroup.Item key={k} className="h-16 w-16 rounded-full" />
           ))}
@@ -88,13 +73,13 @@ export function CommunityActivityPage({
     );
   }
 
-  if (trending.length === 0 && feeds.length === 0) {
+  if (feeds.length === 0 && nearby.length === 0) {
     return (
       <EmptyState className="flex-1 justify-center px-6">
         <EmptyState.Header>
-          <EmptyState.Title>No activity yet</EmptyState.Title>
+          <EmptyState.Title>No rival activity yet</EmptyState.Title>
           <EmptyState.Description>
-            Clicks from other hunters appear here after 24 hours.
+            See who beat you to listings — their clicks land here after 24 hours.
           </EmptyState.Description>
         </EmptyState.Header>
       </EmptyState>
@@ -110,16 +95,6 @@ export function CommunityActivityPage({
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      {trending.length > 0 ? (
-        <View className="mb-8">
-          <CommunitySectionHeader title="Trending yesterday" />
-          <CommunityTrendingRail
-            rows={trending}
-            onPressListing={onPressListing}
-          />
-        </View>
-      ) : null}
-
       <View className="mb-8">
         <CommunityActiveNearbySection
           hunters={nearby}
@@ -130,8 +105,8 @@ export function CommunityActivityPage({
       {feeds.length > 0 ? (
         <View className="mb-6">
           <CommunitySectionHeader
-            title="Recently clicked"
-            subtitle="Delayed 24h · expand a row for hunter stats"
+            title="Rivals clicked"
+            subtitle="They moved first · delayed 24h · expand for their pace"
           />
           <CommunityHunterFeedDepthList
             feeds={feeds}

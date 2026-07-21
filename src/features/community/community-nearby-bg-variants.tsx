@@ -85,7 +85,7 @@ export function CommunityNearbyBgVariant({
 
       {variant === "header-band" ? (
         <View className="bg-surface-secondary py-4">
-          <CommunitySectionHeader title="Active nearby" />
+          <CommunitySectionHeader title="Rivals nearby" />
           {rail}
         </View>
       ) : null}
@@ -94,7 +94,7 @@ export function CommunityNearbyBgVariant({
         <View className="mx-3 rounded-2xl bg-surface px-1 py-3">
           <View className="mb-3 gap-0.5 px-3">
             <Typography type="h3" weight="bold">
-              Active nearby
+              Rivals nearby
             </Typography>
           </View>
           {rail}
@@ -103,7 +103,7 @@ export function CommunityNearbyBgVariant({
 
       {variant === "band" || variant === "borders" ? (
         <View>
-          <CommunitySectionHeader title="Active nearby" />
+          <CommunitySectionHeader title="Rivals nearby" />
           <RailShell variant={variant}>{rail}</RailShell>
         </View>
       ) : null}

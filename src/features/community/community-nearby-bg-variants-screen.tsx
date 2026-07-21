@@ -44,7 +44,7 @@ export function CommunityNearbyBgVariantsScreen(): JSX.Element {
         </Button>
         <View className="min-w-0 flex-1">
           <Typography type="body" weight="semibold">
-            Active nearby · bg variants
+            Rivals nearby · bg variants
           </Typography>
           <Typography type="body-xs" color="muted">
             Pick one — same hunters, four shells

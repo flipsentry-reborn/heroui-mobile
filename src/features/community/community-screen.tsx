@@ -66,7 +66,7 @@ export function CommunityScreen(): JSX.Element {
       <View className="gap-3 px-4 pb-3 pt-2">
         <View className="gap-0.5">
           <Typography type="body-xs" color="muted">
-            {greeting}
+            {greeting} · who's beating you to deals
           </Typography>
           <Typography type="h2" weight="bold">
             Community
@@ -83,7 +83,7 @@ export function CommunityScreen(): JSX.Element {
               <Segment.Label>Activity</Segment.Label>
             </Segment.Item>
             <Segment.Item value="people" className="rounded-xl">
-              <Segment.Label>Similar nearby</Segment.Label>
+              <Segment.Label>Competitors nearby</Segment.Label>
             </Segment.Item>
             <Segment.Item value="you" className="rounded-xl">
               <Segment.Label>You</Segment.Label>

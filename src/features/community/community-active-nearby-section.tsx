@@ -61,7 +61,7 @@ export function CommunityActiveNearbySection({
       <View className="px-1 py-3">
         <View className="mb-3 gap-0.5 px-3">
           <Typography type="h3" weight="bold">
-            Active nearby
+            Rivals nearby
           </Typography>
         </View>
         <CommunityHuntersRail

@@ -69,9 +69,9 @@ export function CommunityPeoplePage({
     return (
       <EmptyState className="flex-1 justify-center px-6">
         <EmptyState.Header>
-          <EmptyState.Title>No similar hunters nearby</EmptyState.Title>
+          <EmptyState.Title>No competitors nearby</EmptyState.Title>
           <EmptyState.Description>
-            Hunters within your local radius will show up here.
+            Rivals in your radius show up here when they hunt the same deals.
           </EmptyState.Description>
         </EmptyState.Header>
       </EmptyState>
@@ -88,8 +88,8 @@ export function CommunityPeoplePage({
       }
     >
       <CommunitySectionHeader
-        title="Similar nearby"
-        subtitle="Hunters near you with similar activity"
+        title="Competitors nearby"
+        subtitle="Same radius · same targets · moving faster than you"
       />
 
       {hunters.map((hunter, index) => (
@@ -107,7 +107,7 @@ export function CommunityPeoplePage({
               <Typography type="body-xs" className="text-muted" numberOfLines={1}>
                 {hunter.city}
                 {" · "}
-                {hunter.clicksYesterday} clicks yesterday
+                {hunter.clicksYesterday} clicks yesterday · racing you
               </Typography>
             </View>
           </PressableFeedback>

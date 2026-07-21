@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps, JSX, ReactNode } from "react";
 import { View } from "react-native";
-import { ListGroup, PressableFeedback, Separator, Typography } from "heroui-native";
+import { ListGroup, Separator, Typography } from "heroui-native";
 import { withUniwind } from "uniwind";
 
 const StyledIonicons = withUniwind(Ionicons);
@@ -86,33 +86,21 @@ export function SettingsRow({
   showChevron = true,
   isLast = false,
 }: SettingsRowProps): JSX.Element {
-  const body = (
-    <SettingsRowBody
-      icon={icon}
-      title={title}
-      description={description}
-      right={right}
-      showChevron={showChevron}
-    />
-  );
-
   return (
     <>
-      {onPress ? (
-        <PressableFeedback animation={false} onPress={onPress}>
-          <PressableFeedback.Scale>
-            <ListGroup.Item disabled className="py-2.5">
-              {body}
-            </ListGroup.Item>
-          </PressableFeedback.Scale>
-          <PressableFeedback.Highlight />
-          <PressableFeedback.Ripple />
-        </PressableFeedback>
-      ) : (
-        <ListGroup.Item disabled className="py-2.5">
-          {body}
-        </ListGroup.Item>
-      )}
+      <ListGroup.Item
+        className="py-2.5"
+        onPress={onPress}
+        disabled={onPress == null}
+      >
+        <SettingsRowBody
+          icon={icon}
+          title={title}
+          description={description}
+          right={right}
+          showChevron={showChevron}
+        />
+      </ListGroup.Item>
       {!isLast ? <Separator className="ml-12 mr-4 bg-muted/40" /> : null}
     </>
   );

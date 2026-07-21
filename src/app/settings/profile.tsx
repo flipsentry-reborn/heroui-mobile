@@ -6,7 +6,7 @@ import { ScrollView, Text, View } from "react-native";
 import {
   Avatar,
   Chip,
-  PressableFeedback,
+  LinkButton,
   Typography,
   useThemeColor,
   useToast,
@@ -133,11 +133,12 @@ export default function ProfileScreen(): JSX.Element {
               {initials}
             </Avatar.Fallback>
           </Avatar>
-          <PressableFeedback
+          <LinkButton
             accessibilityRole="button"
             accessibilityLabel="Copy name"
             onPress={() => void copyValue(fullName, "Name")}
             animation={{ scale: { value: 0.97 } }}
+            className="h-auto p-0"
           >
             <Text
               style={{
@@ -150,12 +151,13 @@ export default function ProfileScreen(): JSX.Element {
             >
               {fullName}
             </Text>
-          </PressableFeedback>
-          <PressableFeedback
+          </LinkButton>
+          <LinkButton
             accessibilityRole="button"
             accessibilityLabel="Copy email"
             onPress={() => void copyValue(profile.email, "Email")}
             animation={{ scale: { value: 0.97 } }}
+            className="h-auto p-0"
           >
             <Text
               style={{
@@ -166,7 +168,7 @@ export default function ProfileScreen(): JSX.Element {
             >
               {profile.email}
             </Text>
-          </PressableFeedback>
+          </LinkButton>
           <View className="mt-2 flex-row items-center gap-1.5">
             <HeroBoltIcon
               from={palette.iconFrom}

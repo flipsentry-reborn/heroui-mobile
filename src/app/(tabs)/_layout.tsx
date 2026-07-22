@@ -16,7 +16,7 @@ const TabsLayout = observer(function TabsLayout(): JSX.Element {
   }, [userStore.isLoggedIn]);
 
   if (userStore.bootstrapped && (!commonStore.token || !userStore.isLoggedIn)) {
-    return <Redirect href={"/login" as Href} />;
+    return <Redirect href={"/welcome" as Href} />;
   }
 
   if (userStore.bootstrapped && userStore.isLoggedIn && !userStore.isPhoneVerified) {

@@ -7,7 +7,7 @@ import { Spinner } from "heroui-native";
 import { useStore } from "@/store/store";
 
 /**
- * Auth gate: login → verify phone → tabs.
+ * Auth gate: welcome → login/register → verify phone → tabs.
  */
 const IndexGate = observer(function IndexGate(): JSX.Element {
   const { userStore, commonStore } = useStore();
@@ -21,7 +21,7 @@ const IndexGate = observer(function IndexGate(): JSX.Element {
   }
 
   if (!userStore.isLoggedIn || !commonStore.token) {
-    return <Redirect href={"/login" as Href} />;
+    return <Redirect href={"/welcome" as Href} />;
   }
 
   if (!userStore.isPhoneVerified) {

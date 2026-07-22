@@ -24,6 +24,8 @@ interface AuthShellProps {
   children: ReactNode;
   footer?: ReactNode;
   onBack?: () => void;
+  /** Vertically center logo + body (welcome / entry). Forms stay top-aligned. */
+  contentAlign?: "top" | "center";
 }
 
 /** Auth canvas: solid subscription dark only — no glow, no particles. */
@@ -33,9 +35,11 @@ export function AuthShell({
   children,
   footer,
   onBack,
+  contentAlign = "top",
 }: AuthShellProps): JSX.Element {
   const insets = useSafeAreaInsets();
   const [muted] = useThemeColor(["muted"]);
+  const isCentered = contentAlign === "center";
 
   return (
     <KeyboardAvoidingView
@@ -53,8 +57,9 @@ export function AuthShell({
         contentContainerClassName="px-6"
         contentContainerStyle={{
           flexGrow: 1,
-          paddingTop: insets.top + (onBack ? 8 : 28),
-          paddingBottom: Math.max(insets.bottom, 24) + 16,
+          justifyContent: isCentered ? "center" : "flex-start",
+          paddingTop: insets.top + (onBack ? 8 : isCentered ? 16 : 28),
+          paddingBottom: Math.max(insets.bottom, 24) + (isCentered ? 32 : 16),
         }}
       >
         {onBack ? (
@@ -69,29 +74,41 @@ export function AuthShell({
           </Pressable>
         ) : null}
 
-        <View className="mb-8 items-center gap-3 pt-2">
+        <View
+          className={`items-center gap-3 ${isCentered ? "mb-12 gap-5 pt-0" : "mb-8 pt-2"}`}
+        >
           <Image
             source={LOGO}
-            style={{ width: LOGO_WIDTH, height: LOGO_HEIGHT }}
+            style={{
+              width: isCentered ? 200 : LOGO_WIDTH,
+              height: isCentered ? 44 : LOGO_HEIGHT,
+            }}
             contentFit="contain"
             accessibilityLabel="FlipSentry"
           />
-          <View className="items-center gap-1.5 px-2">
+          <View className={`items-center px-2 ${isCentered ? "gap-2.5" : "gap-1.5"}`}>
             <Typography
               weight="bold"
-              className="text-center text-[26px] leading-8 text-foreground"
+              className={`text-center text-foreground ${
+                isCentered
+                  ? "text-[28px] leading-9"
+                  : "text-[26px] leading-8"
+              }`}
             >
               {title}
             </Typography>
             {subtitle ? (
-              <Typography type="body-sm" className="text-center text-muted">
+              <Typography
+                type="body-sm"
+                className={`text-center text-muted ${isCentered ? "max-w-[280px] leading-5" : ""}`}
+              >
                 {subtitle}
               </Typography>
             ) : null}
           </View>
         </View>
 
-        <View className="gap-5">{children}</View>
+        <View className={isCentered ? "gap-4" : "gap-5"}>{children}</View>
 
         {footer ? (
           <View className="mt-auto items-center pt-10">{footer}</View>

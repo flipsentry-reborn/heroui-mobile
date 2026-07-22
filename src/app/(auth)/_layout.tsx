@@ -34,6 +34,7 @@ export default function AuthLayout(): JSX.Element {
         animation: "fade",
       }}
     >
+      <Stack.Screen name="welcome" />
       <Stack.Screen name="login" />
       <Stack.Screen name="register" />
       <Stack.Screen name="verify" />

@@ -22,12 +22,6 @@ type CommunityTab = "activity" | "people" | "you";
 
 type VisitedTabs = Record<CommunityTab, boolean>;
 
-function greetingForHour(hour: number): string {
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
-}
-
 export function CommunityScreen(): JSX.Element {
   const router = useRouter();
   const [tab, setTab] = useState<CommunityTab>("activity");
@@ -36,7 +30,6 @@ export function CommunityScreen(): JSX.Element {
     people: false,
     you: false,
   });
-  const greeting = greetingForHour(new Date().getHours());
 
   const selectTab = useCallback((next: CommunityTab) => {
     setTab(next);
@@ -64,14 +57,9 @@ export function CommunityScreen(): JSX.Element {
   return (
     <StyledSafeAreaView edges={["top"]} className="flex-1 bg-background">
       <View className="gap-3 px-4 pb-3 pt-2">
-        <View className="gap-0.5">
-          <Typography type="body-xs" color="muted">
-            {greeting} · who's beating you to deals
-          </Typography>
-          <Typography type="h2" weight="bold">
-            Community
-          </Typography>
-        </View>
+        <Typography type="h2" weight="bold">
+          Community
+        </Typography>
         <Segment
           value={tab}
           onValueChange={(v) => selectTab(v as CommunityTab)}

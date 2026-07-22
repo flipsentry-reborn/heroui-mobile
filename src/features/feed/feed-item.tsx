@@ -117,11 +117,11 @@ export function FeedItem({
     >
       <Card
         variant="transparent"
-        className={`${isRail ? "" : "flex-1 "}gap-0 overflow-hidden rounded-lg border-0 ${
+        className={`${isRail ? "" : "flex-1 "}gap-0 overflow-visible rounded-none border-0 ${
           featured ? "bg-transparent" : "bg-background"
         } p-0`}
       >
-        <View className="relative">
+        <View className="relative overflow-hidden rounded-lg">
           <Image
             source={{ uri: imageUrl }}
             style={{ width: "100%", height: imageH, backgroundColor: surfaceSecondary }}

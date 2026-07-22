@@ -248,8 +248,8 @@ export const FOR_YOU_SHELVES: {
   featured?: boolean;
 }[] = [
   { key: "all", label: "All" },
-  { key: "best-picks", label: "Best's", badge: "AI", featured: true },
-  { key: "price-drop", label: "Price", badge: "Beta" },
+  { key: "best-picks", label: "Best Picks", badge: "AI", featured: true },
+  { key: "price-drop", label: "Price Dropped", badge: "Beta" },
   { key: "your-searches", label: "Your Searches", isAccordion: true },
   { key: "sold", label: "Sold" },
   { key: "saved", label: "Saved" },

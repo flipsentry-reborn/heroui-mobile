@@ -72,5 +72,8 @@ First launch seeds from fixtures; thereafter storage is source of truth.
 
 - Old-app multi-step Edit actions sheet
 - Persisting keywords / full iPhone model price objects beyond `customLabel`
-- Feed search history (FeedStore)
-- Real Axios / SignalR
+- Feed search history UI
+
+## Related (implemented elsewhere)
+
+- `FeedStore` + live FeedHub SignalR — see `src/store/feedStore.ts` / `src/api/signalr/feedHub.ts`

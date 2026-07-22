@@ -17,7 +17,7 @@ alwaysApply: true
 - Screens must not branch on `USE_MOCK`; only the agent façade switches implementations.
 - Persist mock domain data with AsyncStorage via `src/lib/storage.ts` when it must survive reload.
 - Pure rules (slot math, intervals) live in `src/domain/*` — not in screens.
-- No SignalR or Adapty in this pass. Axios is allowed only inside `src/api/http/*`.
+- Feed SignalR is allowed via `src/api/signalr/*` + `FeedStore` (live only). No Adapty in this pass. Axios is allowed only inside `src/api/http/*`.
 - MobX is allowed; keep stores **split by domain** (UserStore, CommonStore, SearchStore, SubscriptionStore).
 - Search / slot rules: see `SEARCH_STORE.md` (Starter / Hunter / Master tables).
 - GroupSearch: **basic radius only** — no advanced/point polygon mode, no population heatmap.

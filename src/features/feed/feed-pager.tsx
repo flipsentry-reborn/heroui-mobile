@@ -30,7 +30,6 @@ export function FeedPager({
   const [visited, setVisited] = useState<Set<string>>(
     () => new Set<string>([activeCategory]),
   );
-  const [syncToken, setSyncToken] = useState(0);
 
   useEffect(() => {
     setVisited((prev) => {
@@ -44,8 +43,6 @@ export function FeedPager({
   const swipeEnabled = activeCategory !== "for-you";
 
   useEffect(() => {
-    // Imperative sync — Android can ignore the scrollEnabled prop after mount.
-    // For You keeps swipe off so horizontal rails don't steal the gesture.
     pagerRef.current?.setScrollEnabled(swipeEnabled);
   }, [pagerRef, swipeEnabled]);
 
@@ -81,10 +78,8 @@ export function FeedPager({
               category={category.key}
               groupIds={category.groupIds}
               query={searchText}
-              syncToken={syncToken}
               onPressItem={onPressItem}
               onOpenCategory={onOpenCategory}
-              onFavoriteChange={() => setSyncToken((n) => n + 1)}
             />
           ) : (
             <View style={{ flex: 1 }} />

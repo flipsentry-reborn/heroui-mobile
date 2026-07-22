@@ -22,30 +22,22 @@ import { withUniwind } from "uniwind";
 import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import { FeedItem } from "@/features/feed/feed-item";
 import { feedCategoryHref } from "@/features/feed/feed-nav";
-import agent from "@/api/agent";
+import { FeedTabBadge } from "@/features/feed/feed-tab-badge";
 import type { FeedItem as FeedModel } from "@/models/feed";
 import { useStore } from "@/store/store";
 
 const StyledIonicons = withUniwind(Ionicons);
 
-const SHELF_LIMIT = 6;
-
-type ShelfState = Record<string, FeedModel[]>;
-
 interface FeedForYouPageProps {
   query: string;
-  /** Bumps when favorites change elsewhere so shelves stay in sync. */
-  syncToken?: number;
   onPressItem?: (id: string) => void;
-  /** When set (pager mode), switch to that category tab instead of stacking. */
   onOpenCategory?: (key: string) => void;
-  onFavoriteChange?: () => void;
 }
 
 function ShelfSkeleton(): JSX.Element {
   return (
-    <SkeletonGroup isLoading isSkeletonOnly className="mb-5">
-      <View className="mb-2 flex-row items-center justify-between px-3">
+    <SkeletonGroup isLoading className="mb-2.5 gap-1.5">
+      <View className="flex-row items-center justify-between px-3 py-0.5">
         <SkeletonGroup.Item className="h-5 w-28 rounded-md" />
         <SkeletonGroup.Item className="h-4 w-4 rounded-md" />
       </View>
@@ -107,13 +99,11 @@ function ShelfRail({
 
 export const FeedForYouPage = observer(function FeedForYouPage({
   query,
-  syncToken = 0,
   onPressItem,
   onOpenCategory,
-  onFavoriteChange,
 }: FeedForYouPageProps): JSX.Element {
   const router = useRouter();
-  const { searchStore } = useStore();
+  const { searchStore, feedStore } = useStore();
   const forYouShelves = searchStore.forYouShelves;
   const yourSearchChildren = searchStore.yourSearchChildren;
   const feedCategoryKeys = useMemo(
@@ -121,11 +111,9 @@ export const FeedForYouPage = observer(function FeedForYouPage({
     [searchStore.feedCategories],
   );
   const [accent, background] = useThemeColor(["accent", "background"]);
-  const [shelves, setShelves] = useState<ShelfState>({});
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const hasLoaded = useRef(false);
-  const skipNextSync = useRef(true);
+  const skipQueryEffect = useRef(true);
 
   const openCategory = useCallback(
     (key: string) => {
@@ -157,70 +145,55 @@ export const FeedForYouPage = observer(function FeedForYouPage({
     [yourSearchChildren],
   );
 
+  const loading =
+    shelfKeys.some((key) => feedStore.isBucketLoading(key)) && !hasLoaded.current;
+
   const load = useCallback(
-    async (opts?: { refresh?: boolean; silent?: boolean }) => {
+    async (opts?: { refresh?: boolean }) => {
       if (opts?.refresh) setRefreshing(true);
-      else if (!opts?.silent) setLoading(true);
       try {
-        const entries = await Promise.all(
-          shelfKeys.map(async (key) => {
-            const items = (
-              await agent.Feed.list({
-                category: key,
-                groupIds: searchStore.groupIdsForCategory(key),
-                query,
-                limit: SHELF_LIMIT,
-              })
-            ).slice(0, SHELF_LIMIT);
-            return [key, items] as const;
-          }),
-        );
-        setShelves(Object.fromEntries(entries));
+        if (opts?.refresh || feedStore.isBucketDirty("best-picks")) {
+          await feedStore.refreshIfDirty("best-picks", {
+            force: true,
+            limit: 6,
+            asShelf: true,
+            query,
+          });
+        }
+        await feedStore.loadForYouShelves(shelfKeys, {
+          query,
+          force: opts?.refresh,
+        });
         hasLoaded.current = true;
       } finally {
-        setLoading(false);
         setRefreshing(false);
       }
     },
-    [query, searchStore, shelfKeys],
+    [feedStore, query, shelfKeys],
   );
 
   useFocusEffect(
     useCallback(() => {
-      void load({ silent: hasLoaded.current });
+      void load();
     }, [load]),
   );
 
   useEffect(() => {
-    if (skipNextSync.current) {
-      skipNextSync.current = false;
+    if (skipQueryEffect.current) {
+      skipQueryEffect.current = false;
       return;
     }
-    void load({ silent: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- syncToken-only
-  }, [syncToken]);
-
-  const handleToggleFavorite = useCallback(async (id: string) => {
-    const updated = await agent.Feed.toggleFavorite(id);
-    if (!updated) return;
-    setShelves((prev) => {
-      const next: ShelfState = {};
-      for (const [key, items] of Object.entries(prev)) {
-        next[key] = items.map((item) => (item.id === id ? updated : item));
-      }
-      return next;
-    });
-    onFavoriteChange?.();
-  }, [onFavoriteChange]);
+    void load({ refresh: true });
+  }, [load, query]);
 
   const onToggleFavorite = useCallback(
     (id: string) => {
-      void handleToggleFavorite(id);
+      void feedStore.toggleFavorite(id);
     },
-    [handleToggleFavorite],
+    [feedStore],
   );
 
-  if (loading && Object.keys(shelves).length === 0) {
+  if (loading) {
     return (
       <ScrollShadow
         className="flex-1"
@@ -309,8 +282,9 @@ export const FeedForYouPage = observer(function FeedForYouPage({
 
                           <Accordion.Content className="pt-1">
                             {allChildrenAlphabetical.map((child) => {
-                              const items = shelves[child.key] ?? [];
+                              const items = feedStore.getShelf(child.key);
                               if (items.length === 0 && !loading) return null;
+                              const unread = feedStore.unreadCount(child.key);
 
                               return (
                                 <View key={child.key} className="mb-2.5">
@@ -321,13 +295,16 @@ export const FeedForYouPage = observer(function FeedForYouPage({
                                     accessibilityRole="button"
                                     accessibilityLabel={`Open ${child.label}`}
                                   >
-                                    <Typography
-                                      type="body"
-                                      weight="semibold"
-                                      className="text-[14px] text-foreground"
-                                    >
-                                      {child.label}
-                                    </Typography>
+                                    <View className="relative min-w-0 flex-1 flex-row items-center">
+                                      <Typography
+                                        type="body"
+                                        weight="semibold"
+                                        className="text-[14px] text-foreground"
+                                      >
+                                        {child.label}
+                                      </Typography>
+                                      <FeedTabBadge count={unread} />
+                                    </View>
                                     <StyledIonicons
                                       name="chevron-forward"
                                       size={16}
@@ -352,8 +329,9 @@ export const FeedForYouPage = observer(function FeedForYouPage({
             );
           }
 
-          const items = shelves[shelf.key] ?? [];
+          const items = feedStore.getShelf(shelf.key);
           if (items.length === 0 && !loading) return null;
+          const unread = feedStore.unreadCount(shelf.key);
 
           const header = (
             <PressableFeedback
@@ -364,7 +342,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
               accessibilityLabel={`Open ${shelf.label}`}
             >
               <Badge.Anchor className={shelf.badge ? "pr-7" : undefined}>
-                <View className="flex-row items-center gap-0.5">
+                <View className="relative flex-row items-center gap-0.5">
                   <Typography
                     type="body"
                     weight="semibold"
@@ -379,6 +357,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
                       className="text-foreground"
                     />
                   ) : null}
+                  <FeedTabBadge count={unread} />
                 </View>
                 {shelf.badge ? (
                   <FeedCategoryBadge label={shelf.badge} />

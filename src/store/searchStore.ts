@@ -13,6 +13,7 @@ import {
 import { buildHomePlan, sortSearchGroups } from "@/mocks/services/home";
 import type { HomePlan, SearchGroup } from "@/mocks/data/home";
 import type { FeedFilterTab, FeedTabAvailability } from "@/models/feed";
+import type FeedStore from "@/store/feedStore";
 import type SubscriptionStore from "@/store/subscriptionStore";
 
 /**
@@ -33,6 +34,7 @@ export default class SearchStore {
   feedTabs: FeedFilterTab[] = [];
 
   private subscriptionStore: SubscriptionStore | null = null;
+  private feedStore: FeedStore | null = null;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -40,6 +42,10 @@ export default class SearchStore {
 
   setSubscriptionStore(store: SubscriptionStore): void {
     this.subscriptionStore = store;
+  }
+
+  setFeedStore(store: FeedStore): void {
+    this.feedStore = store;
   }
 
   get loadingInitial(): boolean {
@@ -126,10 +132,12 @@ export default class SearchStore {
         this.feedTabs = availability.tabs ?? [];
         this.hasLoadedFeedTabAvailability = true;
       });
+      this.feedStore?.flushPendingFeeds();
     } catch {
       runInAction(() => {
         this.hasLoadedFeedTabAvailability = true;
       });
+      this.feedStore?.flushPendingFeeds();
     } finally {
       runInAction(() => {
         this.loadingFeedTabAvailability = false;

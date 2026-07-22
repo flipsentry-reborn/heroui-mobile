@@ -147,6 +147,8 @@ export interface FeedItem {
   distanceMiles?: number;
   images: FeedImage;
   searchSettingIds: string[];
+  /** Search groups this feed matched (SignalR routing). */
+  searchGroupIds?: string[];
   keywordTags: KeywordTags;
   createdAt: string;
   seenAt: string[];
@@ -213,6 +215,16 @@ export interface FeedItem {
   isRemovedAt?: string;
   iphoneBatteryHealth?: number;
   iphoneStorageGb?: number;
+
+  /** Client-only: arrived via SignalR in this session. */
+  isNew?: boolean;
+  receivedAt?: number;
+}
+
+export interface FeedImageUpdateData {
+  feedId: string;
+  marketplaceListingId?: string;
+  images: FeedImage;
 }
 
 export type FeedValuationsSource = {

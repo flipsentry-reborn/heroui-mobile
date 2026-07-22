@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useState, type JSX } from "react";
 import { View } from "react-native";
 import { Button, SkeletonGroup } from "heroui-native";
@@ -10,23 +11,28 @@ import { FeedDetail } from "@/features/feed/feed-detail";
 import agent from "@/api/agent";
 import { peekFeedById } from "@/mocks/services/feed";
 import type { FeedItem } from "@/models/feed";
+import { useStore } from "@/store/store";
 
 const StyledIonicons = withUniwind(Ionicons);
 
-export default function ListingDetailScreen(): JSX.Element {
+const ListingDetailScreen = observer(function ListingDetailScreen(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { feedStore } = useStore();
   const listingId = String(id ?? "");
+  const fromStore = feedStore.items.get(listingId) ?? null;
   // Seed sync so the open transition paints content, not a skeleton flash.
-  const [item, setItem] = useState<FeedItem | null>(() =>
-    peekFeedById(listingId),
+  const [item, setItem] = useState<FeedItem | null>(
+    () => fromStore ?? peekFeedById(listingId),
   );
-  const [loading, setLoading] = useState(() => peekFeedById(listingId) == null);
+  const [loading, setLoading] = useState(
+    () => fromStore == null && peekFeedById(listingId) == null,
+  );
   const [missing, setMissing] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    const cached = peekFeedById(listingId);
+    const cached = feedStore.items.get(listingId) ?? peekFeedById(listingId);
     if (cached) {
       setItem(cached);
       setMissing(false);
@@ -38,20 +44,27 @@ export default function ListingDetailScreen(): JSX.Element {
     void (async () => {
       const data = await agent.Feed.getDetails(listingId);
       if (!alive) return;
+      if (data) feedStore.upsertItem(data);
       setItem(data);
       setMissing(!data);
       setLoading(false);
+      void feedStore.markViewed(listingId);
     })();
     return () => {
       alive = false;
     };
-  }, [listingId]);
+  }, [feedStore, listingId]);
+
+  useEffect(() => {
+    const latest = feedStore.items.get(listingId);
+    if (latest) setItem(latest);
+  }, [feedStore.items, listingId]);
 
   const handleFavorite = useCallback(async () => {
     if (!item) return;
-    const updated = await agent.Feed.toggleFavorite(item.id);
+    const updated = await feedStore.toggleFavorite(item.id);
     if (updated) setItem(updated);
-  }, [item]);
+  }, [feedStore, item]);
 
   if (loading) {
     return (
@@ -102,4 +115,6 @@ export default function ListingDetailScreen(): JSX.Element {
       }}
     />
   );
-}
+});
+
+export default ListingDetailScreen;

@@ -21,6 +21,7 @@ export default class UserStore {
 
   private commonStore: CommonStore;
   private storeResetFunction: (() => void) | null = null;
+  private sessionReadyHandler: (() => Promise<void>) | null = null;
 
   constructor(commonStore: CommonStore) {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -29,6 +30,19 @@ export default class UserStore {
 
   setStoreResetFunction(resetFunction: () => void): void {
     this.storeResetFunction = resetFunction;
+  }
+
+  setSessionReadyHandler(handler: () => Promise<void>): void {
+    this.sessionReadyHandler = handler;
+  }
+
+  private async notifySessionReady(): Promise<void> {
+    if (!this.isLoggedIn || !this.isPhoneVerified) return;
+    try {
+      await this.sessionReadyHandler?.();
+    } catch {
+      // Feed hub / search hydrate is best-effort
+    }
   }
 
   get isLoggedIn(): boolean {
@@ -85,6 +99,7 @@ export default class UserStore {
       if (!user.numberConfirmed) {
         router.replace("/verify" as Href);
       } else {
+        await this.notifySessionReady();
         router.replace("/feed" as Href);
       }
     } finally {
@@ -110,6 +125,7 @@ export default class UserStore {
       } catch {
         // non-blocking
       }
+      await this.notifySessionReady();
       router.replace("/feed" as Href);
     } finally {
       runInAction(() => {
@@ -153,6 +169,7 @@ export default class UserStore {
   ): Promise<void> {
     await agent.Account.verifyPhone({ phoneNumber, verificationCode });
     await this.getUser();
+    await this.notifySessionReady();
   }
 
   async forgotPassword(email: string): Promise<void> {

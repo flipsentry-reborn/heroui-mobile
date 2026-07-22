@@ -38,7 +38,7 @@ Config: `.cursor/mcp.json` (gitignored). Rules: `.cursor/rules/`.
 | Rule | Detail |
 |------|--------|
 | Expo Go first | Ship only what runs in Expo Go |
-| Dual API | Screens → MobX stores → `agent` → mocks **or** live HTTP. No SignalR/Adapty yet. Screens never branch on `USE_MOCK`. |
+| Dual API | Screens → MobX stores → `agent` → mocks **or** live HTTP (+ live FeedHub SignalR). No Adapty yet. Screens never branch on `USE_MOCK`. |
 | Screens thin | `src/app` routes compose UI; domain logic in stores + `src/domain/*` |
 | Models on demand | Copy/adapt from `mobile-app/models` into `src/models` when needed |
 | HeroUI only | Prefer `heroui-native-pro`, then `heroui-native`; no web `@heroui/react` for screens |
@@ -131,7 +131,7 @@ Gate: `src/app/index.tsx` → login → phone verify → tabs.
 |--------------------|------------------|
 | Mapbox / maps | `Image` + `src/assets/placeholders/empty.png` + label |
 | Push notifications | UI only (toggles, sheets) |
-| SignalR live feed | Mock list / pull-to-refresh with fixtures |
+| SignalR live feed | Live: `FeedStore` + `/hubs/feed`; mock: HTTP/fixtures only |
 | Payments / IAP | Buttons + mock success/fail sheets |
 | Custom native modules | Skip; note TODO → implement in `mobile-app` |
 
@@ -146,7 +146,6 @@ Gate: `src/app/index.tsx` → login → phone verify → tabs.
 
 ## Out of scope (for now)
 
-- SignalR live feed hub  
 - Adapty IAP SDK / Expo push token registration  
 - Population heatmap / advanced (point) map search mode  
 - EAS/dev-client-only native map work  

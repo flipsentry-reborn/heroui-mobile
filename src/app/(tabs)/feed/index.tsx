@@ -11,7 +11,7 @@ import { useStore } from "@/store/store";
 
 const FeedScreen = observer(function FeedScreen(): JSX.Element {
   const router = useRouter();
-  const { searchStore } = useStore();
+  const { searchStore, feedStore } = useStore();
   const pagerRef = useRef<PagerView>(null);
   const [searchText, setSearchText] = useState("");
   const [activeCategory, setActiveCategory] = useState("for-you");
@@ -24,6 +24,10 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
       void searchStore.loadFeedTabAvailability();
     }
   }, [searchStore]);
+
+  useEffect(() => {
+    feedStore.setActiveCategory(activeCategory);
+  }, [activeCategory, feedStore]);
 
   useEffect(() => {
     if (categories.some((c) => c.key === activeCategory)) return;
@@ -45,9 +49,10 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
 
   const handlePressItem = useCallback(
     (id: string) => {
+      void feedStore.markClicked(id);
       router.push({ pathname: "/listing/[id]", params: { id } });
     },
-    [router],
+    [feedStore, router],
   );
 
   return (

@@ -9,6 +9,11 @@ import {
   buildLiveFeedParams,
   buildLiveSoldParams,
 } from "@/api/feed-query";
+import {
+  startFeedHub,
+  stopFeedHub,
+  type FeedHubHandlers,
+} from "@/api/signalr/feedHub";
 import { liveAccount } from "@/api/http/account";
 import {
   liveBlockedSellers,
@@ -261,6 +266,21 @@ const liveFeedApi = {
 
 const Feed = USE_MOCK ? mockFeedApi : liveFeedApi;
 
+const mockFeedHubApi = {
+  start: async (_options: {
+    getAccessToken: () => string | Promise<string>;
+    handlers: FeedHubHandlers;
+  }) => undefined,
+  stop: async () => undefined,
+};
+
+const liveFeedHubApi = {
+  start: startFeedHub,
+  stop: stopFeedHub,
+};
+
+const FeedHub = USE_MOCK ? mockFeedHubApi : liveFeedHubApi;
+
 const SoldListings = {
   list: USE_MOCK
     ? async (params?: GetFeedParams) => ({
@@ -401,6 +421,7 @@ const Onboarding = USE_MOCK
 const agent = {
   Account,
   Feed,
+  FeedHub,
   SoldListings,
   GroupSearch,
   Platform,

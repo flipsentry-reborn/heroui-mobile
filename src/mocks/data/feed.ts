@@ -75,6 +75,7 @@ type ExtraListing = {
   image: string;
   seed: number;
   searchSettingIds: string[];
+  searchGroupIds?: string[];
   condition: string;
   isFavorite?: boolean;
   favoritedMinsAgo?: number;
@@ -126,6 +127,7 @@ function extraListing(item: ExtraListing): FeedItem {
     distanceMiles: item.distanceMiles,
     images: images(item.image, item.seed),
     searchSettingIds: item.searchSettingIds,
+    searchGroupIds: item.searchGroupIds,
     keywordTags: { title: [], description: [] },
     createdAt: created,
     seenAt: [],
@@ -261,6 +263,7 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  0,
  ),
  searchSettingIds: ["group-cars"],
+ searchGroupIds: ["g1"],
  keywordTags: { title: [], description: [] },
  createdAt: new Date(now - 1000 * 60 * 18).toISOString(),
  seenAt: [],

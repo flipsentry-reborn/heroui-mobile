@@ -4,12 +4,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useThemeColor } from "heroui-native";
 import { Badge } from "heroui-native-pro";
 
+import type { FeedCategoryDef } from "@/features/feed/build-feed-categories";
 import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
-import { FEED_CATEGORIES, type FeedCategoryKey } from "@/mocks/data/feed";
 
 interface FeedCategoryTabsProps {
-  activeCategory: FeedCategoryKey;
-  onSelect: (key: FeedCategoryKey) => void;
+  categories: FeedCategoryDef[];
+  activeCategory: string;
+  onSelect: (key: string) => void;
 }
 
 /**
@@ -17,6 +18,7 @@ interface FeedCategoryTabsProps {
  * Page content stays in PagerView; these tabs only change the active category.
  */
 export function FeedCategoryTabs({
+  categories,
   activeCategory,
   onSelect,
 }: FeedCategoryTabsProps): JSX.Element {
@@ -28,14 +30,14 @@ export function FeedCategoryTabs({
   return (
     <Tabs
       value={activeCategory}
-      onValueChange={(value) => onSelect(value as FeedCategoryKey)}
+      onValueChange={(value) => onSelect(value)}
       variant="primary"
       className="w-full gap-0 px-1 pt-1"
     >
       <Tabs.List className="w-full max-w-full gap-0 !bg-background">
         <Tabs.ScrollView scrollAlign="center">
           <Tabs.Indicator />
-          {FEED_CATEGORIES.map((category) => (
+          {categories.map((category) => (
             <Tabs.Trigger
               key={category.key}
               value={category.key}

@@ -24,16 +24,18 @@ export function buildLiveFeedParams(
     qs.append("bestPicksMaxHours", "72");
   } else if (category === "sold") {
     // Sold uses SoldListings endpoint separately
+  } else if (params.groupIds != null && params.groupIds.length > 0) {
+    for (const id of params.groupIds) {
+      qs.append("groupIds", id);
+    }
   } else if (
     category !== "all" &&
     category !== "for-you" &&
     category !== "price-drop" &&
-    category !== "car" &&
-    category !== "iphone" &&
-    category !== "couch" &&
-    category !== "xbox"
+    !category.startsWith("type:") &&
+    !category.startsWith("custom:")
   ) {
-    // User search group id
+    // Legacy / user search group id
     qs.append("groupIds", category.replace(/^group-/, ""));
   }
 
@@ -64,39 +66,74 @@ export function buildLiveSoldParams(
   return qs;
 }
 
+type FeedValuationSlice = {
+  buySignal?: number;
+  profit?: number;
+  fairPrice?: number;
+  valuationType?: string;
+} | null | undefined;
+
+function displayValuation<T extends {
+  compValuation?: FeedValuationSlice;
+  externalValuation?: FeedValuationSlice;
+}>(item: T): FeedValuationSlice {
+  if (item.externalValuation?.buySignal != null || item.externalValuation?.fairPrice != null) {
+    return item.externalValuation;
+  }
+  if (item.compValuation?.buySignal != null || item.compValuation?.fairPrice != null) {
+    return item.compValuation;
+  }
+  return item.externalValuation ?? item.compValuation ?? null;
+}
+
 /** Client-side filters for categories the API does not express 1:1. */
 export function applyClientCategoryFilter<T extends {
-  valuation?: { buySignal?: number; profit?: number; valuationType?: string } | null;
+  compValuation?: FeedValuationSlice;
+  externalValuation?: FeedValuationSlice;
   vehicleSpecifications?: unknown;
   iphoneStorageGb?: number | null;
   searchSettingIds?: string[];
   isSold?: boolean;
   isPending?: boolean;
-}>(items: T[], category: string): T[] {
-  if (category === "for-you" || category === "all" || category === "saved" || category === "best-picks" || category === "sold") {
+}>(items: T[], category: string, groupIds?: string[]): T[] {
+  // Server already scoped by groupIds for typed/custom tabs.
+  if (groupIds != null && groupIds.length > 0) {
+    return items;
+  }
+
+  if (
+    category === "for-you" ||
+    category === "all" ||
+    category === "saved" ||
+    category === "best-picks" ||
+    category === "sold"
+  ) {
     return items;
   }
   if (category === "price-drop") {
-    return items.filter((i) => (i.valuation?.profit ?? 0) > 0);
+    return items.filter((i) => (displayValuation(i)?.profit ?? 0) > 0);
   }
-  if (category === "car") {
+  if (category === "car" || category === "type:car") {
     return items.filter(
       (i) =>
-        i.valuation?.valuationType === "car" || !!i.vehicleSpecifications,
+        displayValuation(i)?.valuationType === "car" || !!i.vehicleSpecifications,
     );
   }
-  if (category === "iphone") {
+  if (category === "iphone" || category === "type:iphone") {
     return items.filter(
       (i) =>
-        i.valuation?.valuationType === "iphone" || i.iphoneStorageGb != null,
+        displayValuation(i)?.valuationType === "iphone" || i.iphoneStorageGb != null,
     );
   }
-  if (category === "couch") {
+  if (category === "type:samsung") {
+    return items.filter((i) => displayValuation(i)?.valuationType === "samsung");
+  }
+  if (category === "couch" || category === "custom:couch") {
     return items.filter((i) =>
       (i.searchSettingIds ?? []).some((id) => id.includes("couch")),
     );
   }
-  if (category === "xbox") {
+  if (category === "xbox" || category === "custom:xbox") {
     return items.filter((i) =>
       (i.searchSettingIds ?? []).some((id) => id.includes("xbox")),
     );

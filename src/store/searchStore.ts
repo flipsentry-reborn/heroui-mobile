@@ -4,8 +4,15 @@ import agent, {
   type CreateHomeSearchInput,
   type UpdateHomeSearchInput,
 } from "@/api/agent";
+import {
+  buildFeedCategories,
+  buildForYouShelves,
+  buildYourSearchChildren,
+  type FeedCategoryDef,
+} from "@/features/feed/build-feed-categories";
 import { buildHomePlan, sortSearchGroups } from "@/mocks/services/home";
 import type { HomePlan, SearchGroup } from "@/mocks/data/home";
+import type { FeedFilterTab, FeedTabAvailability } from "@/models/feed";
 import type SubscriptionStore from "@/store/subscriptionStore";
 
 /**
@@ -18,6 +25,12 @@ export default class SearchStore {
   hasLoaded = false;
   submitting = false;
   lastError: string | null = null;
+
+  loadingFeedTabAvailability = false;
+  hasLoadedFeedTabAvailability = false;
+  showFeaturedTab = false;
+  showSoldTab = false;
+  feedTabs: FeedFilterTab[] = [];
 
   private subscriptionStore: SubscriptionStore | null = null;
 
@@ -44,10 +57,40 @@ export default class SearchStore {
     return this.subscriptionStore?.canCreate ?? false;
   }
 
+  get feedTabAvailability(): FeedTabAvailability {
+    return {
+      showFeatured: this.showFeaturedTab,
+      showSold: this.showSoldTab,
+      tabs: this.feedTabs,
+    };
+  }
+
+  get feedCategories(): FeedCategoryDef[] {
+    return buildFeedCategories(
+      this.hasLoadedFeedTabAvailability ? this.feedTabAvailability : null,
+    );
+  }
+
+  get forYouShelves() {
+    return buildForYouShelves(
+      this.hasLoadedFeedTabAvailability ? this.feedTabAvailability : null,
+    );
+  }
+
+  get yourSearchChildren(): FeedCategoryDef[] {
+    return buildYourSearchChildren(this.feedTabs);
+  }
+
+  groupIdsForCategory(key: string): string[] | undefined {
+    const tab = this.feedTabs.find((entry) => entry.key === key);
+    return tab?.groupIds;
+  }
+
   async loadSearchGroups(): Promise<void> {
     if (this.loading) return;
     this.loading = true;
     this.lastError = null;
+    const hadLoaded = this.hasLoaded;
     try {
       const groups = await agent.GroupSearch.list();
       runInAction(() => {
@@ -55,6 +98,7 @@ export default class SearchStore {
         this.hasLoaded = true;
       });
       await this.subscriptionStore?.refreshStatus(groups);
+      await this.loadFeedTabAvailability(hadLoaded);
     } catch (error) {
       runInAction(() => {
         this.lastError =
@@ -63,6 +107,32 @@ export default class SearchStore {
     } finally {
       runInAction(() => {
         this.loading = false;
+      });
+    }
+  }
+
+  async loadFeedTabAvailability(force = false): Promise<void> {
+    if (this.loadingFeedTabAvailability) return;
+    if (this.hasLoadedFeedTabAvailability && !force) return;
+
+    try {
+      runInAction(() => {
+        this.loadingFeedTabAvailability = true;
+      });
+      const availability = await agent.Feed.getTabAvailability();
+      runInAction(() => {
+        this.showFeaturedTab = availability.showFeatured;
+        this.showSoldTab = availability.showSold;
+        this.feedTabs = availability.tabs ?? [];
+        this.hasLoadedFeedTabAvailability = true;
+      });
+    } catch {
+      runInAction(() => {
+        this.hasLoadedFeedTabAvailability = true;
+      });
+    } finally {
+      runInAction(() => {
+        this.loadingFeedTabAvailability = false;
       });
     }
   }
@@ -77,6 +147,7 @@ export default class SearchStore {
         this.searchGroups = sortSearchGroups([group, ...this.searchGroups]);
       });
       await this.subscriptionStore?.refreshStatus(this.searchGroups);
+      await this.loadFeedTabAvailability(true);
       return group;
     } catch (error) {
       runInAction(() => {
@@ -106,6 +177,7 @@ export default class SearchStore {
         );
       });
       await this.subscriptionStore?.refreshStatus(this.searchGroups);
+      await this.loadFeedTabAvailability(true);
       return group;
     } catch (error) {
       runInAction(() => {
@@ -127,6 +199,7 @@ export default class SearchStore {
       this.searchGroups = this.searchGroups.filter((g) => g.id !== id);
     });
     await this.subscriptionStore?.refreshStatus(this.searchGroups);
+    await this.loadFeedTabAvailability(true);
     return true;
   }
 
@@ -142,6 +215,7 @@ export default class SearchStore {
       );
     });
     await this.subscriptionStore?.refreshStatus(this.searchGroups);
+    await this.loadFeedTabAvailability(true);
     return updated;
   }
 

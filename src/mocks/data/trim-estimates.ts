@@ -1,10 +1,14 @@
-import type { ListingValuation, VehicleTrimEstimate } from "@/models/feed";
+import {
+  resolveExternalFairPrice,
+  type ExternalVehicleOption,
+  type ListingValuation,
+} from "@/models/feed";
 
 /**
  * Real 2019 Honda Civic vehicleOptions from vehicle estimation API
  * (analysis.vehicleOptions). Selected = EX Sedan 4D.
  */
-export const CIVIC_2019_VEHICLE_OPTIONS: VehicleTrimEstimate[] = [
+export const CIVIC_2019_VEHICLE_OPTIONS: ExternalVehicleOption[] = [
   {
     make: "Honda",
     model: "Civic",
@@ -207,11 +211,18 @@ function slug(value: string): string {
     .replace(/^-|-$/g, "");
 }
 
-function withPricingOnly(options: VehicleTrimEstimate[]): VehicleTrimEstimate[] {
-  return options.filter((o) => o.hasPricing && o.marketplace.median > 0);
+function withPricingOnly(
+  options: ExternalVehicleOption[],
+  countryCode?: string | null,
+): ExternalVehicleOption[] {
+  return options.filter(
+    (o) =>
+      !!o.hasPricing &&
+      resolveExternalFairPrice(countryCode, o.marketplace) != null,
+  );
 }
 
-function synthesizeOptions(valuation: ListingValuation): VehicleTrimEstimate[] {
+function synthesizeOptions(valuation: ListingValuation): ExternalVehicleOption[] {
   const key = catalogKey(valuation.make, valuation.model);
   const catalog = [...(TRIM_CATALOG[key] ?? DEFAULT_TRIMS)];
   const currentLabel = valuation.trim?.trim() || catalog[1] || catalog[0];
@@ -245,6 +256,7 @@ function synthesizeOptions(valuation: ListingValuation): VehicleTrimEstimate[] {
         min: median - spread,
         median,
         max: median + spread,
+        fair: median,
       },
     };
   });
@@ -256,20 +268,20 @@ function synthesizeOptions(valuation: ListingValuation): VehicleTrimEstimate[] {
  */
 export function resolveTrimEstimates(
   valuation: ListingValuation,
-): VehicleTrimEstimate[] {
+): ExternalVehicleOption[] {
   if (valuation.valuationType != null && valuation.valuationType !== "car") {
     return [];
   }
 
+  const countryCode = valuation.countryCode;
+
   if (valuation.vehicleOptions != null && valuation.vehicleOptions.length > 0) {
-    return withPricingOnly(valuation.vehicleOptions);
+    return withPricingOnly(valuation.vehicleOptions, countryCode);
   }
 
-  if (
-    catalogKey(valuation.make, valuation.model) === "honda|civic"
-  ) {
-    return withPricingOnly(CIVIC_2019_VEHICLE_OPTIONS);
+  if (catalogKey(valuation.make, valuation.model) === "honda|civic") {
+    return withPricingOnly(CIVIC_2019_VEHICLE_OPTIONS, countryCode);
   }
 
-  return withPricingOnly(synthesizeOptions(valuation));
+  return withPricingOnly(synthesizeOptions(valuation), countryCode);
 }

@@ -113,8 +113,14 @@ const mockFeedApi = {
   list: async (params?: GetFeedParams): Promise<FeedItem[]> =>
     getFeed(params ?? {}),
   getTabAvailability: async () => ({
-    hasFeatured: true,
-    hasSold: true,
+    showFeatured: true,
+    showSold: true,
+    tabs: [
+      { key: "type:car", label: "Cars", groupIds: ["g1", "g3"] },
+      { key: "type:iphone", label: "iPhone", groupIds: ["g2"] },
+      { key: "custom:couch", label: "Couch", groupIds: ["group-couch"] },
+      { key: "custom:xbox", label: "Xbox", groupIds: ["group-xbox"] },
+    ],
   }),
   setClicked: async (_id: string) => undefined,
   setViewed: async (_id: string) => undefined,
@@ -177,11 +183,12 @@ function mapLocalCompToFeedItem(comp: LocalCompItem): FeedItem {
             vehicleMileage: comp.mileageInMiles ?? undefined,
           }
         : undefined,
-    valuation:
+    compValuation:
       comp.buySignal != null
-        ? ({
+        ? {
             calculated: true,
             valuationType: "car",
+            valuationSource: "comps",
             platform: comp.platform,
             listingId: comp.listingId,
             make: "",
@@ -201,7 +208,7 @@ function mapLocalCompToFeedItem(comp: LocalCompItem): FeedItem {
             mileageHigh: 0,
             warnings: [],
             calculatedAt: new Date().toISOString(),
-          } as FeedItem["valuation"])
+          }
         : undefined,
   };
 }
@@ -217,7 +224,7 @@ const liveFeedApi = {
     }
     const result = await liveFeed.list(buildLiveFeedParams(params ?? {}));
     const items = result.data ?? [];
-    return applyClientCategoryFilter(items, category);
+    return applyClientCategoryFilter(items, category, params?.groupIds);
   },
   getTabAvailability: () => liveFeed.getTabAvailability(),
   setClicked: (id: string) => liveFeed.setClicked(id),

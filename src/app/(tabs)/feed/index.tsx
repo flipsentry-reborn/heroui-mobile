@@ -1,32 +1,47 @@
 import { useRouter } from "expo-router";
-import { useCallback, useRef, useState, type JSX } from "react";
+import { observer } from "mobx-react-lite";
+import { useCallback, useEffect, useRef, useState, type JSX } from "react";
 import { View } from "react-native";
 import type PagerView from "react-native-pager-view";
 
 import { FeedHeader } from "@/features/feed/feed-header";
 import { FeedPager } from "@/features/feed/feed-pager";
 import { FeedQuickFilterPage } from "@/features/feed/feed-quick-filter-page";
-import {
-  FEED_CATEGORIES,
-  type FeedCategoryKey,
-} from "@/mocks/data/feed";
+import { useStore } from "@/store/store";
 
-export default function FeedScreen(): JSX.Element {
+const FeedScreen = observer(function FeedScreen(): JSX.Element {
   const router = useRouter();
+  const { searchStore } = useStore();
   const pagerRef = useRef<PagerView>(null);
   const [searchText, setSearchText] = useState("");
-  const [activeCategory, setActiveCategory] =
-    useState<FeedCategoryKey>("for-you");
+  const [activeCategory, setActiveCategory] = useState("for-you");
   const [quickFilterOpen, setQuickFilterOpen] = useState(false);
 
-  const handleCategorySelect = useCallback((key: FeedCategoryKey) => {
-    setQuickFilterOpen(false);
-    setActiveCategory(key);
-    const index = FEED_CATEGORIES.findIndex((c) => c.key === key);
-    if (index >= 0) {
-      pagerRef.current?.setPage(index);
+  const categories = searchStore.feedCategories;
+
+  useEffect(() => {
+    if (!searchStore.hasLoadedFeedTabAvailability) {
+      void searchStore.loadFeedTabAvailability();
     }
-  }, []);
+  }, [searchStore]);
+
+  useEffect(() => {
+    if (categories.some((c) => c.key === activeCategory)) return;
+    setActiveCategory("for-you");
+    pagerRef.current?.setPage(0);
+  }, [activeCategory, categories]);
+
+  const handleCategorySelect = useCallback(
+    (key: string) => {
+      setQuickFilterOpen(false);
+      setActiveCategory(key);
+      const index = categories.findIndex((c) => c.key === key);
+      if (index >= 0) {
+        pagerRef.current?.setPage(index);
+      }
+    },
+    [categories],
+  );
 
   const handlePressItem = useCallback(
     (id: string) => {
@@ -40,6 +55,7 @@ export default function FeedScreen(): JSX.Element {
       <FeedHeader
         searchText={searchText}
         onSearchChange={setSearchText}
+        categories={categories}
         activeCategory={activeCategory}
         onCategorySelect={handleCategorySelect}
         quickFilterActive={quickFilterOpen}
@@ -50,6 +66,7 @@ export default function FeedScreen(): JSX.Element {
       ) : (
         <FeedPager
           pagerRef={pagerRef}
+          categories={categories}
           activeCategory={activeCategory}
           searchText={searchText}
           onCategoryChange={setActiveCategory}
@@ -59,4 +76,6 @@ export default function FeedScreen(): JSX.Element {
       )}
     </View>
   );
-}
+});
+
+export default FeedScreen;

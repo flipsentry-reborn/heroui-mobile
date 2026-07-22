@@ -33,7 +33,7 @@ interface FeedDetailScoreBarProps {
   storageGb?: number;
   batteryHealth?: number;
   compCount?: number;
-  valuationType?: "car" | "iphone";
+  valuationType?: "car" | "iphone" | "samsung";
   /** Compact bar only — no meta row / tier label (sticky header). */
   compact?: boolean;
 }

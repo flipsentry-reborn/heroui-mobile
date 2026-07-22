@@ -11,11 +11,18 @@ import {
   FOR_YOU_ALL_CHILDREN,
   FOR_YOU_SHELVES,
 } from "@/mocks/data/feed";
+import { store } from "@/store/store";
 
 export function resolveCategoryMeta(key: string): {
   title: string;
   badge?: string;
 } {
+  const fromStore =
+    store.searchStore.feedCategories.find((c) => c.key === key) ??
+    store.searchStore.forYouShelves.find((s) => s.key === key) ??
+    store.searchStore.yourSearchChildren.find((c) => c.key === key);
+  if (fromStore) return { title: fromStore.label, badge: fromStore.badge };
+
   const fromTabs = FEED_CATEGORIES.find((c) => c.key === key);
   if (fromTabs) return { title: fromTabs.label, badge: fromTabs.badge };
 
@@ -27,7 +34,7 @@ export function resolveCategoryMeta(key: string): {
 
   return {
     title: key
-      .replace(/^group-/, "")
+      .replace(/^(type|custom|group):/, "")
       .replace(/[-_]/g, " ")
       .replace(/\b\w/g, (ch) => ch.toUpperCase()),
   };

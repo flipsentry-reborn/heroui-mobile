@@ -83,7 +83,8 @@ type ExtraListing = {
   isPending?: boolean;
   isPendingMinsAgo?: number;
   vehicleSpecifications?: FeedItem["vehicleSpecifications"];
-  valuation?: FeedItem["valuation"];
+  compValuation?: FeedItem["compValuation"];
+  externalValuation?: FeedItem["externalValuation"];
   seller?: FeedItem["seller"];
   iphoneBatteryHealth?: number;
   iphoneStorageGb?: number;
@@ -158,7 +159,8 @@ function extraListing(item: ExtraListing): FeedItem {
     vehicleSpecifications: item.vehicleSpecifications,
     currency: "USD",
     currencySymbol: "$",
-    valuation: item.valuation,
+    compValuation: item.compValuation,
+    externalValuation: item.externalValuation,
     seller: item.seller,
     iphoneBatteryHealth: item.iphoneBatteryHealth,
     iphoneStorageGb: item.iphoneStorageGb,
@@ -185,66 +187,44 @@ function extraListing(item: ExtraListing): FeedItem {
   };
 }
 
-export type FeedCategoryKey =
-  | "for-you"
-  | "all"
-  | "best-picks"
-  | "price-drop"
-  | "sold"
-  | "saved"
-  | "car"
-  | "iphone"
-  | "couch"
-  | "xbox";
+/** Dynamic tab keys from tab-availability (`type:car`, `custom:xbox`, …). */
+export type FeedCategoryKey = string;
 
-/** Search-type shelves nested under For You → Your Searches. */
-export type ForYouAllChildKey = Extract<
-  FeedCategoryKey,
-  "car" | "couch" | "iphone" | "xbox"
->;
-
-/** Shelf keys used only on the For You page (not feed category tabs). */
-export type ForYouShelfKey =
-  | Exclude<FeedCategoryKey, "for-you" | ForYouAllChildKey>
-  | "your-searches";
-
+/** @deprecated Prefer searchStore.feedCategories (built from tab-availability). */
 export const FEED_CATEGORIES: {
   key: FeedCategoryKey;
   label: string;
-  /** Show HeroUI Pro Badge on the tab (e.g. Beta). */
   badge?: string;
 }[] = [
   { key: "for-you", label: "For You" },
   { key: "all", label: "All" },
   { key: "best-picks", label: "Best's", badge: "AI" },
   { key: "price-drop", label: "Price", badge: "Beta" },
-  { key: "car", label: "Cars" },
-  { key: "couch", label: "Couch" },
-  { key: "iphone", label: "iPhones" },
-  { key: "xbox", label: "Xbox" },
+  { key: "type:car", label: "Cars" },
+  { key: "custom:couch", label: "Couch" },
+  { key: "type:iphone", label: "iPhone" },
+  { key: "custom:xbox", label: "Xbox" },
   { key: "sold", label: "Sold" },
   { key: "saved", label: "Saved" },
 ];
 
-/** Nested type shelves inside the For You "Your Searches" accordion. */
+/** @deprecated Prefer searchStore.yourSearchChildren. */
 export const FOR_YOU_ALL_CHILDREN: {
-  key: ForYouAllChildKey;
+  key: FeedCategoryKey;
   label: string;
 }[] = [
-  { key: "car", label: "Cars" },
-  { key: "couch", label: "Couch" },
-  { key: "iphone", label: "iPhones" },
-  { key: "xbox", label: "Xbox" },
+  { key: "type:car", label: "Cars" },
+  { key: "custom:couch", label: "Couch" },
+  { key: "type:iphone", label: "iPhone" },
+  { key: "custom:xbox", label: "Xbox" },
 ];
 
-/** YouTube-style shelves on the For You page (title opens that category). */
+/** @deprecated Prefer searchStore.forYouShelves. */
 export const FOR_YOU_SHELVES: {
-  key: ForYouShelfKey;
+  key: string;
   label: string;
   badge?: string;
-  /** When true, shelf is an accordion; children live in FOR_YOU_ALL_CHILDREN. */
   isAccordion?: boolean;
-  /** Emphasized shelf (larger cards + secondary surface). */
   featured?: boolean;
 }[] = [
   { key: "all", label: "All" },
@@ -301,8 +281,10 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  currencySymbol: "$",
  isNegociable: true,
  negociableKeywordTexts: ["obo"],
- valuation: {
+ externalValuation: {
  calculated: true,
+ valuationSource: "external",
+ countryCode: "US",
  valuationType: "car",
  platform: "facebookMarketplace",
  listingId: "fb-1001",
@@ -377,8 +359,9 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  ratingAverage: 4.9,
  ratingCount: 38,
  },
- valuation: {
+ compValuation: {
  calculated: true,
+ valuationSource: "comps",
  valuationType: "iphone",
  platform: "offerUp",
  listingId: "ou-2201",
@@ -455,8 +438,10 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  isUrgent: true,
  urgentKeywordTexts: ["must sell"],
  listingUrl: "https://example.com/listing/cl-3301",
- valuation: {
+ externalValuation: {
  calculated: true,
+ valuationSource: "external",
+ countryCode: "US",
  valuationType: "car",
  platform: "craigslist",
  listingId: "cl-3301",
@@ -570,8 +555,10 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  currencySymbol: "$",
  isDealership: true,
  dealershipName: "Metro Ford",
- valuation: {
+ externalValuation: {
  calculated: true,
+ valuationSource: "external",
+ countryCode: "US",
  valuationType: "car",
  platform: "facebookMarketplace",
  listingId: "fb-1005",
@@ -639,8 +626,9 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  iphoneStorageGb: 128,
  isMajorDamaged: true,
  majorDamagedKeywordTexts: ["cracked"],
- valuation: {
+ compValuation: {
  calculated: true,
+ valuationSource: "comps",
  valuationType: "iphone" as const,
  platform: "offerUp",
  listingId: "ou-2208",
@@ -699,8 +687,10 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  vehicleMileage: 72400,
  vehicleTransmission: "Automatic",
  },
- valuation: {
+ externalValuation: {
  calculated: true,
+ valuationSource: "external",
+ countryCode: "US",
  valuationType: "car" as const,
  platform: "facebookMarketplace",
  listingId: "fb-2010",
@@ -761,8 +751,9 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  ratingAverage: 5,
  ratingCount: 9,
  },
- valuation: {
+ compValuation: {
  calculated: true,
+ valuationSource: "comps",
  valuationType: "iphone" as const,
  platform: "craigslist",
  listingId: "cl-4410",
@@ -846,8 +837,10 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  vehicleMileage: 98000,
  vehicleTransmission: "Automatic",
  },
- valuation: {
+ externalValuation: {
  calculated: true,
+ valuationSource: "external",
+ countryCode: "US",
  valuationType: "car" as const,
  platform: "kijiji",
  listingId: "kj-6601",
@@ -932,8 +925,9 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  iphoneStorageGb: 64,
  isSold: true,
  isSoldMinsAgo: 45,
- valuation: {
+ compValuation: {
  calculated: true,
+ valuationSource: "comps",
  valuationType: "iphone" as const,
  platform: "offerUp",
  listingId: "ou-7710",
@@ -986,8 +980,10 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  vehicleMileage: 31200,
  vehicleTransmission: "Automatic",
  },
- valuation: {
+ externalValuation: {
  calculated: true,
+ valuationSource: "external",
+ countryCode: "US",
  valuationType: "car" as const,
  platform: "craigslist",
  listingId: "cl-8820",
@@ -1089,8 +1085,10 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  vehicleMileage: 86400,
  vehicleTransmission: "Manual",
  },
- valuation: {
+ externalValuation: {
  calculated: true,
+ valuationSource: "external",
+ countryCode: "US",
  valuationType: "car" as const,
  platform: "offerUp",
  listingId: "ou-8100",

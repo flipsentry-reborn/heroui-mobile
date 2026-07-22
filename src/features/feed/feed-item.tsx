@@ -17,6 +17,7 @@ import { formatOdometerCompact } from "@/lib/distance-utils";
 import { getDistanceUnitSync } from "@/mocks/services/settings";
 import {
   getOrderedStatusBadges,
+  resolveDisplayValuation,
   type FeedItem as FeedModel,
 } from "@/models/feed";
 
@@ -72,6 +73,7 @@ export function FeedItem({
     feed.images.mainImageUrl.imageUrl ||
     feed.images.marketplaceImages[0]?.imageUrl;
   const statusBadges = getOrderedStatusBadges(feed);
+  const valuation = resolveDisplayValuation(feed);
   const distanceUnit = getDistanceUnitSync();
   const rawMileage = feed.vehicleSpecifications?.vehicleMileage;
   const mileageText =
@@ -148,14 +150,14 @@ export function FeedItem({
             </PressableFeedback>
           ) : null}
 
-          {(feed.valuation?.calculated || statusBadges.length > 0) && (
+          {(valuation?.calculated || statusBadges.length > 0) && (
             <View
               className={`absolute bottom-[5px] left-[5px] flex-row flex-wrap gap-[3px] ${
                 imageCornerLabel ? "right-16" : "right-[5px]"
               }`}
             >
-              {feed.valuation?.calculated ? (
-                <ValuationBadge buySignal={feed.valuation.buySignal} />
+              {valuation?.calculated ? (
+                <ValuationBadge buySignal={valuation.buySignal} />
               ) : null}
               {statusBadges.slice(0, 2).map((badge) => (
                 <StatusBadge key={badge} label={badge} />
@@ -191,13 +193,13 @@ export function FeedItem({
             >
               {formatPrice(feed.price, feed.currencySymbol)}
             </Typography>
-            {feed.valuation?.fairPrice != null ? (
+            {valuation?.fairPrice != null ? (
               <Typography
                 type="body-xs"
                 className={estClass}
                 numberOfLines={1}
               >
-                → {formatPrice(feed.valuation.fairPrice, feed.currencySymbol)}
+                → {formatPrice(valuation.fairPrice, feed.currencySymbol)}
               </Typography>
             ) : null}
           </View>

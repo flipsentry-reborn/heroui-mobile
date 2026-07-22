@@ -1,5 +1,5 @@
 import type { FeedItem } from "@/models/feed";
-import { isCarListing } from "@/models/feed";
+import { isCarListing, resolveDisplayValuation } from "@/models/feed";
 import { MOCK_FEED_ITEMS } from "@/mocks/data/feed";
 import { getLocalCompsForFeed } from "@/mocks/data/local-comps";
 
@@ -11,8 +11,10 @@ export type GetLocalCompsParams = {
 export type SoldStatusFilter = "all" | "sold" | "pending";
 
 export type GetFeedParams = {
-  /** System key (all, car, …) or user search id (pinball, group-pinball). */
+  /** System key (all, best-picks, …), typed tab (type:car), or custom:* tab. */
   category?: string;
+  /** From tab-availability for typed/custom tabs — forwarded to live Feed.list. */
+  groupIds?: string[];
   query?: string;
   limit?: number;
   /** Sold page: Sold / Pending chip filter. */
@@ -50,30 +52,55 @@ function matchesMaxDays(item: FeedItem, maxDays: number | null | undefined): boo
   return stamps.some((t) => Number.isFinite(t) && t >= cutoff);
 }
 
-function matchesCategory(item: FeedItem, category: string): boolean {
+function matchesCategory(
+  item: FeedItem,
+  category: string,
+  groupIds?: string[],
+): boolean {
   if (category === "for-you" || category === "all") return true;
   if (category === "sold") return !!item.isSold || !!item.isPending;
   if (category === "saved") return item.isFavorite;
   if (category === "best-picks") {
-    return (item.valuation?.buySignal ?? 0) >= 60;
+    return (resolveDisplayValuation(item)?.buySignal ?? 0) >= 60;
   }
   if (category === "price-drop") {
     // Mock: listings with positive estimated profit count as price drops
-    return (item.valuation?.profit ?? 0) > 0;
+    return (resolveDisplayValuation(item)?.profit ?? 0) > 0;
   }
-  if (category === "car") {
-    return item.valuation?.valuationType === "car" || !!item.vehicleSpecifications;
-  }
-  if (category === "iphone") {
+  if (category === "car" || category === "type:car") {
     return (
-      item.valuation?.valuationType === "iphone" || item.iphoneStorageGb != null
+      resolveDisplayValuation(item)?.valuationType === "car" ||
+      !!item.vehicleSpecifications
     );
   }
-  if (category === "couch") {
+  if (category === "iphone" || category === "type:iphone") {
+    return (
+      resolveDisplayValuation(item)?.valuationType === "iphone" ||
+      item.iphoneStorageGb != null
+    );
+  }
+  if (category === "type:samsung") {
+    return resolveDisplayValuation(item)?.valuationType === "samsung";
+  }
+  if (category === "couch" || category === "custom:couch") {
     return item.searchSettingIds.includes("group-couch");
   }
-  if (category === "xbox") {
+  if (category === "xbox" || category === "custom:xbox") {
     return item.searchSettingIds.includes("group-xbox");
+  }
+  if (groupIds != null && groupIds.length > 0) {
+    return groupIds.some(
+      (id) =>
+        item.searchSettingIds.includes(id) ||
+        item.searchSettingIds.includes(`group-${id}`),
+    );
+  }
+  if (category.startsWith("custom:")) {
+    const slug = category.slice("custom:".length).trim();
+    return (
+      item.searchSettingIds.includes(`group-${slug}`) ||
+      item.searchSettingIds.some((id) => id.includes(slug))
+    );
   }
   // User-created searches (e.g. pinball / group-pinball)
   return (
@@ -90,7 +117,7 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
   const maxDays = params.maxDays;
 
   const items = MOCK_FEED_ITEMS.filter((item) => {
-    if (!matchesCategory(item, category)) return false;
+    if (!matchesCategory(item, category, params.groupIds)) return false;
     if (category === "sold") {
       if (!matchesSoldStatus(item, soldStatus)) return false;
       if (!matchesMaxDays(item, maxDays)) return false;
@@ -147,12 +174,16 @@ export async function getLocalComps(
   const sameYear = params.sameYear ?? false;
   const days = params.days ?? 3;
   const sourceYear =
-    source.vehicleSpecifications?.vehicleYear ?? source.valuation?.year ?? null;
+    source.vehicleSpecifications?.vehicleYear ??
+    resolveDisplayValuation(source)?.year ??
+    null;
   const cutoffMs = Date.now() - days * 24 * 60 * 60 * 1000;
 
   return getLocalCompsForFeed(feedId).filter((comp) => {
     const year =
-      comp.vehicleSpecifications?.vehicleYear ?? comp.valuation?.year ?? null;
+      comp.vehicleSpecifications?.vehicleYear ??
+      resolveDisplayValuation(comp)?.year ??
+      null;
     if (sameYear && sourceYear != null && year !== sourceYear) {
       return false;
     }

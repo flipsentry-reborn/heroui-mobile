@@ -6,8 +6,8 @@ import { Keyboard, Pressable, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SearchField, Typography, useThemeColor } from "heroui-native";
 
+import type { FeedCategoryDef } from "@/features/feed/build-feed-categories";
 import { FeedCategoryTabs } from "@/features/feed/feed-category-tabs";
-import type { FeedCategoryKey } from "@/mocks/data/feed";
 
 const LOGO = require("../../../assets/images/flipsentry-logo-text-transparent.png");
 const LOGO_WIDTH = 132;
@@ -16,8 +16,9 @@ const LOGO_HEIGHT = 30;
 interface FeedHeaderProps {
   searchText: string;
   onSearchChange: (value: string) => void;
-  activeCategory: FeedCategoryKey;
-  onCategorySelect: (key: FeedCategoryKey) => void;
+  categories: FeedCategoryDef[];
+  activeCategory: string;
+  onCategorySelect: (key: string) => void;
   quickFilterActive?: boolean;
   onQuickFilterPress: () => void;
 }
@@ -25,6 +26,7 @@ interface FeedHeaderProps {
 export function FeedHeader({
   searchText,
   onSearchChange,
+  categories,
   activeCategory,
   onCategorySelect,
   quickFilterActive = false,
@@ -170,6 +172,7 @@ export function FeedHeader({
 
       {quickFilterActive ? null : (
         <FeedCategoryTabs
+          categories={categories}
           activeCategory={activeCategory}
           onSelect={onCategorySelect}
         />

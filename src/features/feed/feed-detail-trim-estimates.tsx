@@ -16,7 +16,10 @@ import { withUniwind } from "uniwind";
 
 import { SheetShell } from "@/features/home/sheet-shell";
 import { resolveTrimEstimates } from "@/mocks/data/trim-estimates";
-import type { ListingValuation } from "@/models/feed";
+import {
+  resolveExternalFairPrice,
+  type ListingValuation,
+} from "@/models/feed";
 
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
 
@@ -60,8 +63,9 @@ export function FeedDetailTrimEstimates({
     () => options.find((o) => o.isSelected),
     [options],
   );
-  const selectedMedian =
-    selected?.marketplace.median ?? valuation.fairPrice;
+  const selectedFair =
+    resolveExternalFairPrice(valuation.countryCode, selected?.marketplace) ??
+    valuation.fairPrice;
 
   if (options.length === 0) return null;
 
@@ -112,7 +116,13 @@ export function FeedDetailTrimEstimates({
                 weight="semibold"
                 className="ml-auto shrink-0 text-foreground"
               >
-                {formatPrice(selected.marketplace.median, currencySymbol)}
+                {formatPrice(
+                  resolveExternalFairPrice(
+                    valuation.countryCode,
+                    selected.marketplace,
+                  ) ?? selectedFair,
+                  currencySymbol,
+                )}
               </Typography>
             </View>
           ) : (
@@ -159,13 +169,17 @@ export function FeedDetailTrimEstimates({
             contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
           >
             {options.map((option) => {
-              const median = option.marketplace.median;
-              const delta = median - selectedMedian;
-              const isSelected = option.isSelected;
+              const fair =
+                resolveExternalFairPrice(
+                  valuation.countryCode,
+                  option.marketplace,
+                ) ?? 0;
+              const delta = fair - selectedFair;
+              const isSelected = !!option.isSelected;
 
               return (
                 <View
-                  key={option.vehicleId}
+                  key={option.vehicleId ?? option.trim ?? String(fair)}
                   className={cn(
                     "flex-row items-center gap-2 rounded-lg px-2 py-2.5",
                     isSelected && "bg-success/15",
@@ -211,7 +225,7 @@ export function FeedDetailTrimEstimates({
                     weight="semibold"
                     className="shrink-0 text-foreground"
                   >
-                    {formatPrice(median, currencySymbol)}
+                    {formatPrice(fair, currencySymbol)}
                   </Typography>
                 </View>
               );

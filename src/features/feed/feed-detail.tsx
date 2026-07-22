@@ -41,6 +41,7 @@ import agent from "@/api/agent";
 import {
   getOrderedStatusBadges,
   isCarListing,
+  resolveDisplayValuation,
   type FeedItem,
   type FeedPlatform,
 } from "@/models/feed";
@@ -93,6 +94,7 @@ export function FeedDetail({
   const { sameYear, days, toggleSameYear, setDays } = useSimilarNearbyFilters();
   const scrollY = useSharedValue(0);
   const statusBadges = getOrderedStatusBadges(item);
+  const valuation = resolveDisplayValuation(item);
   const images = galleryUrls(item);
   const description = item.description || "No description provided.";
   const longDesc = description.length > 160;
@@ -179,11 +181,11 @@ export function FeedDetail({
           imageUrl={thumbUrl}
           priceLabel={formatPrice(item.price, item.currencySymbol)}
           estPriceLabel={
-            item.valuation?.fairPrice != null
-              ? formatPrice(item.valuation.fairPrice, item.currencySymbol)
+            valuation?.fairPrice != null
+              ? formatPrice(valuation.fairPrice, item.currencySymbol)
               : undefined
           }
-          buySignal={item.valuation?.calculated ? item.valuation.buySignal : undefined}
+          buySignal={valuation?.calculated ? valuation.buySignal : undefined}
           foundInLabel={
             item.creationTime && item.createdAt
               ? formatFoundIn(item.creationTime, item.createdAt)
@@ -259,33 +261,33 @@ export function FeedDetail({
               >
                 {formatPrice(item.price, item.currencySymbol)}
               </Typography>
-              {item.valuation?.fairPrice != null ? (
+              {valuation?.fairPrice != null ? (
                 <Typography type="body-xs" className="min-w-0 flex-1 text-[11px] text-muted">
-                  → {formatPrice(item.valuation.fairPrice, item.currencySymbol)}
+                  → {formatPrice(valuation.fairPrice, item.currencySymbol)}
                 </Typography>
               ) : (
                 <View className="flex-1" />
               )}
-              {item.valuation?.calculated ? (
-                <ValuationBadge buySignal={item.valuation.buySignal} scale="detail" />
+              {valuation?.calculated ? (
+                <ValuationBadge buySignal={valuation.buySignal} scale="detail" />
               ) : null}
             </View>
 
-            {item.valuation?.calculated ? (
+            {valuation?.calculated ? (
               <FeedDetailScoreBar
-                buySignal={item.valuation.buySignal}
-                valuationType={item.valuation.valuationType}
-                iphoneModel={item.valuation.iphoneModel}
-                storageGb={item.valuation.storageGb}
-                batteryHealth={item.valuation.batteryHealth}
-                compCount={item.valuation.compCount}
+                buySignal={valuation.buySignal}
+                valuationType={valuation.valuationType}
+                iphoneModel={valuation.iphoneModel}
+                storageGb={valuation.storageGb}
+                batteryHealth={valuation.batteryHealth}
+                compCount={valuation.compCount}
               />
             ) : null}
           </View>
 
-          {isCarListing(item) && item.valuation != null ? (
+          {item.externalValuation?.calculated ? (
             <FeedDetailTrimEstimates
-              valuation={item.valuation}
+              valuation={item.externalValuation}
               currencySymbol={item.currencySymbol}
             />
           ) : null}

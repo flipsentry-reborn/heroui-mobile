@@ -9,16 +9,17 @@ import {
   type SoldStatusFilter,
 } from "@/features/feed/feed-sold-controls";
 import agent from "@/api/agent";
-import type { FeedCategoryKey } from "@/mocks/data/feed";
 import type { FeedItem as FeedModel } from "@/models/feed";
+import { useStore } from "@/store/store";
 
 interface FeedCategoryPageProps {
   category: string;
+  groupIds?: string[];
   query: string;
   /** Bumps when favorites change elsewhere so Saved / lists stay in sync. */
   syncToken?: number;
   onPressItem?: (id: string) => void;
-  onOpenCategory?: (key: FeedCategoryKey) => void;
+  onOpenCategory?: (key: string) => void;
   onFavoriteChange?: () => void;
 }
 
@@ -28,13 +29,17 @@ interface FeedCategoryPageProps {
  */
 export function FeedCategoryPage({
   category,
+  groupIds: groupIdsProp,
   query,
   syncToken = 0,
   onPressItem,
   onOpenCategory,
   onFavoriteChange,
 }: FeedCategoryPageProps): JSX.Element {
+  const { searchStore } = useStore();
   const isSold = category === "sold";
+  const groupIds =
+    groupIdsProp ?? searchStore.groupIdsForCategory(category);
   const [items, setItems] = useState<FeedModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,6 +56,7 @@ export function FeedCategoryPage({
       try {
         const data = await agent.Feed.list({
           category,
+          groupIds,
           query,
           ...(isSold ? { soldStatus, maxDays } : {}),
         });
@@ -61,7 +67,7 @@ export function FeedCategoryPage({
         setRefreshing(false);
       }
     },
-    [category, query, isSold, soldStatus, maxDays],
+    [category, groupIds, query, isSold, soldStatus, maxDays],
   );
 
   useFocusEffect(

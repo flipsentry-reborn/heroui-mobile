@@ -1,12 +1,12 @@
 import { requests } from "@/api/http/client";
 import type { PaginatedResult } from "@/models/pagination";
-import type { FeedItem, LocalCompItem } from "@/models/feed";
+import type {
+  FeedItem,
+  FeedTabAvailability,
+  LocalCompItem,
+} from "@/models/feed";
 
-export interface FeedTabAvailability {
-  hasFeatured: boolean;
-  hasSold: boolean;
-  [key: string]: boolean;
-}
+export type { FeedTabAvailability };
 
 export const liveFeed = {
   list: (params?: URLSearchParams) =>

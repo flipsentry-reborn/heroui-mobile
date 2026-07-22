@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
+import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
@@ -21,20 +22,13 @@ import { withUniwind } from "uniwind";
 import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import { FeedItem } from "@/features/feed/feed-item";
 import { feedCategoryHref } from "@/features/feed/feed-nav";
-import {
-  FEED_CATEGORIES,
-  FOR_YOU_ALL_CHILDREN,
-  FOR_YOU_SHELVES,
-  type FeedCategoryKey,
-} from "@/mocks/data/feed";
 import agent from "@/api/agent";
 import type { FeedItem as FeedModel } from "@/models/feed";
+import { useStore } from "@/store/store";
 
 const StyledIonicons = withUniwind(Ionicons);
 
 const SHELF_LIMIT = 6;
-
-const FEED_CATEGORY_KEYS = new Set(FEED_CATEGORIES.map((c) => c.key));
 
 type ShelfState = Record<string, FeedModel[]>;
 
@@ -44,7 +38,7 @@ interface FeedForYouPageProps {
   syncToken?: number;
   onPressItem?: (id: string) => void;
   /** When set (pager mode), switch to that category tab instead of stacking. */
-  onOpenCategory?: (key: FeedCategoryKey) => void;
+  onOpenCategory?: (key: string) => void;
   onFavoriteChange?: () => void;
 }
 
@@ -111,7 +105,7 @@ function ShelfRail({
   );
 }
 
-export function FeedForYouPage({
+export const FeedForYouPage = observer(function FeedForYouPage({
   query,
   syncToken = 0,
   onPressItem,
@@ -119,6 +113,13 @@ export function FeedForYouPage({
   onFavoriteChange,
 }: FeedForYouPageProps): JSX.Element {
   const router = useRouter();
+  const { searchStore } = useStore();
+  const forYouShelves = searchStore.forYouShelves;
+  const yourSearchChildren = searchStore.yourSearchChildren;
+  const feedCategoryKeys = useMemo(
+    () => new Set(searchStore.feedCategories.map((c) => c.key)),
+    [searchStore.feedCategories],
+  );
   const [accent, background] = useThemeColor(["accent", "background"]);
   const [shelves, setShelves] = useState<ShelfState>({});
   const [loading, setLoading] = useState(true);
@@ -129,36 +130,31 @@ export function FeedForYouPage({
   const openCategory = useCallback(
     (key: string) => {
       if (key === "for-you" || key === "your-searches") return;
-      if (
-        onOpenCategory &&
-        FEED_CATEGORY_KEYS.has(key as FeedCategoryKey)
-      ) {
-        onOpenCategory(key as FeedCategoryKey);
+      if (onOpenCategory && feedCategoryKeys.has(key)) {
+        onOpenCategory(key);
         return;
       }
       router.push(feedCategoryHref(key));
     },
-    [onOpenCategory, router],
+    [feedCategoryKeys, onOpenCategory, router],
   );
 
   const shelfKeys = useMemo(() => {
-    const keys: Exclude<FeedCategoryKey, "for-you">[] = [];
-    for (const shelf of FOR_YOU_SHELVES) {
+    const keys: string[] = [];
+    for (const shelf of forYouShelves) {
       if (shelf.isAccordion) {
-        for (const child of FOR_YOU_ALL_CHILDREN) keys.push(child.key);
+        for (const child of yourSearchChildren) keys.push(child.key);
       } else if (shelf.key !== "your-searches") {
         keys.push(shelf.key);
       }
     }
     return keys;
-  }, []);
+  }, [forYouShelves, yourSearchChildren]);
 
   const allChildrenAlphabetical = useMemo(
     () =>
-      [...FOR_YOU_ALL_CHILDREN].sort((a, b) =>
-        a.label.localeCompare(b.label),
-      ),
-    [],
+      [...yourSearchChildren].sort((a, b) => a.label.localeCompare(b.label)),
+    [yourSearchChildren],
   );
 
   const load = useCallback(
@@ -171,6 +167,7 @@ export function FeedForYouPage({
             const items = (
               await agent.Feed.list({
                 category: key,
+                groupIds: searchStore.groupIdsForCategory(key),
                 query,
                 limit: SHELF_LIMIT,
               })
@@ -185,7 +182,7 @@ export function FeedForYouPage({
         setRefreshing(false);
       }
     },
-    [query, shelfKeys],
+    [query, searchStore, shelfKeys],
   );
 
   useFocusEffect(
@@ -266,7 +263,7 @@ export function FeedForYouPage({
           />
         }
       >
-        {FOR_YOU_SHELVES.map((shelf) => {
+        {forYouShelves.map((shelf) => {
           if (shelf.isAccordion) {
             return (
               <Animated.View
@@ -436,4 +433,4 @@ export function FeedForYouPage({
       </Animated.ScrollView>
     </ScrollShadow>
   );
-}
+});

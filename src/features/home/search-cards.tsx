@@ -269,10 +269,7 @@ function filterMenuItems(group: SearchGroup): FilterMenuItem[] {
             : "Any mileage",
       },
     );
-    return items;
-  }
-
-  if (group.searchType === "iphone") {
+  } else if (group.searchType === "iphone") {
     const modelCount =
       group.customLabel
         ?.split(",")
@@ -283,13 +280,16 @@ function filterMenuItems(group: SearchGroup): FilterMenuItem[] {
       title: "Models",
       description: modelCount > 0 ? String(modelCount) : "Any model",
     });
-    return items;
   }
 
+  // Keywords apply to every search type (same as the edit sheet Filters group).
   items.push({
     key: "keywords",
     title: "Keywords",
-    description: group.customLabel ?? "No keywords set",
+    description:
+      group.searchType === "custom"
+        ? (group.customLabel ?? "No keywords set")
+        : "No keywords set",
   });
   return items;
 }
@@ -314,7 +314,7 @@ function SearchCardActionsMenu({
       <Menu.Trigger asChild>
         <BrandButton className="min-h-12 w-full">
           <Ionicons
-            name="menu-outline"
+            name="create"
             size={18}
             color={accentForeground}
           />

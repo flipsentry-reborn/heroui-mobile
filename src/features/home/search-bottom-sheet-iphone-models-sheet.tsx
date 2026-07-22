@@ -14,6 +14,7 @@ import {
   Accordion,
   BottomSheet,
   Button,
+  Chip,
   cn,
   Input,
   Separator,
@@ -41,8 +42,10 @@ import {
 } from "@/mocks/data/iphone";
 
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
-const StyledIonicons = withUniwind(Ionicons);
 const StyledAnimatedView = withUniwind(Animated.View);
+
+/** Shared size/shape for series Clear / Select All + selected count chip. */
+const SERIES_ACTION_CLASS = "h-7 min-h-7 rounded-full";
 
 /** Matches HeroUI Native `AccordionWithDepthEffect` layout spring. */
 const DEPTH_LAYOUT_TRANSITION = LinearTransition.springify()
@@ -69,11 +72,14 @@ export function formatIphoneModelsLabel(
 
 function CountBadge({ value }: { value: number }): JSX.Element {
   return (
-    <View className="min-w-6 items-center justify-center rounded-full bg-default px-1.5 py-0.5">
-      <Typography type="body-xs" className="text-foreground">
-        {value}
-      </Typography>
-    </View>
+    <Chip
+      size="sm"
+      variant="secondary"
+      color="default"
+      className={cn(SERIES_ACTION_CLASS, "min-w-7 px-2.5")}
+    >
+      <Chip.Label className="text-xs">{value}</Chip.Label>
+    </Chip>
   );
 }
 
@@ -241,21 +247,14 @@ function SeriesDepthItem({
         )}
       >
         <Accordion.Trigger className="gap-2 px-4 py-3">
-          <View className="min-w-0 flex-1 flex-row items-center gap-2.5">
-            <StyledIonicons
-              name="phone-portrait-outline"
-              size={16}
-              className="text-muted"
-            />
-            <Typography
-              type="body-sm"
-              weight="semibold"
-              className="shrink text-foreground"
-              numberOfLines={1}
-            >
-              {series.title}
-            </Typography>
-          </View>
+          <Typography
+            type="body-sm"
+            weight="semibold"
+            className="min-w-0 flex-1 shrink text-foreground"
+            numberOfLines={1}
+          >
+            {series.title}
+          </Typography>
 
           <Button
             size="sm"
@@ -266,7 +265,7 @@ function SeriesDepthItem({
                 : `Select all in ${series.title}`
             }
             onPress={onToggleSeries}
-            className="min-h-0 px-2.5 py-1"
+            className={cn(SERIES_ACTION_CLASS, "px-2.5")}
           >
             <Button.Label className="text-xs">
               {seriesAllSelected ? "Clear" : "Select All"}

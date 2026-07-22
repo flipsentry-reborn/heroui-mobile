@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { router, type Href } from "expo-router";
 import { Button } from "heroui-native";
 
+import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
 import { AuthShell } from "@/features/auth/auth-shell";
 import { BrandButton } from "@/components/ui/brand-button";
 
@@ -25,7 +26,8 @@ export function WelcomeScreen(): JSX.Element {
         </BrandButton>
         <Button
           variant="secondary"
-          className="min-h-12 w-full rounded-full bg-surface-secondary"
+          className="min-h-12 w-full rounded-full border-0"
+          style={{ backgroundColor: AUTH_CONTROL_BACKGROUND }}
           onPress={() => router.push("/register" as Href)}
         >
           <Button.Label className="text-foreground">Create account</Button.Label>

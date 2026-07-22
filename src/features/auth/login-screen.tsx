@@ -19,6 +19,7 @@ import {
   AuthOrDivider,
   AuthShell,
 } from "@/features/auth/auth-shell";
+import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
 import { BrandButton } from "@/components/ui/brand-button";
 import { MOCK_ACCOUNT_CREDENTIALS } from "@/mocks/services/account";
 import { useStore } from "@/store/store";
@@ -183,7 +184,8 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
 
           <Button
             variant="secondary"
-            className="min-h-12 w-full rounded-full bg-surface-secondary"
+            className="min-h-12 w-full rounded-full border-0"
+            style={{ backgroundColor: AUTH_CONTROL_BACKGROUND }}
             onPress={() => switchMethod("phone")}
           >
             <Button.Label className="text-foreground">

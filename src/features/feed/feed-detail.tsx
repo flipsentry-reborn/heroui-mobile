@@ -290,13 +290,15 @@ export function FeedDetail({
             />
           ) : null}
 
-          <FeedDetailMetaSection item={item} />
-          <View
-            ref={stickyAnchorRef}
-            onLayout={syncStickyVisibility}
-            collapsable={false}
-            className="h-0"
-          />
+          <View>
+            <FeedDetailMetaSection item={item} />
+            <View
+              ref={stickyAnchorRef}
+              onLayout={syncStickyVisibility}
+              collapsable={false}
+              className="h-0"
+            />
+          </View>
 
           {item.seller ? (
             <View className="flex-row items-center gap-3 rounded-sm bg-surface-secondary px-3 py-2.5">
@@ -350,36 +352,39 @@ export function FeedDetail({
             />
           </View>
 
-          <View className="gap-1.5">
-            <Typography
-              type="body"
-              weight="semibold"
-              className="text-[15px] tracking-tight text-foreground"
-            >
-              Description
-            </Typography>
-            <Typography
-              type="body-xs"
-              className="text-xs font-normal leading-4 text-muted"
-              numberOfLines={descExpanded || !longDesc ? undefined : 5}
-            >
-              {description}
-            </Typography>
-            {longDesc ? (
-              <PressableFeedback
-                onPress={() => setDescExpanded((v) => !v)}
-                className="self-start py-1"
-                animation={{ scale: { value: 0.98 } }}
+          <View className="gap-4">
+            <Separator className="opacity-50" />
+            <View className="gap-1.5">
+              <Typography
+                type="body"
+                weight="semibold"
+                className="text-[15px] tracking-tight text-foreground"
               >
-                <Typography
-                  type="body-sm"
-                  weight="semibold"
-                  className="text-[13px] text-foreground"
+                Description
+              </Typography>
+              <Typography
+                type="body-xs"
+                className="text-xs font-normal leading-4 text-muted"
+                numberOfLines={descExpanded || !longDesc ? undefined : 5}
+              >
+                {description}
+              </Typography>
+              {longDesc ? (
+                <PressableFeedback
+                  onPress={() => setDescExpanded((v) => !v)}
+                  className="self-start py-1"
+                  animation={{ scale: { value: 0.98 } }}
                 >
-                  {descExpanded ? "Show less" : "Show more"}
-                </Typography>
-              </PressableFeedback>
-            ) : null}
+                  <Typography
+                    type="body-sm"
+                    weight="semibold"
+                    className="text-[13px] text-foreground"
+                  >
+                    {descExpanded ? "Show less" : "Show more"}
+                  </Typography>
+                </PressableFeedback>
+              ) : null}
+            </View>
           </View>
 
           {showSimilarNearby &&

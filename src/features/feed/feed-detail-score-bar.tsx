@@ -49,8 +49,8 @@ export function FeedDetailScoreBar({
   const pct = Math.max(0, Math.min(100, buySignal));
   const tier = getValuationTier(buySignal);
   const tierStyle = TIER_STYLE[tier];
-  const barH = compact ? "h-2.5" : "h-3";
-  const cutH = compact ? "h-4 -top-1" : "h-6 -top-1.5";
+  const barH = compact ? "h-2" : "h-2.5";
+  const cutH = compact ? "h-3.5 -top-0.5" : "h-5 -top-1";
   const cutBg = compact ? "bg-surface-secondary" : "bg-background";
 
   return (

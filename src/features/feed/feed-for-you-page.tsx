@@ -231,7 +231,7 @@ export function FeedForYouPage({
       >
         <ScrollView
           className="flex-1"
-          contentContainerClassName="pb-28 pt-2"
+          contentContainerClassName="pb-28 pt-0.5"
           showsVerticalScrollIndicator={false}
         >
           <ShelfSkeleton />
@@ -251,7 +251,7 @@ export function FeedForYouPage({
     >
       <Animated.ScrollView
         className="flex-1"
-        contentContainerClassName="pb-28 pt-2"
+        contentContainerClassName="pb-28 pt-0.5"
         showsVerticalScrollIndicator={false}
         layout={AccordionLayoutTransition}
         refreshControl={

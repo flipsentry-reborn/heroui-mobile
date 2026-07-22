@@ -7,9 +7,6 @@ import { Badge } from "heroui-native-pro";
 import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import { FEED_CATEGORIES, type FeedCategoryKey } from "@/mocks/data/feed";
 
-/** mobile-app primary — Uniwind arbitrary hex classes are unreliable here */
-const BRAND_GREEN = "#009966";
-
 interface FeedCategoryTabsProps {
   activeCategory: FeedCategoryKey;
   onSelect: (key: FeedCategoryKey) => void;
@@ -23,29 +20,31 @@ export function FeedCategoryTabs({
   activeCategory,
   onSelect,
 }: FeedCategoryTabsProps): JSX.Element {
-  const [muted] = useThemeColor(["muted"]);
+  const [muted, segmentForeground] = useThemeColor([
+    "muted",
+    "segment-foreground",
+  ]);
 
   return (
     <Tabs
       value={activeCategory}
       onValueChange={(value) => onSelect(value as FeedCategoryKey)}
-      variant="secondary"
-      className="w-full gap-0 px-0.5"
+      variant="primary"
+      className="w-full gap-0 px-1 pt-1"
     >
-      <Tabs.List className="w-full max-w-full gap-0 border-b border-border">
+      <Tabs.List className="w-full max-w-full gap-0 !bg-background">
         <Tabs.ScrollView scrollAlign="center">
-          {/* Secondary indicator is border-b, not bg */}
-          <Tabs.Indicator style={{ borderBottomColor: BRAND_GREEN }} />
+          <Tabs.Indicator />
           {FEED_CATEGORIES.map((category) => (
             <Tabs.Trigger
               key={category.key}
               value={category.key}
-              className="min-h-11 px-3 py-2.5"
+              className="min-h-9 px-2.5 py-1.5"
             >
               {({ isSelected }) => {
-                const labelColor = isSelected ? BRAND_GREEN : muted;
+                const labelColor = isSelected ? segmentForeground : muted;
                 const labelClass = isSelected
-                  ? "text-[15px] font-semibold tracking-tight"
+                  ? "text-[15px] font-semibold tracking-tight text-segment-foreground"
                   : "text-[15px] font-medium tracking-tight text-muted";
 
                 return (
@@ -54,10 +53,7 @@ export function FeedCategoryTabs({
                   >
                     {category.key === "price-drop" ? (
                       <View className="flex-row items-center gap-0.5">
-                        <Tabs.Label
-                          className={labelClass}
-                          style={isSelected ? { color: BRAND_GREEN } : undefined}
-                        >
+                        <Tabs.Label className={labelClass}>
                           {category.label}
                         </Tabs.Label>
                         <Ionicons
@@ -67,10 +63,7 @@ export function FeedCategoryTabs({
                         />
                       </View>
                     ) : (
-                      <Tabs.Label
-                        className={labelClass}
-                        style={isSelected ? { color: BRAND_GREEN } : undefined}
-                      >
+                      <Tabs.Label className={labelClass}>
                         {category.label}
                       </Tabs.Label>
                     )}

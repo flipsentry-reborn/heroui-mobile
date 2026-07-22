@@ -7,14 +7,14 @@ type BadgeScale = "default" | "detail";
 
 const BADGE_SIZE_CLASS: Record<BadgeScale, string> = {
   default:
-    "h-[21px] min-h-[21px] max-h-[21px] items-center justify-center rounded-md px-1 py-0",
-  detail:
     "h-6 min-h-6 max-h-6 items-center justify-center rounded-md px-1.5 py-0",
+  detail:
+    "h-7 min-h-7 max-h-7 items-center justify-center rounded-md px-2 py-0",
 };
 
 const BADGE_LABEL_CLASS: Record<BadgeScale, string> = {
-  default: "text-[11px] font-medium leading-none !text-white",
-  detail: "text-[13px] font-medium leading-none !text-white",
+  default: "text-xs font-medium leading-none !text-white",
+  detail: "text-sm font-medium leading-none !text-white",
 };
 
 /**

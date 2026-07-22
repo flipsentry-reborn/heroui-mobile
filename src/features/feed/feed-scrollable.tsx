@@ -31,10 +31,10 @@ function FeedSkeleton(): JSX.Element {
     <SkeletonGroup
       isLoading
       isSkeletonOnly
-      className="flex-row flex-wrap px-0.5 pt-1"
+      className="flex-row flex-wrap pt-1"
     >
       {[0, 1, 2, 3, 4, 5].map((key) => (
-        <View key={key} className="mb-0.5 w-1/2 px-0.5">
+        <View key={key} className="mb-0.5 w-1/2 px-px">
           <View className="overflow-hidden rounded-lg">
             <SkeletonGroup.Item className="h-[168px] w-full rounded-lg" />
             <View className="gap-0.5 px-1.5 pb-1.5 pt-1">
@@ -92,7 +92,7 @@ export function FeedScrollable({
         data={items}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        columnWrapperStyle={{ paddingHorizontal: 2 }}
+        columnWrapperStyle={{ paddingHorizontal: 0 }}
         contentContainerStyle={{
           paddingTop: topInset,
           paddingBottom: bottomInset,

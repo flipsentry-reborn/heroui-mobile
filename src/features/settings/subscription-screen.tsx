@@ -21,11 +21,15 @@ import {
   useThemeColor,
   useToast,
 } from "heroui-native";
+import { useUniwind } from "uniwind";
 
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
 import { SubscriptionPlansSkeleton } from "@/features/settings/settings-skeletons";
 import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
-import { PLAN_ACCENTS } from "@/features/settings/subscription-theme";
+import {
+  PLAN_ACCENTS,
+  SUBSCRIPTION_DARK_BACKGROUND,
+} from "@/features/settings/subscription-theme";
 import { Fonts } from "@/lib/fonts";
 import type {
   SubscriptionPlan,
@@ -289,11 +293,15 @@ export function SubscriptionScreen(): JSX.Element {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { toast } = useToast();
+  const { theme } = useUniwind();
+  const isDark = theme === "dark";
   const [foreground, muted, background] = useThemeColor([
     "foreground",
     "muted",
     "background",
   ]);
+  /** Near-black wash in dark; theme background in light. */
+  const pageBackground = isDark ? SUBSCRIPTION_DARK_BACKGROUND : background;
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [currentTier, setCurrentTier] = useState<SubscriptionTier | null>(null);
@@ -355,7 +363,10 @@ export function SubscriptionScreen(): JSX.Element {
   };
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+    <View
+      className="flex-1 bg-background dark:bg-[oklch(12%_0_0)]"
+      style={{ paddingTop: insets.top }}
+    >
       <View className="px-3 pb-1 pt-1">
         <Pressable
           onPress={() => router.back()}
@@ -370,7 +381,7 @@ export function SubscriptionScreen(): JSX.Element {
       <ScrollShadow
         className="flex-1"
         LinearGradientComponent={LinearGradient}
-        color={background}
+        color={pageBackground}
       >
         <ScrollView
           className="flex-1"

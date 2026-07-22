@@ -129,7 +129,7 @@ export function FeedCategoryPage({
         onToggleFavorite={(id) => {
           void handleToggleFavorite(id);
         }}
-        topInset={isSold ? 4 : 14}
+        topInset={4}
         shadowSize={16}
       />
     </View>

@@ -41,15 +41,28 @@ export interface FeedSellerInfo {
  ratingCount?: number;
 }
 
-/** Sibling trim / sub-model fair prices for the same make+model (cars only). */
+/** Marketplace band from vehicle estimation API (min / median / max). */
+export interface MarketplacePrice {
+  min: number;
+  median: number;
+  max: number;
+}
+
+/**
+ * Sibling trim option from analysis.vehicleOptions
+ * (same shape as VehicleEstimationVehicleOption).
+ */
 export interface VehicleTrimEstimate {
-  id: string;
+  make: string;
+  model: string;
   trim: string;
-  fairPrice: number;
-  /** This listing’s trim. */
-  isCurrent?: boolean;
-  /** Short expand detail (e.g. comps / mileage band). */
-  note?: string;
+  modelId?: string;
+  vehicleId: string;
+  matchScore?: number | null;
+  /** Matched / selected trim for this listing. */
+  isSelected: boolean;
+  hasPricing: boolean;
+  marketplace: MarketplacePrice;
 }
 
 export interface ListingValuation {
@@ -77,8 +90,8 @@ export interface ListingValuation {
  iphoneModel?: string;
  storageGb?: number;
  batteryHealth?: number;
- /** Other trims of the same model with estimated prices (cars). */
- trimEstimates?: VehicleTrimEstimate[];
+ /** Sibling trims from analysis.vehicleOptions (cars). */
+ vehicleOptions?: VehicleTrimEstimate[];
 }
 
 export interface FeedItem {

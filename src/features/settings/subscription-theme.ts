@@ -1,5 +1,11 @@
 import type { PlanAccent } from "@/mocks/data/subscription";
 
+/**
+ * Pre–bright-dark canvas (`global.css` before elevated outdoor wash).
+ * Used on subscription page in dark mode only — near-black Uber wash.
+ */
+export const SUBSCRIPTION_DARK_BACKGROUND = "oklch(12% 0 0)";
+
 /** Shared card accents for subscription screen + settings plan card. */
 export const PLAN_ACCENTS: Record<
   PlanAccent,

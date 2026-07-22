@@ -111,7 +111,7 @@ export function FeedItem({
   return (
     <PressableFeedback
       onPress={() => onPress?.(feed.id)}
-      className={isRail ? "mr-1.5" : "mb-0.5 flex-1 px-0.5"}
+      className={isRail ? "mr-1.5" : "mb-0.5 flex-1 px-px"}
       style={isRail ? { width: railW } : undefined}
       animation={{ scale: { value: 0.98 } }}
     >

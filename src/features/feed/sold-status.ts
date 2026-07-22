@@ -1,7 +1,7 @@
 import type { FeedItem, FeedPlatform } from "@/models/feed";
 
-/** Coral sold/pending accent — same hex as mobile-app feed cards & detail. */
-export const SOLD_STATUS_COLOR = "#ff7c74";
+/** Sold/pending accent — stronger red for feed cards & detail. */
+export const SOLD_STATUS_COLOR = "#ef4444";
 export const SOLD_STATUS_TEXT_CLASS = "text-sold-status";
 
 /**

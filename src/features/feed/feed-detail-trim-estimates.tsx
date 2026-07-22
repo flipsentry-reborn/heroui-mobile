@@ -1,10 +1,26 @@
+import { Ionicons } from "@expo/vector-icons";
+import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import type { JSX } from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { View } from "react-native";
-import { Accordion, Chip, cn, Typography } from "heroui-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  BottomSheet,
+  Chip,
+  cn,
+  PressableFeedback,
+  Typography,
+  useThemeColor,
+} from "heroui-native";
+import { withUniwind } from "uniwind";
 
 import { resolveTrimEstimates } from "@/mocks/data/trim-estimates";
 import type { ListingValuation } from "@/models/feed";
+
+const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
+
+/** Yellowish AI sparkles — matches “AI” accent on Advanced. */
+const AI_ICON_COLOR = "#E8C547";
 
 function formatPrice(price: number, symbol: string): string {
   const formatted = Math.round(price)
@@ -13,87 +29,196 @@ function formatPrice(price: number, symbol: string): string {
   return `${symbol}${formatted}`;
 }
 
+function formatDelta(delta: number, symbol: string): string {
+  if (delta === 0) return "—";
+  const sign = delta > 0 ? "+" : "−";
+  return `${sign}${formatPrice(Math.abs(delta), symbol)}`;
+}
+
 interface FeedDetailTrimEstimatesProps {
   valuation: ListingValuation;
   currencySymbol: string;
 }
 
-/** Car-only: one compact accordion listing sibling trim estimates. */
+/**
+ * Car-only: Advanced row opens a scrollable trim bottom sheet.
+ * Follows HeroUI scrollable-with-snap-points best practices:
+ * gorhom BottomSheetScrollView, fixed Content height, no over-drag / dynamic sizing.
+ */
 export function FeedDetailTrimEstimates({
   valuation,
   currencySymbol,
 }: FeedDetailTrimEstimatesProps): JSX.Element | null {
-  const trims = useMemo(() => resolveTrimEstimates(valuation), [valuation]);
-  const current = useMemo(() => trims.find((t) => t.isCurrent), [trims]);
+  const insets = useSafeAreaInsets();
+  const [muted] = useThemeColor(["muted"]);
+  const [isOpen, setIsOpen] = useState(false);
+  const snapPoints = useMemo(() => ["55%", "88%"], []);
 
-  if (trims.length === 0) return null;
+  const options = useMemo(() => resolveTrimEstimates(valuation), [valuation]);
+  const selected = useMemo(
+    () => options.find((o) => o.isSelected),
+    [options],
+  );
+  const selectedMedian =
+    selected?.marketplace.median ?? valuation.fairPrice;
 
-  const summary =
-    current != null
-      ? `${current.trim} · ${formatPrice(current.fairPrice, currencySymbol)}`
-      : `${trims.length} trims`;
+  if (options.length === 0) return null;
 
   return (
-    <Accordion
-      variant="surface"
-      selectionMode="single"
-      hideSeparator
-      isCollapsible
-      className="w-auto"
-    >
-      <Accordion.Item value="other-trims">
-        <Accordion.Trigger className="gap-2 px-3 py-2">
-          <View className="min-w-0 flex-1 gap-0.5">
-            <Typography
-              type="body-sm"
-              weight="semibold"
-              className="text-foreground"
-              numberOfLines={1}
-            >
-              Other trims
-            </Typography>
-            <Typography type="body-xs" className="text-muted" numberOfLines={1}>
-              {valuation.year} {valuation.make} {valuation.model}
-              {" · "}
-              {summary}
-            </Typography>
-          </View>
-          <Accordion.Indicator />
-        </Accordion.Trigger>
-
-        <Accordion.Content className="gap-0 px-3 pb-2.5 pt-0">
-          {trims.map((trim, index) => (
-            <View
-              key={trim.id}
-              className={cn(
-                "flex-row items-center gap-2 py-1.5",
-                index < trims.length - 1 && "border-b border-border/40",
-              )}
-            >
+    <BottomSheet isOpen={isOpen} onOpenChange={setIsOpen}>
+      <BottomSheet.Trigger asChild>
+        <PressableFeedback
+          accessibilityRole="button"
+          accessibilityLabel="Open advanced calculation"
+          className="w-auto overflow-hidden rounded-2xl bg-surface"
+          animation={{ scale: { value: 0.98 } }}
+        >
+          <View className="gap-1 px-3 py-2">
+            <View className="flex-row items-center gap-2.5">
+              <Ionicons name="sparkles" size={16} color={AI_ICON_COLOR} />
               <Typography
-                type="body-xs"
-                weight={trim.isCurrent ? "semibold" : "normal"}
-                className="min-w-0 shrink text-foreground"
+                type="body-sm"
+                weight="semibold"
+                className="min-w-0 flex-1 text-foreground"
                 numberOfLines={1}
               >
-                {trim.trim}
+                Advanced Calculation
               </Typography>
-              {trim.isCurrent ? (
-                <Chip size="sm" variant="soft" color="accent" className="h-5 px-1.5">
-                  <Chip.Label className="text-[10px]">Current</Chip.Label>
+              <Ionicons name="chevron-forward" size={16} color={muted} />
+            </View>
+            {selected != null ? (
+              <View className="flex-row items-center gap-1.5 pl-[26px]">
+                <Typography
+                  type="body-xs"
+                  weight="medium"
+                  className="min-w-0 shrink text-foreground"
+                  numberOfLines={1}
+                >
+                  {selected.trim}
+                </Typography>
+                <Chip
+                  size="sm"
+                  variant="soft"
+                  color="success"
+                  className="h-5 shrink-0 px-1.5"
+                >
+                  <Chip.Label className="text-[10px]">Selected</Chip.Label>
                 </Chip>
-              ) : null}
+                <Typography
+                  type="body-xs"
+                  weight="semibold"
+                  className="ml-auto shrink-0 text-foreground"
+                >
+                  {formatPrice(selected.marketplace.median, currencySymbol)}
+                </Typography>
+              </View>
+            ) : (
               <Typography
                 type="body-xs"
-                weight="semibold"
-                className="ml-auto text-foreground"
+                className="pl-[26px] text-muted"
+                numberOfLines={1}
               >
-                {formatPrice(trim.fairPrice, currencySymbol)}
+                {options.length} trims
               </Typography>
+            )}
+          </View>
+        </PressableFeedback>
+      </BottomSheet.Trigger>
+
+      <BottomSheet.Portal>
+        <BottomSheet.Overlay />
+        <BottomSheet.Content
+          snapPoints={snapPoints}
+          enableOverDrag={false}
+          enableDynamicSizing={false}
+          handleComponent={null}
+          contentContainerClassName="h-full px-0"
+        >
+          {/* Sticky header — outside the scroll view (HeroUI example pattern) */}
+          <View className="gap-1 px-5 pb-3 pt-4">
+            <View className="flex-row items-center gap-2.5">
+              <Ionicons name="sparkles" size={18} color={AI_ICON_COLOR} />
+              <BottomSheet.Title
+                className="min-w-0 flex-1 text-left text-xl font-bold"
+                numberOfLines={1}
+              >
+                Advanced Calculation
+              </BottomSheet.Title>
+              <BottomSheet.Close />
             </View>
-          ))}
-        </Accordion.Content>
-      </Accordion.Item>
-    </Accordion>
+            <BottomSheet.Description className="pl-[28px] text-left">
+              {valuation.year} {valuation.make} {valuation.model}
+              {" · "}
+              {options.length} trims
+            </BottomSheet.Description>
+          </View>
+
+          <StyledBottomSheetScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerClassName="gap-1 px-4 pt-1"
+            contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+          >
+            {options.map((option) => {
+              const median = option.marketplace.median;
+              const delta = median - selectedMedian;
+              const isSelected = option.isSelected;
+
+              return (
+                <View
+                  key={option.vehicleId}
+                  className={cn(
+                    "flex-row items-center gap-2 rounded-lg px-2 py-2.5",
+                    isSelected && "bg-success/15",
+                  )}
+                >
+                  <View className="min-w-0 flex-1 flex-row items-center gap-1.5">
+                    <Typography
+                      type="body-xs"
+                      weight={isSelected ? "semibold" : "normal"}
+                      className="min-w-0 shrink text-foreground"
+                      numberOfLines={2}
+                    >
+                      {option.trim}
+                    </Typography>
+                    {isSelected ? (
+                      <Chip
+                        size="sm"
+                        variant="soft"
+                        color="success"
+                        className="h-5 shrink-0 px-1.5"
+                      >
+                        <Chip.Label className="text-[10px]">
+                          Selected
+                        </Chip.Label>
+                      </Chip>
+                    ) : null}
+                  </View>
+
+                  {!isSelected ? (
+                    <Typography
+                      type="body-xs"
+                      className={cn(
+                        "shrink-0 text-[11px]",
+                        delta > 0 ? "text-danger" : "text-success",
+                      )}
+                    >
+                      {formatDelta(delta, currencySymbol)}
+                    </Typography>
+                  ) : null}
+
+                  <Typography
+                    type="body-xs"
+                    weight="semibold"
+                    className="shrink-0 text-foreground"
+                  >
+                    {formatPrice(median, currencySymbol)}
+                  </Typography>
+                </View>
+              );
+            })}
+          </StyledBottomSheetScrollView>
+        </BottomSheet.Content>
+      </BottomSheet.Portal>
+    </BottomSheet>
   );
 }

@@ -365,8 +365,8 @@ export function SubscriptionScreen(): JSX.Element {
 
   return (
     <View
-      className="flex-1 bg-background dark:bg-[oklch(12%_0_0)]"
-      style={{ paddingTop: insets.top }}
+      className="flex-1"
+      style={{ paddingTop: insets.top, backgroundColor: pageBackground }}
     >
       <View className="px-3 pb-1 pt-1">
         <Pressable

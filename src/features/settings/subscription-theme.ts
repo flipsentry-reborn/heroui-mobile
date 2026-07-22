@@ -3,8 +3,10 @@ import type { PlanAccent } from "@/mocks/data/subscription";
 /**
  * Pre–bright-dark canvas (`global.css` before elevated outdoor wash).
  * Used on subscription page in dark mode only — near-black Uber wash.
+ * Hex (not oklch): ScrollShadow → colorKit only parses hex/rgb/hsl.
+ * `oklch(12% 0 0)` ≈ `#060606`.
  */
-export const SUBSCRIPTION_DARK_BACKGROUND = "oklch(12% 0 0)";
+export const SUBSCRIPTION_DARK_BACKGROUND = "#060606";
 
 /**
  * Accent glow wash (top-right → bottom-left).

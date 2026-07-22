@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
+import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useCallback, useState } from "react";
 import { Alert, Linking, Platform, ScrollView, View } from "react-native";
@@ -36,10 +37,9 @@ import type {
 import type { SubscriptionPlan } from "@/mocks/data/subscription";
 import {
   getSettings,
-  mockLogout,
   updatePreferences,
 } from "@/mocks/services/settings";
-import { getSubscription } from "@/mocks/services/subscription";
+import { useStore } from "@/store/store";
 
 const StyledIonicons = withUniwind(Ionicons);
 
@@ -82,26 +82,51 @@ function DistanceUnitFab({
   );
 }
 
-export function SettingsScreen(): JSX.Element {
+export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { toast } = useToast();
   const background = useThemeColor("background");
+  const { userStore, subscriptionStore } = useStore();
   const [state, setState] = useState<SettingsState | null>(null);
   const [activePlan, setActivePlan] = useState<SubscriptionPlan | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [hideOpen, setHideOpen] = useState(false);
 
   const load = useCallback(async () => {
-    const [next, sub] = await Promise.all([getSettings(), getSubscription()]);
+    const next = await getSettings();
     applyAppearance(next.preferences.appearance);
+    try {
+      await userStore.loadPreferences();
+      const apiPrefs = userStore.preferences;
+      if (apiPrefs) {
+        next.preferences = {
+          ...next.preferences,
+          showScams: apiPrefs.showScams,
+          showDealers: apiPrefs.showDealers,
+          showDealerships: apiPrefs.showDealerships,
+          showMajorDamaged: apiPrefs.showMajorIssue,
+          showRebuiltTitle: apiPrefs.showRebuiltTitle,
+          showSalvageTitle: apiPrefs.showSalvageTitle,
+          distanceUnit: apiPrefs.distanceUnit,
+        };
+      }
+    } catch {
+      // keep local prefs
+    }
     setState(next);
+    try {
+      await subscriptionStore.load();
+    } catch {
+      // keep last known
+    }
+    const sub = subscriptionStore;
     const plan =
       sub.hasActiveSubscription && sub.currentTier != null
         ? (sub.plans.find((p) => p.id === sub.currentTier) ?? null)
         : null;
     setActivePlan(plan);
-  }, []);
+  }, [subscriptionStore, userStore]);
 
   useFocusEffect(
     useCallback(() => {
@@ -110,8 +135,22 @@ export function SettingsScreen(): JSX.Element {
   );
 
   const prefs = state?.preferences;
-  const planLabel = activePlan?.displayName ?? (state?.hasActiveTrial ? "Trial" : "Free");
+  const planLabel =
+    activePlan?.displayName ??
+    (subscriptionStore.hasActiveTrial || state?.hasActiveTrial
+      ? "Trial"
+      : "Free");
   const appearance: AppearanceMode = prefs?.appearance ?? "system";
+  const profile = userStore.user
+    ? {
+        firstName: userStore.user.firstName,
+        lastName: userStore.user.lastName,
+        email: userStore.user.email,
+        emailConfirmed: userStore.user.emailConfirmed,
+        phoneNumber: userStore.user.phoneNumber,
+        numberConfirmed: userStore.user.numberConfirmed,
+      }
+    : state?.profile;
 
   const patchPrefs = async (patch: Partial<UserPreferences>) => {
     try {
@@ -120,6 +159,28 @@ export function SettingsScreen(): JSX.Element {
         applyAppearance(patch.appearance);
       }
       setState((s) => (s ? { ...s, preferences: next } : s));
+
+      // Sync hide/distance prefs to backend (or mock Account)
+      const apiBase = userStore.preferences ?? {
+        showScams: next.showScams,
+        showDealers: next.showDealers,
+        showAdvertised: true,
+        showDealerships: next.showDealerships,
+        showMajorIssue: next.showMajorDamaged,
+        showRebuiltTitle: next.showRebuiltTitle,
+        showSalvageTitle: next.showSalvageTitle,
+        distanceUnit: next.distanceUnit,
+      };
+      await userStore.updatePreferences({
+        ...apiBase,
+        showScams: next.showScams,
+        showDealers: next.showDealers,
+        showDealerships: next.showDealerships,
+        showMajorIssue: next.showMajorDamaged,
+        showRebuiltTitle: next.showRebuiltTitle,
+        showSalvageTitle: next.showSalvageTitle,
+        distanceUnit: next.distanceUnit,
+      });
     } catch {
       Alert.alert("Error", "Failed to update preference");
     }
@@ -132,12 +193,11 @@ export function SettingsScreen(): JSX.Element {
         text: "Logout",
         style: "destructive",
         onPress: () => {
-          void mockLogout().then(() => {
+          void userStore.logout().then(() => {
             toast.show({
               variant: "default",
               label: "Logged out",
-              description: "Mock only - no auth in this build.",
-              duration: 2500,
+              duration: 2200,
             });
           });
         },
@@ -181,7 +241,7 @@ export function SettingsScreen(): JSX.Element {
           ) : (
             <>
           <SettingsProfileHeader
-            profile={state.profile}
+            profile={profile ?? state.profile}
             planLabel={planLabel}
             planAccent={activePlan?.accent}
             onPress={() => router.push("/settings/profile")}
@@ -328,5 +388,5 @@ export function SettingsScreen(): JSX.Element {
       ) : null}
     </View>
   );
-}
+});
 

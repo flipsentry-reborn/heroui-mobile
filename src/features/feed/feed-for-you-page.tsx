@@ -27,7 +27,7 @@ import {
   FOR_YOU_SHELVES,
   type FeedCategoryKey,
 } from "@/mocks/data/feed";
-import { getFeed, toggleFavorite } from "@/mocks/services/feed";
+import agent from "@/api/agent";
 import type { FeedItem as FeedModel } from "@/models/feed";
 
 const StyledIonicons = withUniwind(Ionicons);
@@ -168,11 +168,13 @@ export function FeedForYouPage({
       try {
         const entries = await Promise.all(
           shelfKeys.map(async (key) => {
-            const items = await getFeed({
-              category: key,
-              query,
-              limit: SHELF_LIMIT,
-            });
+            const items = (
+              await agent.Feed.list({
+                category: key,
+                query,
+                limit: SHELF_LIMIT,
+              })
+            ).slice(0, SHELF_LIMIT);
             return [key, items] as const;
           }),
         );
@@ -202,7 +204,7 @@ export function FeedForYouPage({
   }, [syncToken]);
 
   const handleToggleFavorite = useCallback(async (id: string) => {
-    const updated = await toggleFavorite(id);
+    const updated = await agent.Feed.toggleFavorite(id);
     if (!updated) return;
     setShelves((prev) => {
       const next: ShelfState = {};

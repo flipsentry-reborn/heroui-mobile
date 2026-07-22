@@ -16,6 +16,7 @@ import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useUniwind } from "uniwind";
 
+import { setUnauthorizedHandler } from "@/api/http/client";
 import {
   applyAppearance,
   loadCachedAppearance,
@@ -25,6 +26,10 @@ import { StoreProvider, store } from "@/store/store";
 import "../global.css";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+setUnauthorizedHandler(() => {
+  void store.userStore.logout({ skipNavigate: false });
+});
 
 function RootLayoutContent(): JSX.Element {
   const background = useThemeColor("background");
@@ -70,20 +75,21 @@ function RootLayoutContent(): JSX.Element {
             contentStyle: { backgroundColor: background },
           }}
         >
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
           <Stack.Screen
             name="(tabs)"
             options={{
               contentStyle: { backgroundColor: background },
             }}
           />
-            <Stack.Screen
-              name="listing/[id]"
-              options={{
-                // Short push so open feels immediate (content is seeded sync)
-                animation: "slide_from_right",
-                gestureEnabled: true
-              }}
-            />
+          <Stack.Screen
+            name="listing/[id]"
+            options={{
+              animation: "slide_from_right",
+              gestureEnabled: true,
+            }}
+          />
           <Stack.Screen
             name="settings"
             options={{

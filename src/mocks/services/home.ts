@@ -137,6 +137,11 @@ export interface CreateHomeSearchSettingInput {
   platform: HomePlatform;
   locationName: string;
   runIntervalSeconds: number;
+  /** Present when creating against live API. */
+  latitude?: number;
+  longitude?: number;
+  country?: string;
+  timeZoneId?: string;
 }
 
 export interface CreateHomeSearchInput {
@@ -148,6 +153,12 @@ export interface CreateHomeSearchInput {
   customLabel?: string;
   containsText?: string[];
   excludeText?: string[];
+  /** Geo fields used by live GroupSearch (mode: basic). */
+  latitude?: number;
+  longitude?: number;
+  country?: string;
+  timeZoneId?: string;
+  iphoneQuery?: import("@/models/create-search-setting").IphoneQuery[];
 }
 
 export type UpdateHomeSearchInput = CreateHomeSearchInput;

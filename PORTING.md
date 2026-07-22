@@ -1,11 +1,11 @@
 # FlipSentry → HeroUI Mobile Port
 
-Expo Go UI rebuild of `mobile-app` using **HeroUI Native + Pro**. 
-Always mock. No real API calls. Keep everything simple.
+Expo Go UI rebuild of `mobile-app` using **HeroUI Native + Pro**.  
+Supports **Mock** and **Live** API modes via `EXPO_PUBLIC_USE_MOCK`.
 
 ## Goal
 
-Port FlipSentry screens and flows into `heroui-mobile` so we can iterate on UI with Expo Go. Real networking, maps, and native modules stay in `mobile-app` until we merge later.
+Port FlipSentry screens and flows into `heroui-mobile`. With `USE_MOCK=true` (default), fixtures power the app. With `USE_MOCK=false`, the unified `agent` talks to the backend at `EXPO_PUBLIC_API_URL` (default `http://192.168.0.106:9000`).
 
 ## Locked decisions
 
@@ -14,9 +14,9 @@ Port FlipSentry screens and flows into `heroui-mobile` so we can iterate on UI w
 | Visual language | Uber neutrals - oklch grayscale, dark white accent / light black accent (see `global.css`) |
 | Components | `heroui-native-pro` first → `heroui-native` OSS → minimal custom only |
 | Styling | Uniwind + `className` only — **never** `StyleSheet` / NativeWind / shadcn |
-| Data | Mock only via `src/mocks/*` (+ AsyncStorage persistence) |
+| Data | Dual: mocks **or** live REST via `agent` (`USE_MOCK`) |
 | State | MobX stores (`src/store`) — split by domain; see **`SEARCH_STORE.md`** |
-| API façade | `src/api/agent.ts` mock only (no Axios) |
+| API façade | `src/api/agent.ts` — mock services or `src/api/http/*` (Axios) |
 | Reference | `mobile-app` = flows/screens reference only |
 
 UI preferences, settings type scale, buttons, and copy rules: **`DESIGN.md`**.
@@ -29,7 +29,7 @@ UI preferences, settings type scale, buttons, and copy rules: **`DESIGN.md`**.
 | MCP `heroui-pro` | Web React docs (optional; not for RN screens) |
 | Skill `heroui-native-pro` | Native Pro patterns (user skills) |
 | Skill `heroui-pro-design-taste` | Design system polish (user skills) |
-| Rules `.cursor/rules/*.mdc` | Project constraints (theme, mock-only, port scope) |
+| Rules `.cursor/rules/*.mdc` | Project constraints (theme, dual-mode API, port scope) |
 
 Config: `.cursor/mcp.json` (gitignored). Rules: `.cursor/rules/`.
 
@@ -38,7 +38,7 @@ Config: `.cursor/mcp.json` (gitignored). Rules: `.cursor/rules/`.
 | Rule | Detail |
 |------|--------|
 | Expo Go first | Ship only what runs in Expo Go |
-| Mock always | Screens → MobX stores → `agent` → `mocks/services/*` — never axios / SignalR / real APIs |
+| Dual API | Screens → MobX stores → `agent` → mocks **or** live HTTP. No SignalR/Adapty yet. Screens never branch on `USE_MOCK`. |
 | Screens thin | `src/app` routes compose UI; domain logic in stores + `src/domain/*` |
 | Models on demand | Copy/adapt from `mobile-app/models` into `src/models` when needed |
 | HeroUI only | Prefer `heroui-native-pro`, then `heroui-native`; no web `@heroui/react` for screens |
@@ -74,7 +74,7 @@ heroui-mobile/
 │ ├── models/ # from mobile-app/models as needed
 │ ├── domain/ # pure rules (search slots, etc.)
 │ ├── store/ # MobX root + domain stores
-│ ├── api/ # agent.ts mock façade
+│ ├── api/ # agent.ts + http/* + config (Mock/Live)
 │ ├── lib/ # small helpers (money, dates, storage)
 │ ├── constants/ # routes, category ids
 │ ├── assets/
@@ -92,19 +92,31 @@ heroui-mobile/
 - Help
 - Settings
 
-## Auth (mocked)
+## Auth
 
-1. Show login (and related auth screens) as UI.
-2. Fake login → navigate into `(main)` tabs.
-3. Optional: persist a mock “session” flag in memory/AsyncStorage for reload convenience - still no real API.
+Routes: `(auth)/login` (Login | Create Account; email or phone), `(auth)/verify`, `(auth)/forgot-password`.  
+Gate: `src/app/index.tsx` → login → phone verify → tabs.
 
-## Mocking rules
+### Mock credentials (`USE_MOCK=true`)
 
-- Preferred path: UI (`observer`) → `useStore()` → `agent` → `mocks/services/*`.
-- Services may persist with AsyncStorage (`src/lib/storage.ts`); seed from fixtures on first launch.
-- Services return typed fixtures from `src/mocks/data/*`.
-- Use delays (`setTimeout` / fake latency) only when useful for loading UI.
-- Never import from `mobile-app` API clients or env that hits backends.
+| Field | Value |
+|-------|--------|
+| Email | `test@flipsentry.com` |
+| Phone | `+12345678901` |
+| Password | `password` |
+| OTP | `000000` |
+
+### Live (`USE_MOCK=false`)
+
+- JWT in AsyncStorage key `jwt`; Bearer on Axios requests.
+- Base URL: `EXPO_PUBLIC_API_URL` (see `.env.example`).
+- GroupSearch: **basic radius only** (no advanced/point mode, no population).
+
+## Dual-mode rules
+
+- Preferred path: UI (`observer`) → `useStore()` → `agent` → mocks or `api/http/*`.
+- Toggle: `EXPO_PUBLIC_USE_MOCK` / `app.config.ts` → `extra.useMock`.
+- Mock services may persist with AsyncStorage; seed from fixtures on first launch.
 - Subscription tiers for slot rules: **starter / hunter / master** — see `SEARCH_STORE.md`.
 
 ## Models
@@ -134,11 +146,18 @@ heroui-mobile/
 
 ## Out of scope (for now)
 
-- Real API, auth tokens, CI install tokens usage in the app runtime 
-- EAS/dev-client-only native map work 
-- Full 1:1 file copy of `mobile-app` 
-- NativeWind / old RN primitives component stack 
-- Edit-search wizard / full CreateGroupStore (phase 2 — see `SEARCH_STORE.md`)
+- SignalR live feed hub  
+- Adapty IAP SDK / Expo push token registration  
+- Population heatmap / advanced (point) map search mode  
+- EAS/dev-client-only native map work  
+- Full 1:1 file copy of `mobile-app`  
+- NativeWind / old RN primitives component stack  
+
+## Smoke checklist
+
+1. `EXPO_PUBLIC_USE_MOCK=true` → login with mock credentials → feed/home/settings → logout.  
+2. Register → verify with OTP `000000` → tabs.  
+3. `EXPO_PUBLIC_USE_MOCK=false` + backend on `192.168.0.106:9000` → email/phone login → feed list → create basic-radius search.
 
 ## Theme
 

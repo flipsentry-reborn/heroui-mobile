@@ -637,20 +637,51 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
               MOCK_CAR_MAKES.find((make) => make.id === id)?.label ?? id,
           );
 
+    const mainLat = draft.main.latitude;
+    const mainLng = draft.main.longitude;
+    const country =
+      /,?\s*Canada$/i.test(draft.main.displayName ?? "") ||
+      /,?\s*CA$/i.test(draft.main.displayName ?? "")
+        ? "CA"
+        : "US";
+
+    const resolveLocationCoords = (locationId: string) => {
+      if (locationId === draft.main?.id || locationId === "main") {
+        return { latitude: mainLat, longitude: mainLng };
+      }
+      const fromFixture = locationsFixture.find((l) => l.id === locationId);
+      if (fromFixture) {
+        return {
+          latitude: fromFixture.latitude,
+          longitude: fromFixture.longitude,
+        };
+      }
+      return { latitude: mainLat, longitude: mainLng };
+    };
+
     const payload = {
       searchType,
       locationName:
         draft.main.displayName ?? draft.main.name ?? "Unknown location",
       radiusMiles: draft.radiusMiles,
-      settings: settingRows.map((row) => ({
-        platform: toHomePlatform(row.platform),
-        locationName: resolveLocationName(
-          row.locationId,
-          draft.main?.name,
-          draft.main?.id,
-        ),
-        runIntervalSeconds: row.runIntervalSeconds,
-      })),
+      latitude: mainLat,
+      longitude: mainLng,
+      country,
+      settings: settingRows.map((row) => {
+        const coords = resolveLocationCoords(row.locationId);
+        return {
+          platform: toHomePlatform(row.platform),
+          locationName: resolveLocationName(
+            row.locationId,
+            draft.main?.name,
+            draft.main?.id,
+          ),
+          runIntervalSeconds: row.runIntervalSeconds,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          country,
+        };
+      }),
       carQuery:
         searchType === "car"
           ? {
@@ -669,6 +700,14 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
           : searchType === "iphone"
             ? iphoneSelections.map((s) => s.id).join(", ")
             : undefined,
+      iphoneQuery:
+        searchType === "iphone"
+          ? iphoneSelections.map((s) => ({
+              model: s.id,
+              minPrice: parseOptionalNumber(minPrice),
+              maxPrice: parseOptionalNumber(maxPrice),
+            }))
+          : undefined,
     };
 
     const saved =
@@ -752,7 +791,6 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
         onMinChange={setMinYear}
         onMaxChange={setMaxYear}
         maxLength={4}
-        getRangeError={getSearchYearRangeError}
       />
 
       <SearchBottomSheetPriceSheet

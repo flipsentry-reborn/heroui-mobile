@@ -1,5 +1,6 @@
 import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
+import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
@@ -27,7 +28,7 @@ import { Fonts } from "@/lib/fonts";
 import type { MockUserProfile } from "@/mocks/data/settings";
 import type { SubscriptionPlan } from "@/mocks/data/subscription";
 import { getSettings } from "@/mocks/services/settings";
-import { getSubscription } from "@/mocks/services/subscription";
+import { useStore } from "@/store/store";
 
 function StatusChip({
   label,
@@ -47,7 +48,8 @@ function StatusChip({
 
 const FREE_PALETTE = PLAN_ACCENTS.purple;
 
-export default function ProfileScreen(): JSX.Element {
+const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
+  const { userStore, subscriptionStore } = useStore();
   const [profile, setProfile] = useState<MockUserProfile | null>(null);
   const [activePlan, setActivePlan] = useState<SubscriptionPlan | null>(null);
   const [isTrial, setIsTrial] = useState(false);
@@ -55,18 +57,32 @@ export default function ProfileScreen(): JSX.Element {
   const { toast } = useToast();
 
   useEffect(() => {
-    void Promise.all([getSettings(), getSubscription()]).then(
-      ([settings, sub]) => {
+    void (async () => {
+      const settings = await getSettings();
+      if (userStore.user) {
+        setProfile({
+          firstName: userStore.user.firstName,
+          lastName: userStore.user.lastName,
+          email: userStore.user.email,
+          emailConfirmed: userStore.user.emailConfirmed,
+          phoneNumber: userStore.user.phoneNumber,
+          numberConfirmed: userStore.user.numberConfirmed,
+        });
+      } else {
         setProfile(settings.profile);
-        const plan =
-          sub.hasActiveSubscription && sub.currentTier != null
-            ? (sub.plans.find((p) => p.id === sub.currentTier) ?? null)
-            : null;
-        setActivePlan(plan);
-        setIsTrial(sub.hasActiveTrial && plan == null);
-      },
-    );
-  }, []);
+      }
+      await subscriptionStore.load();
+      const plan =
+        subscriptionStore.hasActiveSubscription &&
+        subscriptionStore.currentTier != null
+          ? (subscriptionStore.plans.find(
+              (p) => p.id === subscriptionStore.currentTier,
+            ) ?? null)
+          : null;
+      setActivePlan(plan);
+      setIsTrial(subscriptionStore.hasActiveTrial && plan == null);
+    })();
+  }, [userStore.user, subscriptionStore]);
 
   const copyValue = async (value: string, label: string) => {
     const trimmed = value.trim();
@@ -276,9 +292,11 @@ export default function ProfileScreen(): JSX.Element {
 
       <View className="mx-5 mb-2">
         <Typography type="body-xs" className="text-muted">
-          Tap a field to copy it. Profile details are read-only in this mock.
+          Tap a field to copy it. Profile details are read-only here.
         </Typography>
       </View>
     </ScrollView>
   );
-}
+});
+
+export default ProfileScreen;

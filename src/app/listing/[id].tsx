@@ -7,11 +7,8 @@ import { EmptyState } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
 import { FeedDetail } from "@/features/feed/feed-detail";
-import {
-  getFeedById,
-  peekFeedById,
-  toggleFavorite,
-} from "@/mocks/services/feed";
+import agent from "@/api/agent";
+import { peekFeedById } from "@/mocks/services/feed";
 import type { FeedItem } from "@/models/feed";
 
 const StyledIonicons = withUniwind(Ionicons);
@@ -39,7 +36,7 @@ export default function ListingDetailScreen(): JSX.Element {
       setMissing(false);
     }
     void (async () => {
-      const data = await getFeedById(listingId);
+      const data = await agent.Feed.getDetails(listingId);
       if (!alive) return;
       setItem(data);
       setMissing(!data);
@@ -52,7 +49,7 @@ export default function ListingDetailScreen(): JSX.Element {
 
   const handleFavorite = useCallback(async () => {
     if (!item) return;
-    const updated = await toggleFavorite(item.id);
+    const updated = await agent.Feed.toggleFavorite(item.id);
     if (updated) setItem(updated);
   }, [item]);
 

@@ -7,7 +7,9 @@ import {
   Button,
   Checkbox,
   ControlField,
+  Input,
   Label,
+  TextField,
   Typography,
   useBottomSheet,
   useToast,
@@ -20,7 +22,9 @@ import {
   SHEET_CONTENT_CONTAINER_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import { mockDeleteAccount } from "@/mocks/services/settings";
+import { useStore } from "@/store/store";
+import { USE_MOCK } from "@/api/config";
+import { MOCK_ACCOUNT_CREDENTIALS } from "@/mocks/services/account";
 
 type DeleteStep = "confirm" | "hold";
 
@@ -37,16 +41,29 @@ function DeleteAccountContent({
 }): JSX.Element {
   const { toast } = useToast();
   const { onOpenChange } = useBottomSheet();
+  const { userStore } = useStore();
   const [step, setStep] = useState<DeleteStep>("confirm");
   const [acknowledged, setAcknowledged] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [password, setPassword] = useState(
+    USE_MOCK ? MOCK_ACCOUNT_CREDENTIALS.password : "",
+  );
 
   const dismiss = () => onOpenChange(false);
 
   const handleHoldComplete = () => {
     if (deleting || !acknowledged) return;
+    if (!password.trim()) {
+      toast.show({
+        variant: "danger",
+        label: "Password required",
+        duration: 2200,
+      });
+      return;
+    }
     setDeleting(true);
-    void mockDeleteAccount()
+    void userStore
+      .deleteAccount(password)
       .then(() => {
         onDeleted();
         toast.show({
@@ -154,10 +171,22 @@ function DeleteAccountContent({
             </Label>
           </ControlField>
 
+          <TextField>
+            <Label>Password</Label>
+            <Input
+              className="h-12"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              editable={!deleting}
+              placeholder="Confirm with your password"
+            />
+          </TextField>
+
           <ProgressButton
             variant="danger"
             holdDuration={2000}
-            isDisabled={!acknowledged || deleting}
+            isDisabled={!acknowledged || deleting || !password.trim()}
             onComplete={handleHoldComplete}
             className="w-full rounded-2xl"
           >

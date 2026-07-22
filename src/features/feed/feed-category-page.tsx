@@ -8,8 +8,8 @@ import {
   FeedSoldControls,
   type SoldStatusFilter,
 } from "@/features/feed/feed-sold-controls";
+import agent from "@/api/agent";
 import type { FeedCategoryKey } from "@/mocks/data/feed";
-import { getFeed, toggleFavorite } from "@/mocks/services/feed";
 import type { FeedItem as FeedModel } from "@/models/feed";
 
 interface FeedCategoryPageProps {
@@ -49,7 +49,7 @@ export function FeedCategoryPage({
       if (opts?.refresh) setRefreshing(true);
       else if (!opts?.silent) setLoading(true);
       try {
-        const data = await getFeed({
+        const data = await agent.Feed.list({
           category,
           query,
           ...(isSold ? { soldStatus, maxDays } : {}),
@@ -83,7 +83,7 @@ export function FeedCategoryPage({
 
   const handleToggleFavorite = useCallback(
     async (id: string) => {
-      const updated = await toggleFavorite(id);
+      const updated = await agent.Feed.toggleFavorite(id);
       if (!updated) return;
       setItems((prev) => {
         if (category === "saved" && !updated.isFavorite) {

@@ -163,3 +163,36 @@ export interface IntervalSetting {
   interval: number;
   value: number;
 }
+
+export interface SuggestLocationsInput {
+  latitude: number;
+  longitude: number;
+  country: string;
+  radiusMiles: number;
+  count?: number;
+}
+
+export interface SuggestLocationsResult {
+  locations: Array<{
+    latitude: number;
+    longitude: number;
+    locationName: string;
+    country: string;
+    distanceMiles?: number;
+  }>;
+}
+
+export interface MatchPlatformsInput {
+  locations: Array<{
+    latitude: number;
+    longitude: number;
+    locationName: string;
+    country: string;
+  }>;
+  platforms: string[];
+  runIntervalSeconds?: number;
+}
+
+export interface MatchPlatformsResult {
+  settings: GroupSearchSettingInput[];
+}

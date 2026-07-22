@@ -37,7 +37,7 @@ import {
   SOLD_STATUS_COLOR,
   SOLD_STATUS_TEXT_CLASS,
 } from "@/features/feed/sold-status";
-import { getLocalComps } from "@/mocks/services/feed";
+import agent from "@/api/agent";
 import {
   getOrderedStatusBadges,
   isCarListing,
@@ -135,7 +135,7 @@ export function FeedDetail({
     let alive = true;
     setLocalCompsLoading(true);
     void (async () => {
-      const comps = await getLocalComps(item.id, { sameYear, days });
+      const comps = await agent.Feed.getLocalComps(item.id, { sameYear, days });
       if (!alive) return;
       setLocalComps(comps);
       setLocalCompsLoading(false);
@@ -150,7 +150,7 @@ export function FeedDetail({
     toast.show({
       variant: "accent",
       label,
-      description: "Mock only - no API in this build.",
+      description: "Action queued",
       duration: 2800,
     });
   };

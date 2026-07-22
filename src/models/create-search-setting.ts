@@ -29,3 +29,10 @@ export interface SamsungQuery {
   minPrice?: number;
   maxPrice?: number;
 }
+
+export interface UserActiveSetting {
+  maxSearchSettings: number;
+  maxActiveSearchSettings: number;
+  allowedSlotSettings: Array<{ interval: number; value: number }>;
+  remainingSlotSettings: Array<{ interval: number; value: number }>;
+}

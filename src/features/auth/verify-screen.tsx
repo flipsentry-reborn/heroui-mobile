@@ -5,8 +5,6 @@ import { View } from "react-native";
 import { router, type Href } from "expo-router";
 import {
   Button,
-  InputOTP,
-  REGEXP_ONLY_DIGITS,
   Spinner,
   Typography,
   useThemeColor,
@@ -14,6 +12,7 @@ import {
 } from "heroui-native";
 
 import { USE_MOCK } from "@/api/config";
+import { AuthInputOtp } from "@/features/auth/auth-input-otp";
 import { AuthPhoneField } from "@/features/auth/auth-phone-field";
 import { AuthShell } from "@/features/auth/auth-shell";
 import { BrandButton } from "@/components/ui/brand-button";
@@ -46,7 +45,7 @@ export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
   useEffect(() => {
     if (!userStore.bootstrapped) return;
     if (!userStore.isLoggedIn) {
-      router.replace("/login" as Href);
+      router.replace("/welcome" as Href);
     } else if (userStore.isPhoneVerified) {
       router.replace("/feed" as Href);
     }
@@ -141,18 +140,7 @@ export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
           </>
         ) : (
           <>
-            <InputOTP
-              maxLength={6}
-              value={otp}
-              onChange={setOtp}
-              pattern={REGEXP_ONLY_DIGITS}
-            >
-              <InputOTP.Group>
-                {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <InputOTP.Slot key={i} index={i} />
-                ))}
-              </InputOTP.Group>
-            </InputOTP>
+            <AuthInputOtp value={otp} onChange={setOtp} />
             <BrandButton
               className="min-h-12 w-full rounded-full"
               isDisabled={submitting || otp.length !== 6}

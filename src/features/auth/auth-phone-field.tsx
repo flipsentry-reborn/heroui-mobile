@@ -21,6 +21,7 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
+import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
 import {
   COUNTRY_DIAL_CODES,
   findCountryByIso2,
@@ -94,7 +95,8 @@ export function AuthPhoneField({
             </Pressable>
           </InputGroup.Prefix>
           <InputGroup.Input
-            className="h-12 rounded-2xl border-border bg-field text-foreground"
+            className="h-12 rounded-2xl border-0 text-foreground shadow-none"
+            style={{ backgroundColor: AUTH_CONTROL_BACKGROUND, borderWidth: 0 }}
             value={nationalNumber}
             onChangeText={(text) =>
               onNationalNumberChange(text.replace(/[^\d]/g, ""))

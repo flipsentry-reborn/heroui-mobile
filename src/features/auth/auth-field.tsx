@@ -12,15 +12,24 @@ import {
   useThemeColor,
 } from "heroui-native";
 
+import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
+
 interface AuthFieldProps extends Omit<TextInputProps, "className"> {
   label: string;
   error?: string;
   className?: string;
 }
 
+const AUTH_INPUT_CLASS =
+  "h-12 rounded-2xl border-0 text-foreground shadow-none";
+
+const AUTH_INPUT_STYLE = {
+  backgroundColor: AUTH_CONTROL_BACKGROUND,
+  borderWidth: 0,
+} as const;
+
 /**
- * Auth field — same tokens as in-app search/home:
- * label = foreground, placeholder = muted, fill = field.
+ * Auth field — charcoal fill matching Custom OTP pill (`#18181b`).
  * Password fields (`secureTextEntry`) get a trailing eye toggle.
  */
 export function AuthField({
@@ -40,7 +49,8 @@ export function AuthField({
       {isPassword ? (
         <InputGroup>
           <InputGroup.Input
-            className="h-12 rounded-2xl border-border bg-field text-foreground"
+            className={AUTH_INPUT_CLASS}
+            style={AUTH_INPUT_STYLE}
             autoCapitalize="none"
             autoCorrect={false}
             placeholderTextColor={muted}
@@ -65,7 +75,8 @@ export function AuthField({
         </InputGroup>
       ) : (
         <Input
-          className="h-12 rounded-2xl border-border bg-field text-foreground"
+          className={AUTH_INPUT_CLASS}
+          style={AUTH_INPUT_STYLE}
           autoCapitalize="none"
           autoCorrect={false}
           placeholderTextColor={muted}

@@ -220,7 +220,7 @@ export default class UserStore {
     }
     this.storeResetFunction?.();
     if (!opts?.skipNavigate) {
-      router.replace("/login" as Href);
+      router.replace("/welcome" as Href);
     }
   }
 }

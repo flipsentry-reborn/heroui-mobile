@@ -5,8 +5,6 @@ import { Pressable, View } from "react-native";
 import { router, type Href } from "expo-router";
 import {
   Button,
-  InputOTP,
-  REGEXP_ONLY_DIGITS,
   Spinner,
   Typography,
   useThemeColor,
@@ -15,9 +13,9 @@ import {
 
 import { USE_MOCK } from "@/api/config";
 import { AuthField, AuthHint } from "@/features/auth/auth-field";
+import { AuthInputOtp } from "@/features/auth/auth-input-otp";
 import { AuthPhoneField } from "@/features/auth/auth-phone-field";
 import {
-  AuthFooterLink,
   AuthOrDivider,
   AuthShell,
 } from "@/features/auth/auth-shell";
@@ -143,13 +141,7 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
     <AuthShell
       title={title}
       subtitle={subtitle}
-      footer={
-        <AuthFooterLink
-          prompt="Don't have an account?"
-          actionLabel="Sign up"
-          onPress={() => router.push("/register" as Href)}
-        />
-      }
+      onBack={() => router.back()}
     >
       {loginMethod === "email" ? (
         <View className="gap-4">
@@ -236,18 +228,7 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
         </View>
       ) : (
         <View className="gap-4">
-          <InputOTP
-            maxLength={6}
-            value={otp}
-            onChange={setOtp}
-            pattern={REGEXP_ONLY_DIGITS}
-          >
-            <InputOTP.Group>
-              {[0, 1, 2, 3, 4, 5].map((i) => (
-                <InputOTP.Slot key={i} index={i} />
-              ))}
-            </InputOTP.Group>
-          </InputOTP>
+          <AuthInputOtp value={otp} onChange={setOtp} />
 
           <BrandButton
             className="min-h-12 w-full rounded-full"

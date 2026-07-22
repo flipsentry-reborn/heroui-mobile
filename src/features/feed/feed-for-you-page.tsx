@@ -22,7 +22,6 @@ import { withUniwind } from "uniwind";
 import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import { FeedItem } from "@/features/feed/feed-item";
 import { feedCategoryHref } from "@/features/feed/feed-nav";
-import { FeedTabBadge } from "@/features/feed/feed-tab-badge";
 import type { FeedItem as FeedModel } from "@/models/feed";
 import { useStore } from "@/store/store";
 
@@ -284,7 +283,6 @@ export const FeedForYouPage = observer(function FeedForYouPage({
                             {allChildrenAlphabetical.map((child) => {
                               const items = feedStore.getShelf(child.key);
                               if (items.length === 0 && !loading) return null;
-                              const unread = feedStore.unreadCount(child.key);
 
                               return (
                                 <View key={child.key} className="mb-2.5">
@@ -295,16 +293,13 @@ export const FeedForYouPage = observer(function FeedForYouPage({
                                     accessibilityRole="button"
                                     accessibilityLabel={`Open ${child.label}`}
                                   >
-                                    <View className="relative min-w-0 flex-1 flex-row items-center">
-                                      <Typography
-                                        type="body"
-                                        weight="semibold"
-                                        className="text-[14px] text-foreground"
-                                      >
-                                        {child.label}
-                                      </Typography>
-                                      <FeedTabBadge count={unread} />
-                                    </View>
+                                    <Typography
+                                      type="body"
+                                      weight="semibold"
+                                      className="text-[14px] text-foreground"
+                                    >
+                                      {child.label}
+                                    </Typography>
                                     <StyledIonicons
                                       name="chevron-forward"
                                       size={16}
@@ -331,7 +326,6 @@ export const FeedForYouPage = observer(function FeedForYouPage({
 
           const items = feedStore.getShelf(shelf.key);
           if (items.length === 0 && !loading) return null;
-          const unread = feedStore.unreadCount(shelf.key);
 
           const header = (
             <PressableFeedback
@@ -342,7 +336,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
               accessibilityLabel={`Open ${shelf.label}`}
             >
               <Badge.Anchor className={shelf.badge ? "pr-7" : undefined}>
-                <View className="relative flex-row items-center gap-0.5">
+                <View className="flex-row items-center gap-0.5">
                   <Typography
                     type="body"
                     weight="semibold"
@@ -357,7 +351,6 @@ export const FeedForYouPage = observer(function FeedForYouPage({
                       className="text-foreground"
                     />
                   ) : null}
-                  <FeedTabBadge count={unread} />
                 </View>
                 {shelf.badge ? (
                   <FeedCategoryBadge label={shelf.badge} />

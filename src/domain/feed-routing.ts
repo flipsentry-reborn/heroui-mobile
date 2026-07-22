@@ -126,3 +126,15 @@ export function mergeHttpPageWithLiveHead(
     return true;
   });
 }
+
+/**
+ * Reconnect catch-up: server page-1 becomes the new head;
+ * keep already-loaded rows after it (no wipe of the rest of the list).
+ */
+export function mergeCatchUpHead(
+  httpIds: string[],
+  existingIds: string[],
+): string[] {
+  const httpSet = new Set(httpIds);
+  return [...httpIds, ...existingIds.filter((id) => !httpSet.has(id))];
+}

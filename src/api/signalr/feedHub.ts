@@ -8,7 +8,10 @@ import {
 import { AppState, type AppStateStatus } from "react-native";
 
 import { API_URL } from "@/api/config";
+import { debugLog } from "@/lib/debug-log";
 import type { FeedImageUpdateData, FeedItem } from "@/models/feed";
+
+const LOG = "FeedHub";
 
 export type FeedHubHandlers = {
   onReceiveFeed: (feed: FeedItem) => void;
@@ -44,14 +47,25 @@ function bindHandlers(hub: HubConnection): void {
     handlers?.onImageUpdate?.(update);
   });
 
-  hub.onreconnecting(() => {
+  hub.onreconnecting((error) => {
+    debugLog.warn(LOG, "reconnecting", {
+      state: hub.state,
+      error: error?.message ?? String(error ?? ""),
+    });
     setStatus("connecting");
   });
-  hub.onreconnected(() => {
+  hub.onreconnected((connectionId) => {
+    debugLog.info(LOG, "reconnected", {
+      connectionId: connectionId ?? null,
+      state: hub.state,
+    });
     setStatus("connected");
     handlers?.onReconnected?.();
   });
-  hub.onclose(() => {
+  hub.onclose((error) => {
+    debugLog.warn(LOG, "closed", {
+      error: error?.message ?? String(error ?? ""),
+    });
     setStatus("disconnected");
   });
 }
@@ -67,17 +81,39 @@ async function ensureStarted(): Promise<void> {
   setStatus("connecting");
   try {
     await connection.start();
+    debugLog.info(LOG, "started", {
+      state: connection.state,
+      connectionId: connection.connectionId ?? null,
+    });
     setStatus("connected");
   } catch (error) {
-    console.warn("[FeedHub] start failed", error);
+    debugLog.warn(LOG, "start failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     setStatus("disconnected");
   }
 }
 
 function onAppStateChange(next: AppStateStatus): void {
-  if (next !== "active") return;
+  if (next !== "active") {
+    debugLog.info(LOG, "app state", { next });
+    return;
+  }
   if (!connection || !tokenFactory) return;
-  if (connection.state === HubConnectionState.Connected) return;
+
+  // Mobile often keeps HubConnectionState.Connected while backgrounded, but
+  // ReceiveFeed events are still missed — always run catch-up on resume.
+  if (connection.state === HubConnectionState.Connected) {
+    debugLog.info(LOG, "app active; hub connected → catch-up", {
+      connectionId: connection.connectionId ?? null,
+    });
+    handlers?.onReconnected?.();
+    return;
+  }
+
+  debugLog.info(LOG, "app active; ensuring hub + catch-up", {
+    state: connection.state,
+  });
   void ensureStarted().then(() => {
     handlers?.onReconnected?.();
   });
@@ -104,6 +140,7 @@ export async function startFeedHub(options: {
   }
 
   const url = `${API_URL}/hubs/feed`;
+  debugLog.info(LOG, "building connection", { url });
   connection = new HubConnectionBuilder()
     .withUrl(url, {
       accessTokenFactory: () => tokenFactory?.() ?? "",
@@ -114,7 +151,7 @@ export async function startFeedHub(options: {
       },
     })
     .withAutomaticReconnect([0, 2000, 5000, 10000, 20000])
-    .configureLogging(LogLevel.Warning)
+    .configureLogging(__DEV__ ? LogLevel.Information : LogLevel.Warning)
     .build();
 
   bindHandlers(connection);
@@ -147,9 +184,12 @@ export async function stopFeedHub(): Promise<void> {
       await hub.stop();
     }
   } catch (error) {
-    console.warn("[FeedHub] stop failed", error);
+    debugLog.warn(LOG, "stop failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
   } finally {
     setStatus("disconnected");
+    debugLog.info(LOG, "stopped");
   }
 }
 

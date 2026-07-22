@@ -17,6 +17,8 @@ export type GetFeedParams = {
   groupIds?: string[];
   query?: string;
   limit?: number;
+  /** Live API page size (default 40). Catch-up uses 10. */
+  pageSize?: number;
   /** Sold page: Sold / Pending chip filter. */
   soldStatus?: SoldStatusFilter;
   /** Sold page: only listings sold/pending within this many days. */
@@ -130,8 +132,14 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
     );
   }).map((item) => ({ ...item }));
 
-  if (params.limit != null && params.limit > 0) {
-    return items.slice(0, params.limit);
+  const take =
+    params.limit != null && params.limit > 0
+      ? params.limit
+      : params.pageSize != null && params.pageSize > 0
+        ? params.pageSize
+        : null;
+  if (take != null) {
+    return items.slice(0, take);
   }
   return items;
 }

@@ -39,6 +39,7 @@ import {
   SOLD_STATUS_TEXT_CLASS,
 } from "@/features/feed/sold-status";
 import agent from "@/api/agent";
+import { openListing } from "@/lib/marketplace-links";
 import {
   getOrderedStatusBadges,
   isCarListing,
@@ -46,6 +47,7 @@ import {
   type FeedItem,
   type FeedPlatform,
 } from "@/models/feed";
+import { useStore } from "@/store/store";
 
 const PLATFORM_CTA: Record<FeedPlatform, string> = {
   facebookMarketplace: "#1877F2",
@@ -85,6 +87,7 @@ export function FeedDetail({
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { toast } = useToast();
+  const { feedStore } = useStore();
   const [descExpanded, setDescExpanded] = useState(false);
   const [localComps, setLocalComps] = useState<FeedItem[]>([]);
   const [localCompsLoading, setLocalCompsLoading] = useState(false);
@@ -170,6 +173,11 @@ export function FeedDetail({
   const handleCompPress = (id: string) => {
     router.push({ pathname: "/listing/[id]", params: { id } });
   };
+
+  const openMarketplaceListing = useCallback(() => {
+    void feedStore.markViewed(item.id);
+    openListing(item.platform, item.listingId, item.listingUrl);
+  }, [feedStore, item.id, item.listingId, item.listingUrl, item.platform]);
 
   const thumbUrl = images[0];
 
@@ -418,16 +426,16 @@ export function FeedDetail({
 
       <View
         className="absolute inset-x-0 bottom-0 border-t border-border bg-background px-4 pt-2.5"
-        style={{ paddingBottom: Math.max(insets.bottom, 10) }}
+        style={{ paddingBottom: Math.max(insets.bottom, 10) + 6 }}
       >
         <Button
           variant="primary"
-          className="min-h-11 w-full"
+          className="min-h-11 w-full rounded-full"
           style={{ backgroundColor: PLATFORM_CTA[item.platform] }}
-          onPress={() => mockAction("View on Marketplace")}
+          onPress={openMarketplaceListing}
         >
           <Ionicons name="open-outline" size={16} color="#FFFFFF" />
-          <Button.Label className="text-sm text-white">
+          <Button.Label className="text-sm tracking-wide text-white">
             View on Marketplace
           </Button.Label>
         </Button>

@@ -1,14 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import type { JSX } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
-import { Card, PressableFeedback, Typography, useThemeColor } from "heroui-native";
+import {
+  Card,
+  PressableFeedback,
+  Typography,
+  useThemeColor,
+} from "heroui-native";
 
 import PlatformIcon from "@/components/icons/PlatformIcon";
 import {
   StatusBadge,
   ValuationBadge,
 } from "@/features/feed/feed-badge";
+import { FeedDiagonalShimmer } from "@/features/feed/feed-diagonal-shimmer";
 import {
   SOLD_STATUS_COLOR,
   SOLD_STATUS_TEXT_CLASS,
@@ -20,6 +27,7 @@ import {
   resolveDisplayValuation,
   type FeedItem as FeedModel,
 } from "@/models/feed";
+import { useStore } from "@/store/store";
 
 /**
  * Image sizing is layout-split so For You shelves can grow without
@@ -67,7 +75,9 @@ export function FeedItem({
   imageCornerSide = "right",
   hideFavorite = false,
 }: FeedItemProps): JSX.Element {
+  const { feedStore } = useStore();
   const [surfaceSecondary] = useThemeColor(["surface-secondary"]);
+  const [showNewShimmer, setShowNewShimmer] = useState(Boolean(feed.isNew));
   const imageUrl =
     feed.images.imageUrlHostedByUs ||
     feed.images.mainImageUrl.imageUrl ||
@@ -87,6 +97,15 @@ export function FeedItem({
   const imageH = isRail
     ? Math.round(IMAGE_H_RAIL * scale)
     : IMAGE_H_GRID;
+
+  useEffect(() => {
+    setShowNewShimmer(Boolean(feed.isNew));
+  }, [feed.id, feed.isNew]);
+
+  const handleShimmerDone = useCallback(() => {
+    setShowNewShimmer(false);
+    feedStore.clearNewFlag(feed.id);
+  }, [feed.id, feedStore]);
 
   /** Rail (For You) slightly compact; grid category pages keep fuller type. */
   const priceClass = isRail
@@ -126,9 +145,17 @@ export function FeedItem({
         <View className="relative overflow-hidden rounded-lg">
           <Image
             source={{ uri: imageUrl }}
-            style={{ width: "100%", height: imageH, backgroundColor: surfaceSecondary }}
+            style={{
+              width: "100%",
+              height: imageH,
+              backgroundColor: surfaceSecondary,
+            }}
             contentFit="cover"
             transition={180}
+          />
+          <FeedDiagonalShimmer
+            active={showNewShimmer}
+            onDone={handleShimmerDone}
           />
 
           {!hideFavorite ? (

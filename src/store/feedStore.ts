@@ -7,11 +7,15 @@ import {
   FEED_SHELF_LIMIT,
   insertSortedByBuySignal,
   isBestPicksCandidate,
+  mergeCatchUpHead,
   mergeHttpPageWithLiveHead,
   prependId,
 } from "@/domain/feed-routing";
+import { debugLog } from "@/lib/debug-log";
 import type { FeedImageUpdateData, FeedItem } from "@/models/feed";
 import type SearchStore from "@/store/searchStore";
+
+const CATCH_UP_LOG = "FeedCatchUp";
 
 export type FeedHubStatus = "disconnected" | "connecting" | "connected";
 
@@ -32,7 +36,6 @@ export default class FeedStore {
   items = observable.map<string, FeedItem>();
   lists: Record<string, string[]> = {};
   shelves: Record<string, string[]> = {};
-  unreadByTab: Record<string, number> = {};
   dirtyBuckets = new Set<string>();
   loadingBuckets = new Set<string>();
   loadedBuckets = new Set<string>();
@@ -55,7 +58,6 @@ export default class FeedStore {
 
   setActiveCategory(key: string): void {
     this.activeCategory = key;
-    this.ackTabUnread(key);
   }
 
   getList(bucket: string): FeedItem[] {
@@ -72,21 +74,12 @@ export default class FeedStore {
       .filter((item): item is FeedItem => item != null);
   }
 
-  unreadCount(tabKey: string): number {
-    return this.unreadByTab[tabKey] ?? 0;
-  }
-
   isBucketLoading(bucket: string): boolean {
     return this.loadingBuckets.has(bucket);
   }
 
   isBucketDirty(bucket: string): boolean {
     return this.dirtyBuckets.has(bucket);
-  }
-
-  ackTabUnread(tabKey: string): void {
-    if ((this.unreadByTab[tabKey] ?? 0) === 0) return;
-    this.unreadByTab = { ...this.unreadByTab, [tabKey]: 0 };
   }
 
   setHubStatus(status: FeedHubStatus): void {
@@ -96,6 +89,13 @@ export default class FeedStore {
   upsertItem(feed: FeedItem): void {
     const existing = this.items.get(feed.id);
     this.items.set(feed.id, existing ? { ...existing, ...feed } : feed);
+  }
+
+  /** Clear live "just arrived" highlight after the UI shimmer finishes. */
+  clearNewFlag(id: string): void {
+    const existing = this.items.get(id);
+    if (!existing?.isNew) return;
+    this.items.set(id, { ...existing, isNew: false });
   }
 
   private groupIdsFor(bucket: string): string[] | undefined {
@@ -113,13 +113,6 @@ export default class FeedStore {
     const next = new Set(this[field]);
     mutate(next);
     this[field] = next;
-  }
-
-  private markUnread(bucket: string): void {
-    if (bucket === "for-you" || bucket === "sold") return;
-    if (this.activeCategory === bucket) return;
-    const next = (this.unreadByTab[bucket] ?? 0) + 1;
-    this.unreadByTab = { ...this.unreadByTab, [bucket]: next };
   }
 
   private setListIds(bucket: string, ids: string[]): void {
@@ -263,6 +256,75 @@ export default class FeedStore {
     await this.loadBucket(bucket, { ...opts, force: true });
   }
 
+  /**
+   * Reconnect catch-up: fetch a small page-1 head and merge in front of
+   * already-loaded rows (does not wipe the rest of the list).
+   */
+  async catchUpBucket(bucket: string, pageSize = 10): Promise<void> {
+    if (bucket === "for-you") return;
+
+    const groupIds = this.groupIdsFor(bucket);
+    const existingBefore = this.lists[bucket] ?? [];
+    const startedAt = Date.now();
+
+    debugLog.info(CATCH_UP_LOG, "bucket start", {
+      bucket,
+      pageSize,
+      groupIds,
+      existingCount: existingBefore.length,
+      shelfHydrated: this.hydratedShelves.has(bucket),
+    });
+
+    try {
+      const items = await agent.Feed.list({
+        category: bucket,
+        groupIds,
+        pageSize,
+        ...(bucket === "sold" ? { maxDays: 1 } : {}),
+      });
+
+      runInAction(() => {
+        for (const item of items) {
+          this.upsertItem(item);
+        }
+        const httpIds = items.map((i) => i.id);
+        const existing = this.lists[bucket] ?? [];
+        const merged = mergeCatchUpHead(httpIds, existing);
+        const newHeadIds = httpIds.filter((id) => !existing.includes(id));
+        this.setListIds(bucket, merged);
+
+        if (this.hydratedShelves.has(bucket)) {
+          this.setShelfIds(bucket, merged.slice(0, FEED_SHELF_LIMIT));
+        }
+
+        this.touchSet("dirtyBuckets", (s) => {
+          s.delete(bucket);
+        });
+
+        debugLog.info(CATCH_UP_LOG, "bucket done", {
+          bucket,
+          pageSize,
+          ms: Date.now() - startedAt,
+          fetched: httpIds.length,
+          headIds: httpIds.slice(0, 5),
+          newAtHead: newHeadIds.length,
+          newHeadIds: newHeadIds.slice(0, 5),
+          existingBefore: existing.length,
+          mergedCount: merged.length,
+          preservedTail: merged.length - httpIds.length,
+        });
+      });
+    } catch (error) {
+      // Soft-fail: keep existing list; next open/dirty refresh can recover.
+      debugLog.error(CATCH_UP_LOG, "bucket failed", {
+        bucket,
+        pageSize,
+        ms: Date.now() - startedAt,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
   handleReceiveFeed(feed: FeedItem): void {
     if (!this.searchStore?.hasLoadedFeedTabAvailability) {
       this.pendingFeeds.push(feed);
@@ -292,18 +354,13 @@ export default class FeedStore {
     const buckets = bucketsForLiveFeed(feed, tabs);
 
     runInAction(() => {
-      const already = this.items.has(feed.id);
       this.upsertItem(feed);
       this.liveHeadIds.add(feed.id);
 
       for (const bucket of buckets) {
         const mode =
           bucket === "best-picks" ? "sorted-best-picks" : "prepend";
-        const had = (this.lists[bucket] ?? []).includes(feed.id);
         this.putInBucket(bucket, feed.id, mode);
-        if (!already && !had) {
-          this.markUnread(bucket);
-        }
       }
 
       // Low-confidence Best Picks: dirty so open refreshes server ranking.
@@ -327,17 +384,30 @@ export default class FeedStore {
   }
 
   onHubReconnected(): void {
-    runInAction(() => {
-      this.touchSet("dirtyBuckets", (s) => {
-        s.add("best-picks");
-        if (this.activeCategory && this.activeCategory !== "for-you") {
-          s.add(this.activeCategory);
-        }
-      });
-    });
-    if (this.activeCategory && this.activeCategory !== "for-you") {
-      void this.loadBucket(this.activeCategory, { force: true });
+    const targets = new Set<string>(["best-picks"]);
+    if (this.activeCategory === "for-you") {
+      for (const key of this.hydratedShelves) {
+        targets.add(key);
+      }
+    } else if (this.activeCategory) {
+      targets.add(this.activeCategory);
     }
+
+    const targetList = [...targets];
+    debugLog.info(CATCH_UP_LOG, "reconnect catch-up", {
+      activeCategory: this.activeCategory,
+      targets: targetList,
+      hydratedShelves: [...this.hydratedShelves],
+      pageSize: 10,
+    });
+
+    void Promise.all(targetList.map((b) => this.catchUpBucket(b, 10))).then(
+      () => {
+        debugLog.info(CATCH_UP_LOG, "reconnect catch-up finished", {
+          targets: targetList,
+        });
+      },
+    );
   }
 
   async toggleFavorite(id: string): Promise<FeedItem | null> {
@@ -411,7 +481,6 @@ export default class FeedStore {
     this.items.clear();
     this.lists = {};
     this.shelves = {};
-    this.unreadByTab = {};
     this.dirtyBuckets = new Set();
     this.loadingBuckets = new Set();
     this.loadedBuckets = new Set();

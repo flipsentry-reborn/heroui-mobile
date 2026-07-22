@@ -120,8 +120,8 @@ export async function register(
   await delay(280);
   await ensureHydrated();
   const email = creds.email.trim().toLowerCase();
-  if (!email || !creds.password || creds.password.length < 6) {
-    throw new Error("Invalid registration details");
+  if (!email || !creds.password || creds.password.length < 8) {
+    throw new Error("Password must be at least 8 characters");
   }
   const user = baseUser({
     id: `mock-user-${Date.now()}`,

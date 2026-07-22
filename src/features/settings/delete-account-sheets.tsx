@@ -1,17 +1,19 @@
+import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
 import { useEffect, useState } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import {
   Alert,
   BottomSheet,
   Button,
   Checkbox,
   ControlField,
-  Input,
+  InputGroup,
   Label,
   TextField,
   Typography,
   useBottomSheet,
+  useThemeColor,
   useToast,
 } from "heroui-native";
 import { ProgressButton } from "heroui-native-pro";
@@ -42,12 +44,14 @@ function DeleteAccountContent({
   const { toast } = useToast();
   const { onOpenChange } = useBottomSheet();
   const { userStore } = useStore();
+  const [muted] = useThemeColor(["muted"]);
   const [step, setStep] = useState<DeleteStep>("confirm");
   const [acknowledged, setAcknowledged] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [password, setPassword] = useState(
     USE_MOCK ? MOCK_ACCOUNT_CREDENTIALS.password : "",
   );
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const dismiss = () => onOpenChange(false);
 
@@ -173,14 +177,33 @@ function DeleteAccountContent({
 
           <TextField>
             <Label>Password</Label>
-            <Input
-              className="h-12"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              editable={!deleting}
-              placeholder="Confirm with your password"
-            />
+            <InputGroup>
+              <InputGroup.Input
+                className="h-12"
+                secureTextEntry={!passwordVisible}
+                value={password}
+                onChangeText={setPassword}
+                editable={!deleting}
+                placeholder="Confirm with your password"
+              />
+              <InputGroup.Suffix>
+                <Pressable
+                  onPress={() => setPasswordVisible((v) => !v)}
+                  hitSlop={12}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    passwordVisible ? "Hide password" : "Show password"
+                  }
+                  className="items-center justify-center px-1"
+                >
+                  <Ionicons
+                    name={passwordVisible ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color={muted}
+                  />
+                </Pressable>
+              </InputGroup.Suffix>
+            </InputGroup>
           </TextField>
 
           <ProgressButton

@@ -1,11 +1,15 @@
+import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
-import type { TextInputProps } from "react-native";
+import { useState } from "react";
+import { Pressable, type TextInputProps } from "react-native";
 import {
   FieldError,
   Input,
+  InputGroup,
   Label,
   TextField,
   Typography,
+  useThemeColor,
 } from "heroui-native";
 
 interface AuthFieldProps extends Omit<TextInputProps, "className"> {
@@ -14,28 +18,78 @@ interface AuthFieldProps extends Omit<TextInputProps, "className"> {
   className?: string;
 }
 
+/**
+ * Auth field — same tokens as in-app search/home:
+ * label = foreground, placeholder = muted, fill = field.
+ * Password fields (`secureTextEntry`) get a trailing eye toggle.
+ */
 export function AuthField({
   label,
   error,
   className,
+  secureTextEntry,
   ...inputProps
 }: AuthFieldProps): JSX.Element {
+  const [muted] = useThemeColor(["muted"]);
+  const [visible, setVisible] = useState(false);
+  const isPassword = secureTextEntry === true;
+
   return (
     <TextField isInvalid={!!error} className={className}>
-      <Label>{label}</Label>
-      <Input
-        className="h-12"
-        autoCapitalize="none"
-        autoCorrect={false}
-        {...inputProps}
-      />
+      <Label className="text-foreground">{label}</Label>
+      {isPassword ? (
+        <InputGroup>
+          <InputGroup.Input
+            className="h-12 rounded-2xl border-border bg-field text-foreground"
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholderTextColor={muted}
+            secureTextEntry={!visible}
+            {...inputProps}
+          />
+          <InputGroup.Suffix>
+            <Pressable
+              onPress={() => setVisible((v) => !v)}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={visible ? "Hide password" : "Show password"}
+              className="items-center justify-center px-1"
+            >
+              <Ionicons
+                name={visible ? "eye-off-outline" : "eye-outline"}
+                size={20}
+                color={muted}
+              />
+            </Pressable>
+          </InputGroup.Suffix>
+        </InputGroup>
+      ) : (
+        <Input
+          className="h-12 rounded-2xl border-border bg-field text-foreground"
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholderTextColor={muted}
+          {...inputProps}
+        />
+      )}
       {error ? <FieldError>{error}</FieldError> : null}
     </TextField>
   );
 }
 
-export function AuthHint({ children }: { children: string }): JSX.Element {
+export function AuthHint({
+  children,
+  className,
+}: {
+  children: string;
+  className?: string;
+}): JSX.Element {
   return (
-    <Typography className="text-muted text-sm text-center">{children}</Typography>
+    <Typography
+      type="body-xs"
+      className={className ?? "text-center text-muted"}
+    >
+      {children}
+    </Typography>
   );
 }

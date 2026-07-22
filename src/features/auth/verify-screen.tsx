@@ -9,12 +9,14 @@ import {
   REGEXP_ONLY_DIGITS,
   Spinner,
   Typography,
+  useThemeColor,
   useToast,
 } from "heroui-native";
 
 import { USE_MOCK } from "@/api/config";
-import { AuthField, AuthHint } from "@/features/auth/auth-field";
+import { AuthPhoneField } from "@/features/auth/auth-phone-field";
 import { AuthShell } from "@/features/auth/auth-shell";
+import { BrandButton } from "@/components/ui/brand-button";
 import { MOCK_ACCOUNT_CREDENTIALS } from "@/mocks/services/account";
 import { useStore } from "@/store/store";
 
@@ -24,13 +26,16 @@ function errorMessage(error: unknown): string {
   return "Something went wrong";
 }
 
+/** Post-auth phone verification (register / email login without confirmed number). */
 export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
   const { userStore } = useStore();
   const { toast } = useToast();
+  const [accentForeground] = useThemeColor(["accent-foreground"]);
   const [phoneNumber, setPhoneNumber] = useState(
     USE_MOCK ? "2345678901" : "",
   );
-  const [callingCode] = useState("1");
+  const [callingCode, setCallingCode] = useState("1");
+  const [countryIso2, setCountryIso2] = useState("US");
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [formattedPhone, setFormattedPhone] = useState("");
@@ -100,36 +105,42 @@ export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
 
   return (
     <AuthShell
-      title="Verify phone"
-      subtitle="Confirm your number to unlock searches and feed"
+      title={isCodeSent ? "Enter verification code" : "Verify phone"}
+      subtitle={
+        isCodeSent
+          ? `We sent a code to ${formattedPhone}`
+          : "Confirm your number to unlock searches and feed"
+      }
     >
       <View className="gap-4">
         {!isCodeSent ? (
           <>
-            <AuthField
-              label="Phone number"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-              keyboardType="phone-pad"
-              placeholder="2345678901"
+            <AuthPhoneField
+              nationalNumber={phoneNumber}
+              onNationalNumberChange={setPhoneNumber}
+              callingCode={callingCode}
+              onCallingCodeChange={setCallingCode}
+              countryIso2={countryIso2}
+              onCountryIso2Change={setCountryIso2}
+              placeholder="Phone number"
             />
-            <AuthHint>{`+${callingCode} · ${fullPhone}`}</AuthHint>
-            <Button
-              variant="primary"
+            <BrandButton
+              className="min-h-12 w-full rounded-full"
               isDisabled={
                 submitting || phoneNumber.replace(/\D/g, "").length < 7
               }
               onPress={() => void onSend()}
             >
-              {submitting ? <Spinner size="sm" /> : null}
-              <Button.Label>Send code</Button.Label>
-            </Button>
+              {submitting ? <Spinner size="sm" color={accentForeground} /> : null}
+              <BrandButton.Label>Continue</BrandButton.Label>
+            </BrandButton>
+            <Typography type="body-xs" className="text-center text-muted">
+              By tapping continue, you consent to receiving security codes from
+              FlipSentry via SMS.
+            </Typography>
           </>
         ) : (
           <>
-            <Typography className="text-muted text-sm">
-              Enter the code sent to {formattedPhone}
-            </Typography>
             <InputOTP
               maxLength={6}
               value={otp}
@@ -142,14 +153,14 @@ export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
                 ))}
               </InputOTP.Group>
             </InputOTP>
-            <Button
-              variant="primary"
+            <BrandButton
+              className="min-h-12 w-full rounded-full"
               isDisabled={submitting || otp.length !== 6}
               onPress={() => void onVerify()}
             >
-              {submitting ? <Spinner size="sm" /> : null}
-              <Button.Label>Verify</Button.Label>
-            </Button>
+              {submitting ? <Spinner size="sm" color={accentForeground} /> : null}
+              <BrandButton.Label>Verify</BrandButton.Label>
+            </BrandButton>
             <Button
               variant="ghost"
               isDisabled={countdown > 0 || submitting}
@@ -159,20 +170,24 @@ export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
                 {countdown > 0 ? `Resend in ${countdown}s` : "Resend code"}
               </Button.Label>
             </Button>
+            <Button variant="ghost" onPress={() => setIsCodeSent(false)}>
+              <Button.Label>Change number</Button.Label>
+            </Button>
           </>
         )}
 
         {error ? (
-          <Typography className="text-danger text-sm text-center">
+          <Typography type="body-sm" className="text-center text-danger">
             {error}
           </Typography>
         ) : null}
 
         <Button
           variant="secondary"
+          className="min-h-12 w-full rounded-full bg-surface-secondary"
           onPress={() => void userStore.logout()}
         >
-          <Button.Label>Sign out</Button.Label>
+          <Button.Label className="text-foreground">Sign out</Button.Label>
         </Button>
       </View>
     </AuthShell>

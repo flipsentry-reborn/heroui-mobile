@@ -8,14 +8,20 @@ import {
   InputOTP,
   REGEXP_ONLY_DIGITS,
   Spinner,
-  Tabs,
   Typography,
+  useThemeColor,
   useToast,
 } from "heroui-native";
 
-import { AuthField, AuthHint } from "@/features/auth/auth-field";
-import { AuthShell } from "@/features/auth/auth-shell";
 import { USE_MOCK } from "@/api/config";
+import { AuthField, AuthHint } from "@/features/auth/auth-field";
+import { AuthPhoneField } from "@/features/auth/auth-phone-field";
+import {
+  AuthFooterLink,
+  AuthOrDivider,
+  AuthShell,
+} from "@/features/auth/auth-shell";
+import { BrandButton } from "@/components/ui/brand-button";
 import { MOCK_ACCOUNT_CREDENTIALS } from "@/mocks/services/account";
 import { useStore } from "@/store/store";
 
@@ -25,11 +31,15 @@ function errorMessage(error: unknown): string {
   return "Something went wrong";
 }
 
+/**
+ * Login — mobile-app flow:
+ * Email path OR Phone OTP path, switched via “or” secondary CTA (mockup layout).
+ */
 export const LoginScreen = observer(function LoginScreen(): JSX.Element {
   const { userStore } = useStore();
   const { toast } = useToast();
+  const [accentForeground] = useThemeColor(["accent-foreground"]);
 
-  const [mode, setMode] = useState<"login" | "register">("login");
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
 
   const [email, setEmail] = useState(
@@ -41,21 +51,14 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
   const [phoneNumber, setPhoneNumber] = useState(
     USE_MOCK ? "2345678901" : "",
   );
-  const [callingCode] = useState("1");
+  const [callingCode, setCallingCode] = useState("1");
+  const [countryIso2, setCountryIso2] = useState("US");
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [formattedPhone, setFormattedPhone] = useState("");
   const [countdown, setCountdown] = useState(0);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  // Register fields
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [regEmail, setRegEmail] = useState("");
-  const [regPassword, setRegPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [allowNotifications, setAllowNotifications] = useState(true);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -68,14 +71,18 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
     [callingCode, phoneNumber],
   );
 
+  const switchMethod = (next: "email" | "phone") => {
+    setLoginMethod(next);
+    setError("");
+    setIsCodeSent(false);
+    setOtp("");
+  };
+
   const onEmailLogin = async () => {
     setError("");
     setSubmitting(true);
     try {
-      await userStore.login({
-        email: email.trim(),
-        password,
-      });
+      await userStore.login({ email: email.trim(), password });
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -118,260 +125,163 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
     }
   };
 
-  const onRegister = async () => {
-    setError("");
-    if (regPassword !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-    if (regPassword.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await userStore.register({
-        email: regEmail.trim(),
-        password: regPassword,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        allowSmsAndEmailNotifications: allowNotifications,
-      });
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const title =
+    loginMethod === "email"
+      ? "Log in to your account"
+      : isCodeSent
+        ? "Enter verification code"
+        : "Log in to your account";
+
+  const subtitle =
+    loginMethod === "email"
+      ? "Welcome back! Please enter your details."
+      : isCodeSent
+        ? `We sent a code to ${formattedPhone}`
+        : "Welcome back! Please enter your details.";
 
   return (
     <AuthShell
-      title={mode === "login" ? "Welcome back" : "Create account"}
-      subtitle={
-        mode === "login"
-          ? "Sign in with email or phone"
-          : "Start flipping smarter"
+      title={title}
+      subtitle={subtitle}
+      footer={
+        <AuthFooterLink
+          prompt="Don't have an account?"
+          actionLabel="Sign up"
+          onPress={() => router.push("/register" as Href)}
+        />
       }
     >
-      <Tabs
-        value={mode}
-        onValueChange={(v) => {
-          setMode(v as "login" | "register");
-          setError("");
-          setIsCodeSent(false);
-        }}
-        className="mb-6"
-      >
-        <Tabs.List className="bg-surface w-full">
-          <Tabs.Trigger value="login" className="flex-1">
-            <Tabs.Label>Login</Tabs.Label>
-          </Tabs.Trigger>
-          <Tabs.Trigger value="register" className="flex-1">
-            <Tabs.Label>Create Account</Tabs.Label>
-          </Tabs.Trigger>
-          <Tabs.Indicator />
-        </Tabs.List>
-      </Tabs>
-
-      {mode === "login" ? (
+      {loginMethod === "email" ? (
         <View className="gap-4">
-          <View className="flex-row gap-2">
-            <Button
-              variant={loginMethod === "email" ? "primary" : "secondary"}
-              size="sm"
-              className="flex-1"
-              onPress={() => {
-                setLoginMethod("email");
-                setIsCodeSent(false);
-                setError("");
-              }}
-            >
-              Email
-            </Button>
-            <Button
-              variant={loginMethod === "phone" ? "primary" : "secondary"}
-              size="sm"
-              className="flex-1"
-              onPress={() => {
-                setLoginMethod("phone");
-                setError("");
-              }}
-            >
-              Phone
-            </Button>
-          </View>
-
-          {loginMethod === "email" ? (
-            <>
-              <AuthField
-                label="Email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                textContentType="emailAddress"
-                placeholder="you@example.com"
-              />
-              <AuthField
-                label="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                textContentType="password"
-                placeholder="••••••••"
-              />
-              <Pressable onPress={() => router.push("/forgot-password" as Href)}>
-                <Typography className="text-muted text-sm self-end">
-                  Forgot password?
-                </Typography>
-              </Pressable>
-              <Button
-                variant="primary"
-                isDisabled={submitting || !email || !password}
-                onPress={() => void onEmailLogin()}
-              >
-                {submitting ? <Spinner size="sm" /> : null}
-                <Button.Label>Sign in</Button.Label>
-              </Button>
-            </>
-          ) : !isCodeSent ? (
-            <>
-              <AuthField
-                label="Phone number"
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                keyboardType="phone-pad"
-                placeholder="2345678901"
-              />
-              <AuthHint>{`Country code +${callingCode} · E.164: ${fullPhone}`}</AuthHint>
-              <Button
-                variant="primary"
-                isDisabled={submitting || phoneNumber.replace(/\D/g, "").length < 7}
-                onPress={() => void onSendPhoneCode()}
-              >
-                {submitting ? <Spinner size="sm" /> : null}
-                <Button.Label>Send code</Button.Label>
-              </Button>
-            </>
-          ) : (
-            <>
-              <Typography className="text-muted text-sm">
-                Enter the 6-digit code sent to {formattedPhone}
-              </Typography>
-              <InputOTP
-                maxLength={6}
-                value={otp}
-                onChange={setOtp}
-                pattern={REGEXP_ONLY_DIGITS}
-              >
-                <InputOTP.Group>
-                  {[0, 1, 2, 3, 4, 5].map((i) => (
-                    <InputOTP.Slot key={i} index={i} />
-                  ))}
-                </InputOTP.Group>
-              </InputOTP>
-              <Button
-                variant="primary"
-                isDisabled={submitting || otp.length !== 6}
-                onPress={() => void onVerifyPhone()}
-              >
-                {submitting ? <Spinner size="sm" /> : null}
-                <Button.Label>Verify & sign in</Button.Label>
-              </Button>
-              <Button
-                variant="ghost"
-                isDisabled={countdown > 0 || submitting}
-                onPress={() => void onSendPhoneCode()}
-              >
-                <Button.Label>
-                  {countdown > 0 ? `Resend in ${countdown}s` : "Resend code"}
-                </Button.Label>
-              </Button>
-            </>
-          )}
-        </View>
-      ) : (
-        <View className="gap-4">
-          <AuthField
-            label="First name"
-            value={firstName}
-            onChangeText={setFirstName}
-            autoCapitalize="words"
-            placeholder="Alex"
-          />
-          <AuthField
-            label="Last name"
-            value={lastName}
-            onChangeText={setLastName}
-            autoCapitalize="words"
-            placeholder="Rivera"
-          />
           <AuthField
             label="Email"
-            value={regEmail}
-            onChangeText={setRegEmail}
+            value={email}
+            onChangeText={setEmail}
             keyboardType="email-address"
-            placeholder="you@example.com"
+            textContentType="emailAddress"
+            placeholder="youremail@site.com"
           />
           <AuthField
             label="Password"
-            value={regPassword}
-            onChangeText={setRegPassword}
+            value={password}
+            onChangeText={setPassword}
             secureTextEntry
-            placeholder="At least 6 characters"
-          />
-          <AuthField
-            label="Confirm password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            placeholder="Repeat password"
+            textContentType="password"
+            placeholder="••••••••"
           />
           <Pressable
-            className="flex-row items-center gap-2 py-1"
-            onPress={() => setAllowNotifications((v) => !v)}
+            onPress={() => router.push("/forgot-password" as Href)}
+            className="self-end"
           >
-            <View
-              className={`h-5 w-5 rounded border items-center justify-center ${
-                allowNotifications
-                  ? "bg-accent border-accent"
-                  : "border-border bg-transparent"
-              }`}
-            >
-              {allowNotifications ? (
-                <Typography className="text-accent-foreground text-xs">
-                  ✓
-                </Typography>
-              ) : null}
-            </View>
-            <Typography className="text-foreground text-sm flex-1">
-              Allow SMS and email notifications
+            <Typography type="body-sm" className="text-muted">
+              Forgot password?
             </Typography>
           </Pressable>
-          <Button
-            variant="primary"
-            isDisabled={
-              submitting ||
-              !firstName ||
-              !lastName ||
-              !regEmail ||
-              !regPassword
-            }
-            onPress={() => void onRegister()}
+
+          <BrandButton
+            className="min-h-12 w-full rounded-full"
+            isDisabled={submitting || !email || !password}
+            onPress={() => void onEmailLogin()}
           >
-            {submitting ? <Spinner size="sm" /> : null}
-            <Button.Label>Create account</Button.Label>
+            {submitting ? <Spinner size="sm" color={accentForeground} /> : null}
+            <BrandButton.Label>Login</BrandButton.Label>
+          </BrandButton>
+
+          <AuthOrDivider />
+
+          <Button
+            variant="secondary"
+            className="min-h-12 w-full rounded-full bg-surface-secondary"
+            onPress={() => switchMethod("phone")}
+          >
+            <Button.Label className="text-foreground">
+              Login with Phone Number
+            </Button.Label>
+          </Button>
+        </View>
+      ) : !isCodeSent ? (
+        <View className="gap-4">
+          <AuthPhoneField
+            nationalNumber={phoneNumber}
+            onNationalNumberChange={setPhoneNumber}
+            callingCode={callingCode}
+            onCallingCodeChange={setCallingCode}
+            countryIso2={countryIso2}
+            onCountryIso2Change={setCountryIso2}
+            placeholder="Phone number"
+          />
+
+          <BrandButton
+            className="min-h-12 w-full rounded-full"
+            isDisabled={
+              submitting || phoneNumber.replace(/\D/g, "").length < 7
+            }
+            onPress={() => void onSendPhoneCode()}
+          >
+            {submitting ? <Spinner size="sm" color={accentForeground} /> : null}
+            <BrandButton.Label>Login</BrandButton.Label>
+          </BrandButton>
+
+          <AuthOrDivider />
+
+          <Button
+            variant="secondary"
+            className="min-h-12 w-full rounded-full bg-surface-secondary"
+            onPress={() => switchMethod("email")}
+          >
+            <Button.Label className="text-foreground">
+              Login with Email
+            </Button.Label>
+          </Button>
+        </View>
+      ) : (
+        <View className="gap-4">
+          <InputOTP
+            maxLength={6}
+            value={otp}
+            onChange={setOtp}
+            pattern={REGEXP_ONLY_DIGITS}
+          >
+            <InputOTP.Group>
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <InputOTP.Slot key={i} index={i} />
+              ))}
+            </InputOTP.Group>
+          </InputOTP>
+
+          <BrandButton
+            className="min-h-12 w-full rounded-full"
+            isDisabled={submitting || otp.length !== 6}
+            onPress={() => void onVerifyPhone()}
+          >
+            {submitting ? <Spinner size="sm" color={accentForeground} /> : null}
+            <BrandButton.Label>Verify & sign in</BrandButton.Label>
+          </BrandButton>
+
+          <Button
+            variant="ghost"
+            isDisabled={countdown > 0 || submitting}
+            onPress={() => void onSendPhoneCode()}
+          >
+            <Button.Label>
+              {countdown > 0 ? `Resend in ${countdown}s` : "Resend code"}
+            </Button.Label>
+          </Button>
+
+          <Button variant="ghost" onPress={() => setIsCodeSent(false)}>
+            <Button.Label>Change number</Button.Label>
           </Button>
         </View>
       )}
 
       {error ? (
-        <Typography className="text-danger text-sm mt-4 text-center">
+        <Typography type="body-sm" className="text-center text-danger">
           {error}
         </Typography>
       ) : null}
 
-      {USE_MOCK && mode === "login" ? (
-        <View className="mt-6 gap-1">
+      {USE_MOCK ? (
+        <View className="gap-1 pt-2">
           <AuthHint>
             {`Mock: ${MOCK_ACCOUNT_CREDENTIALS.email} / ${MOCK_ACCOUNT_CREDENTIALS.password}`}
           </AuthHint>

@@ -3,25 +3,26 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import type { JSX } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import Animated, {
   Easing,
+  Extrapolation,
   FadeIn,
   FadeInDown,
   FadeOut,
+  interpolate,
   LinearTransition,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  Button,
-  ScrollShadow,
-  useThemeColor,
-  useToast,
-} from "heroui-native";
+import { Button, useThemeColor, useToast } from "heroui-native";
 import { useUniwind } from "uniwind";
+
+/** Soft edge fade while scrolling plans (top + bottom). */
+const SCROLL_EDGE_FADE = 96;
 
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
 import { SubscriptionPlansSkeleton } from "@/features/settings/settings-skeletons";
@@ -311,6 +312,37 @@ export function SubscriptionScreen(): JSX.Element {
   );
   const [expandedId, setExpandedId] = useState<SubscriptionTier | null>(null);
 
+  const scrollY = useSharedValue(0);
+  const contentHeight = useSharedValue(0);
+  const viewportHeight = useSharedValue(0);
+
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const topFadeStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      scrollY.value,
+      [0, SCROLL_EDGE_FADE * 0.35],
+      [0, 1],
+      Extrapolation.CLAMP,
+    ),
+  }));
+
+  const bottomFadeStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      scrollY.value + viewportHeight.value,
+      [
+        Math.max(contentHeight.value - SCROLL_EDGE_FADE * 0.35, 0),
+        Math.max(contentHeight.value, 1),
+      ],
+      [1, 0],
+      Extrapolation.CLAMP,
+    ),
+  }));
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -379,16 +411,22 @@ export function SubscriptionScreen(): JSX.Element {
           <Ionicons name="chevron-back" size={24} color={foreground} />
         </Pressable>
       </View>
-      <ScrollShadow
-        className="flex-1"
-        LinearGradientComponent={LinearGradient}
-        color={pageBackground}
+      <View
+        className="relative flex-1"
+        onLayout={(e) => {
+          viewportHeight.value = e.nativeEvent.layout.height;
+        }}
       >
-        <ScrollView
+        <Animated.ScrollView
           className="flex-1"
           contentContainerClassName="gap-4 px-4 pt-2"
           contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
           showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={onScroll}
+          onContentSizeChange={(_, height) => {
+            contentHeight.value = height;
+          }}
         >
           <View className="mb-3 items-center gap-3 px-2 pt-1">
             <View className="items-center">
@@ -462,8 +500,31 @@ export function SubscriptionScreen(): JSX.Element {
               </Button>
             </>
           )}
-        </ScrollView>
-      </ScrollShadow>
+        </Animated.ScrollView>
+
+        <Animated.View
+          pointerEvents="none"
+          className="absolute left-0 right-0 top-0 z-10"
+          style={[{ height: SCROLL_EDGE_FADE }, topFadeStyle]}
+        >
+          <LinearGradient
+            colors={[pageBackground, "transparent"]}
+            locations={[0.15, 1]}
+            style={{ flex: 1 }}
+          />
+        </Animated.View>
+        <Animated.View
+          pointerEvents="none"
+          className="absolute bottom-0 left-0 right-0 z-10"
+          style={[{ height: SCROLL_EDGE_FADE }, bottomFadeStyle]}
+        >
+          <LinearGradient
+            colors={["transparent", pageBackground]}
+            locations={[0, 0.85]}
+            style={{ flex: 1 }}
+          />
+        </Animated.View>
+      </View>
     </View>
   );
 }

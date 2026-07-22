@@ -31,6 +31,7 @@ import {
   useSimilarNearbyFilters,
 } from "@/features/feed/feed-detail-similar-nearby";
 import { FeedDetailStickyHeader } from "@/features/feed/feed-detail-sticky-header";
+import { FeedDetailBasicCalculation } from "@/features/feed/feed-detail-basic-calculation";
 import { FeedDetailTrimEstimates } from "@/features/feed/feed-detail-trim-estimates";
 import {
   formatSoldPendingTitlePrefix,
@@ -285,11 +286,22 @@ export function FeedDetail({
             ) : null}
           </View>
 
-          {item.externalValuation?.calculated ? (
-            <FeedDetailTrimEstimates
-              valuation={item.externalValuation}
-              currencySymbol={item.currencySymbol}
-            />
+          {item.externalValuation?.calculated ||
+          item.compValuation?.calculated ? (
+            <View className="gap-2">
+              {item.externalValuation?.calculated ? (
+                <FeedDetailTrimEstimates
+                  valuation={item.externalValuation}
+                  currencySymbol={item.currencySymbol}
+                />
+              ) : null}
+              {item.compValuation?.calculated ? (
+                <FeedDetailBasicCalculation
+                  valuation={item.compValuation}
+                  currencySymbol={item.currencySymbol}
+                />
+              ) : null}
+            </View>
           ) : null}
 
           <View>

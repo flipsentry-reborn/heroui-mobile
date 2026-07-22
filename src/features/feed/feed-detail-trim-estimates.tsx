@@ -45,7 +45,7 @@ interface FeedDetailTrimEstimatesProps {
 }
 
 /**
- * Car-only: Advanced row opens a scrollable trim bottom sheet.
+ * External (book) valuation — Advanced Calculation row + trim bottom sheet.
  * Uses SheetShell (same as home) — no BottomSheet.Trigger — so the feed-card
  * press that navigates here cannot auto-open the portal on mount.
  */

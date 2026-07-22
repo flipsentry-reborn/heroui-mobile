@@ -1,28 +1,30 @@
-import type { JSX } from "react";
-import { View } from "react-native";
-import { Typography } from "heroui-native";
+import { useId, useState, type JSX } from "react";
+import { View, type LayoutChangeEvent } from "react-native";
+import Svg, { ClipPath, Defs, G, Polygon, Rect } from "react-native-svg";
+import { Typography, useThemeColor } from "heroui-native";
 
 import { getValuationTier, type ValuationTier } from "@/models/feed";
 
 const TIER_ORDER: ValuationTier[] = ["overpriced", "fairPrice", "goodValue", "greatDeal"];
 
-const TIER_STYLE: Record<ValuationTier, { label: string; fillClass: string }> = {
-  greatDeal: {
-    label: "Great",
-    fillClass: "bg-success",
-  },
-  goodValue: {
-    label: "Good",
-    fillClass: "bg-lime-700",
-  },
-  fairPrice: {
-    label: "Fair",
-    fillClass: "bg-warning",
-  },
-  overpriced: {
-    label: "Skip",
-    fillClass: "bg-danger",
-  },
+/** Matches the tier-cut rotate angle. */
+const CUT_DEG = 18;
+
+/** Tailwind lime-700 — Good tier (no theme token). */
+const GOOD_VALUE_FILL = "#4d7c0f";
+
+const TIER_LABEL: Record<ValuationTier, string> = {
+  greatDeal: "Great",
+  goodValue: "Good",
+  fairPrice: "Fair",
+  overpriced: "Skip",
+};
+
+const TIER_TRACK_CLASS: Record<ValuationTier, string> = {
+  greatDeal: "bg-success",
+  goodValue: "bg-lime-700",
+  fairPrice: "bg-warning",
+  overpriced: "bg-danger",
 };
 
 interface FeedDetailScoreBarProps {
@@ -48,10 +50,35 @@ export function FeedDetailScoreBar({
 }: FeedDetailScoreBarProps): JSX.Element {
   const pct = Math.max(0, Math.min(100, buySignal));
   const tier = getValuationTier(buySignal);
-  const tierStyle = TIER_STYLE[tier];
   const barH = compact ? "h-2" : "h-2.5";
   const cutH = compact ? "h-3.5 -top-0.5" : "h-5 -top-1";
   const cutBg = compact ? "bg-surface-secondary" : "bg-background";
+  const clipId = `score-fill-${useId().replace(/:/g, "")}`;
+
+  const [success, warning, danger] = useThemeColor(["success", "warning", "danger"]);
+  const tierFill: Record<ValuationTier, string> = {
+    greatDeal: success,
+    goodValue: GOOD_VALUE_FILL,
+    fairPrice: warning,
+    overpriced: danger,
+  };
+
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const onBarLayout = (event: LayoutChangeEvent): void => {
+    const { width, height } = event.nativeEvent.layout;
+    setSize((prev) =>
+      prev.width === width && prev.height === height ? prev : { width, height },
+    );
+  };
+
+  const fillW = (pct / 100) * size.width;
+  /** Half-projection of an 18° cut across bar height — centers the tip on `pct`. */
+  const diag = (size.height / 2) * Math.tan((CUT_DEG * Math.PI) / 180);
+  // RN +rotate is clockwise → vertical cut leans `/` (top-right → bottom-left).
+  const tipTop = pct >= 100 ? size.width : Math.min(size.width, fillW + diag);
+  const tipBottom = pct >= 100 ? size.width : Math.max(0, fillW - diag);
+  /** Darker band width along the tip so the finish reads clearly. */
+  const tipBand = compact ? 3.5 : 5;
 
   return (
     <View className={compact ? "gap-0" : "gap-2"}>
@@ -79,46 +106,76 @@ export function FeedDetailScoreBar({
       ) : null}
 
       <View
-        className={`relative w-full flex-row overflow-hidden rounded-sm ${barH}`}
+        className={`relative w-full overflow-hidden rounded-sm ${barH}`}
+        onLayout={onBarLayout}
         accessibilityRole="progressbar"
         accessibilityValue={{ min: 0, max: 100, now: Math.round(pct) }}
-        accessibilityLabel={`Deal score: ${tierStyle.label}`}
+        accessibilityLabel={`Deal score: ${TIER_LABEL[tier]}`}
       >
-        {TIER_ORDER.map((itemTier, index) => {
-          const start = index * 25;
-          const localProgress = Math.max(0, Math.min(100, ((pct - start) / 25) * 100));
-          return (
+        {/* Muted track */}
+        <View className="absolute inset-0 flex-row">
+          {TIER_ORDER.map((itemTier) => (
             <View key={itemTier} className="relative flex-1 overflow-hidden">
               <View
-                className={`absolute inset-0 ${TIER_STYLE[itemTier].fillClass}`}
-                style={{ opacity: 0.22 }}
-              />
-              <View
-                className={`h-full ${TIER_STYLE[itemTier].fillClass}`}
-                style={{ width: `${localProgress}%` }}
+                className={`absolute inset-0 ${TIER_TRACK_CLASS[itemTier]}`}
+                style={{ opacity: 0.12 }}
               />
             </View>
-          );
-        })}
+          ))}
+        </View>
+
+        {/* Solid fill clipped to a diagonal tip — track stays visible past the edge */}
+        {size.width > 0 && size.height > 0 && pct > 0 ? (
+          <Svg
+            width={size.width}
+            height={size.height}
+            className="absolute inset-0"
+            pointerEvents="none"
+          >
+            <Defs>
+              <ClipPath id={clipId}>
+                <Polygon
+                  points={`0,0 ${tipTop},0 ${tipBottom},${size.height} 0,${size.height}`}
+                />
+              </ClipPath>
+            </Defs>
+            <G clipPath={`url(#${clipId})`}>
+              {TIER_ORDER.map((itemTier, index) => (
+                <Rect
+                  key={itemTier}
+                  x={(index / TIER_ORDER.length) * size.width}
+                  y={0}
+                  width={size.width / TIER_ORDER.length}
+                  height={size.height}
+                  fill={tierFill[itemTier]}
+                />
+              ))}
+              {/* Thick darker tip — makes the diagonal finish obvious */}
+              {pct < 100 ? (
+                <Polygon
+                  points={[
+                    `${Math.max(0, tipTop - tipBand)},0`,
+                    `${tipTop},0`,
+                    `${tipBottom},${size.height}`,
+                    `${Math.max(0, tipBottom - tipBand)},${size.height}`,
+                  ].join(" ")}
+                  fill="rgba(255,255,255,0.55)"
+                />
+              ) : null}
+            </G>
+          </Svg>
+        ) : null}
+
         {[25, 50, 75].map((position) => (
           <View
             key={position}
             className={`absolute w-1 ${cutBg} ${cutH}`}
             style={{
               left: `${position}%`,
-              transform: [{ translateX: -2 }, { rotate: "18deg" }],
+              transform: [{ translateX: -2 }, { rotate: `${CUT_DEG}deg` }],
             }}
           />
         ))}
-        {pct > 0 && pct < 100 ? (
-          <View
-            className={`absolute w-1 ${cutBg} ${cutH}`}
-            style={{
-              left: `${pct}%`,
-              transform: [{ translateX: -2 }, { rotate: "18deg" }],
-            }}
-          />
-        ) : null}
       </View>
     </View>
   );

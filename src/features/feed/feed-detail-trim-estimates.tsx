@@ -14,6 +14,7 @@ import {
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
+import { SheetShell } from "@/features/home/sheet-shell";
 import { resolveTrimEstimates } from "@/mocks/data/trim-estimates";
 import type { ListingValuation } from "@/models/feed";
 
@@ -42,8 +43,8 @@ interface FeedDetailTrimEstimatesProps {
 
 /**
  * Car-only: Advanced row opens a scrollable trim bottom sheet.
- * Follows HeroUI scrollable-with-snap-points best practices:
- * gorhom BottomSheetScrollView, fixed Content height, no over-drag / dynamic sizing.
+ * Uses SheetShell (same as home) — no BottomSheet.Trigger — so the feed-card
+ * press that navigates here cannot auto-open the portal on mount.
  */
 export function FeedDetailTrimEstimates({
   valuation,
@@ -51,7 +52,7 @@ export function FeedDetailTrimEstimates({
 }: FeedDetailTrimEstimatesProps): JSX.Element | null {
   const insets = useSafeAreaInsets();
   const [muted] = useThemeColor(["muted"]);
-  const [isOpen, setIsOpen] = useState(false);
+  const [visible, setVisible] = useState(false);
   const snapPoints = useMemo(() => ["55%", "88%"], []);
 
   const options = useMemo(() => resolveTrimEstimates(valuation), [valuation]);
@@ -64,69 +65,69 @@ export function FeedDetailTrimEstimates({
 
   if (options.length === 0) return null;
 
+  // Single wrapper so SheetShell never becomes a second `gap-*` sibling on the
+  // feed-detail column when the portal mounts (Fragment would flatten to 2 kids).
   return (
-    <BottomSheet isOpen={isOpen} onOpenChange={setIsOpen}>
-      <BottomSheet.Trigger asChild>
-        <PressableFeedback
-          accessibilityRole="button"
-          accessibilityLabel="Open advanced calculation"
-          className="w-auto overflow-hidden rounded-2xl bg-surface"
-          animation={{ scale: { value: 0.98 } }}
-        >
-          <View className="gap-1 px-3 py-2">
-            <View className="flex-row items-center gap-2.5">
-              <Ionicons name="sparkles" size={16} color={AI_ICON_COLOR} />
-              <Typography
-                type="body-sm"
-                weight="semibold"
-                className="min-w-0 flex-1 text-foreground"
-                numberOfLines={1}
-              >
-                Advanced Calculation
-              </Typography>
-              <Ionicons name="chevron-forward" size={16} color={muted} />
-            </View>
-            {selected != null ? (
-              <View className="flex-row items-center gap-1.5 pl-[26px]">
-                <Typography
-                  type="body-xs"
-                  weight="medium"
-                  className="min-w-0 shrink text-foreground"
-                  numberOfLines={1}
-                >
-                  {selected.trim}
-                </Typography>
-                <Chip
-                  size="sm"
-                  variant="soft"
-                  color="success"
-                  className="h-5 shrink-0 px-1.5"
-                >
-                  <Chip.Label className="text-[10px]">Selected</Chip.Label>
-                </Chip>
-                <Typography
-                  type="body-xs"
-                  weight="semibold"
-                  className="ml-auto shrink-0 text-foreground"
-                >
-                  {formatPrice(selected.marketplace.median, currencySymbol)}
-                </Typography>
-              </View>
-            ) : (
+    <View>
+      <PressableFeedback
+        accessibilityRole="button"
+        accessibilityLabel="Open advanced calculation"
+        className="w-auto overflow-hidden rounded-2xl bg-surface"
+        animation={{ scale: { value: 0.98 } }}
+        onPress={() => setVisible(true)}
+      >
+        <View className="gap-1 px-3 py-2">
+          <View className="flex-row items-center gap-2.5">
+            <Ionicons name="sparkles" size={16} color={AI_ICON_COLOR} />
+            <Typography
+              type="body-sm"
+              weight="semibold"
+              className="min-w-0 flex-1 text-foreground"
+              numberOfLines={1}
+            >
+              Advanced Calculation
+            </Typography>
+            <Ionicons name="chevron-forward" size={16} color={muted} />
+          </View>
+          {selected != null ? (
+            <View className="flex-row items-center gap-1.5 pl-[26px]">
               <Typography
                 type="body-xs"
-                className="pl-[26px] text-muted"
+                weight="medium"
+                className="min-w-0 shrink text-foreground"
                 numberOfLines={1}
               >
-                {options.length} trims
+                {selected.trim}
               </Typography>
-            )}
-          </View>
-        </PressableFeedback>
-      </BottomSheet.Trigger>
+              <Chip
+                size="sm"
+                variant="soft"
+                color="success"
+                className="h-5 shrink-0 px-1.5"
+              >
+                <Chip.Label className="text-[10px]">Selected</Chip.Label>
+              </Chip>
+              <Typography
+                type="body-xs"
+                weight="semibold"
+                className="ml-auto shrink-0 text-foreground"
+              >
+                {formatPrice(selected.marketplace.median, currencySymbol)}
+              </Typography>
+            </View>
+          ) : (
+            <Typography
+              type="body-xs"
+              className="pl-[26px] text-muted"
+              numberOfLines={1}
+            >
+              {options.length} trims
+            </Typography>
+          )}
+        </View>
+      </PressableFeedback>
 
-      <BottomSheet.Portal>
-        <BottomSheet.Overlay />
+      <SheetShell visible={visible} onClose={() => setVisible(false)}>
         <BottomSheet.Content
           snapPoints={snapPoints}
           enableOverDrag={false}
@@ -134,7 +135,6 @@ export function FeedDetailTrimEstimates({
           handleComponent={null}
           contentContainerClassName="h-full px-0"
         >
-          {/* Sticky header — outside the scroll view (HeroUI example pattern) */}
           <View className="gap-1 px-5 pb-3 pt-4">
             <View className="flex-row items-center gap-2.5">
               <Ionicons name="sparkles" size={18} color={AI_ICON_COLOR} />
@@ -218,7 +218,7 @@ export function FeedDetailTrimEstimates({
             })}
           </StyledBottomSheetScrollView>
         </BottomSheet.Content>
-      </BottomSheet.Portal>
-    </BottomSheet>
+      </SheetShell>
+    </View>
   );
 }

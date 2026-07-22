@@ -25,7 +25,7 @@ export function FeedDetailActions({
         onPress={onSave}
         accessibilityLabel={isFavorite ? "Saved" : "Save"}
         animation={{ scale: { value: 0.96 } }}
-        className="min-w-0 flex-1 flex-row items-center justify-center gap-2 py-1.5"
+        className="min-w-0 flex-1 flex-row items-center justify-center gap-2 py-2"
       >
         <Ionicons
           name={isFavorite ? "bookmark" : "bookmark-outline"}
@@ -41,7 +41,7 @@ export function FeedDetailActions({
         onPress={onDelete}
         accessibilityLabel="Delete"
         animation={{ scale: { value: 0.96 } }}
-        className="min-w-0 flex-1 flex-row items-center justify-center gap-2 py-1.5"
+        className="min-w-0 flex-1 flex-row items-center justify-center gap-2 py-2"
       >
         <Ionicons name="trash-outline" size={18} color={foreground} />
         <Typography type="body-sm" weight="medium" className="text-[13px] text-foreground">
@@ -53,7 +53,7 @@ export function FeedDetailActions({
         onPress={onShare}
         accessibilityLabel="Share"
         animation={{ scale: { value: 0.96 } }}
-        className="min-w-0 flex-1 flex-row items-center justify-center gap-2 py-1.5"
+        className="min-w-0 flex-1 flex-row items-center justify-center gap-2 py-2"
       >
         <Ionicons name="arrow-redo-outline" size={18} color={foreground} />
         <Typography type="body-sm" weight="medium" className="text-[13px] text-foreground">

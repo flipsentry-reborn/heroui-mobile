@@ -342,7 +342,7 @@ export function FeedDetail({
             </View>
           ) : null}
 
-          <View className="gap-4">
+          <View>
             <Separator className="opacity-50" />
             <FeedDetailActions
               isFavorite={item.isFavorite}
@@ -350,11 +350,8 @@ export function FeedDetail({
               onDelete={() => mockAction("Delete")}
               onShare={() => mockAction("Share")}
             />
-          </View>
-
-          <View className="gap-4">
             <Separator className="opacity-50" />
-            <View className="gap-1.5">
+            <View className="gap-1.5 pt-3">
               <Typography
                 type="body"
                 weight="semibold"

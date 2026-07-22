@@ -44,7 +44,8 @@ export function FeedCategoryPage({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [soldStatus, setSoldStatus] = useState<SoldStatusFilter>("all");
-  const [maxDays, setMaxDays] = useState<number | null>(null);
+  /** Sold defaults to last 1 day; null = "Days" (no chip / backend default). */
+  const [maxDays, setMaxDays] = useState<number | null>(1);
   const hasLoaded = useRef(false);
   const skipNextSync = useRef(true);
 

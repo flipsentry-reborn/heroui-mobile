@@ -25,6 +25,7 @@ export function FeedSoldControls({
     onStatusChange(statusFilter === status ? "all" : status);
   };
 
+  // Unset → "Days"; otherwise "1 day" / "2 day" / "3 day".
   const daysLabel = maxDays != null ? `${maxDays} day` : "Days";
 
   return (

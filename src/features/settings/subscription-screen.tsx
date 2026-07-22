@@ -28,6 +28,7 @@ import { SubscriptionPlansSkeleton } from "@/features/settings/settings-skeleton
 import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
 import {
   PLAN_ACCENTS,
+  PLAN_GLOW_GRADIENT,
   SUBSCRIPTION_DARK_BACKGROUND,
 } from "@/features/settings/subscription-theme";
 import { Fonts } from "@/lib/fonts";
@@ -123,8 +124,8 @@ function PlanCard({
       />
       <LinearGradient
         colors={[palette.glow, "transparent"]}
-        start={{ x: 1, y: 0 }}
-        end={{ x: 0.15, y: 0.9 }}
+        start={PLAN_GLOW_GRADIENT.start}
+        end={PLAN_GLOW_GRADIENT.end}
         style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
       />
       <SubscriptionParticleField />

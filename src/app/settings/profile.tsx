@@ -19,7 +19,10 @@ import {
 } from "@/features/settings/settings-section";
 import { ProfileScreenSkeleton } from "@/features/settings/settings-skeletons";
 import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
-import { PLAN_ACCENTS } from "@/features/settings/subscription-theme";
+import {
+  PLAN_ACCENTS,
+  PLAN_GLOW_GRADIENT,
+} from "@/features/settings/subscription-theme";
 import { Fonts } from "@/lib/fonts";
 import type { MockUserProfile } from "@/mocks/data/settings";
 import type { SubscriptionPlan } from "@/mocks/data/subscription";
@@ -118,8 +121,8 @@ export default function ProfileScreen(): JSX.Element {
         />
         <LinearGradient
           colors={[palette.glow, "transparent"]}
-          start={{ x: 1, y: 0 }}
-          end={{ x: 0.15, y: 0.9 }}
+          start={PLAN_GLOW_GRADIENT.start}
+          end={PLAN_GLOW_GRADIENT.end}
           style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
         />
         <SubscriptionParticleField />

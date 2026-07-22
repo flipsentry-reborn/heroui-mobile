@@ -6,6 +6,15 @@ import type { PlanAccent } from "@/mocks/data/subscription";
  */
 export const SUBSCRIPTION_DARK_BACKGROUND = "oklch(12% 0 0)";
 
+/**
+ * Accent glow wash (top-right → bottom-left).
+ * End sits past the corner so the transparent/dark zone does not land early.
+ */
+export const PLAN_GLOW_GRADIENT = {
+  start: { x: 1, y: 0 },
+  end: { x: -0.08, y: 1.18 },
+} as const;
+
 /** Shared card accents for subscription screen + settings plan card. */
 export const PLAN_ACCENTS: Record<
   PlanAccent,

@@ -9,13 +9,14 @@ import type { ImageStyle } from "react-native";
 export const AI_ESTIMATION_ASSET =
   require("../../../assets/images/ai-estimation-2.png") as number;
 
-/** Max on-screen size is 18pt; decode at 3x so we never keep a larger bitmap. */
-const DECODE_MAX_PX = 54;
+/** Max on-screen size is 20pt; decode at 3x so we never keep a larger bitmap. */
+const DECODE_MAX_PX = 60;
 
-const SIZE_STYLE: Record<15 | 16 | 18, ImageStyle> = {
+const SIZE_STYLE: Record<15 | 16 | 18 | 20, ImageStyle> = {
   15: { width: 15, height: 15 },
   16: { width: 16, height: 16 },
   18: { width: 18, height: 18 },
+  20: { width: 20, height: 20 },
 };
 
 /** Native decoded ref after {@link prefetchAiEstimationIcon}; null until boot. */

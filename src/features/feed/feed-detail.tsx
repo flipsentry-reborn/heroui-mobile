@@ -266,14 +266,14 @@ export function FeedDetail({
             <Typography
               type="body-sm"
               weight="semibold"
-              className="text-[15px] leading-5 text-foreground"
+              className="text-[17px] leading-6 text-foreground"
               numberOfLines={2}
             >
               {soldPendingPrefix ? (
                 <Typography
                   type="body-sm"
                   weight="semibold"
-                  className={`text-[15px] leading-5 ${SOLD_STATUS_TEXT_CLASS}`}
+                  className={`text-[17px] leading-6 ${SOLD_STATUS_TEXT_CLASS}`}
                   style={{ color: SOLD_STATUS_COLOR }}
                 >
                   {soldPendingPrefix}{" "}
@@ -286,16 +286,16 @@ export function FeedDetail({
               <Typography
                 type="body-sm"
                 weight="semibold"
-                className="text-[22px] leading-7 text-foreground"
+                className="text-[26px] leading-8 text-foreground"
               >
                 {formatPrice(item.price, item.currencySymbol)}
               </Typography>
               {valuation?.fairPrice != null ? (
                 <View className="min-w-0 flex-1 flex-row items-center gap-1">
-                  <AiEstimationIcon size={18} />
+                  <AiEstimationIcon size={20} />
                   <Typography
                     type="body-xs"
-                    className="min-w-0 shrink text-[11px] text-muted"
+                    className="min-w-0 shrink text-[14px] text-muted"
                     numberOfLines={1}
                   >
                     Avg. {formatPrice(valuation.fairPrice, item.currencySymbol)}

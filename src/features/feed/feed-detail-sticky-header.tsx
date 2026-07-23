@@ -92,14 +92,14 @@ export function FeedDetailStickyHeader({
           <Typography
             type="body-sm"
             weight="semibold"
-            className="text-[14px] leading-5 text-foreground"
+            className="text-[15px] leading-5 text-foreground"
             numberOfLines={1}
           >
             {soldPendingPrefix ? (
               <Typography
                 type="body-sm"
                 weight="semibold"
-                className={`text-[14px] leading-5 ${SOLD_STATUS_TEXT_CLASS}`}
+                className={`text-[15px] leading-5 ${SOLD_STATUS_TEXT_CLASS}`}
                 style={{ color: SOLD_STATUS_COLOR }}
               >
                 {soldPendingPrefix}{" "}
@@ -112,7 +112,7 @@ export function FeedDetailStickyHeader({
             <Typography
               type="body-sm"
               weight="semibold"
-              className="text-[16px] leading-5 text-foreground"
+              className="text-[18px] leading-6 text-foreground"
             >
               {priceLabel}
             </Typography>
@@ -121,7 +121,7 @@ export function FeedDetailStickyHeader({
                 <AiEstimationIcon size={18} />
                 <Typography
                   type="body-xs"
-                  className="min-w-0 shrink text-[11px] text-muted"
+                  className="min-w-0 shrink text-[13px] text-muted"
                   numberOfLines={1}
                 >
                   Avg. {estPriceLabel}

@@ -229,6 +229,13 @@ export interface FeedImageUpdateData {
   images: FeedImage;
 }
 
+/** Late comps/external patch via SignalR `ReceiveFeedValuationUpdate`. */
+export interface FeedValuationUpdateData {
+  feedId: string;
+  compValuation?: ListingValuation | null;
+  externalValuation?: ListingValuation | null;
+}
+
 export type FeedValuationsSource = {
   compValuation?: ListingValuation | null;
   externalValuation?: ListingValuation | null;

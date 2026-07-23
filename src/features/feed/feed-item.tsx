@@ -90,9 +90,10 @@ function FeedItemInner({
     [feed.id, feed.isNew],
   );
   const imageUrl =
-    feed.images.imageUrlHostedByUs ||
+    feed.images.marketplaceImages[0]?.imageUrl ||
     feed.images.mainImageUrl.imageUrl ||
-    feed.images.marketplaceImages[0]?.imageUrl;
+    feed.images.imageUrlHostedByUs ||
+    undefined;
   const statusBadges = getOrderedStatusBadges(feed);
   const valuation = resolveDisplayValuation(feed);
   const distanceUnit = getDistanceUnitSync();
@@ -197,7 +198,7 @@ function FeedItemInner({
             }}
             contentFit="cover"
             cachePolicy="memory-disk"
-            recyclingKey={feed.id}
+            recyclingKey={`${feed.id}:${imageUrl ?? ""}`}
             transition={180}
           />
           <FeedDiagonalShimmer

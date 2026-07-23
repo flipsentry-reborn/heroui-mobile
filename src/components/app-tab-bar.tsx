@@ -123,7 +123,7 @@ export const AppTabBar = observer(function AppTabBar({
           hitSlop={{ top: 8, bottom: 8 }}
           className="absolute inset-x-0 top-0 z-10 h-3 justify-start"
         >
-          <View className="h-1 w-full bg-[#FF3B30]" />
+          <View className="h-1 w-full bg-[#34C759]" />
         </Pressable>
       ) : null}
       <View
@@ -185,7 +185,7 @@ export const AppTabBar = observer(function AppTabBar({
                   <View
                     accessibilityElementsHidden
                     importantForAccessibility="no"
-                    className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full border-[1.5px] border-background bg-[#FF3B30]"
+                    className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full border-[1.5px] border-background bg-[#34C759]"
                   />
                 ) : null}
               </View>

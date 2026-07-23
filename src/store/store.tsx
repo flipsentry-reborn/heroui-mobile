@@ -51,6 +51,8 @@ async function startFeedHubConnection(): Promise<void> {
     handlers: {
       onReceiveFeed: (feed) => feedStore.handleReceiveFeed(feed),
       onImageUpdate: (update) => feedStore.handleFeedImageUpdate(update),
+      onValuationUpdate: (update) =>
+        feedStore.handleFeedValuationUpdate(update),
       onReconnected: () => feedStore.onHubReconnected(),
       onStatusChange: (status) => feedStore.setHubStatus(status),
     },

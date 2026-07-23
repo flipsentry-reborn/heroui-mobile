@@ -8,6 +8,7 @@ import {
   FEED_SHELF_LIMIT,
   insertSortedByBuySignal,
   isBestPicksCandidate,
+  isPriceDropCandidate,
   mergeCatchUpHead,
   mergeHttpPageWithLiveHead,
   prependId,
@@ -20,7 +21,11 @@ import {
 } from "@/features/feed/layout-mode";
 import { debugLog } from "@/lib/debug-log";
 import { toUserErrorMessage } from "@/lib/user-error-message";
-import type { FeedImageUpdateData, FeedItem } from "@/models/feed";
+import type {
+  FeedImageUpdateData,
+  FeedItem,
+  FeedValuationUpdateData,
+} from "@/models/feed";
 import type { Pagination } from "@/models/pagination";
 import type SearchStore from "@/store/searchStore";
 
@@ -32,6 +37,8 @@ const FEED_OPEN_LOG = "FeedOpen";
 const CATCH_UP_DEBOUNCE_MS = 600;
 /** Bound live queue while feed tabs are still loading. */
 const PENDING_FEEDS_MAX = 80;
+/** Bound pending image/valuation patches that race ahead of ReceiveFeed. */
+const PENDING_PATCH_MAX = 80;
 /** Default page size for category lists (infinite scroll). Backend max is 50. */
 const FEED_PAGE_SIZE = 40;
 
@@ -76,6 +83,12 @@ export default class FeedStore {
 
   private searchStore: SearchStore | null = null;
   private pendingFeeds: FeedItem[] = [];
+  /** Patches that arrived before the feed was in `items` (SignalR race). */
+  private pendingImageUpdates = new Map<string, FeedImageUpdateData>();
+  private pendingValuationUpdates = new Map<
+    string,
+    FeedValuationUpdateData
+  >();
   private liveHeadIds = new Set<string>();
   private catchUpTimer: ReturnType<typeof setTimeout> | null = null;
   private catchUpInFlight = false;
@@ -217,8 +230,30 @@ export default class FeedStore {
   }
 
   upsertItem(feed: FeedItem): void {
-    const existing = this.items.get(feed.id);
-    this.items.set(feed.id, existing ? { ...existing, ...feed } : feed);
+    const pendingImage = this.pendingImageUpdates.get(feed.id);
+    const pendingValuation = this.pendingValuationUpdates.get(feed.id);
+    if (pendingImage) this.pendingImageUpdates.delete(feed.id);
+    if (pendingValuation) this.pendingValuationUpdates.delete(feed.id);
+
+    const merged: FeedItem = {
+      ...feed,
+      ...(pendingImage?.images ? { images: pendingImage.images } : null),
+      ...(pendingValuation
+        ? {
+            compValuation:
+              pendingValuation.compValuation !== undefined
+                ? pendingValuation.compValuation
+                : (feed.compValuation ?? null),
+            externalValuation:
+              pendingValuation.externalValuation !== undefined
+                ? pendingValuation.externalValuation
+                : (feed.externalValuation ?? null),
+          }
+        : null),
+    };
+
+    const existing = this.items.get(merged.id);
+    this.items.set(merged.id, existing ? { ...existing, ...merged } : merged);
   }
 
   /** Clear live "just arrived" highlight after the UI shimmer finishes. */
@@ -676,46 +711,114 @@ export default class FeedStore {
       searchGroupIds: raw.searchGroupIds ?? [],
     };
 
+    // upsertItem also merges any pending image/valuation patches that raced ahead.
     const tabs = this.searchStore?.feedTabs ?? [];
-    const buckets = bucketsForLiveFeed(feed, tabs);
-
+    // Resolve buckets after upsert so pending valuation is visible on the item.
     runInAction(() => {
       this.upsertItem(feed);
-      this.liveHeadIds.add(feed.id);
+      const resolved = this.items.get(feed.id) ?? feed;
+      const buckets = bucketsForLiveFeed(resolved, tabs);
+      this.liveHeadIds.add(resolved.id);
 
       for (const bucket of buckets) {
         const mode =
           bucket === "best-picks" ? "sorted-best-picks" : "prepend";
-        this.putInBucket(bucket, feed.id, mode);
+        this.putInBucket(bucket, resolved.id, mode);
       }
 
       // Low-confidence Best Picks: dirty so open refreshes server ranking.
-      if (!isBestPicksCandidate(feed)) {
+      if (!isBestPicksCandidate(resolved)) {
         this.touchSet("dirtyBuckets", (s) => {
           s.add("best-picks");
         });
       }
-    });
 
-    debugLog.info(FEED_LIVE_LOG, "applyLiveFeed", {
-      id: feed.id,
-      buckets,
-      bucketCount: buckets.length,
-      activeCategory: this.activeCategory,
-      ms: Date.now() - t0,
-      t: Date.now(),
+      debugLog.info(FEED_LIVE_LOG, "applyLiveFeed", {
+        id: resolved.id,
+        buckets,
+        bucketCount: buckets.length,
+        activeCategory: this.activeCategory,
+        ms: Date.now() - t0,
+        t: Date.now(),
+      });
     });
   }
 
   handleFeedImageUpdate(update: FeedImageUpdateData): void {
+    if (!update.images) return;
     const existing = this.items.get(update.feedId);
-    if (!existing) return;
+    if (!existing) {
+      this.queuePendingPatch(
+        this.pendingImageUpdates,
+        update.feedId,
+        update,
+      );
+      return;
+    }
     runInAction(() => {
       this.items.set(update.feedId, {
         ...existing,
         images: update.images,
       });
     });
+  }
+
+  handleFeedValuationUpdate(update: FeedValuationUpdateData): void {
+    const existing = this.items.get(update.feedId);
+    if (!existing) {
+      this.queuePendingPatch(
+        this.pendingValuationUpdates,
+        update.feedId,
+        update,
+      );
+      return;
+    }
+
+    const updated: FeedItem = {
+      ...existing,
+      compValuation:
+        update.compValuation !== undefined
+          ? update.compValuation
+          : (existing.compValuation ?? null),
+      externalValuation:
+        update.externalValuation !== undefined
+          ? update.externalValuation
+          : (existing.externalValuation ?? null),
+    };
+
+    runInAction(() => {
+      this.items.set(update.feedId, updated);
+
+      // Late valuation may newly qualify for Best Picks / price-drop.
+      if (isBestPicksCandidate(updated)) {
+        this.putInBucket("best-picks", update.feedId, "sorted-best-picks");
+      } else {
+        this.touchSet("dirtyBuckets", (s) => {
+          s.add("best-picks");
+        });
+      }
+      if (isPriceDropCandidate(updated)) {
+        this.putInBucket("price-drop", update.feedId, "prepend");
+      }
+    });
+
+    debugLog.info(FEED_LIVE_LOG, "handleFeedValuationUpdate", {
+      id: update.feedId,
+      bestPicks: isBestPicksCandidate(updated),
+      priceDrop: isPriceDropCandidate(updated),
+      t: Date.now(),
+    });
+  }
+
+  private queuePendingPatch<T>(
+    map: Map<string, T>,
+    feedId: string,
+    value: T,
+  ): void {
+    map.set(feedId, value);
+    if (map.size <= PENDING_PATCH_MAX) return;
+    const oldest = map.keys().next().value;
+    if (oldest != null) map.delete(oldest);
   }
 
   /**
@@ -866,6 +969,8 @@ export default class FeedStore {
     this.hydratedShelves = new Set();
     this.frozenBuckets = new Set();
     this.pendingFeeds = [];
+    this.pendingImageUpdates.clear();
+    this.pendingValuationUpdates.clear();
     this.liveHeadIds = new Set();
     this.hubStatus = "disconnected";
     this.activeCategory = "for-you";

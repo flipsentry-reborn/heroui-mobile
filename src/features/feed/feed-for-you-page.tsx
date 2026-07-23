@@ -5,10 +5,8 @@ import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
-import Animated from "react-native-reanimated";
 import {
   Accordion,
-  AccordionLayoutTransition,
   PressableFeedback,
   ScrollShadow,
   SkeletonGroup,
@@ -220,11 +218,10 @@ export const FeedForYouPage = observer(function FeedForYouPage({
       color={background}
       size={12}
     >
-      <Animated.ScrollView
+      <ScrollView
         className="flex-1"
         contentContainerClassName="pb-28 pt-0.5"
         showsVerticalScrollIndicator={false}
-        layout={AccordionLayoutTransition}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -238,11 +235,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
         {forYouShelves.map((shelf) => {
           if (shelf.isAccordion) {
             return (
-              <Animated.View
-                key={shelf.key}
-                className="mb-2.5"
-                layout={AccordionLayoutTransition}
-              >
+              <View key={shelf.key} className="mb-2.5">
                 <Surface
                   variant="default"
                   className="w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl px-0 py-2"
@@ -320,7 +313,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
                     </Accordion.Item>
                   </Accordion>
                 </Surface>
-              </Animated.View>
+              </View>
             );
           }
 
@@ -375,11 +368,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
 
           if (shelf.featured) {
             return (
-              <Animated.View
-                key={shelf.key}
-                className="mb-2.5"
-                layout={AccordionLayoutTransition}
-              >
+              <View key={shelf.key} className="mb-2.5">
                 <Surface
                   variant="default"
                   className="w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl px-0 py-2"
@@ -387,22 +376,18 @@ export const FeedForYouPage = observer(function FeedForYouPage({
                   {header}
                   {rail}
                 </Surface>
-              </Animated.View>
+              </View>
             );
           }
 
           return (
-            <Animated.View
-              key={shelf.key}
-              className="mb-2.5"
-              layout={AccordionLayoutTransition}
-            >
+            <View key={shelf.key} className="mb-2.5">
               {header}
               {rail}
-            </Animated.View>
+            </View>
           );
         })}
-      </Animated.ScrollView>
+      </ScrollView>
     </ScrollShadow>
   );
 });

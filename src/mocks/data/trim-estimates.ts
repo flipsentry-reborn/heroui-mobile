@@ -222,6 +222,62 @@ function withPricingOnly(
   );
 }
 
+function fairOf(
+  option: ExternalVehicleOption,
+  countryCode?: string | null,
+): number {
+  return resolveExternalFairPrice(countryCode, option.marketplace) ?? 0;
+}
+
+/** Price ascending, then trim name A→Z. */
+function sortByPriceThenName(
+  options: ExternalVehicleOption[],
+  countryCode?: string | null,
+): ExternalVehicleOption[] {
+  return [...options].sort((a, b) => {
+    const priceDelta = fairOf(a, countryCode) - fairOf(b, countryCode);
+    if (priceDelta !== 0) return priceDelta;
+    return (a.trim ?? "").localeCompare(b.trim ?? "", undefined, {
+      sensitivity: "base",
+    });
+  });
+}
+
+/**
+ * Guarantee one selected trim whenever options exist (API sometimes omits
+ * isSelected until a later refresh).
+ */
+function ensureSelected(
+  options: ExternalVehicleOption[],
+  valuation: ListingValuation,
+): ExternalVehicleOption[] {
+  if (options.length === 0) return options;
+  if (options.some((o) => o.isSelected)) return options;
+
+  const trimKey = valuation.trim?.trim().toLowerCase();
+  let pickIndex = trimKey
+    ? options.findIndex((o) => o.trim?.trim().toLowerCase() === trimKey)
+    : -1;
+
+  if (pickIndex < 0) {
+    const target = valuation.fairPrice;
+    let bestDelta = Number.POSITIVE_INFINITY;
+    options.forEach((option, index) => {
+      const delta = Math.abs(fairOf(option, valuation.countryCode) - target);
+      if (delta < bestDelta) {
+        bestDelta = delta;
+        pickIndex = index;
+      }
+    });
+  }
+
+  if (pickIndex < 0) pickIndex = 0;
+
+  return options.map((option, index) =>
+    index === pickIndex ? { ...option, isSelected: true } : option,
+  );
+}
+
 function synthesizeOptions(valuation: ListingValuation): ExternalVehicleOption[] {
   const key = catalogKey(valuation.make, valuation.model);
   const catalog = [...(TRIM_CATALOG[key] ?? DEFAULT_TRIMS)];
@@ -265,6 +321,7 @@ function synthesizeOptions(valuation: ListingValuation): ExternalVehicleOption[]
 /**
  * Prefer API/mock `valuation.vehicleOptions`; Honda Civic uses the real
  * estimation fixture; other cars get a short synthesized sibling list.
+ * Always returns priced options sorted by price then name, with one selected.
  */
 export function resolveTrimEstimates(
   valuation: ListingValuation,
@@ -275,13 +332,14 @@ export function resolveTrimEstimates(
 
   const countryCode = valuation.countryCode;
 
+  let options: ExternalVehicleOption[];
   if (valuation.vehicleOptions != null && valuation.vehicleOptions.length > 0) {
-    return withPricingOnly(valuation.vehicleOptions, countryCode);
+    options = withPricingOnly(valuation.vehicleOptions, countryCode);
+  } else if (catalogKey(valuation.make, valuation.model) === "honda|civic") {
+    options = withPricingOnly(CIVIC_2019_VEHICLE_OPTIONS, countryCode);
+  } else {
+    options = withPricingOnly(synthesizeOptions(valuation), countryCode);
   }
 
-  if (catalogKey(valuation.make, valuation.model) === "honda|civic") {
-    return withPricingOnly(CIVIC_2019_VEHICLE_OPTIONS, countryCode);
-  }
-
-  return withPricingOnly(synthesizeOptions(valuation), countryCode);
+  return sortByPriceThenName(ensureSelected(options, valuation), countryCode);
 }

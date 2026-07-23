@@ -213,7 +213,7 @@ export function FeedDetailTrimEstimates({
                       type="body-xs"
                       className={cn(
                         "shrink-0 text-[11px]",
-                        delta > 0 ? "text-danger" : "text-success",
+                        delta > 0 ? "text-success" : "text-danger",
                       )}
                     >
                       {formatDelta(delta, currencySymbol)}

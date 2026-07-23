@@ -18,6 +18,7 @@ import {
   useToast,
 } from "heroui-native";
 
+import { AiEstimationIcon } from "@/components/icons/ai-estimation-icon";
 import { FeedDetailActions } from "@/features/feed/feed-detail-actions";
 import { FeedDetailGallery } from "@/features/feed/feed-detail-gallery";
 import { StatusBadge, ValuationBadge } from "@/features/feed/feed-badge";
@@ -39,6 +40,7 @@ import {
   SOLD_STATUS_TEXT_CLASS,
 } from "@/features/feed/sold-status";
 import agent from "@/api/agent";
+import { debugLog } from "@/lib/debug-log";
 import { openListing } from "@/lib/marketplace-links";
 import {
   getOrderedStatusBadges,
@@ -48,6 +50,8 @@ import {
   type FeedPlatform,
 } from "@/models/feed";
 import { useStore } from "@/store/store";
+
+const FEED_OPEN_LOG = "FeedOpen";
 
 const PLATFORM_CTA: Record<FeedPlatform, string> = {
   facebookMarketplace: "#1877F2",
@@ -179,6 +183,15 @@ export function FeedDetail({
     openListing(item.platform, item.listingId, item.listingUrl);
   }, [feedStore, item.id, item.listingId, item.listingUrl, item.platform]);
 
+  const handleBack = useCallback(() => {
+    debugLog.info(FEED_OPEN_LOG, "back press", {
+      id: item.id,
+      stickyVisible: stickyVisibleRef.current,
+      t: Date.now(),
+    });
+    onBack();
+  }, [item.id, onBack]);
+
   const thumbUrl = images[0];
 
   return (
@@ -197,11 +210,12 @@ export function FeedDetail({
           buySignal={valuation?.calculated ? valuation.buySignal : undefined}
           foundInLabel={
             item.creationTime && item.createdAt
-              ? formatFoundIn(item.creationTime, item.createdAt)
+              ? formatFoundIn(item.creationTime, item.createdAt, item.platform)
               : undefined
           }
           locationLabel={item.locationText || undefined}
           topInset={insets.top}
+          onBack={handleBack}
         />
       ) : null}
 
@@ -217,7 +231,7 @@ export function FeedDetail({
 
           {!stickyVisible ? (
             <PressableFeedback
-              onPress={onBack}
+              onPress={handleBack}
               accessibilityLabel="Go back"
               className="absolute left-4 z-10 h-10 w-10 items-center justify-center rounded-full bg-black/55"
               style={{ top: insets.top + 8 }}
@@ -271,9 +285,16 @@ export function FeedDetail({
                 {formatPrice(item.price, item.currencySymbol)}
               </Typography>
               {valuation?.fairPrice != null ? (
-                <Typography type="body-xs" className="min-w-0 flex-1 text-[11px] text-muted">
-                  → {formatPrice(valuation.fairPrice, item.currencySymbol)}
-                </Typography>
+                <View className="min-w-0 flex-1 flex-row items-center gap-1">
+                  <AiEstimationIcon size={18} />
+                  <Typography
+                    type="body-xs"
+                    className="min-w-0 shrink text-[11px] text-muted"
+                    numberOfLines={1}
+                  >
+                    Avg. {formatPrice(valuation.fairPrice, item.currencySymbol)}
+                  </Typography>
+                </View>
               ) : (
                 <View className="flex-1" />
               )}

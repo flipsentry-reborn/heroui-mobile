@@ -8,6 +8,9 @@ import {
   FeedCategoryHeader,
   resolveCategoryMeta,
 } from "@/features/feed/feed-category-title";
+import { debugLog } from "@/lib/debug-log";
+
+const FEED_OPEN_LOG = "FeedOpen";
 
 export default function FeedCategoryScreen(): JSX.Element {
   const router = useRouter();
@@ -22,9 +25,21 @@ export default function FeedCategoryScreen(): JSX.Element {
 
   const handlePressItem = useCallback(
     (id: string) => {
+      const t0 = Date.now();
+      debugLog.info(FEED_OPEN_LOG, "handlePressItem → push", {
+        id,
+        source: "feed-category",
+        category,
+        t: t0,
+      });
       router.push({ pathname: "/listing/[id]", params: { id } });
+      debugLog.info(FEED_OPEN_LOG, "handlePressItem push queued", {
+        id,
+        ms: Date.now() - t0,
+        t: Date.now(),
+      });
     },
-    [router],
+    [category, router],
   );
 
   if (!category) {

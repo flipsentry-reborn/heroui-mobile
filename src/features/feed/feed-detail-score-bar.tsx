@@ -1,5 +1,5 @@
 import { useId, useState, type JSX } from "react";
-import { View, type LayoutChangeEvent } from "react-native";
+import { Dimensions, View, type LayoutChangeEvent } from "react-native";
 import Svg, { ClipPath, Defs, G, Polygon, Rect } from "react-native-svg";
 import { Typography, useThemeColor } from "heroui-native";
 
@@ -13,11 +13,14 @@ const CUT_DEG = 18;
 /** Tailwind lime-700 — Good tier (no theme token). */
 const GOOD_VALUE_FILL = "#4d7c0f";
 
+/** Detail page horizontal padding estimate so fill paints before onLayout. */
+const ESTIMATED_BAR_WIDTH = Math.max(200, Dimensions.get("window").width - 32);
+
 const TIER_LABEL: Record<ValuationTier, string> = {
   greatDeal: "Great",
   goodValue: "Good",
   fairPrice: "Fair",
-  overpriced: "Skip",
+  overpriced: "Bad",
 };
 
 const TIER_TRACK_CLASS: Record<ValuationTier, string> = {
@@ -51,19 +54,25 @@ export function FeedDetailScoreBar({
   const pct = Math.max(0, Math.min(100, buySignal));
   const tier = getValuationTier(buySignal);
   const barH = compact ? "h-2" : "h-2.5";
+  const barHeightPx = compact ? 8 : 10;
   const cutH = compact ? "h-3.5 -top-0.5" : "h-5 -top-1";
   const cutBg = compact ? "bg-surface-secondary" : "bg-background";
   const clipId = `score-fill-${useId().replace(/:/g, "")}`;
 
   const [success, warning, danger] = useThemeColor(["success", "warning", "danger"]);
+  // Fallbacks so fill never waits on theme token resolution.
   const tierFill: Record<ValuationTier, string> = {
-    greatDeal: success,
+    greatDeal: success || "#22c55e",
     goodValue: GOOD_VALUE_FILL,
-    fairPrice: warning,
-    overpriced: danger,
+    fairPrice: warning || "#eab308",
+    overpriced: danger || "#ef4444",
   };
 
-  const [size, setSize] = useState({ width: 0, height: 0 });
+  // Seed size so the filled score is visible on first paint (not after layout).
+  const [size, setSize] = useState({
+    width: ESTIMATED_BAR_WIDTH,
+    height: barHeightPx,
+  });
   const onBarLayout = (event: LayoutChangeEvent): void => {
     const { width, height } = event.nativeEvent.layout;
     setSize((prev) =>
@@ -74,7 +83,7 @@ export function FeedDetailScoreBar({
   const fillW = (pct / 100) * size.width;
   /** Half-projection of an 18° cut across bar height — centers the tip on `pct`. */
   const diag = (size.height / 2) * Math.tan((CUT_DEG * Math.PI) / 180);
-  // RN +rotate is clockwise → vertical cut leans `/` (top-right → bottom-left).
+  // RN +svg is clockwise → vertical cut leans `/` (top-right → bottom-left).
   const tipTop = pct >= 100 ? size.width : Math.min(size.width, fillW + diag);
   const tipBottom = pct >= 100 ? size.width : Math.max(0, fillW - diag);
   /** Darker band width along the tip so the finish reads clearly. */
@@ -124,8 +133,8 @@ export function FeedDetailScoreBar({
           ))}
         </View>
 
-        {/* Solid fill clipped to a diagonal tip — track stays visible past the edge */}
-        {size.width > 0 && size.height > 0 && pct > 0 ? (
+        {/* Solid fill clipped to a diagonal tip — paints immediately via seeded size */}
+        {pct > 0 ? (
           <Svg
             width={size.width}
             height={size.height}

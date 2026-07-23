@@ -7,34 +7,34 @@ type BadgeScale = "default" | "detail";
 
 const BADGE_SIZE_CLASS: Record<BadgeScale, string> = {
   default:
-    "h-6 min-h-6 max-h-6 items-center justify-center rounded-md px-1.5 py-0",
+    "h-5 min-h-5 max-h-5 items-center justify-center rounded-md px-1 py-0",
   detail:
-    "h-7 min-h-7 max-h-7 items-center justify-center rounded-md px-2 py-0",
+    "h-6 min-h-6 max-h-6 items-center justify-center rounded-md px-1.5 py-0",
 };
 
 const BADGE_LABEL_CLASS: Record<BadgeScale, string> = {
-  default: "text-xs font-medium leading-none !text-white",
-  detail: "text-sm font-medium leading-none !text-white",
+  default: "text-xs font-bold leading-none !text-white",
+  detail: "text-sm font-bold leading-none !text-white",
 };
 
 /**
  * Deal quality (valuation) only - each tier has its own color.
  * Good uses olive-lime for a natural Fair → Good → Great progression.
- * Backgrounds are translucent so they sit softer on listing photos.
+ * Backgrounds are slightly translucent so they sit softer on listing photos.
  * Label text is always white.
  */
 const TIER_BG: Record<ValuationTier, string> = {
-  greatDeal: "!bg-green-600/75",
-  goodValue: "!bg-lime-700/75",
-  fairPrice: "!bg-amber-500/75",
-  overpriced: "!bg-red-600/75",
+  greatDeal: "!bg-green-600/85",
+  goodValue: "!bg-lime-700/85",
+  fairPrice: "!bg-amber-500/85",
+  overpriced: "!bg-red-600/85",
 };
 
 const TIER_LABEL: Record<ValuationTier, string> = {
   greatDeal: "Great",
   goodValue: "Good",
   fairPrice: "Fair",
-  overpriced: "Skip",
+  overpriced: "Bad",
 };
 
 interface FeedBadgeProps {
@@ -87,5 +87,5 @@ export function StatusBadge({
   label: string;
   scale?: BadgeScale;
 }): JSX.Element {
-  return <FeedBadge label={label} scale={scale} chipClass="!bg-black/60" />;
+  return <FeedBadge label={label} scale={scale} chipClass="!bg-black/75" />;
 }

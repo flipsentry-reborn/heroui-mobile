@@ -18,6 +18,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { useUniwind } from "uniwind";
 
 import { setUnauthorizedHandler } from "@/api/http/client";
+import { prefetchAiEstimationIcon } from "@/components/icons/ai-estimation-icon";
 import {
   applyAppearance,
   loadCachedAppearance,
@@ -127,6 +128,8 @@ export default function RootLayout(): JSX.Element | null {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      // Warm the hot-path AI sparkle decode in parallel with boot work.
+      const iconPrefetch = prefetchAiEstimationIcon();
       try {
         const cached = await loadCachedAppearance();
         if (!cancelled) applyAppearance(cached ?? "dark");
@@ -137,6 +140,11 @@ export default function RootLayout(): JSX.Element | null {
         await store.hydrate();
       } catch {
         // Mock hydrate is best-effort; screens reload on focus.
+      }
+      try {
+        await iconPrefetch;
+      } catch {
+        // Falls back to the bundled require on first paint.
       }
       if (!cancelled) setBootReady(true);
     })();

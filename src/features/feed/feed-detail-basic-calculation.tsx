@@ -213,18 +213,6 @@ export function FeedDetailBasicCalculation({
                   {formatPrice(valuation.profit, currencySymbol)}
                 </Typography>
               </View>
-              <View className="min-w-0 flex-1 rounded-xl bg-background px-3 py-2.5">
-                <Typography type="body-xs" className="text-muted">
-                  Buy signal
-                </Typography>
-                <Typography
-                  type="body-sm"
-                  weight="semibold"
-                  className="text-foreground"
-                >
-                  {valuation.buySignal}
-                </Typography>
-              </View>
             </View>
 
             <View className="rounded-xl bg-background px-3 py-1">

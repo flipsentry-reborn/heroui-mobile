@@ -7,7 +7,10 @@ import type PagerView from "react-native-pager-view";
 import { FeedHeader } from "@/features/feed/feed-header";
 import { FeedPager } from "@/features/feed/feed-pager";
 import { FeedQuickFilterPage } from "@/features/feed/feed-quick-filter-page";
+import { debugLog } from "@/lib/debug-log";
 import { useStore } from "@/store/store";
+
+const FEED_OPEN_LOG = "FeedOpen";
 
 const FeedScreen = observer(function FeedScreen(): JSX.Element {
   const router = useRouter();
@@ -49,8 +52,30 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
 
   const handlePressItem = useCallback(
     (id: string) => {
-      void feedStore.markClicked(id);
+      const t0 = Date.now();
+      debugLog.info(FEED_OPEN_LOG, "handlePressItem → push", {
+        id,
+        source: "feed-index",
+        t: t0,
+      });
+      // Navigate first; defer store mutation so list observers don't block the transition.
       router.push({ pathname: "/listing/[id]", params: { id } });
+      debugLog.info(FEED_OPEN_LOG, "handlePressItem push queued", {
+        id,
+        ms: Date.now() - t0,
+        t: Date.now(),
+      });
+      requestIdleCallback(
+        () => {
+          debugLog.info(FEED_OPEN_LOG, "deferred markClicked", {
+            id,
+            sincePressMs: Date.now() - t0,
+            t: Date.now(),
+          });
+          void feedStore.markClicked(id);
+        },
+        { timeout: 1000 },
+      );
     },
     [feedStore, router],
   );

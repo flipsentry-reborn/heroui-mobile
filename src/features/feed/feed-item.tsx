@@ -10,6 +10,7 @@ import {
   useThemeColor,
 } from "heroui-native";
 
+import { AiEstimationIcon } from "@/components/icons/ai-estimation-icon";
 import PlatformIcon from "@/components/icons/PlatformIcon";
 import {
   StatusBadge,
@@ -20,6 +21,7 @@ import {
   SOLD_STATUS_COLOR,
   SOLD_STATUS_TEXT_CLASS,
 } from "@/features/feed/sold-status";
+import { debugLog } from "@/lib/debug-log";
 import { formatOdometerCompact } from "@/lib/distance-utils";
 import { getDistanceUnitSync } from "@/mocks/services/settings";
 import {
@@ -28,6 +30,8 @@ import {
   type FeedItem as FeedModel,
 } from "@/models/feed";
 import { useStore } from "@/store/store";
+
+const FEED_OPEN_LOG = "FeedOpen";
 
 /**
  * Image sizing is layout-split so For You shelves can grow without
@@ -104,8 +108,22 @@ export function FeedItem({
 
   const handleShimmerDone = useCallback(() => {
     setShowNewShimmer(false);
+    debugLog.info(FEED_OPEN_LOG, "shimmer done → clearNewFlag", {
+      id: feed.id,
+      t: Date.now(),
+    });
     feedStore.clearNewFlag(feed.id);
   }, [feed.id, feedStore]);
+
+  const handlePress = useCallback(() => {
+    debugLog.info(FEED_OPEN_LOG, "card press", {
+      id: feed.id,
+      isNew: Boolean(feed.isNew),
+      layout,
+      t: Date.now(),
+    });
+    onPress?.(feed.id);
+  }, [feed.id, feed.isNew, layout, onPress]);
 
   /** Rail (For You) slightly compact; grid category pages keep fuller type. */
   const priceClass = isRail
@@ -131,16 +149,14 @@ export function FeedItem({
 
   return (
     <PressableFeedback
-      onPress={() => onPress?.(feed.id)}
+      onPress={handlePress}
       className={isRail ? "mr-1.5" : "mb-0.5 flex-1 px-px"}
       style={isRail ? { width: railW } : undefined}
       animation={{ scale: { value: 0.98 } }}
     >
       <Card
         variant="transparent"
-        className={`${isRail ? "" : "flex-1 "}gap-0 overflow-visible rounded-none border-0 ${
-          featured ? "bg-transparent" : "bg-background"
-        } p-0`}
+        className={`${isRail ? "" : "flex-1 "}gap-0 overflow-visible rounded-none border-0 bg-transparent p-0`}
       >
         <View className="relative overflow-hidden rounded-lg">
           <Image
@@ -154,6 +170,7 @@ export function FeedItem({
             transition={180}
           />
           <FeedDiagonalShimmer
+            key={feed.id}
             active={showNewShimmer}
             onDone={handleShimmerDone}
           />
@@ -206,11 +223,7 @@ export function FeedItem({
         </View>
 
         {/* Exactly 3 rows: price, title (ellipsis), meta */}
-        <Card.Body
-          className={`gap-0.5 px-1.5 pb-1.5 pt-1 ${
-            featured ? "bg-transparent" : "bg-background"
-          }`}
-        >
+        <Card.Body className="gap-0.5 bg-transparent px-1.5 pb-1.5 pt-1">
           <View className="flex-row items-center gap-1">
             <Typography
               type="body-sm"
@@ -221,13 +234,16 @@ export function FeedItem({
               {formatPrice(feed.price, feed.currencySymbol)}
             </Typography>
             {valuation?.fairPrice != null ? (
-              <Typography
-                type="body-xs"
-                className={estClass}
-                numberOfLines={1}
-              >
-                → {formatPrice(valuation.fairPrice, feed.currencySymbol)}
-              </Typography>
+              <View className="min-w-0 flex-1 flex-row items-center gap-0.5">
+                <AiEstimationIcon size={isRail ? 15 : 16} />
+                <Typography
+                  type="body-xs"
+                  className={`min-w-0 shrink ${estClass}`}
+                  numberOfLines={1}
+                >
+                  Avg. {formatPrice(valuation.fairPrice, feed.currencySymbol)}
+                </Typography>
+              </View>
             ) : null}
           </View>
 

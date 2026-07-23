@@ -16,6 +16,13 @@ import type { FeedImageUpdateData, FeedItem } from "@/models/feed";
 import type SearchStore from "@/store/searchStore";
 
 const CATCH_UP_LOG = "FeedCatchUp";
+const FEED_LIVE_LOG = "FeedLive";
+const FEED_OPEN_LOG = "FeedOpen";
+
+/** Collapse reconnect + AppState resume into one catch-up run. */
+const CATCH_UP_DEBOUNCE_MS = 600;
+/** Bound live queue while feed tabs are still loading. */
+const PENDING_FEEDS_MAX = 80;
 
 export type FeedHubStatus = "disconnected" | "connecting" | "connected";
 
@@ -47,6 +54,9 @@ export default class FeedStore {
   private searchStore: SearchStore | null = null;
   private pendingFeeds: FeedItem[] = [];
   private liveHeadIds = new Set<string>();
+  private catchUpTimer: ReturnType<typeof setTimeout> | null = null;
+  private catchUpInFlight = false;
+  private catchUpQueued = false;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -95,6 +105,7 @@ export default class FeedStore {
   clearNewFlag(id: string): void {
     const existing = this.items.get(id);
     if (!existing?.isNew) return;
+    debugLog.info(FEED_LIVE_LOG, "clearNewFlag", { id, t: Date.now() });
     this.items.set(id, { ...existing, isNew: false });
   }
 
@@ -328,6 +339,14 @@ export default class FeedStore {
   handleReceiveFeed(feed: FeedItem): void {
     if (!this.searchStore?.hasLoadedFeedTabAvailability) {
       this.pendingFeeds.push(feed);
+      if (this.pendingFeeds.length > PENDING_FEEDS_MAX) {
+        this.pendingFeeds = this.pendingFeeds.slice(-PENDING_FEEDS_MAX);
+      }
+      debugLog.info(FEED_LIVE_LOG, "receive queued (tabs not ready)", {
+        id: feed.id,
+        pending: this.pendingFeeds.length,
+        t: Date.now(),
+      });
       return;
     }
     this.applyLiveFeed(feed);
@@ -337,16 +356,21 @@ export default class FeedStore {
     if (!this.pendingFeeds.length) return;
     const queued = this.pendingFeeds;
     this.pendingFeeds = [];
+    debugLog.info(FEED_LIVE_LOG, "flushPendingFeeds", {
+      count: queued.length,
+      t: Date.now(),
+    });
     for (const feed of queued) {
       this.applyLiveFeed(feed);
     }
   }
 
   private applyLiveFeed(raw: FeedItem): void {
+    const t0 = Date.now();
     const feed: FeedItem = {
       ...raw,
       isNew: true,
-      receivedAt: Date.now(),
+      receivedAt: t0,
       searchGroupIds: raw.searchGroupIds ?? [],
     };
 
@@ -370,6 +394,15 @@ export default class FeedStore {
         });
       }
     });
+
+    debugLog.info(FEED_LIVE_LOG, "applyLiveFeed", {
+      id: feed.id,
+      buckets,
+      bucketCount: buckets.length,
+      activeCategory: this.activeCategory,
+      ms: Date.now() - t0,
+      t: Date.now(),
+    });
   }
 
   handleFeedImageUpdate(update: FeedImageUpdateData): void {
@@ -383,7 +416,39 @@ export default class FeedStore {
     });
   }
 
+  /**
+   * Debounced + single-flight catch-up after hub reconnect or app resume.
+   * Rapid reconnect/resume events collapse into one HTTP burst.
+   */
   onHubReconnected(): void {
+    if (this.catchUpTimer) {
+      clearTimeout(this.catchUpTimer);
+    }
+    this.catchUpTimer = setTimeout(() => {
+      this.catchUpTimer = null;
+      void this.runCatchUpSingleFlight();
+    }, CATCH_UP_DEBOUNCE_MS);
+  }
+
+  private async runCatchUpSingleFlight(): Promise<void> {
+    if (this.catchUpInFlight) {
+      this.catchUpQueued = true;
+      debugLog.info(CATCH_UP_LOG, "catch-up coalesced (in flight)");
+      return;
+    }
+
+    this.catchUpInFlight = true;
+    try {
+      do {
+        this.catchUpQueued = false;
+        await this.executeCatchUp();
+      } while (this.catchUpQueued);
+    } finally {
+      this.catchUpInFlight = false;
+    }
+  }
+
+  private async executeCatchUp(): Promise<void> {
     const targets = new Set<string>(["best-picks"]);
     if (this.activeCategory === "for-you") {
       for (const key of this.hydratedShelves) {
@@ -401,13 +466,10 @@ export default class FeedStore {
       pageSize: 10,
     });
 
-    void Promise.all(targetList.map((b) => this.catchUpBucket(b, 10))).then(
-      () => {
-        debugLog.info(CATCH_UP_LOG, "reconnect catch-up finished", {
-          targets: targetList,
-        });
-      },
-    );
+    await Promise.all(targetList.map((b) => this.catchUpBucket(b, 10)));
+    debugLog.info(CATCH_UP_LOG, "reconnect catch-up finished", {
+      targets: targetList,
+    });
   }
 
   async toggleFavorite(id: string): Promise<FeedItem | null> {
@@ -462,6 +524,11 @@ export default class FeedStore {
   async markClicked(id: string): Promise<void> {
     const item = this.items.get(id);
     if (item && (!item.seenAt || item.seenAt.length === 0)) {
+      debugLog.info(FEED_OPEN_LOG, "markClicked mutate", {
+        id,
+        wasNew: Boolean(item.isNew),
+        t: Date.now(),
+      });
       runInAction(() => {
         this.items.set(id, {
           ...item,
@@ -478,6 +545,12 @@ export default class FeedStore {
   }
 
   reset(): void {
+    if (this.catchUpTimer) {
+      clearTimeout(this.catchUpTimer);
+      this.catchUpTimer = null;
+    }
+    this.catchUpInFlight = false;
+    this.catchUpQueued = false;
     this.items.clear();
     this.lists = {};
     this.shelves = {};

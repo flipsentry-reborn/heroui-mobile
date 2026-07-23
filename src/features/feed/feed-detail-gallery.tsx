@@ -33,6 +33,8 @@ export function FeedDetailGallery({
  const [index, setIndex] = useState(0);
  const listRef = useRef<FlatList<string>>(null);
  const [surfaceSecondary, accent] = useThemeColor(["surface-secondary", "accent"]);
+ const showThumbs = images.length > 1;
+ const galleryH = DETAIL_HERO_H + (showThumbs ? THUMBS_H : 0);
 
  const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
  const next = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
@@ -45,16 +47,16 @@ export function FeedDetailGallery({
  };
 
  const collapseStyle = useAnimatedStyle(() => {
- if (!scrollY) return {};
+ if (!scrollY) return { height: galleryH };
  const y = Math.max(0, scrollY.value);
  return {
  height: interpolate(
  y,
- [0, DETAIL_HERO_H],
- [DETAIL_HERO_H + THUMBS_H, 0],
+ [0, galleryH],
+ [galleryH, 0],
  Extrapolation.CLAMP,
  ),
- opacity: interpolate(y, [0, DETAIL_HERO_H * 0.55], [1, 0], Extrapolation.CLAMP),
+ opacity: interpolate(y, [0, galleryH * 0.55], [1, 0], Extrapolation.CLAMP),
  };
  });
 
@@ -107,7 +109,7 @@ export function FeedDetailGallery({
  )}
  />
 
- {images.length > 1 ? (
+ {showThumbs ? (
  <ScrollView
  horizontal
  showsHorizontalScrollIndicator={false}

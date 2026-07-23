@@ -1,9 +1,11 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import type { JSX } from "react";
 import { View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
-import { Typography, useThemeColor } from "heroui-native";
+import { PressableFeedback, Typography, useThemeColor } from "heroui-native";
 
+import { AiEstimationIcon } from "@/components/icons/ai-estimation-icon";
 import { ValuationBadge } from "@/features/feed/feed-badge";
 import { FeedDetailScoreBar } from "@/features/feed/feed-detail-score-bar";
 import {
@@ -24,6 +26,7 @@ interface FeedDetailStickyHeaderProps {
   foundInLabel?: string;
   locationLabel?: string;
   topInset: number;
+  onBack: () => void;
 }
 
 export function FeedDetailStickyHeader({
@@ -36,8 +39,12 @@ export function FeedDetailStickyHeader({
   foundInLabel,
   locationLabel,
   topInset,
+  onBack,
 }: FeedDetailStickyHeaderProps): JSX.Element {
-  const [surfaceSecondary] = useThemeColor(["surface-secondary"]);
+  const [surfaceSecondary, foreground] = useThemeColor([
+    "surface-secondary",
+    "foreground",
+  ]);
 
   return (
     <Animated.View
@@ -53,7 +60,16 @@ export function FeedDetailStickyHeader({
       }}
       className="border-b border-border bg-surface-secondary"
     >
-      <View className="flex-row items-stretch gap-3 px-3 pb-3 pt-1.5">
+      <View className="flex-row items-stretch gap-2 px-2 pb-3 pt-1.5">
+        <PressableFeedback
+          onPress={onBack}
+          accessibilityLabel="Go back"
+          className="mt-1 h-10 w-10 shrink-0 items-center justify-center rounded-full"
+          animation={{ scale: { value: 0.92 } }}
+        >
+          <Ionicons name="chevron-back" size={22} color={foreground} />
+        </PressableFeedback>
+
         {imageUrl ? (
           <Image
             source={{ uri: imageUrl }}
@@ -101,9 +117,16 @@ export function FeedDetailStickyHeader({
               {priceLabel}
             </Typography>
             {estPriceLabel ? (
-              <Typography type="body-xs" className="min-w-0 flex-1 text-[11px] text-muted">
-                → {estPriceLabel}
-              </Typography>
+              <View className="min-w-0 flex-1 flex-row items-center gap-1">
+                <AiEstimationIcon size={18} />
+                <Typography
+                  type="body-xs"
+                  className="min-w-0 shrink text-[11px] text-muted"
+                  numberOfLines={1}
+                >
+                  Avg. {estPriceLabel}
+                </Typography>
+              </View>
             ) : (
               <View className="flex-1" />
             )}

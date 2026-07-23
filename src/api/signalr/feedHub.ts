@@ -4,6 +4,8 @@ import {
   HubConnectionState,
   HttpTransportType,
   LogLevel,
+  type IRetryPolicy,
+  type RetryContext,
 } from "@microsoft/signalr";
 import { AppState, type AppStateStatus } from "react-native";
 
@@ -12,6 +14,11 @@ import { debugLog } from "@/lib/debug-log";
 import type { FeedImageUpdateData, FeedItem } from "@/models/feed";
 
 const LOG = "FeedHub";
+
+/** Backoff steps (ms) before saturating at the last value forever. */
+const RECONNECT_DELAYS_MS = [0, 2000, 5000, 10000, 20000, 30000] as const;
+const START_RETRY_MAX_MS = 30_000;
+const JITTER_RATIO = 0.15;
 
 export type FeedHubHandlers = {
   onReceiveFeed: (feed: FeedItem) => void;
@@ -29,6 +36,34 @@ let appStateSub: { remove: () => void } | null = null;
 let tokenFactory: FeedHubAccessTokenFactory | null = null;
 let handlers: FeedHubHandlers | null = null;
 let startPromise: Promise<void> | null = null;
+let lifecycleBound = false;
+let startRetryTimer: ReturnType<typeof setTimeout> | null = null;
+let startRetryAttempt = 0;
+let intentionalStop = false;
+
+function withJitter(delayMs: number): number {
+  if (delayMs <= 0) return 0;
+  const spread = delayMs * JITTER_RATIO;
+  return Math.max(0, Math.round(delayMs + (Math.random() * 2 - 1) * spread));
+}
+
+function delayForAttempt(attempt: number): number {
+  const index = Math.min(Math.max(attempt, 0), RECONNECT_DELAYS_MS.length - 1);
+  return withJitter(RECONNECT_DELAYS_MS[index]);
+}
+
+/** Never returns null — keeps retrying with capped exponential backoff + jitter. */
+const durableReconnectPolicy: IRetryPolicy = {
+  nextRetryDelayInMilliseconds(retryContext: RetryContext): number {
+    const delay = delayForAttempt(retryContext.previousRetryCount);
+    debugLog.info(LOG, "reconnect schedule", {
+      previousRetryCount: retryContext.previousRetryCount,
+      delayMs: delay,
+      elapsedMs: retryContext.elapsedMilliseconds,
+    });
+    return delay;
+  },
+};
 
 function setStatus(
   status: "disconnected" | "connecting" | "connected",
@@ -36,7 +71,33 @@ function setStatus(
   handlers?.onStatusChange?.(status);
 }
 
-function bindHandlers(hub: HubConnection): void {
+function clearStartRetry(): void {
+  if (startRetryTimer) {
+    clearTimeout(startRetryTimer);
+    startRetryTimer = null;
+  }
+  startRetryAttempt = 0;
+}
+
+function scheduleStartRetry(): void {
+  if (intentionalStop || !connection || !tokenFactory || !handlers) return;
+  if (startRetryTimer) return;
+
+  const delay = Math.min(delayForAttempt(startRetryAttempt), START_RETRY_MAX_MS);
+  startRetryAttempt += 1;
+  debugLog.info(LOG, "start retry scheduled", {
+    attempt: startRetryAttempt,
+    delayMs: delay,
+  });
+
+  startRetryTimer = setTimeout(() => {
+    startRetryTimer = null;
+    if (intentionalStop || !connection || !tokenFactory || !handlers) return;
+    void ensureStarted();
+  }, delay);
+}
+
+function bindMessageHandlers(hub: HubConnection): void {
   hub.off("ReceiveFeed");
   hub.off("ReceiveFeedImageUpdate");
 
@@ -46,6 +107,11 @@ function bindHandlers(hub: HubConnection): void {
   hub.on("ReceiveFeedImageUpdate", (update: FeedImageUpdateData) => {
     handlers?.onImageUpdate?.(update);
   });
+}
+
+function bindLifecycleOnce(hub: HubConnection): void {
+  if (lifecycleBound) return;
+  lifecycleBound = true;
 
   hub.onreconnecting((error) => {
     debugLog.warn(LOG, "reconnecting", {
@@ -59,38 +125,55 @@ function bindHandlers(hub: HubConnection): void {
       connectionId: connectionId ?? null,
       state: hub.state,
     });
+    clearStartRetry();
     setStatus("connected");
     handlers?.onReconnected?.();
   });
   hub.onclose((error) => {
     debugLog.warn(LOG, "closed", {
       error: error?.message ?? String(error ?? ""),
+      intentionalStop,
     });
     setStatus("disconnected");
+    // Durable policy normally reconnects; if the hub fully closed (e.g. stop
+    // during reconnect), resume via start retry unless we intended to stop.
+    if (!intentionalStop) {
+      scheduleStartRetry();
+    }
   });
 }
 
 async function ensureStarted(): Promise<void> {
-  if (!connection || !tokenFactory || !handlers) return;
+  if (!connection || !tokenFactory || !handlers || intentionalStop) return;
   if (connection.state === HubConnectionState.Connected) {
+    clearStartRetry();
     setStatus("connected");
     return;
   }
-  if (connection.state === HubConnectionState.Connecting) return;
+  if (
+    connection.state === HubConnectionState.Connecting ||
+    connection.state === HubConnectionState.Reconnecting
+  ) {
+    return;
+  }
 
   setStatus("connecting");
   try {
     await connection.start();
+    if (intentionalStop) return;
     debugLog.info(LOG, "started", {
       state: connection.state,
       connectionId: connection.connectionId ?? null,
     });
+    clearStartRetry();
     setStatus("connected");
   } catch (error) {
+    if (intentionalStop) return;
     debugLog.warn(LOG, "start failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     setStatus("disconnected");
+    scheduleStartRetry();
   }
 }
 
@@ -99,7 +182,7 @@ function onAppStateChange(next: AppStateStatus): void {
     debugLog.info(LOG, "app state", { next });
     return;
   }
-  if (!connection || !tokenFactory) return;
+  if (!connection || !tokenFactory || intentionalStop) return;
 
   // Mobile often keeps HubConnectionState.Connected while backgrounded, but
   // ReceiveFeed events are still missed — always run catch-up on resume.
@@ -115,7 +198,10 @@ function onAppStateChange(next: AppStateStatus): void {
     state: connection.state,
   });
   void ensureStarted().then(() => {
-    handlers?.onReconnected?.();
+    if (intentionalStop) return;
+    if (connection?.state === HubConnectionState.Connected) {
+      handlers?.onReconnected?.();
+    }
   });
 }
 
@@ -123,11 +209,12 @@ export async function startFeedHub(options: {
   getAccessToken: FeedHubAccessTokenFactory;
   handlers: FeedHubHandlers;
 }): Promise<void> {
+  intentionalStop = false;
   tokenFactory = options.getAccessToken;
   handlers = options.handlers;
 
   if (connection) {
-    bindHandlers(connection);
+    bindMessageHandlers(connection);
     if (startPromise) {
       await startPromise;
       return;
@@ -150,11 +237,13 @@ export async function startFeedHub(options: {
         "X-Platform": "mobile",
       },
     })
-    .withAutomaticReconnect([0, 2000, 5000, 10000, 20000])
+    .withAutomaticReconnect(durableReconnectPolicy)
     .configureLogging(__DEV__ ? LogLevel.Information : LogLevel.Warning)
     .build();
 
-  bindHandlers(connection);
+  lifecycleBound = false;
+  bindMessageHandlers(connection);
+  bindLifecycleOnce(connection);
 
   if (!appStateSub) {
     appStateSub = AppState.addEventListener("change", onAppStateChange);
@@ -167,6 +256,8 @@ export async function startFeedHub(options: {
 }
 
 export async function stopFeedHub(): Promise<void> {
+  intentionalStop = true;
+  clearStartRetry();
   appStateSub?.remove();
   appStateSub = null;
   tokenFactory = null;
@@ -174,6 +265,8 @@ export async function stopFeedHub(): Promise<void> {
 
   const hub = connection;
   connection = null;
+  lifecycleBound = false;
+
   if (!hub) {
     setStatus("disconnected");
     return;

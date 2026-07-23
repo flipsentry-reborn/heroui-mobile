@@ -2,7 +2,16 @@ import type { JSX, ReactNode } from "react";
 import { View } from "react-native";
 import { Typography } from "heroui-native";
 
-import type { FeedItem } from "@/models/feed";
+import type { FeedItem, FeedPlatform } from "@/models/feed";
+
+/**
+ * Platform listing lag (matches mobile-app detail `platformDelayMs`).
+ * Facebook ~7 min, OfferUp ~30 min after the seller posts.
+ */
+const PLATFORM_DELAY_MS: Partial<Record<FeedPlatform, number>> = {
+  facebookMarketplace: 7 * 60 * 1000,
+  offerUp: 30 * 60 * 1000,
+};
 
 function formatTimeAgo(dateString: string): string {
   const diffMs = Math.max(0, Date.now() - new Date(dateString).getTime());
@@ -13,16 +22,28 @@ function formatTimeAgo(dateString: string): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
-export function formatFoundIn(creationTime: string, createdAt: string): string {
+/**
+ * "Found in" = createdAt − creationTime − platform delay (mobile-app Spotted in).
+ * Never shows `0 sec` — sub-second / 1s floors round up to `1 sec`.
+ */
+export function formatFoundIn(
+  creationTime: string,
+  createdAt: string,
+  platform?: FeedPlatform,
+): string {
+  const delay = (platform && PLATFORM_DELAY_MS[platform]) || 0;
   const diffMs = Math.max(
     0,
-    new Date(createdAt).getTime() - new Date(creationTime).getTime(),
+    new Date(createdAt).getTime() - new Date(creationTime).getTime() - delay,
   );
   const totalSeconds = Math.floor(diffMs / 1000);
   const totalMinutes = Math.floor(totalSeconds / 60);
   const totalHours = Math.floor(totalMinutes / 60);
 
-  if (totalMinutes < 1) return `${totalSeconds} sec`;
+  if (totalMinutes < 1) {
+    // Avoid "Found in 0 sec" when delay nearly cancels the gap.
+    return `${Math.max(1, totalSeconds)} sec`;
+  }
   if (totalHours < 1) {
     const sec = totalSeconds % 60;
     return `${totalMinutes} min ${sec} sec`;
@@ -76,7 +97,7 @@ export function FeedDetailMetaSection({ item }: FeedDetailMetaSectionProps): JSX
   if (item.creationTime && item.createdAt) {
     rows.push({
       label: "Found in",
-      value: formatFoundIn(item.creationTime, item.createdAt),
+      value: formatFoundIn(item.creationTime, item.createdAt, item.platform),
       valueClassName: "text-success",
     });
   }

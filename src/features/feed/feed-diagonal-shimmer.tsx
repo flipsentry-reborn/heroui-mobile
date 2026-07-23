@@ -1,8 +1,9 @@
 import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { View, type LayoutChangeEvent } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   runOnJS,
   useAnimatedStyle,
@@ -24,20 +25,35 @@ type FeedDiagonalShimmerProps = {
 /**
  * Skeleton-style highlight, but diagonal (HeroUI Skeleton is horizontal-only).
  * Sweeps top-left → bottom-right over the feed image.
+ * One-shot per activation: parent re-renders / layout noise cannot restart it.
  */
 export function FeedDiagonalShimmer({
   active,
   onDone,
 }: FeedDiagonalShimmerProps): JSX.Element | null {
   const progress = useSharedValue(0);
-  const [size, setSize] = useState({ w: 0, h: 0 });
+  const widthSV = useSharedValue(0);
+  const heightSV = useSharedValue(0);
+  const [hasSize, setHasSize] = useState(false);
+  const startedRef = useRef(false);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+
+  const notifyDone = useCallback(() => {
+    onDoneRef.current?.();
+  }, []);
 
   useEffect(() => {
-    if (!active || size.w === 0 || size.h === 0) {
+    if (!active) {
+      cancelAnimation(progress);
       progress.value = 0;
+      startedRef.current = false;
       return;
     }
 
+    if (!hasSize || startedRef.current) return;
+
+    startedRef.current = true;
     progress.value = 0;
     progress.value = withDelay(
       SHIMMER_DELAY_MS,
@@ -48,19 +64,23 @@ export function FeedDiagonalShimmer({
           easing: Easing.inOut(Easing.quad),
         },
         (finished) => {
-          if (finished && onDone) {
-            runOnJS(onDone)();
+          if (finished) {
+            runOnJS(notifyDone)();
           }
         },
       ),
     );
-  }, [active, onDone, progress, size.h, size.w]);
+  }, [active, hasSize, notifyDone, progress]);
 
   const bandStyle = useAnimatedStyle(() => {
-    const travel = Math.sqrt(size.w * size.w + size.h * size.h) + size.w * 0.55;
+    const w = widthSV.value;
+    const h = heightSV.value;
+    const travel = Math.sqrt(w * w + h * h) + w * 0.55;
     const t = progress.value * travel - travel * 0.5;
     // Equal X/Y = 45° path (top-left → bottom-right)
     return {
+      width: w * 0.45 || 1,
+      height: (h || 160) * 2.4,
       transform: [
         { translateX: t * 0.7071 },
         { translateY: t * 0.7071 },
@@ -71,8 +91,11 @@ export function FeedDiagonalShimmer({
 
   const onLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
-    if (width === size.w && height === size.h) return;
-    setSize({ w: width, h: height });
+    if (width <= 0 || height <= 0) return;
+    if (widthSV.value === width && heightSV.value === height) return;
+    widthSV.value = width;
+    heightSV.value = height;
+    if (!hasSize) setHasSize(true);
   };
 
   if (!active) return null;
@@ -87,8 +110,6 @@ export function FeedDiagonalShimmer({
         className="absolute"
         style={[
           {
-            width: size.w * 0.45 || "40%",
-            height: (size.h || 160) * 2.4,
             top: "-70%",
             left: "-10%",
           },

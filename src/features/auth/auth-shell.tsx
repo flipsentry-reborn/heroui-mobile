@@ -69,6 +69,23 @@ export function AuthShell({
       className="flex-1"
       style={{ backgroundColor: SUBSCRIPTION_DARK_BACKGROUND }}
     >
+      {onBack ? (
+        <Pressable
+          onPress={onBack}
+          hitSlop={12}
+          className="absolute z-10 h-10 w-10 items-center justify-center rounded-full"
+          style={{
+            top: insets.top + 8,
+            left: 16,
+            backgroundColor: AUTH_CONTROL_BACKGROUND,
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={22} color={muted} />
+        </Pressable>
+      ) : null}
+
       <KeyboardAwareScrollView
         style={{ flex: 1 }}
         bottomOffset={KEYBOARD_TOOLBAR_OFFSET}
@@ -81,23 +98,10 @@ export function AuthShell({
           flexGrow: 1,
           justifyContent: isCentered ? "center" : "flex-start",
           paddingHorizontal: 24,
-          paddingTop: insets.top + (onBack ? 8 : isCentered ? 16 : 28),
+          paddingTop: insets.top + (isCentered ? 16 : 28),
           paddingBottom: Math.max(insets.bottom, 24) + (isCentered ? 32 : 16),
         }}
       >
-        {onBack ? (
-          <Pressable
-            onPress={onBack}
-            hitSlop={12}
-            className="mb-4 h-10 w-10 items-center justify-center rounded-full"
-            style={{ backgroundColor: AUTH_CONTROL_BACKGROUND }}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={22} color={muted} />
-          </Pressable>
-        ) : null}
-
         <View
           className={`items-center gap-3 ${isCentered ? "mb-12 gap-5 pt-0" : "mb-8 pt-2"}`}
         >
@@ -117,9 +121,9 @@ export function AuthShell({
             <Text
               style={{
                 fontFamily: Fonts.heading,
-                fontSize: isCentered ? 34 : 30,
-                lineHeight: isCentered ? 40 : 36,
-                letterSpacing: -0.6,
+                fontSize: isCentered ? 26 : 24,
+                lineHeight: isCentered ? 32 : 30,
+                letterSpacing: -0.4,
                 color: foreground,
                 textAlign: "center",
               }}
@@ -130,8 +134,8 @@ export function AuthShell({
               <Text
                 style={{
                   fontFamily: Fonts.headingRegular,
-                  fontSize: 16,
-                  lineHeight: 24,
+                  fontSize: 14,
+                  lineHeight: 20,
                   color: muted,
                   textAlign: "center",
                   paddingHorizontal: isCentered ? 8 : 4,

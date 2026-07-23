@@ -1,6 +1,7 @@
 import type { JSX } from "react";
-import { useEffect, useRef } from "react";
-import { Stack } from "expo-router";
+import { useEffect, useMemo, useRef } from "react";
+import { View } from "react-native";
+import { DarkTheme, Stack, ThemeProvider } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import { useThemeColor } from "heroui-native";
@@ -11,12 +12,31 @@ import { SUBSCRIPTION_DARK_BACKGROUND } from "@/features/settings/subscription-t
 /**
  * Auth stack: near-black canvas + force Uniwind dark so Input/field tokens
  * match in-app dark fields (no white boxes on #060606).
- * Also pins status / system chrome to the same #060606 (not elevated dark wash).
+ * Also pins status / system chrome + nav theme to the same #060606 so
+ * slide/back gestures don't flash the elevated dark wash.
  */
 export default function AuthLayout(): JSX.Element {
   const { theme } = useUniwind();
   const background = useThemeColor("background");
+  const foreground = useThemeColor("foreground");
+  const border = useThemeColor("border");
   const previousThemeRef = useRef(theme);
+
+  const authNavigationTheme = useMemo(
+    () => ({
+      ...DarkTheme,
+      colors: {
+        ...DarkTheme.colors,
+        primary: foreground,
+        background: SUBSCRIPTION_DARK_BACKGROUND,
+        card: SUBSCRIPTION_DARK_BACKGROUND,
+        text: foreground,
+        border,
+        notification: foreground,
+      },
+    }),
+    [border, foreground],
+  );
 
   useEffect(() => {
     previousThemeRef.current = theme;
@@ -41,21 +61,28 @@ export default function AuthLayout(): JSX.Element {
   }, [background]);
 
   return (
-    <>
-      <StatusBar style="light" backgroundColor={SUBSCRIPTION_DARK_BACKGROUND} />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: SUBSCRIPTION_DARK_BACKGROUND },
-          animation: "fade",
-        }}
+    <ThemeProvider value={authNavigationTheme}>
+      <View
+        style={{ flex: 1, backgroundColor: SUBSCRIPTION_DARK_BACKGROUND }}
       >
-        <Stack.Screen name="welcome" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="register" />
-        <Stack.Screen name="verify" />
-        <Stack.Screen name="forgot-password" />
-      </Stack>
-    </>
+        <StatusBar style="light" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: SUBSCRIPTION_DARK_BACKGROUND },
+            animation: "slide_from_right",
+            animationTypeForReplace: "push",
+            gestureEnabled: true,
+            fullScreenGestureEnabled: true,
+          }}
+        >
+          <Stack.Screen name="welcome" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="register" />
+          <Stack.Screen name="verify" />
+          <Stack.Screen name="forgot-password" />
+        </Stack>
+      </View>
+    </ThemeProvider>
   );
 }

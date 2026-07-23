@@ -1,6 +1,7 @@
 import ky, { HTTPError, type KyInstance } from "ky";
 
 import { API_URL } from "@/api/config";
+import { userMessageForHttpStatus } from "@/lib/user-error-message";
 
 let authToken: string | null = null;
 let onUnauthorized: (() => void) | null = null;
@@ -33,6 +34,7 @@ type ApiErrorBody = {
  * - 400 + ASP.NET model state → string[]
  * - 400 / API message fields → Error
  * - otherwise keep HTTPError (call sites read `.response.status`)
+ *   with `.message` rewritten so UI never shows method/URL.
  */
 async function normalizeHttpError(error: unknown): Promise<unknown> {
   if (!(error instanceof HTTPError)) return error;
@@ -60,16 +62,23 @@ async function normalizeHttpError(error: unknown): Promise<unknown> {
         const messages = data.errors[key];
         if (messages) modelStateErrors.push(...messages);
       }
-      return modelStateErrors;
+      if (modelStateErrors.length > 0) return modelStateErrors;
     }
-    const message = data.error || data.message || JSON.stringify(data);
-    return new Error(message);
+    const message = data.error || data.message;
+    if (typeof message === "string" && message.trim()) {
+      return new Error(message.trim());
+    }
   }
 
-  if (data && typeof data === "object" && (data.error || data.message)) {
-    return new Error(data.error || data.message);
+  if (data && typeof data === "object") {
+    const message = data.error || data.message;
+    if (typeof message === "string" && message.trim()) {
+      return new Error(message.trim());
+    }
   }
 
+  // Ky's default message includes "POST https://…". Strip that for UI.
+  error.message = userMessageForHttpStatus(status);
   return error;
 }
 

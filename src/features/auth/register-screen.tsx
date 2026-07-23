@@ -12,16 +12,11 @@ import {
 } from "@/features/auth/auth-shell";
 import { BrandButton } from "@/components/ui/brand-button";
 import { Fonts } from "@/lib/fonts";
+import { toUserErrorMessage } from "@/lib/user-error-message";
 import { useStore } from "@/store/store";
 
 const TERMS_URL = "https://flipsentry.com/terms";
 const PRIVACY_URL = "https://flipsentry.com/privacy";
-
-function errorMessage(error: unknown): string {
-  if (Array.isArray(error)) return error.join(", ");
-  if (error instanceof Error) return error.message;
-  return "Something went wrong";
-}
 
 /**
  * Register — mobile-app flow (email account → then /verify for phone).
@@ -83,7 +78,7 @@ export const RegisterScreen = observer(function RegisterScreen(): JSX.Element {
       });
       // userStore navigates to /verify
     } catch (e) {
-      setError(errorMessage(e));
+      setError(toUserErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
@@ -107,7 +102,7 @@ export const RegisterScreen = observer(function RegisterScreen(): JSX.Element {
         <AuthFooterLink
           prompt="Already have an account?"
           actionLabel="Sign in"
-          onPress={() => router.replace("/login" as Href)}
+          onPress={() => router.push("/login" as Href)}
         />
       }
     >
@@ -117,14 +112,14 @@ export const RegisterScreen = observer(function RegisterScreen(): JSX.Element {
           value={firstName}
           onChangeText={setFirstName}
           autoCapitalize="words"
-          placeholder="Alex"
+          placeholder="First name"
         />
         <AuthField
           label="Last name"
           value={lastName}
           onChangeText={setLastName}
           autoCapitalize="words"
-          placeholder="Rivera"
+          placeholder="Last name"
         />
         <AuthField
           label="Email"

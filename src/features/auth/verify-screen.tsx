@@ -17,14 +17,9 @@ import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
 import { AuthShell } from "@/features/auth/auth-shell";
 import { BrandButton } from "@/components/ui/brand-button";
 import { Fonts } from "@/lib/fonts";
+import { toUserErrorMessage } from "@/lib/user-error-message";
 import { MOCK_ACCOUNT_CREDENTIALS } from "@/mocks/services/account";
 import { useStore } from "@/store/store";
-
-function errorMessage(error: unknown): string {
-  if (Array.isArray(error)) return error.join(", ");
-  if (error instanceof Error) return error.message;
-  return "Something went wrong";
-}
 
 /** Post-auth phone verification (register / email login without confirmed number). */
 export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
@@ -88,7 +83,7 @@ export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
         duration: 3000,
       });
     } catch (e) {
-      setError(errorMessage(e));
+      setError(toUserErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
@@ -101,7 +96,7 @@ export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
       await userStore.verifyPhone(formattedPhone, otp);
       router.replace("/feed" as Href);
     } catch (e) {
-      setError(errorMessage(e));
+      setError(toUserErrorMessage(e));
     } finally {
       setSubmitting(false);
     }

@@ -15,20 +15,16 @@ import { AuthField, AuthHint } from "@/features/auth/auth-field";
 import { AuthInputOtp } from "@/features/auth/auth-input-otp";
 import { AuthPhoneField } from "@/features/auth/auth-phone-field";
 import {
+  AuthFooterLink,
   AuthOrDivider,
   AuthShell,
 } from "@/features/auth/auth-shell";
 import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
 import { BrandButton } from "@/components/ui/brand-button";
 import { Fonts } from "@/lib/fonts";
+import { toUserErrorMessage } from "@/lib/user-error-message";
 import { MOCK_ACCOUNT_CREDENTIALS } from "@/mocks/services/account";
 import { useStore } from "@/store/store";
-
-function errorMessage(error: unknown): string {
-  if (Array.isArray(error)) return error.join(", ");
-  if (error instanceof Error) return error.message;
-  return "Something went wrong";
-}
 
 /**
  * Login — mobile-app flow:
@@ -87,7 +83,7 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
     try {
       await userStore.login({ email: email.trim(), password });
     } catch (e) {
-      setError(errorMessage(e));
+      setError(toUserErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
@@ -110,7 +106,7 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
         duration: 3000,
       });
     } catch (e) {
-      setError(errorMessage(e));
+      setError(toUserErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
@@ -122,7 +118,7 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
     try {
       await userStore.verifyPhoneLogin(formattedPhone, otp);
     } catch (e) {
-      setError(errorMessage(e));
+      setError(toUserErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
@@ -147,6 +143,13 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
       title={title}
       subtitle={subtitle}
       onBack={() => router.back()}
+      footer={
+        <AuthFooterLink
+          prompt="Don't have an account?"
+          actionLabel="Sign up"
+          onPress={() => router.push("/register" as Href)}
+        />
+      }
     >
       {loginMethod === "email" ? (
         <View className="gap-4">

@@ -12,6 +12,7 @@ import {
 } from "@/features/feed/build-feed-categories";
 import { buildHomePlan, sortSearchGroups } from "@/mocks/services/home";
 import type { HomePlan, SearchGroup } from "@/mocks/data/home";
+import { toUserErrorMessage } from "@/lib/user-error-message";
 import type { FeedFilterTab, FeedTabAvailability } from "@/models/feed";
 import type FeedStore from "@/store/feedStore";
 import type SubscriptionStore from "@/store/subscriptionStore";
@@ -107,8 +108,7 @@ export default class SearchStore {
       await this.loadFeedTabAvailability(hadLoaded);
     } catch (error) {
       runInAction(() => {
-        this.lastError =
-          error instanceof Error ? error.message : "Failed to load searches";
+        this.lastError = toUserErrorMessage(error);
       });
     } finally {
       runInAction(() => {
@@ -159,8 +159,7 @@ export default class SearchStore {
       return group;
     } catch (error) {
       runInAction(() => {
-        this.lastError =
-          error instanceof Error ? error.message : "Failed to create search";
+        this.lastError = toUserErrorMessage(error);
       });
       return null;
     } finally {
@@ -189,8 +188,7 @@ export default class SearchStore {
       return group;
     } catch (error) {
       runInAction(() => {
-        this.lastError =
-          error instanceof Error ? error.message : "Failed to update search";
+        this.lastError = toUserErrorMessage(error);
       });
       return null;
     } finally {

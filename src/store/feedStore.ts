@@ -12,6 +12,7 @@ import {
   prependId,
 } from "@/domain/feed-routing";
 import { debugLog } from "@/lib/debug-log";
+import { toUserErrorMessage } from "@/lib/user-error-message";
 import type { FeedImageUpdateData, FeedItem } from "@/models/feed";
 import type { Pagination } from "@/models/pagination";
 import type SearchStore from "@/store/searchStore";
@@ -402,8 +403,7 @@ export default class FeedStore {
       });
     } catch (error) {
       runInAction(() => {
-        this.lastError =
-          error instanceof Error ? error.message : "Failed to load feed";
+        this.lastError = toUserErrorMessage(error);
       });
     } finally {
       runInAction(() => {
@@ -458,8 +458,7 @@ export default class FeedStore {
       });
     } catch (error) {
       runInAction(() => {
-        this.lastError =
-          error instanceof Error ? error.message : "Failed to load more feed";
+        this.lastError = toUserErrorMessage(error);
       });
     } finally {
       runInAction(() => {

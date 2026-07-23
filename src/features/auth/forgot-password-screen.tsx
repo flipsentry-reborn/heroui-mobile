@@ -8,13 +8,8 @@ import { AuthField } from "@/features/auth/auth-field";
 import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
 import { AuthShell } from "@/features/auth/auth-shell";
 import { BrandButton } from "@/components/ui/brand-button";
+import { toUserErrorMessage } from "@/lib/user-error-message";
 import { useStore } from "@/store/store";
-
-function errorMessage(error: unknown): string {
-  if (Array.isArray(error)) return error.join(", ");
-  if (error instanceof Error) return error.message;
-  return "Something went wrong";
-}
 
 export function ForgotPasswordScreen(): JSX.Element {
   const { userStore } = useStore();
@@ -37,7 +32,7 @@ export function ForgotPasswordScreen(): JSX.Element {
       });
       router.back();
     } catch (e) {
-      setError(errorMessage(e));
+      setError(toUserErrorMessage(e));
     } finally {
       setSubmitting(false);
     }

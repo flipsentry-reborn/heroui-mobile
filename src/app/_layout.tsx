@@ -23,6 +23,7 @@ import {
   applyAppearance,
   loadCachedAppearance,
 } from "@/lib/appearance";
+import { SUBSCRIPTION_DARK_BACKGROUND } from "@/features/settings/subscription-theme";
 import { StoreProvider, store } from "@/store/store";
 
 import "../global.css";
@@ -78,7 +79,12 @@ function RootLayoutContent(): JSX.Element {
           }}
         >
           <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" />
+          <Stack.Screen
+            name="(auth)"
+            options={{
+              contentStyle: { backgroundColor: SUBSCRIPTION_DARK_BACKGROUND },
+            }}
+          />
           <Stack.Screen
             name="(tabs)"
             options={{

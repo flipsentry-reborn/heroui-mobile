@@ -189,6 +189,8 @@ export interface FeedItem {
   advertisedCount?: number;
   isDealership?: boolean;
   dealershipName?: string;
+  /** Null/undefined for legacy rows; set true/false on new ingest. */
+  isCarListing?: boolean | null;
   isDamaged?: boolean;
   isMajorDamaged?: boolean;
   isSalvageTitle?: boolean;
@@ -284,6 +286,7 @@ type FeedStatusSource = Pick<
   | "motivatedKeywords"
   | "motivatedKeywordTexts"
   | "statusBadges"
+  | "isCarListing"
   | "vehicleSpecifications"
   | "compValuation"
   | "externalValuation"
@@ -376,10 +379,14 @@ export interface LocalCompItem {
 export function isCarListing(
   item: Pick<
     FeedItem,
-    "vehicleSpecifications" | "compValuation" | "externalValuation"
+    | "isCarListing"
+    | "vehicleSpecifications"
+    | "compValuation"
+    | "externalValuation"
   > | null | undefined,
 ): boolean {
   if (!item) return false;
+  if (item.isCarListing != null) return item.isCarListing;
   const valuation = resolveDisplayValuation(item);
   const valuationType = valuation?.valuationType?.trim().toLowerCase();
   if (valuationType === "car") return true;

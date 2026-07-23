@@ -10,7 +10,10 @@ import {
   useThemeColor,
 } from "heroui-native";
 
-import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
+import {
+  AUTH_CONTROL_BACKGROUND,
+  AUTH_PLACEHOLDER_COLOR,
+} from "@/features/auth/auth-theme";
 import { Fonts } from "@/lib/fonts";
 
 interface AuthFieldProps extends Omit<TextInputProps, "className"> {
@@ -19,12 +22,12 @@ interface AuthFieldProps extends Omit<TextInputProps, "className"> {
   className?: string;
 }
 
+/** Keep charcoal fill; leave HeroUI Input focus ring (iOS outline / Android border). */
 const AUTH_INPUT_CLASS =
-  "h-12 rounded-2xl border-0 text-foreground shadow-none";
+  "h-12 rounded-2xl border-transparent text-foreground shadow-none";
 
 const AUTH_INPUT_STYLE = {
   backgroundColor: AUTH_CONTROL_BACKGROUND,
-  borderWidth: 0,
 } as const;
 
 /**
@@ -62,9 +65,9 @@ export function AuthField({
             style={AUTH_INPUT_STYLE}
             autoCapitalize="none"
             autoCorrect={false}
-            placeholderTextColor={muted}
             secureTextEntry={!visible}
             {...inputProps}
+            placeholderTextColor={AUTH_PLACEHOLDER_COLOR}
           />
           <InputGroup.Suffix>
             <Pressable
@@ -88,8 +91,8 @@ export function AuthField({
           style={AUTH_INPUT_STYLE}
           autoCapitalize="none"
           autoCorrect={false}
-          placeholderTextColor={muted}
           {...inputProps}
+          placeholderTextColor={AUTH_PLACEHOLDER_COLOR}
         />
       )}
       {error ? <FieldError>{error}</FieldError> : null}

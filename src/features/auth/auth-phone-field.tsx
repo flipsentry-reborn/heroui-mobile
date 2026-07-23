@@ -20,7 +20,10 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
+import {
+  AUTH_CONTROL_BACKGROUND,
+  AUTH_PLACEHOLDER_COLOR,
+} from "@/features/auth/auth-theme";
 import { Fonts } from "@/lib/fonts";
 import {
   COUNTRY_DIAL_CODES,
@@ -106,8 +109,8 @@ export function AuthPhoneField({
             </Pressable>
           </InputGroup.Prefix>
           <InputGroup.Input
-            className="h-12 rounded-2xl border-0 text-foreground shadow-none"
-            style={{ backgroundColor: AUTH_CONTROL_BACKGROUND, borderWidth: 0 }}
+            className="h-12 rounded-2xl border-transparent text-foreground shadow-none"
+            style={{ backgroundColor: AUTH_CONTROL_BACKGROUND }}
             value={nationalNumber}
             onChangeText={(text) =>
               onNationalNumberChange(text.replace(/[^\d]/g, "").slice(0, 10))
@@ -116,7 +119,7 @@ export function AuthPhoneField({
             textContentType="telephoneNumber"
             maxLength={10}
             placeholder={placeholder}
-            placeholderTextColor={muted}
+            placeholderTextColor={AUTH_PLACEHOLDER_COLOR}
             autoCapitalize="none"
             autoCorrect={false}
           />

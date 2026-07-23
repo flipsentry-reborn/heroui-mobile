@@ -10,8 +10,10 @@ const TIER_ORDER: ValuationTier[] = ["overpriced", "fairPrice", "goodValue", "gr
 /** Matches the tier-cut rotate angle. */
 const CUT_DEG = 18;
 
-/** Tailwind lime-700 — Good tier (no theme token). */
-const GOOD_VALUE_FILL = "#4d7c0f";
+/** Tailwind violet-600 — Good tier (no theme token). */
+const GOOD_VALUE_FILL = "#7c3aed";
+/** Tailwind cyan-500 — Great tier (no theme token). */
+const GREAT_DEAL_FILL = "#06b6d4";
 
 /** Detail page horizontal padding estimate so fill paints before onLayout. */
 const ESTIMATED_BAR_WIDTH = Math.max(200, Dimensions.get("window").width - 32);
@@ -24,8 +26,8 @@ const TIER_LABEL: Record<ValuationTier, string> = {
 };
 
 const TIER_TRACK_CLASS: Record<ValuationTier, string> = {
-  greatDeal: "bg-success",
-  goodValue: "bg-lime-700",
+  greatDeal: "bg-cyan-500",
+  goodValue: "bg-violet-600",
   fairPrice: "bg-warning",
   overpriced: "bg-danger",
 };
@@ -59,10 +61,10 @@ export function FeedDetailScoreBar({
   const cutBg = compact ? "bg-surface-secondary" : "bg-background";
   const clipId = `score-fill-${useId().replace(/:/g, "")}`;
 
-  const [success, warning, danger] = useThemeColor(["success", "warning", "danger"]);
+  const [warning, danger] = useThemeColor(["warning", "danger"]);
   // Fallbacks so fill never waits on theme token resolution.
   const tierFill: Record<ValuationTier, string> = {
-    greatDeal: success || "#22c55e",
+    greatDeal: GREAT_DEAL_FILL,
     goodValue: GOOD_VALUE_FILL,
     fairPrice: warning || "#eab308",
     overpriced: danger || "#ef4444",

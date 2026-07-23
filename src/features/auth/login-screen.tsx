@@ -1,17 +1,19 @@
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { router, type Href } from "expo-router";
 import {
   Button,
   Spinner,
   useThemeColor,
+  useToast,
 } from "heroui-native";
 
 import { USE_MOCK } from "@/api/config";
 import { AuthField, AuthHint } from "@/features/auth/auth-field";
-import { LoginPhoneSheet } from "@/features/auth/login-phone-sheet";
+import { AuthInputOtp } from "@/features/auth/auth-input-otp";
+import { AuthPhoneField } from "@/features/auth/auth-phone-field";
 import {
   AuthFooterLink,
   AuthOrDivider,
@@ -25,16 +27,19 @@ import { MOCK_ACCOUNT_CREDENTIALS } from "@/mocks/services/account";
 import { useStore } from "@/store/store";
 
 /**
- * Login — email form on-page; phone OTP opens HeroUI bottom sheet
- * (Avatar + InputOTP groups, see `login-phone-sheet`).
+ * Login — mobile-app flow:
+ * Email path OR Phone OTP path, switched via “or” secondary CTA (mockup layout).
  */
 export const LoginScreen = observer(function LoginScreen(): JSX.Element {
   const { userStore } = useStore();
+  const { toast } = useToast();
   const [accentForeground, muted, danger] = useThemeColor([
     "accent-foreground",
     "muted",
     "danger",
   ]);
+
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
 
   const [email, setEmail] = useState(
     USE_MOCK ? MOCK_ACCOUNT_CREDENTIALS.email : "",
@@ -42,9 +47,35 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
   const [password, setPassword] = useState(
     USE_MOCK ? MOCK_ACCOUNT_CREDENTIALS.password : "",
   );
-  const [phoneSheetOpen, setPhoneSheetOpen] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState(
+    USE_MOCK ? "2345678901" : "",
+  );
+  const [callingCode, setCallingCode] = useState("1");
+  const [countryIso2, setCountryIso2] = useState("US");
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [formattedPhone, setFormattedPhone] = useState("");
+  const [countdown, setCountdown] = useState(0);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const id = setInterval(() => setCountdown((c) => c - 1), 1000);
+    return () => clearInterval(id);
+  }, [countdown]);
+
+  const fullPhone = useMemo(
+    () => `+${callingCode}${phoneNumber.replace(/\D/g, "")}`,
+    [callingCode, phoneNumber],
+  );
+
+  const switchMethod = (next: "email" | "phone") => {
+    setLoginMethod(next);
+    setError("");
+    setIsCodeSent(false);
+    setOtp("");
+  };
 
   const onEmailLogin = async () => {
     setError("");
@@ -58,20 +89,69 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
     }
   };
 
+  const onSendPhoneCode = async () => {
+    setError("");
+    setSubmitting(true);
+    try {
+      await userStore.sendPhoneLoginCode(fullPhone);
+      setFormattedPhone(fullPhone);
+      setIsCodeSent(true);
+      setCountdown(30);
+      toast.show({
+        variant: "default",
+        label: "Code sent",
+        description: USE_MOCK
+          ? `Use OTP ${MOCK_ACCOUNT_CREDENTIALS.otp}`
+          : "Check your SMS",
+        duration: 3000,
+      });
+    } catch (e) {
+      setError(toUserErrorMessage(e));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onVerifyPhone = async () => {
+    setError("");
+    setSubmitting(true);
+    try {
+      await userStore.verifyPhoneLogin(formattedPhone, otp);
+    } catch (e) {
+      setError(toUserErrorMessage(e));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const title =
+    loginMethod === "email"
+      ? "Log in to your account"
+      : isCodeSent
+        ? "Enter verification code"
+        : "Log in to your account";
+
+  const subtitle =
+    loginMethod === "email"
+      ? "Welcome back! Please enter your details."
+      : isCodeSent
+        ? `We sent a code to ${formattedPhone}`
+        : "Welcome back! Please enter your details.";
+
   return (
-    <>
-      <AuthShell
-        title="Log in to your account"
-        subtitle="Welcome back! Please enter your details."
-        onBack={() => router.back()}
-        footer={
-          <AuthFooterLink
-            prompt="Don't have an account?"
-            actionLabel="Sign up"
-            onPress={() => router.push("/register" as Href)}
-          />
-        }
-      >
+    <AuthShell
+      title={title}
+      subtitle={subtitle}
+      onBack={() => router.back()}
+      footer={
+        <AuthFooterLink
+          prompt="Don't have an account?"
+          actionLabel="Sign up"
+          onPress={() => router.push("/register" as Href)}
+        />
+      }
+    >
+      {loginMethod === "email" ? (
         <View className="gap-4">
           <AuthField
             label="Email"
@@ -120,47 +200,102 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
             variant="secondary"
             className="min-h-12 w-full rounded-full border-0"
             style={{ backgroundColor: AUTH_CONTROL_BACKGROUND }}
-            onPress={() => {
-              setError("");
-              setPhoneSheetOpen(true);
-            }}
+            onPress={() => switchMethod("phone")}
           >
             <Button.Label className="text-foreground">
               Login with Phone Number
             </Button.Label>
           </Button>
-
-          {error ? (
-            <Text
-              style={{
-                fontFamily: Fonts.headingRegular,
-                fontSize: 14,
-                lineHeight: 20,
-                color: danger,
-                textAlign: "center",
-              }}
-            >
-              {error}
-            </Text>
-          ) : null}
-
-          {USE_MOCK ? (
-            <View className="gap-1 pt-2">
-              <AuthHint>
-                {`Mock: ${MOCK_ACCOUNT_CREDENTIALS.email} / ${MOCK_ACCOUNT_CREDENTIALS.password}`}
-              </AuthHint>
-              <AuthHint>
-                {`Phone ${MOCK_ACCOUNT_CREDENTIALS.phone} · OTP ${MOCK_ACCOUNT_CREDENTIALS.otp}`}
-              </AuthHint>
-            </View>
-          ) : null}
         </View>
-      </AuthShell>
+      ) : !isCodeSent ? (
+        <View className="gap-4">
+          <AuthPhoneField
+            nationalNumber={phoneNumber}
+            onNationalNumberChange={setPhoneNumber}
+            callingCode={callingCode}
+            onCallingCodeChange={setCallingCode}
+            countryIso2={countryIso2}
+            onCountryIso2Change={setCountryIso2}
+            placeholder="Phone number"
+          />
 
-      <LoginPhoneSheet
-        visible={phoneSheetOpen}
-        onClose={() => setPhoneSheetOpen(false)}
-      />
-    </>
+          <BrandButton
+            className="min-h-12 w-full rounded-full"
+            isDisabled={
+              submitting || phoneNumber.replace(/\D/g, "").length !== 10
+            }
+            onPress={() => void onSendPhoneCode()}
+          >
+            {submitting ? <Spinner size="sm" color={accentForeground} /> : null}
+            <BrandButton.Label>Login</BrandButton.Label>
+          </BrandButton>
+
+          <AuthOrDivider />
+
+          <Button
+            variant="secondary"
+            className="min-h-12 w-full rounded-full border-0"
+            style={{ backgroundColor: AUTH_CONTROL_BACKGROUND }}
+            onPress={() => switchMethod("email")}
+          >
+            <Button.Label className="text-foreground">
+              Login with Email
+            </Button.Label>
+          </Button>
+        </View>
+      ) : (
+        <View className="gap-4">
+          <AuthInputOtp value={otp} onChange={setOtp} />
+
+          <BrandButton
+            className="min-h-12 w-full rounded-full"
+            isDisabled={submitting || otp.length !== 6}
+            onPress={() => void onVerifyPhone()}
+          >
+            {submitting ? <Spinner size="sm" color={accentForeground} /> : null}
+            <BrandButton.Label>Verify & sign in</BrandButton.Label>
+          </BrandButton>
+
+          <Button
+            variant="ghost"
+            isDisabled={countdown > 0 || submitting}
+            onPress={() => void onSendPhoneCode()}
+          >
+            <Button.Label>
+              {countdown > 0 ? `Resend in ${countdown}s` : "Resend code"}
+            </Button.Label>
+          </Button>
+
+          <Button variant="ghost" onPress={() => setIsCodeSent(false)}>
+            <Button.Label>Change number</Button.Label>
+          </Button>
+        </View>
+      )}
+
+      {error ? (
+        <Text
+          style={{
+            fontFamily: Fonts.headingRegular,
+            fontSize: 14,
+            lineHeight: 20,
+            color: danger,
+            textAlign: "center",
+          }}
+        >
+          {error}
+        </Text>
+      ) : null}
+
+      {USE_MOCK ? (
+        <View className="gap-1 pt-2">
+          <AuthHint>
+            {`Mock: ${MOCK_ACCOUNT_CREDENTIALS.email} / ${MOCK_ACCOUNT_CREDENTIALS.password}`}
+          </AuthHint>
+          <AuthHint>
+            {`Phone ${MOCK_ACCOUNT_CREDENTIALS.phone} · OTP ${MOCK_ACCOUNT_CREDENTIALS.otp}`}
+          </AuthHint>
+        </View>
+      ) : null}
+    </AuthShell>
   );
 });

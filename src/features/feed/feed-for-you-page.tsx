@@ -7,7 +7,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshControl, ScrollView, View } from "react-native";
+import { RefreshControl, Platform, ScrollView, View } from "react-native";
 import {
   Accordion,
   PressableFeedback,
@@ -17,7 +17,7 @@ import {
   useThemeColor,
 } from "heroui-native";
 import { Badge } from "heroui-native-pro";
-import { withUniwind } from "uniwind";
+import { useUniwind, withUniwind } from "uniwind";
 
 import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import {
@@ -188,6 +188,8 @@ export const FeedForYouPage = observer(function FeedForYouPage({
     [searchStore.feedCategories],
   );
   const accent = useThemeColor("accent");
+  const { theme } = useUniwind();
+  const indicatorStyle = theme === "dark" ? "white" : "black";
   const [refreshing, setRefreshing] = useState(false);
   const hasLoaded = useRef(false);
   const skipQueryEffect = useRef(true);
@@ -433,7 +435,9 @@ export const FeedForYouPage = observer(function FeedForYouPage({
       <ScrollView
         className="flex-1"
         contentContainerClassName="pb-28 pt-0.5"
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator
+        indicatorStyle={indicatorStyle}
+        persistentScrollbar={Platform.OS === "android"}
       >
         <ShelfSkeleton />
         <ShelfSkeleton />
@@ -454,7 +458,9 @@ export const FeedForYouPage = observer(function FeedForYouPage({
           paddingTop: 2,
           paddingBottom: 112,
         }}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator
+        indicatorStyle={indicatorStyle}
+        persistentScrollbar={Platform.OS === "android"}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

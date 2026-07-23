@@ -14,6 +14,7 @@ import {
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
+import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import { SheetShell } from "@/features/home/sheet-shell";
 import { resolveTrimEstimates } from "@/mocks/data/trim-estimates";
 import {
@@ -23,7 +24,7 @@ import {
 
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
 
-/** Yellowish AI sparkles — matches “AI” accent on Advanced. */
+/** Yellowish AI sparkles — pairs with the New/Beta badge on Advanced. */
 const AI_ICON_COLOR = "#E8C547";
 
 function formatPrice(price: number, symbol: string): string {
@@ -83,14 +84,17 @@ export function FeedDetailTrimEstimates({
         <View className="gap-1 px-3 py-2">
           <View className="flex-row items-center gap-2.5">
             <Ionicons name="sparkles" size={16} color={AI_ICON_COLOR} />
-            <Typography
-              type="body-sm"
-              weight="semibold"
-              className="min-w-0 flex-1 text-foreground"
-              numberOfLines={1}
-            >
-              Advanced Calculation
-            </Typography>
+            <View className="min-w-0 flex-1 flex-row items-center gap-1.5">
+              <Typography
+                type="body-sm"
+                weight="semibold"
+                className="min-w-0 shrink text-foreground"
+                numberOfLines={1}
+              >
+                Advanced Calculation
+              </Typography>
+              <FeedCategoryBadge label="New" inline />
+            </View>
             <Ionicons name="chevron-forward" size={16} color={muted} />
           </View>
           {selected != null ? (
@@ -148,12 +152,15 @@ export function FeedDetailTrimEstimates({
           <View className="gap-1 px-5 pb-3 pt-4">
             <View className="flex-row items-center gap-2.5">
               <Ionicons name="sparkles" size={18} color={AI_ICON_COLOR} />
-              <BottomSheet.Title
-                className="min-w-0 flex-1 text-left text-xl font-bold"
-                numberOfLines={1}
-              >
-                Advanced Calculation
-              </BottomSheet.Title>
+              <View className="min-w-0 flex-1 flex-row items-center gap-1.5">
+                <BottomSheet.Title
+                  className="min-w-0 shrink text-left text-xl font-bold"
+                  numberOfLines={1}
+                >
+                  Advanced Calculation
+                </BottomSheet.Title>
+                <FeedCategoryBadge label="New" inline />
+              </View>
               <BottomSheet.Close />
             </View>
             <BottomSheet.Description className="pl-[28px] text-left">

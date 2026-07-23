@@ -78,6 +78,7 @@ export function FeedPager({
               category={category.key}
               groupIds={category.groupIds}
               query={searchText}
+              isActive={category.key === activeCategory}
               onPressItem={onPressItem}
               onOpenCategory={onOpenCategory}
             />

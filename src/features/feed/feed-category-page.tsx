@@ -15,6 +15,7 @@ interface FeedCategoryPageProps {
   category: string;
   groupIds?: string[];
   query: string;
+  isActive?: boolean;
   onPressItem?: (id: string) => void;
   onOpenCategory?: (key: string) => void;
 }
@@ -25,6 +26,7 @@ interface FeedCategoryPageProps {
 export const FeedCategoryPage = observer(function FeedCategoryPage({
   category,
   query,
+  isActive = false,
   onPressItem,
   onOpenCategory,
 }: FeedCategoryPageProps): JSX.Element {
@@ -115,6 +117,8 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
         refreshing={refreshing}
         loadingMore={loadingMore}
         hasMore={hasMore}
+        category={category}
+        isActive={isActive}
         onRefresh={() => {
           void load({ refresh: true });
         }}

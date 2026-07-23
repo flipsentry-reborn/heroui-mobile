@@ -1,10 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { LinearGradient } from "expo-linear-gradient";
+import { observer } from "mobx-react-lite";
 import type { ComponentProps, JSX } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PressableFeedback, Typography, useThemeColor } from "heroui-native";
+
+import { useStore } from "@/store/store";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -33,18 +36,24 @@ function withAlpha(color: string, alpha: number): string {
 }
 
 /** Floating bottom tab bar with fade into the screen background. */
-export function AppTabBar({
+export const AppTabBar = observer(function AppTabBar({
   state,
   descriptors,
   navigation,
 }: BottomTabBarProps): JSX.Element {
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 10);
-  const [foreground, muted, background] = useThemeColor([
+  const { feedStore } = useStore();
+  const [foreground, muted, background, accent] = useThemeColor([
     "foreground",
     "muted",
     "background",
+    "accent",
   ]);
+  const showNewItems = feedStore.showNewItemsIndicator;
+  const feedRoute = state.routes.find((r) => r.name === "feed");
+  const feedFocused =
+    feedRoute != null && state.index === state.routes.indexOf(feedRoute);
 
   return (
     <View pointerEvents="box-none" className="absolute inset-x-0 bottom-0 z-50 bg-transparent">
@@ -58,6 +67,20 @@ export function AppTabBar({
         className="absolute inset-0"
         pointerEvents="none"
       />
+      {/* Full-width sticky strip — deferred live items on the active feed category. */}
+      {showNewItems && feedFocused ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="New listings available, scroll to top"
+          onPress={() => {
+            feedStore.requestScrollToTop();
+          }}
+          hitSlop={{ top: 8, bottom: 8 }}
+          className="absolute inset-x-0 top-0 z-10 h-3 justify-start"
+        >
+          <View className="h-1 w-full" style={{ backgroundColor: accent }} />
+        </Pressable>
+      ) : null}
       <View
         className="min-h-[52px] flex-row items-center pt-2"
         style={{ paddingBottom: bottomPad }}
@@ -76,6 +99,12 @@ export function AppTabBar({
           const icons = TAB_ICONS[route.name];
 
           const onPress = () => {
+            // Re-tap Feed while already on it → scroll active category to top.
+            if (focused && route.name === "feed") {
+              feedStore.requestScrollToTop();
+              return;
+            }
+
             const event = navigation.emit({
               type: "tabPress",
               target: route.key,
@@ -115,4 +144,4 @@ export function AppTabBar({
       </View>
     </View>
   );
-}
+});

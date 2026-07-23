@@ -55,6 +55,10 @@ export default class FeedStore {
   loadingMoreBuckets = new Set<string>();
   loadedBuckets = new Set<string>();
   hydratedShelves = new Set<string>();
+  /** Category grids currently scrolled — live list prepends are deferred. */
+  frozenBuckets = new Set<string>();
+  /** Live ids waiting to prepend once the user returns to top. */
+  deferredIdsByBucket: Record<string, string[]> = {};
   hubStatus: FeedHubStatus = "disconnected";
   activeCategory = "for-you";
   lastError: string | null = null;
@@ -65,6 +69,7 @@ export default class FeedStore {
   private catchUpTimer: ReturnType<typeof setTimeout> | null = null;
   private catchUpInFlight = false;
   private catchUpQueued = false;
+  private scrollToTopHandler: (() => void) | null = null;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -110,6 +115,69 @@ export default class FeedStore {
     return pagination.currentPage < pagination.totalPages;
   }
 
+  /** Full-width tab bar strip — deferred live items for the active category. */
+  get showNewItemsIndicator(): boolean {
+    const key = this.activeCategory;
+    if (!key || key === "for-you") return false;
+    return (this.deferredIdsByBucket[key]?.length ?? 0) > 0;
+  }
+
+  deferredCount(bucket: string): number {
+    return this.deferredIdsByBucket[bucket]?.length ?? 0;
+  }
+
+  isBucketFrozen(bucket: string): boolean {
+    return this.frozenBuckets.has(bucket);
+  }
+
+  setBucketFrozen(bucket: string, frozen: boolean): void {
+    if (bucket === "for-you") return;
+    if (frozen === this.frozenBuckets.has(bucket)) return;
+    this.touchSet("frozenBuckets", (s) => {
+      if (frozen) s.add(bucket);
+      else s.delete(bucket);
+    });
+  }
+
+  registerScrollToTop(handler: (() => void) | null): void {
+    this.scrollToTopHandler = handler;
+  }
+
+  /** Re-tap Feed tab / strip — scroll active category to top and reveal deferred. */
+  requestScrollToTop(): void {
+    this.scrollToTopHandler?.();
+  }
+
+  /**
+   * Reveal deferred live items into the list and clear the pending indicator.
+   * Call when the user returns to the top of a category grid.
+   */
+  flushDeferredBucket(bucket: string): void {
+    if (bucket === "for-you") return;
+    const deferred = this.deferredIdsByBucket[bucket] ?? [];
+    if (deferred.length > 0) {
+      let list = this.lists[bucket] ?? [];
+      // Arrival order was push; prepend oldest-first so newest stays on top.
+      for (let i = deferred.length - 1; i >= 0; i -= 1) {
+        list = prependId(list, deferred[i]!);
+      }
+      this.setListIds(bucket, list);
+      this.deferredIdsByBucket = {
+        ...this.deferredIdsByBucket,
+        [bucket]: [],
+      };
+    }
+    this.setBucketFrozen(bucket, false);
+  }
+
+  clearDeferredBucket(bucket: string): void {
+    if (!(bucket in this.deferredIdsByBucket)) return;
+    this.deferredIdsByBucket = {
+      ...this.deferredIdsByBucket,
+      [bucket]: [],
+    };
+  }
+
   setHubStatus(status: FeedHubStatus): void {
     this.hubStatus = status;
   }
@@ -137,7 +205,8 @@ export default class FeedStore {
       | "loadingBuckets"
       | "loadingMoreBuckets"
       | "loadedBuckets"
-      | "hydratedShelves",
+      | "hydratedShelves"
+      | "frozenBuckets",
     mutate: (set: Set<string>) => void,
   ): void {
     const next = new Set(this[field]);
@@ -172,26 +241,25 @@ export default class FeedStore {
     return next;
   }
 
+  private queueDeferred(bucket: string, id: string): void {
+    const current = this.deferredIdsByBucket[bucket] ?? [];
+    if (current.includes(id)) return;
+    if ((this.lists[bucket] ?? []).includes(id)) return;
+    this.deferredIdsByBucket = {
+      ...this.deferredIdsByBucket,
+      [bucket]: [...current, id],
+    };
+  }
+
   private putInBucket(
     bucket: string,
     id: string,
     mode: "prepend" | "sorted-best-picks",
   ): void {
-    const current = this.lists[bucket] ?? [];
-    const next =
-      mode === "sorted-best-picks"
-        ? insertSortedByBuySignal(
-            current,
-            id,
-            (itemId) => {
-              const item = this.items.get(itemId);
-              return item ? buySignalOf(item) : 0;
-            },
-          )
-        : prependId(current, id);
-    this.setListIds(bucket, next);
-
-    if (this.hydratedShelves.has(bucket) || bucket in this.shelves) {
+    const updateShelf = (): void => {
+      if (!(this.hydratedShelves.has(bucket) || bucket in this.shelves)) {
+        return;
+      }
       const shelfCurrent = this.shelves[bucket] ?? [];
       const shelfNext =
         mode === "sorted-best-picks"
@@ -209,7 +277,29 @@ export default class FeedStore {
       this.touchSet("hydratedShelves", (s) => {
         s.add(bucket);
       });
+    };
+
+    // Scrolled category grid: keep shelves live, defer list prepend so cells don't jump.
+    if (this.frozenBuckets.has(bucket)) {
+      this.queueDeferred(bucket, id);
+      updateShelf();
+      return;
     }
+
+    const current = this.lists[bucket] ?? [];
+    const next =
+      mode === "sorted-best-picks"
+        ? insertSortedByBuySignal(
+            current,
+            id,
+            (itemId) => {
+              const item = this.items.get(itemId);
+              return item ? buySignalOf(item) : 0;
+            },
+          )
+        : prependId(current, id);
+    this.setListIds(bucket, next);
+    updateShelf();
   }
 
   async loadBucket(bucket: string, opts: LoadBucketOpts = {}): Promise<void> {
@@ -297,6 +387,7 @@ export default class FeedStore {
               );
         this.setListIds(bucket, merged);
         this.setPagination(bucket, result.pagination ?? null);
+        this.clearDeferredBucket(bucket);
 
         if (this.hydratedShelves.has(bucket)) {
           this.setShelfIds(bucket, merged.slice(0, FEED_SHELF_LIMIT));
@@ -453,8 +544,34 @@ export default class FeedStore {
         }
         const httpIds = items.map((i) => i.id);
         const existing = this.lists[bucket] ?? [];
-        const merged = mergeCatchUpHead(httpIds, existing);
         const newHeadIds = httpIds.filter((id) => !existing.includes(id));
+
+        // Don't reflow a scrolled grid — queue new head ids for the tab strip.
+        if (this.frozenBuckets.has(bucket)) {
+          for (const id of newHeadIds) {
+            this.queueDeferred(bucket, id);
+          }
+          if (this.hydratedShelves.has(bucket)) {
+            const shelfMerged = mergeCatchUpHead(
+              httpIds,
+              this.shelves[bucket] ?? [],
+            );
+            this.setShelfIds(bucket, shelfMerged.slice(0, FEED_SHELF_LIMIT));
+          }
+          this.touchSet("dirtyBuckets", (s) => {
+            s.delete(bucket);
+          });
+          debugLog.info(CATCH_UP_LOG, "bucket deferred (frozen)", {
+            bucket,
+            pageSize,
+            ms: Date.now() - startedAt,
+            fetched: httpIds.length,
+            deferredNew: newHeadIds.length,
+          });
+          return;
+        }
+
+        const merged = mergeCatchUpHead(httpIds, existing);
         this.setListIds(bucket, merged);
 
         if (this.hydratedShelves.has(bucket)) {
@@ -704,15 +821,18 @@ export default class FeedStore {
     }
     this.catchUpInFlight = false;
     this.catchUpQueued = false;
+    this.scrollToTopHandler = null;
     this.items.clear();
     this.lists = {};
     this.shelves = {};
     this.paginationByBucket = {};
+    this.deferredIdsByBucket = {};
     this.dirtyBuckets = new Set();
     this.loadingBuckets = new Set();
     this.loadingMoreBuckets = new Set();
     this.loadedBuckets = new Set();
     this.hydratedShelves = new Set();
+    this.frozenBuckets = new Set();
     this.pendingFeeds = [];
     this.liveHeadIds = new Set();
     this.hubStatus = "disconnected";

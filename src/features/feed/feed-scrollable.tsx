@@ -1,17 +1,27 @@
 import { Ionicons } from "@expo/vector-icons";
-import { FlashList, type ListRenderItem } from "@shopify/flash-list";
+import { FlashList, type FlashListRef, type ListRenderItem } from "@shopify/flash-list";
 import type { JSX } from "react";
-import { useCallback } from "react";
-import { RefreshControl, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Platform,
+  RefreshControl,
+  View,
+} from "react-native";
 import { EmptyState } from "heroui-native-pro";
 import { SkeletonGroup, Spinner, useThemeColor } from "heroui-native";
-import { withUniwind } from "uniwind";
+import { useUniwind, withUniwind } from "uniwind";
 
 import { FEED_GRID_DRAW_DISTANCE } from "@/features/feed/feed-flash-list";
 import { FeedItem } from "@/features/feed/feed-item";
 import type { FeedItem as FeedModel } from "@/models/feed";
+import { useStore } from "@/store/store";
 
 const StyledIonicons = withUniwind(Ionicons);
+
+/** Past this offset, live prepends freeze so taps don't miss in the 2-col grid. */
+const SCROLLED_THRESHOLD = 48;
 
 interface FeedScrollableProps {
   items: FeedModel[];
@@ -19,6 +29,10 @@ interface FeedScrollableProps {
   refreshing: boolean;
   loadingMore?: boolean;
   hasMore?: boolean;
+  /** Category key — enables freeze / scroll-to-top for grid pages. */
+  category?: string;
+  /** True when this page is the active pager tab. */
+  isActive?: boolean;
   onRefresh: () => void;
   onEndReached?: () => void;
   onPressItem?: (id: string) => void;
@@ -55,12 +69,35 @@ function FeedSkeleton(): JSX.Element {
   );
 }
 
+function findSequenceStart(
+  haystack: FeedModel[],
+  needle: FeedModel[],
+): number {
+  if (needle.length === 0) return 0;
+  const firstId = needle[0]?.id;
+  if (!firstId) return -1;
+  for (let i = 0; i <= haystack.length - needle.length; i += 1) {
+    if (haystack[i]?.id !== firstId) continue;
+    let match = true;
+    for (let j = 1; j < needle.length; j += 1) {
+      if (haystack[i + j]?.id !== needle[j]?.id) {
+        match = false;
+        break;
+      }
+    }
+    if (match) return i;
+  }
+  return -1;
+}
+
 export function FeedScrollable({
   items,
   loading,
   refreshing,
   loadingMore = false,
   hasMore = false,
+  category,
+  isActive = false,
   onRefresh,
   onEndReached,
   onPressItem,
@@ -68,7 +105,14 @@ export function FeedScrollable({
   topInset = 4,
   bottomInset = 96,
 }: FeedScrollableProps): JSX.Element {
+  const { feedStore } = useStore();
   const accent = useThemeColor("accent");
+  const { theme } = useUniwind();
+  const indicatorStyle = theme === "dark" ? "white" : "black";
+  const listRef = useRef<FlashListRef<FeedModel>>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [frozenItems, setFrozenItems] = useState<FeedModel[] | null>(null);
+  const isScrolledRef = useRef(false);
 
   const renderItem = useCallback<ListRenderItem<FeedModel>>(
     ({ item }) => (
@@ -90,6 +134,98 @@ export function FeedScrollable({
     onEndReached();
   }, [hasMore, loading, loadingMore, onEndReached, refreshing]);
 
+  const revealTop = useCallback(() => {
+    if (category) {
+      feedStore.flushDeferredBucket(category);
+    }
+    setFrozenItems(null);
+    setIsScrolled(false);
+    isScrolledRef.current = false;
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, [category, feedStore]);
+
+  // Active category owns scroll-to-top (re-tap Feed tab).
+  useEffect(() => {
+    if (!isActive || !category || category === "for-you") {
+      return;
+    }
+    feedStore.registerScrollToTop(revealTop);
+    return () => {
+      feedStore.registerScrollToTop(null);
+    };
+  }, [category, feedStore, isActive, revealTop]);
+
+  // Sync store freeze flag for live SignalR deferral.
+  useEffect(() => {
+    if (!category || category === "for-you" || !isActive) return;
+    feedStore.setBucketFrozen(category, isScrolled);
+  }, [category, feedStore, isActive, isScrolled]);
+
+  // Clear freeze when leaving the page.
+  useEffect(() => {
+    if (isActive || !category) return;
+    feedStore.setBucketFrozen(category, false);
+    setFrozenItems(null);
+    setIsScrolled(false);
+    isScrolledRef.current = false;
+  }, [category, feedStore, isActive]);
+
+  // While scrolled: freeze visible rows; still allow infinite-scroll tails.
+  useEffect(() => {
+    if (!isScrolled) {
+      if (frozenItems !== null) setFrozenItems(null);
+      return;
+    }
+
+    if (frozenItems === null) {
+      setFrozenItems(items);
+      return;
+    }
+
+    const start = findSequenceStart(items, frozenItems);
+    if (start === -1) {
+      setFrozenItems(items);
+      return;
+    }
+
+    const tail = items.slice(start + frozenItems.length);
+    if (tail.length > 0) {
+      setFrozenItems([...frozenItems, ...tail]);
+    }
+  }, [frozenItems, isScrolled, items]);
+
+  const listData = useMemo(() => {
+    if (isScrolled && frozenItems) return frozenItems;
+    return items;
+  }, [frozenItems, isScrolled, items]);
+
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const y = e.nativeEvent.contentOffset.y;
+      const scrolled = y > SCROLLED_THRESHOLD;
+      if (scrolled !== isScrolledRef.current) {
+        isScrolledRef.current = scrolled;
+        setIsScrolled(scrolled);
+        if (!scrolled && category) {
+          feedStore.flushDeferredBucket(category);
+          setFrozenItems(null);
+        }
+      }
+    },
+    [category, feedStore],
+  );
+
+  const handleRefresh = useCallback(() => {
+    if (category) {
+      feedStore.clearDeferredBucket(category);
+      feedStore.setBucketFrozen(category, false);
+    }
+    setFrozenItems(null);
+    setIsScrolled(false);
+    isScrolledRef.current = false;
+    onRefresh();
+  }, [category, feedStore, onRefresh]);
+
   if (loading && items.length === 0) {
     return (
       <View className="flex-1" style={{ paddingTop: topInset }}>
@@ -101,7 +237,9 @@ export function FeedScrollable({
   return (
     <View className="flex-1">
       <FlashList
-        data={items}
+        ref={listRef}
+        data={listData}
+        extraData={`${listData.length}:${listData[0]?.id ?? ""}`}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         numColumns={2}
@@ -113,10 +251,12 @@ export function FeedScrollable({
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={onRefresh}
+            onRefresh={handleRefresh}
             tintColor={accent}
           />
         }
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.55}
         ListFooterComponent={
@@ -143,7 +283,9 @@ export function FeedScrollable({
             </EmptyState.Header>
           </EmptyState>
         }
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator
+        indicatorStyle={indicatorStyle}
+        persistentScrollbar={Platform.OS === "android"}
       />
     </View>
   );

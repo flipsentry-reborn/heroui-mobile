@@ -284,16 +284,30 @@ type FeedStatusSource = Pick<
   | "motivatedKeywords"
   | "motivatedKeywordTexts"
   | "statusBadges"
+  | "vehicleSpecifications"
+  | "compValuation"
+  | "externalValuation"
 >;
 
 function keywordSignalCount(matches?: KeywordMatch[], texts?: string[]): number {
   return Math.max(matches?.length ?? 0, texts?.length ?? 0);
 }
 
+function normalizeBusinessDealerBadge(label: string, isCarFeed: boolean): string {
+  if (label === "Business" && isCarFeed) return "Dealer";
+  if (label === "Dealer" && !isCarFeed) return "Business";
+  return label;
+}
+
 export function getOrderedStatusBadges(feed?: FeedStatusSource | null): string[] {
   if (!feed) return [];
+
+  const isCarFeed = isCarListing(feed);
+
   if (feed.statusBadges != null && feed.statusBadges.length > 0) {
-    return feed.statusBadges;
+    return feed.statusBadges.map((label) =>
+      normalizeBusinessDealerBadge(label, isCarFeed),
+    );
   }
 
   const spamCount = keywordSignalCount(feed.scamKeywords, feed.scamKeywordTexts);
@@ -317,7 +331,7 @@ export function getOrderedStatusBadges(feed?: FeedStatusSource | null): string[]
     keywordSignalCount(feed.negociableKeywords, feed.negociableKeywordTexts) > 0;
 
   const badges: string[] = [];
-  if (feed.isDealership) badges.push("Dealer");
+  if (feed.isDealership) badges.push(isCarFeed ? "Dealer" : "Business");
   if (!feed.isDealership && spamCount > 0) badges.push("Spam");
   if (hasSalvageTitle && !hasRebuiltTitle) badges.push("Salvage");
   if (hasRebuiltTitle) badges.push("Rebuilt");
@@ -359,9 +373,25 @@ export interface LocalCompItem {
   description: string | null;
 }
 
-export function isCarListing(item: FeedItem): boolean {
+export function isCarListing(
+  item: Pick<
+    FeedItem,
+    "vehicleSpecifications" | "compValuation" | "externalValuation"
+  > | null | undefined,
+): boolean {
+  if (!item) return false;
   const valuation = resolveDisplayValuation(item);
-  return valuation?.valuationType === "car" || !!item.vehicleSpecifications;
+  if (valuation?.valuationType === "car") return true;
+  const specs = item.vehicleSpecifications;
+  if (
+    specs &&
+    (specs.vehicleYear != null ||
+      specs.vehicleMileage != null ||
+      !!specs.vehicleTransmission)
+  ) {
+    return true;
+  }
+  return false;
 }
 
 /** Matches backend FeedFilterTabDto / FeedTabAvailabilityDto. */

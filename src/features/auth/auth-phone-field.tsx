@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetFlatList } from "@gorhom/bottom-sheet";
 import type { JSX } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, View, type TextInputProps } from "react-native";
 import {
   BottomSheet,
   FieldError,
@@ -43,6 +43,8 @@ interface AuthPhoneFieldProps {
   onCountryIso2Change?: (iso2: string) => void;
   error?: string;
   placeholder?: string;
+  onFocus?: TextInputProps["onFocus"];
+  onBlur?: TextInputProps["onBlur"];
 }
 
 /** Phone row with country-code prefix inside HeroUI InputGroup (app field tokens). */
@@ -56,6 +58,8 @@ export function AuthPhoneField({
   onCountryIso2Change,
   error,
   placeholder = "Phone number",
+  onFocus,
+  onBlur,
 }: AuthPhoneFieldProps): JSX.Element {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [foreground, muted] = useThemeColor(["foreground", "muted"]);
@@ -120,6 +124,8 @@ export function AuthPhoneField({
             maxLength={10}
             placeholder={placeholder}
             placeholderTextColor={AUTH_PLACEHOLDER_COLOR}
+            onFocus={onFocus}
+            onBlur={onBlur}
             autoCapitalize="none"
             autoCorrect={false}
           />

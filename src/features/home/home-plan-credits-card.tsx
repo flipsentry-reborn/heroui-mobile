@@ -6,6 +6,8 @@ import { Chip } from "heroui-native";
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
 import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
 import {
+  NOT_SUBSCRIBED_ICON_STROKE,
+  NOT_SUBSCRIBED_PALETTE,
   PLAN_ACCENTS,
   PLAN_GLOW_GRADIENT,
 } from "@/features/settings/subscription-theme";
@@ -26,16 +28,20 @@ export function HomePlanCreditsCard({
   subscriptionPlan,
   onPress,
 }: HomePlanCreditsCardProps): JSX.Element {
-  const palette =
-    subscriptionPlan != null
-      ? PLAN_ACCENTS[subscriptionPlan.accent]
-      : PLAN_ACCENTS.purple;
-  const title = subscriptionPlan?.displayName ?? "Choose a plan";
+  const isSubscribed = subscriptionPlan != null;
+  const palette = isSubscribed
+    ? PLAN_ACCENTS[subscriptionPlan.accent]
+    : NOT_SUBSCRIBED_PALETTE;
+  const title = subscriptionPlan?.displayName ?? "Not subscribed";
 
   return (
     <Pressable
       onPress={onPress}
-      className="mx-3 mb-3 overflow-hidden rounded-3xl border border-white/10"
+      className={
+        isSubscribed
+          ? "mx-3 mb-3 overflow-hidden rounded-3xl border border-white/10"
+          : "mx-3 mb-3 overflow-hidden rounded-3xl border border-black/10"
+      }
     >
       <LinearGradient
         colors={palette.gradient}
@@ -49,13 +55,15 @@ export function HomePlanCreditsCard({
         end={PLAN_GLOW_GRADIENT.end}
         style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
       />
-      <SubscriptionParticleField />
+      {isSubscribed ? <SubscriptionParticleField /> : null}
 
       <View className="gap-2.5 p-[15px]">
         <View className="flex-row items-center gap-2">
           <HeroBoltIcon
             from={palette.iconFrom}
             to={palette.iconTo}
+            boltFill={palette.boltFill}
+            stroke={isSubscribed ? undefined : NOT_SUBSCRIBED_ICON_STROKE}
             size={22}
           />
           <Text
@@ -65,7 +73,7 @@ export function HomePlanCreditsCard({
               fontSize: 18,
               lineHeight: 24,
               letterSpacing: -0.3,
-              color: "#FFFFFF",
+              color: palette.text,
             }}
           >
             {title}
@@ -78,7 +86,7 @@ export function HomePlanCreditsCard({
               fontFamily: Fonts.heading,
               fontSize: 22,
               lineHeight: 28,
-              color: "#FFFFFF",
+              color: palette.text,
             }}
           >
             {homePlan.usedSearches} / {homePlan.maxSearches}
@@ -87,7 +95,7 @@ export function HomePlanCreditsCard({
             style={{
               fontFamily: Fonts.headingRegular,
               fontSize: 11,
-              color: "rgba(255,255,255,0.55)",
+              color: palette.textMuted,
             }}
           >
             active searches
@@ -101,9 +109,19 @@ export function HomePlanCreditsCard({
               size="sm"
               variant="secondary"
               color="default"
-              className="border border-white/12 bg-white/10 px-2.5 py-1"
+              className={
+                isSubscribed
+                  ? "border border-white/12 bg-white/10 px-2.5 py-1"
+                  : "border border-black/10 bg-black/5 px-2.5 py-1"
+              }
             >
-              <Chip.Label className="text-[11px] text-white">
+              <Chip.Label
+                className={
+                  isSubscribed
+                    ? "text-[11px] text-white"
+                    : "text-[11px] text-black"
+                }
+              >
                 {formatIntervalLabel(c.intervalSeconds)}: {c.remaining}/{c.total}
               </Chip.Label>
             </Chip>

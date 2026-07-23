@@ -132,7 +132,7 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
     activePlan?.displayName ??
     (subscriptionStore.hasActiveTrial || state?.hasActiveTrial
       ? "Trial"
-      : "Free");
+      : "Not subscribed");
   const appearance: AppearanceMode = prefs?.appearance ?? "system";
   const profile = userStore.user
     ? {

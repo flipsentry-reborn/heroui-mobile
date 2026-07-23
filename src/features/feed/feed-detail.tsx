@@ -52,6 +52,7 @@ import {
 import { useStore } from "@/store/store";
 
 const FEED_OPEN_LOG = "FeedOpen";
+const DESC_COLLAPSE_LENGTH = 160;
 
 const PLATFORM_CTA: Record<FeedPlatform, string> = {
   facebookMarketplace: "#1877F2",
@@ -105,7 +106,11 @@ export function FeedDetail({
   const valuation = resolveDisplayValuation(item);
   const images = galleryUrls(item);
   const description = item.description || "No description provided.";
-  const longDesc = description.length > 160;
+  const longDesc = description.length > DESC_COLLAPSE_LENGTH;
+  const displayDescription =
+    descExpanded || !longDesc
+      ? description
+      : `${description.slice(0, DESC_COLLAPSE_LENGTH).trimEnd()}…`;
   const showSimilarNearby = isCarListing(item) && !item.isSold && !item.isPending;
   const soldPendingPrefix = formatSoldPendingTitlePrefix(item);
 
@@ -129,6 +134,7 @@ export function FeedDetail({
     stickyVisibleRef.current = false;
     setStickyVisible(false);
     setHasShownLocalComps(false);
+    setDescExpanded(false);
   }, [item.id]);
 
   useEffect(() => {
@@ -405,9 +411,8 @@ export function FeedDetail({
               <Typography
                 type="body-xs"
                 className="text-xs font-normal leading-4 text-muted"
-                numberOfLines={descExpanded || !longDesc ? undefined : 5}
               >
-                {description}
+                {displayDescription}
               </Typography>
               {longDesc ? (
                 <PressableFeedback
@@ -418,7 +423,7 @@ export function FeedDetail({
                   <Typography
                     type="body-sm"
                     weight="semibold"
-                    className="text-[13px] text-foreground"
+                    className="text-[13px] text-success underline"
                   >
                     {descExpanded ? "Show less" : "Show more"}
                   </Typography>

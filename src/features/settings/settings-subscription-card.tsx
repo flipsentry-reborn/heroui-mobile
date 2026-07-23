@@ -7,6 +7,8 @@ import { Button } from "heroui-native";
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
 import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
 import {
+  NOT_SUBSCRIBED_ICON_STROKE,
+  NOT_SUBSCRIBED_PALETTE,
   PLAN_ACCENTS,
   PLAN_GLOW_GRADIENT,
 } from "@/features/settings/subscription-theme";
@@ -24,24 +26,30 @@ export function SettingsSubscriptionCard({
   onPress,
 }: SettingsSubscriptionCardProps): JSX.Element {
   if (plan == null) {
+    const palette = NOT_SUBSCRIBED_PALETTE;
     return (
-      <View className="mx-3 mb-4 overflow-hidden rounded-3xl border border-white/10">
+      <View className="mx-3 mb-4 overflow-hidden rounded-3xl border border-black/10">
         <LinearGradient
-          colors={["#12081f", "#0a0614", "#050505"]}
+          colors={palette.gradient}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
           style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
         />
         <LinearGradient
-          colors={["rgba(117, 56, 248, 0.45)", "transparent"]}
+          colors={[palette.glow, "transparent"]}
           start={PLAN_GLOW_GRADIENT.start}
           end={PLAN_GLOW_GRADIENT.end}
           style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
         />
-        <SubscriptionParticleField />
         <View className="gap-3 p-4">
           <View className="flex-row items-center gap-2">
-            <HeroBoltIcon from="#7538F8" to="#F690EC" size={22} />
+            <HeroBoltIcon
+              from={palette.iconFrom}
+              to={palette.iconTo}
+              boltFill={palette.boltFill}
+              stroke={NOT_SUBSCRIBED_ICON_STROKE}
+              size={22}
+            />
             <Text
               style={{
                 flex: 1,
@@ -49,10 +57,10 @@ export function SettingsSubscriptionCard({
                 fontSize: 18,
                 lineHeight: 24,
                 letterSpacing: -0.3,
-                color: "#FFFFFF",
+                color: palette.text,
               }}
             >
-              Choose a plan.
+              Not subscribed
             </Text>
           </View>
           <Text
@@ -60,7 +68,7 @@ export function SettingsSubscriptionCard({
               fontFamily: Fonts.headingRegular,
               fontSize: 13,
               lineHeight: 18,
-              color: "rgba(255,255,255,0.65)",
+              color: palette.textMuted,
             }}
           >
             Unlock search slots, faster alerts, and deal scores.
@@ -68,10 +76,10 @@ export function SettingsSubscriptionCard({
           <Button
             variant="primary"
             size="sm"
-            className="w-full bg-white"
+            className="w-full bg-black"
             onPress={onPress}
           >
-            <Button.Label className="text-sm text-black">
+            <Button.Label className="text-sm text-white">
               View plans
             </Button.Label>
           </Button>

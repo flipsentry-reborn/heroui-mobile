@@ -167,16 +167,29 @@ export const AppTabBar = observer(function AppTabBar({
               key={route.key}
               accessibilityRole="button"
               accessibilityState={focused ? { selected: true } : {}}
-              accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
+              accessibilityLabel={
+                route.name === "feed" && showNewItems
+                  ? `${label}, new listings available`
+                  : (options.tabBarAccessibilityLabel ?? label)
+              }
               onPress={onPress}
               className="flex-1 items-center justify-center py-1.5"
               animation={{ scale: { value: 0.94 } }}
             >
-              <Ionicons
-                name={focused ? icons.filled : icons.outline}
-                size={24}
-                color={color}
-              />
+              <View className="relative">
+                <Ionicons
+                  name={focused ? icons.filled : icons.outline}
+                  size={24}
+                  color={color}
+                />
+                {route.name === "feed" && showNewItems ? (
+                  <View
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                    className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full border-[1.5px] border-background bg-[#FF3B30]"
+                  />
+                ) : null}
+              </View>
               <Typography
                 type="body-xs"
                 weight={focused ? "semibold" : "medium"}

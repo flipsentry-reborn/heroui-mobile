@@ -21,6 +21,8 @@ import {
 import { ProfileScreenSkeleton } from "@/features/settings/settings-skeletons";
 import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
 import {
+  NOT_SUBSCRIBED_ICON_STROKE,
+  NOT_SUBSCRIBED_PALETTE,
   PLAN_ACCENTS,
   PLAN_GLOW_GRADIENT,
 } from "@/features/settings/subscription-theme";
@@ -44,8 +46,6 @@ function StatusChip({
     </Chip>
   );
 }
-
-const FREE_PALETTE = PLAN_ACCENTS.purple;
 
 const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
   const { userStore, subscriptionStore } = useStore();
@@ -106,14 +106,15 @@ const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
 
   const activePlan = subscriptionStore.activePlan;
   const isTrial = subscriptionStore.hasActiveTrial && activePlan == null;
+  const isSubscribed = activePlan != null;
   const fullName = `${profile.firstName} ${profile.lastName}`;
   const initials =
     `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase();
-  const palette = activePlan
+  const palette = isSubscribed
     ? PLAN_ACCENTS[activePlan.accent]
-    : FREE_PALETTE;
+    : NOT_SUBSCRIBED_PALETTE;
   const planLabel =
-    activePlan?.displayName ?? (isTrial ? "Trial" : "Free");
+    activePlan?.displayName ?? (isTrial ? "Trial" : "Not subscribed");
 
   return (
     <ScrollView
@@ -122,7 +123,13 @@ const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
       style={{ backgroundColor: background }}
       showsVerticalScrollIndicator={false}
     >
-      <View className="mx-3 mb-4 overflow-hidden rounded-3xl border border-white/10">
+      <View
+        className={
+          isSubscribed
+            ? "mx-3 mb-4 overflow-hidden rounded-3xl border border-white/10"
+            : "mx-3 mb-4 overflow-hidden rounded-3xl border border-black/10"
+        }
+      >
         <LinearGradient
           colors={palette.gradient}
           start={{ x: 0.5, y: 0 }}
@@ -135,14 +142,22 @@ const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
           end={PLAN_GLOW_GRADIENT.end}
           style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
         />
-        <SubscriptionParticleField />
+        {isSubscribed ? <SubscriptionParticleField /> : null}
         <View className="items-center gap-1.5 px-5 py-6">
           <Avatar
             size="lg"
             alt={fullName}
-            className="mb-1.5 bg-white/10"
+            className={
+              isSubscribed ? "mb-1.5 bg-white/10" : "mb-1.5 bg-black/5"
+            }
           >
-            <Avatar.Fallback className="bg-white/10 text-white">
+            <Avatar.Fallback
+              className={
+                isSubscribed
+                  ? "bg-white/10 text-white"
+                  : "bg-black/5 text-black"
+              }
+            >
               {initials}
             </Avatar.Fallback>
           </Avatar>
@@ -159,7 +174,7 @@ const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
                 fontSize: 18,
                 lineHeight: 24,
                 letterSpacing: -0.3,
-                color: "#FFFFFF",
+                color: palette.text,
               }}
             >
               {fullName}
@@ -176,7 +191,7 @@ const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
               style={{
                 fontFamily: Fonts.headingRegular,
                 fontSize: 12,
-                color: "rgba(255,255,255,0.55)",
+                color: palette.textMuted,
               }}
             >
               {profile.email}
@@ -186,13 +201,17 @@ const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
             <HeroBoltIcon
               from={palette.iconFrom}
               to={palette.iconTo}
+              boltFill={palette.boltFill}
+              stroke={
+                isSubscribed ? undefined : NOT_SUBSCRIBED_ICON_STROKE
+              }
               size={16}
             />
             <Text
               style={{
                 fontFamily: Fonts.headingSemi,
                 fontSize: 13,
-                color: "#FFFFFF",
+                color: palette.text,
               }}
             >
               {planLabel}

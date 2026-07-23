@@ -1,22 +1,41 @@
 import { Image } from "expo-image";
 import type { JSX, ReactNode } from "react";
+import { Pressable, Text, View } from "react-native";
 import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  View,
-} from "react-native";
+  KeyboardAwareScrollView,
+  KeyboardToolbar,
+} from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Typography, useThemeColor } from "heroui-native";
+import { useThemeColor } from "heroui-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
 import { SUBSCRIPTION_DARK_BACKGROUND } from "@/features/settings/subscription-theme";
+import { Fonts } from "@/lib/fonts";
 
 /** Same mark as feed header (not Expo placeholder `icon.png`). */
 const LOGO = require("../../../assets/images/flipsentry-logo-text-transparent.png");
 const LOGO_WIDTH = 180;
 const LOGO_HEIGHT = 40;
+
+/** Space for KeyboardToolbar above the keyboard (HeroUI / Expo form pattern). */
+const KEYBOARD_TOOLBAR_OFFSET = 62;
+
+/** Match auth canvas `#060606` — default toolbar uses elevated gray. */
+const AUTH_KEYBOARD_TOOLBAR_THEME = {
+  light: {
+    primary: "#FAFAFA",
+    disabled: "#707070",
+    background: SUBSCRIPTION_DARK_BACKGROUND,
+    ripple: "#F8F8F888",
+  },
+  dark: {
+    primary: "#FAFAFA",
+    disabled: "#707070",
+    background: SUBSCRIPTION_DARK_BACKGROUND,
+    ripple: "#F8F8F888",
+  },
+} as const;
 
 interface AuthShellProps {
   title: string;
@@ -28,7 +47,11 @@ interface AuthShellProps {
   contentAlign?: "top" | "center";
 }
 
-/** Auth canvas: solid subscription dark only — no glow, no particles. */
+/**
+ * Auth canvas: solid subscription dark.
+ * Uses `KeyboardAwareScrollView` + `KeyboardToolbar` from
+ * `react-native-keyboard-controller` so TextFields scroll above the keyboard.
+ */
 export function AuthShell({
   title,
   subtitle,
@@ -38,26 +61,26 @@ export function AuthShell({
   contentAlign = "top",
 }: AuthShellProps): JSX.Element {
   const insets = useSafeAreaInsets();
-  const [muted] = useThemeColor(["muted"]);
+  const [foreground, muted] = useThemeColor(["foreground", "muted"]);
   const isCentered = contentAlign === "center";
 
   return (
-    <KeyboardAvoidingView
+    <View
       className="flex-1"
       style={{ backgroundColor: SUBSCRIPTION_DARK_BACKGROUND }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView
-        className="flex-1"
+      <KeyboardAwareScrollView
+        style={{ flex: 1 }}
+        bottomOffset={KEYBOARD_TOOLBAR_OFFSET}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         bounces
         alwaysBounceVertical
         overScrollMode="always"
-        contentContainerClassName="px-6"
         contentContainerStyle={{
           flexGrow: 1,
           justifyContent: isCentered ? "center" : "flex-start",
+          paddingHorizontal: 24,
           paddingTop: insets.top + (onBack ? 8 : isCentered ? 16 : 28),
           paddingBottom: Math.max(insets.bottom, 24) + (isCentered ? 32 : 16),
         }}
@@ -66,7 +89,8 @@ export function AuthShell({
           <Pressable
             onPress={onBack}
             hitSlop={12}
-            className="mb-4 h-10 w-10 items-center justify-center rounded-full bg-surface-secondary"
+            className="mb-4 h-10 w-10 items-center justify-center rounded-full"
+            style={{ backgroundColor: AUTH_CONTROL_BACKGROUND }}
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
@@ -86,24 +110,36 @@ export function AuthShell({
             contentFit="contain"
             accessibilityLabel="FlipSentry"
           />
-          <View className={`items-center px-2 ${isCentered ? "gap-2.5" : "gap-1.5"}`}>
-            <Typography
-              weight="bold"
-              className={`text-center text-foreground ${
-                isCentered
-                  ? "text-[28px] leading-9"
-                  : "text-[26px] leading-8"
-              }`}
+          {/* Same Britti pattern as subscription “Find deals faster.” */}
+          <View
+            className={`items-center px-2 ${isCentered ? "gap-3" : "gap-2.5"}`}
+          >
+            <Text
+              style={{
+                fontFamily: Fonts.heading,
+                fontSize: isCentered ? 34 : 30,
+                lineHeight: isCentered ? 40 : 36,
+                letterSpacing: -0.6,
+                color: foreground,
+                textAlign: "center",
+              }}
             >
               {title}
-            </Typography>
+            </Text>
             {subtitle ? (
-              <Typography
-                type="body-sm"
-                className={`text-center text-muted ${isCentered ? "max-w-[280px] leading-5" : ""}`}
+              <Text
+                style={{
+                  fontFamily: Fonts.headingRegular,
+                  fontSize: 16,
+                  lineHeight: 24,
+                  color: muted,
+                  textAlign: "center",
+                  paddingHorizontal: isCentered ? 8 : 4,
+                  maxWidth: isCentered ? 300 : undefined,
+                }}
               >
                 {subtitle}
-              </Typography>
+              </Text>
             ) : null}
           </View>
         </View>
@@ -113,8 +149,10 @@ export function AuthShell({
         {footer ? (
           <View className="mt-auto items-center pt-10">{footer}</View>
         ) : null}
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
+
+      <KeyboardToolbar theme={AUTH_KEYBOARD_TOOLBAR_THEME} />
+    </View>
   );
 }
 
@@ -127,27 +165,52 @@ export function AuthFooterLink({
   actionLabel: string;
   onPress: () => void;
 }): JSX.Element {
+  const [foreground, muted] = useThemeColor(["foreground", "muted"]);
+
   return (
     <View className="flex-row flex-wrap items-center justify-center gap-1">
-      <Typography type="body-sm" className="text-muted">
+      <Text
+        style={{
+          fontFamily: Fonts.headingRegular,
+          fontSize: 14,
+          lineHeight: 20,
+          color: muted,
+        }}
+      >
         {prompt}
-      </Typography>
+      </Text>
       <Pressable onPress={onPress} hitSlop={8}>
-        <Typography type="body-sm" weight="semibold" className="text-foreground">
+        <Text
+          style={{
+            fontFamily: Fonts.headingSemi,
+            fontSize: 14,
+            lineHeight: 20,
+            color: foreground,
+          }}
+        >
           {actionLabel}
-        </Typography>
+        </Text>
       </Pressable>
     </View>
   );
 }
 
 export function AuthOrDivider(): JSX.Element {
+  const [muted] = useThemeColor(["muted"]);
+
   return (
     <View className="flex-row items-center gap-3 py-1">
       <View className="h-px flex-1 bg-border" />
-      <Typography type="body-xs" className="text-muted">
+      <Text
+        style={{
+          fontFamily: Fonts.headingRegular,
+          fontSize: 12,
+          lineHeight: 16,
+          color: muted,
+        }}
+      >
         or
-      </Typography>
+      </Text>
       <View className="h-px flex-1 bg-border" />
     </View>
   );

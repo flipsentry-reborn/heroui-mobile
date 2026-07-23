@@ -14,6 +14,7 @@ import { StatusBar } from "expo-status-bar";
 import { HeroUINativeProvider, useThemeColor } from "heroui-native";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import { useUniwind } from "uniwind";
 
 import { setUnauthorizedHandler } from "@/api/http/client";
@@ -158,17 +159,21 @@ export default function RootLayout(): JSX.Element | null {
 
   // GestureHandlerRootView must wrap HeroUINativeProvider so BottomSheet /
   // Dialog portals (PortalHost siblings of app content) still get gestures.
+  // KeyboardProvider: HeroUI Native–recommended keyboard avoidance
+  // (react-native-keyboard-controller) for auth forms and TextFields.
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <HeroUINativeProvider
-        config={{
-          devInfo: { stylingPrinciples: false },
-        }}
-      >
-        <StoreProvider>
-          <RootLayoutContent />
-        </StoreProvider>
-      </HeroUINativeProvider>
+      <KeyboardProvider>
+        <HeroUINativeProvider
+          config={{
+            devInfo: { stylingPrinciples: false },
+          }}
+        >
+          <StoreProvider>
+            <RootLayoutContent />
+          </StoreProvider>
+        </HeroUINativeProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

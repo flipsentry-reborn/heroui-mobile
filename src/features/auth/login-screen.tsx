@@ -1,12 +1,11 @@
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { router, type Href } from "expo-router";
 import {
   Button,
   Spinner,
-  Typography,
   useThemeColor,
   useToast,
 } from "heroui-native";
@@ -21,6 +20,7 @@ import {
 } from "@/features/auth/auth-shell";
 import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
 import { BrandButton } from "@/components/ui/brand-button";
+import { Fonts } from "@/lib/fonts";
 import { MOCK_ACCOUNT_CREDENTIALS } from "@/mocks/services/account";
 import { useStore } from "@/store/store";
 
@@ -37,7 +37,11 @@ function errorMessage(error: unknown): string {
 export const LoginScreen = observer(function LoginScreen(): JSX.Element {
   const { userStore } = useStore();
   const { toast } = useToast();
-  const [accentForeground] = useThemeColor(["accent-foreground"]);
+  const [accentForeground, muted, danger] = useThemeColor([
+    "accent-foreground",
+    "muted",
+    "danger",
+  ]);
 
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
 
@@ -152,7 +156,7 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
             onChangeText={setEmail}
             keyboardType="email-address"
             textContentType="emailAddress"
-            placeholder="youremail@site.com"
+            placeholder="Email"
           />
           <AuthField
             label="Password"
@@ -160,15 +164,22 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
             onChangeText={setPassword}
             secureTextEntry
             textContentType="password"
-            placeholder="••••••••"
+            placeholder="Password"
           />
           <Pressable
             onPress={() => router.push("/forgot-password" as Href)}
             className="self-end"
           >
-            <Typography type="body-sm" className="text-muted">
+            <Text
+              style={{
+                fontFamily: Fonts.headingRegular,
+                fontSize: 14,
+                lineHeight: 20,
+                color: muted,
+              }}
+            >
               Forgot password?
-            </Typography>
+            </Text>
           </Pressable>
 
           <BrandButton
@@ -208,7 +219,7 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
           <BrandButton
             className="min-h-12 w-full rounded-full"
             isDisabled={
-              submitting || phoneNumber.replace(/\D/g, "").length < 7
+              submitting || phoneNumber.replace(/\D/g, "").length !== 10
             }
             onPress={() => void onSendPhoneCode()}
           >
@@ -220,7 +231,8 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
 
           <Button
             variant="secondary"
-            className="min-h-12 w-full rounded-full bg-surface-secondary"
+            className="min-h-12 w-full rounded-full border-0"
+            style={{ backgroundColor: AUTH_CONTROL_BACKGROUND }}
             onPress={() => switchMethod("email")}
           >
             <Button.Label className="text-foreground">
@@ -258,9 +270,17 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
       )}
 
       {error ? (
-        <Typography type="body-sm" className="text-center text-danger">
+        <Text
+          style={{
+            fontFamily: Fonts.headingRegular,
+            fontSize: 14,
+            lineHeight: 20,
+            color: danger,
+            textAlign: "center",
+          }}
+        >
           {error}
-        </Typography>
+        </Text>
       ) : null}
 
       {USE_MOCK ? (

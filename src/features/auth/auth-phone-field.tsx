@@ -2,12 +2,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetFlatList } from "@gorhom/bottom-sheet";
 import type { JSX } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import {
   BottomSheet,
   FieldError,
   InputGroup,
-  Label,
   SearchField,
   TextField,
   Typography,
@@ -22,6 +21,7 @@ import {
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
 import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
+import { Fonts } from "@/lib/fonts";
 import {
   COUNTRY_DIAL_CODES,
   findCountryByIso2,
@@ -55,7 +55,7 @@ export function AuthPhoneField({
   placeholder = "Phone number",
 }: AuthPhoneFieldProps): JSX.Element {
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [muted] = useThemeColor(["muted"]);
+  const [foreground, muted] = useThemeColor(["foreground", "muted"]);
 
   const selected =
     findCountryByIso2(countryIso2) ??
@@ -71,7 +71,17 @@ export function AuthPhoneField({
   return (
     <>
       <TextField isInvalid={!!error}>
-        <Label className="text-foreground">{label}</Label>
+        <Text
+          style={{
+            fontFamily: Fonts.headingSemi,
+            fontSize: 14,
+            lineHeight: 20,
+            color: foreground,
+            marginBottom: 6,
+          }}
+        >
+          {label}
+        </Text>
         <InputGroup>
           <InputGroup.Prefix>
             <Pressable
@@ -81,16 +91,17 @@ export function AuthPhoneField({
               accessibilityRole="button"
               accessibilityLabel="Select country code"
             >
-              <Typography type="body-sm" className="text-[16px]">
-                {selected.flag}
-              </Typography>
-              <Typography
-                type="body-sm"
-                weight="semibold"
-                className="text-foreground"
+              <Text style={{ fontSize: 16 }}>{selected.flag}</Text>
+              <Text
+                style={{
+                  fontFamily: Fonts.headingSemi,
+                  fontSize: 14,
+                  lineHeight: 20,
+                  color: foreground,
+                }}
               >
                 +{selected.dialCode}
-              </Typography>
+              </Text>
               <Ionicons name="chevron-down" size={14} color={muted} />
             </Pressable>
           </InputGroup.Prefix>
@@ -99,10 +110,11 @@ export function AuthPhoneField({
             style={{ backgroundColor: AUTH_CONTROL_BACKGROUND, borderWidth: 0 }}
             value={nationalNumber}
             onChangeText={(text) =>
-              onNationalNumberChange(text.replace(/[^\d]/g, ""))
+              onNationalNumberChange(text.replace(/[^\d]/g, "").slice(0, 10))
             }
             keyboardType="phone-pad"
             textContentType="telephoneNumber"
+            maxLength={10}
             placeholder={placeholder}
             placeholderTextColor={muted}
             autoCapitalize="none"

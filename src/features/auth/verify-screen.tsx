@@ -1,12 +1,11 @@
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { View } from "react-native";
+import { Text, View } from "react-native";
 import { router, type Href } from "expo-router";
 import {
   Button,
   Spinner,
-  Typography,
   useThemeColor,
   useToast,
 } from "heroui-native";
@@ -14,8 +13,10 @@ import {
 import { USE_MOCK } from "@/api/config";
 import { AuthInputOtp } from "@/features/auth/auth-input-otp";
 import { AuthPhoneField } from "@/features/auth/auth-phone-field";
+import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
 import { AuthShell } from "@/features/auth/auth-shell";
 import { BrandButton } from "@/components/ui/brand-button";
+import { Fonts } from "@/lib/fonts";
 import { MOCK_ACCOUNT_CREDENTIALS } from "@/mocks/services/account";
 import { useStore } from "@/store/store";
 
@@ -29,7 +30,11 @@ function errorMessage(error: unknown): string {
 export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
   const { userStore } = useStore();
   const { toast } = useToast();
-  const [accentForeground] = useThemeColor(["accent-foreground"]);
+  const [accentForeground, muted, danger] = useThemeColor([
+    "accent-foreground",
+    "muted",
+    "danger",
+  ]);
   const [phoneNumber, setPhoneNumber] = useState(
     USE_MOCK ? "2345678901" : "",
   );
@@ -126,17 +131,25 @@ export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
             <BrandButton
               className="min-h-12 w-full rounded-full"
               isDisabled={
-                submitting || phoneNumber.replace(/\D/g, "").length < 7
+                submitting || phoneNumber.replace(/\D/g, "").length !== 10
               }
               onPress={() => void onSend()}
             >
               {submitting ? <Spinner size="sm" color={accentForeground} /> : null}
               <BrandButton.Label>Continue</BrandButton.Label>
             </BrandButton>
-            <Typography type="body-xs" className="text-center text-muted">
+            <Text
+              style={{
+                fontFamily: Fonts.headingRegular,
+                fontSize: 12,
+                lineHeight: 16,
+                color: muted,
+                textAlign: "center",
+              }}
+            >
               By tapping continue, you consent to receiving security codes from
               FlipSentry via SMS.
-            </Typography>
+            </Text>
           </>
         ) : (
           <>
@@ -165,14 +178,23 @@ export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
         )}
 
         {error ? (
-          <Typography type="body-sm" className="text-center text-danger">
+          <Text
+            style={{
+              fontFamily: Fonts.headingRegular,
+              fontSize: 14,
+              lineHeight: 20,
+              color: danger,
+              textAlign: "center",
+            }}
+          >
             {error}
-          </Typography>
+          </Text>
         ) : null}
 
         <Button
           variant="secondary"
-          className="min-h-12 w-full rounded-full bg-surface-secondary"
+          className="min-h-12 w-full rounded-full border-0"
+          style={{ backgroundColor: AUTH_CONTROL_BACKGROUND }}
           onPress={() => void userStore.logout()}
         >
           <Button.Label className="text-foreground">Sign out</Button.Label>

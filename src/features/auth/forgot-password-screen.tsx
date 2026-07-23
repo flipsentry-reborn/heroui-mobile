@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { Button, Spinner, Typography, useThemeColor, useToast } from "heroui-native";
 
 import { AuthField } from "@/features/auth/auth-field";
+import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
 import { AuthShell } from "@/features/auth/auth-shell";
 import { BrandButton } from "@/components/ui/brand-button";
 import { useStore } from "@/store/store";
@@ -54,7 +55,7 @@ export function ForgotPasswordScreen(): JSX.Element {
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
-          placeholder="youremail@site.com"
+          placeholder="Email"
         />
         <BrandButton
           className="min-h-12 w-full rounded-full"
@@ -66,7 +67,8 @@ export function ForgotPasswordScreen(): JSX.Element {
         </BrandButton>
         <Button
           variant="secondary"
-          className="min-h-12 w-full rounded-full bg-surface-secondary"
+          className="min-h-12 w-full rounded-full border-0"
+          style={{ backgroundColor: AUTH_CONTROL_BACKGROUND }}
           onPress={() => router.back()}
         >
           <Button.Label className="text-foreground">Back to login</Button.Label>

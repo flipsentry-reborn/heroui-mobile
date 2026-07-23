@@ -1,18 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
 import { useState } from "react";
-import { Pressable, type TextInputProps } from "react-native";
+import { Pressable, Text, type TextInputProps } from "react-native";
 import {
   FieldError,
   Input,
   InputGroup,
-  Label,
   TextField,
-  Typography,
   useThemeColor,
 } from "heroui-native";
 
 import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
+import { Fonts } from "@/lib/fonts";
 
 interface AuthFieldProps extends Omit<TextInputProps, "className"> {
   label: string;
@@ -39,13 +38,23 @@ export function AuthField({
   secureTextEntry,
   ...inputProps
 }: AuthFieldProps): JSX.Element {
-  const [muted] = useThemeColor(["muted"]);
+  const [foreground, muted] = useThemeColor(["foreground", "muted"]);
   const [visible, setVisible] = useState(false);
   const isPassword = secureTextEntry === true;
 
   return (
     <TextField isInvalid={!!error} className={className}>
-      <Label className="text-foreground">{label}</Label>
+      <Text
+        style={{
+          fontFamily: Fonts.headingSemi,
+          fontSize: 14,
+          lineHeight: 20,
+          color: foreground,
+          marginBottom: 6,
+        }}
+      >
+        {label}
+      </Text>
       {isPassword ? (
         <InputGroup>
           <InputGroup.Input
@@ -90,17 +99,23 @@ export function AuthField({
 
 export function AuthHint({
   children,
-  className,
 }: {
   children: string;
   className?: string;
 }): JSX.Element {
+  const [muted] = useThemeColor(["muted"]);
+
   return (
-    <Typography
-      type="body-xs"
-      className={className ?? "text-center text-muted"}
+    <Text
+      style={{
+        fontFamily: Fonts.headingRegular,
+        fontSize: 12,
+        lineHeight: 16,
+        color: muted,
+        textAlign: "center",
+      }}
     >
       {children}
-    </Typography>
+    </Text>
   );
 }

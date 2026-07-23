@@ -3,7 +3,7 @@ import type { JSX } from "react";
 import { useState } from "react";
 import { Linking, Pressable, Text, View } from "react-native";
 import { router, type Href } from "expo-router";
-import { Checkbox, Spinner, Typography, useThemeColor } from "heroui-native";
+import { Checkbox, Spinner, useThemeColor } from "heroui-native";
 
 import { AuthField } from "@/features/auth/auth-field";
 import {
@@ -11,6 +11,7 @@ import {
   AuthShell,
 } from "@/features/auth/auth-shell";
 import { BrandButton } from "@/components/ui/brand-button";
+import { Fonts } from "@/lib/fonts";
 import { useStore } from "@/store/store";
 
 const TERMS_URL = "https://flipsentry.com/terms";
@@ -28,7 +29,12 @@ function errorMessage(error: unknown): string {
  */
 export const RegisterScreen = observer(function RegisterScreen(): JSX.Element {
   const { userStore } = useStore();
-  const [accentForeground] = useThemeColor(["accent-foreground"]);
+  const [accentForeground, foreground, muted, danger] = useThemeColor([
+    "accent-foreground",
+    "foreground",
+    "muted",
+    "danger",
+  ]);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -126,7 +132,7 @@ export const RegisterScreen = observer(function RegisterScreen(): JSX.Element {
           onChangeText={setEmail}
           keyboardType="email-address"
           textContentType="emailAddress"
-          placeholder="youremail@site.com"
+          placeholder="Email"
         />
         <AuthField
           label="Password"
@@ -137,12 +143,20 @@ export const RegisterScreen = observer(function RegisterScreen(): JSX.Element {
           }}
           secureTextEntry
           textContentType="newPassword"
-          placeholder="At least 8 characters"
+          placeholder="Password"
         />
         {passwordError ? (
-          <Typography type="body-xs" className="-mt-2 text-danger">
+          <Text
+            style={{
+              marginTop: -8,
+              fontFamily: Fonts.headingRegular,
+              fontSize: 12,
+              lineHeight: 16,
+              color: danger,
+            }}
+          >
             {passwordError}
-          </Typography>
+          </Text>
         ) : null}
         <AuthField
           label="Confirm password"
@@ -150,7 +164,7 @@ export const RegisterScreen = observer(function RegisterScreen(): JSX.Element {
           onChangeText={setConfirmPassword}
           secureTextEntry
           textContentType="newPassword"
-          placeholder="••••••••"
+          placeholder="Confirm password"
         />
 
         <Pressable
@@ -163,14 +177,28 @@ export const RegisterScreen = observer(function RegisterScreen(): JSX.Element {
             }`}
           >
             {allowNotifications ? (
-              <Typography type="body-xs" className="text-accent-foreground">
+              <Text
+                style={{
+                  fontFamily: Fonts.headingSemi,
+                  fontSize: 12,
+                  color: accentForeground,
+                }}
+              >
                 ✓
-              </Typography>
+              </Text>
             ) : null}
           </View>
-          <Typography type="body-sm" className="flex-1 text-foreground">
+          <Text
+            style={{
+              flex: 1,
+              fontFamily: Fonts.headingRegular,
+              fontSize: 14,
+              lineHeight: 20,
+              color: foreground,
+            }}
+          >
             Allow SMS and email notifications
-          </Typography>
+          </Text>
         </Pressable>
 
         <View className="flex-row items-start gap-3 py-1">
@@ -179,17 +207,37 @@ export const RegisterScreen = observer(function RegisterScreen(): JSX.Element {
             onSelectedChange={setAcceptedPolicies}
             className="mt-0.5"
           />
-          <Text className="flex-1 text-sm leading-5 text-foreground">
+          <Text
+            style={{
+              flex: 1,
+              fontFamily: Fonts.headingRegular,
+              fontSize: 14,
+              lineHeight: 20,
+              color: foreground,
+            }}
+          >
             I agree to the{" "}
             <Text
-              className="text-sm underline text-foreground"
+              style={{
+                fontFamily: Fonts.headingSemi,
+                fontSize: 14,
+                lineHeight: 20,
+                color: foreground,
+                textDecorationLine: "underline",
+              }}
               onPress={() => void Linking.openURL(TERMS_URL)}
             >
               Terms
             </Text>{" "}
             and{" "}
             <Text
-              className="text-sm underline text-foreground"
+              style={{
+                fontFamily: Fonts.headingSemi,
+                fontSize: 14,
+                lineHeight: 20,
+                color: foreground,
+                textDecorationLine: "underline",
+              }}
               onPress={() => void Linking.openURL(PRIVACY_URL)}
             >
               Privacy Policy
@@ -206,15 +254,31 @@ export const RegisterScreen = observer(function RegisterScreen(): JSX.Element {
           <BrandButton.Label>Continue</BrandButton.Label>
         </BrandButton>
 
-        <Typography type="body-xs" className="text-center text-muted">
+        <Text
+          style={{
+            fontFamily: Fonts.headingRegular,
+            fontSize: 12,
+            lineHeight: 16,
+            color: muted,
+            textAlign: "center",
+          }}
+        >
           By tapping continue, you consent to receiving security codes from
           FlipSentry via SMS after sign-up.
-        </Typography>
+        </Text>
 
         {error ? (
-          <Typography type="body-sm" className="text-center text-danger">
+          <Text
+            style={{
+              fontFamily: Fonts.headingRegular,
+              fontSize: 14,
+              lineHeight: 20,
+              color: danger,
+              textAlign: "center",
+            }}
+          >
             {error}
-          </Typography>
+          </Text>
         ) : null}
       </View>
     </AuthShell>

@@ -13,6 +13,7 @@ import {
 } from "@/domain/feed-routing";
 import { debugLog } from "@/lib/debug-log";
 import type { FeedImageUpdateData, FeedItem } from "@/models/feed";
+import type { Pagination } from "@/models/pagination";
 import type SearchStore from "@/store/searchStore";
 
 const CATCH_UP_LOG = "FeedCatchUp";
@@ -23,6 +24,8 @@ const FEED_OPEN_LOG = "FeedOpen";
 const CATCH_UP_DEBOUNCE_MS = 600;
 /** Bound live queue while feed tabs are still loading. */
 const PENDING_FEEDS_MAX = 80;
+/** Default page size for category lists (infinite scroll). */
+const FEED_PAGE_SIZE = 40;
 
 export type FeedHubStatus = "disconnected" | "connecting" | "connected";
 
@@ -30,6 +33,8 @@ type LoadBucketOpts = {
   query?: string;
   force?: boolean;
   limit?: number;
+  pageNumber?: number;
+  pageSize?: number;
   soldStatus?: "all" | "sold" | "pending";
   maxDays?: number | null;
   /** When true, also refresh For You shelf slice for this key. */
@@ -43,8 +48,11 @@ export default class FeedStore {
   items = observable.map<string, FeedItem>();
   lists: Record<string, string[]> = {};
   shelves: Record<string, string[]> = {};
+  /** Per-bucket pagination from last HTTP page (for infinite scroll). */
+  paginationByBucket: Record<string, Pagination | null> = {};
   dirtyBuckets = new Set<string>();
   loadingBuckets = new Set<string>();
+  loadingMoreBuckets = new Set<string>();
   loadedBuckets = new Set<string>();
   hydratedShelves = new Set<string>();
   hubStatus: FeedHubStatus = "disconnected";
@@ -88,8 +96,18 @@ export default class FeedStore {
     return this.loadingBuckets.has(bucket);
   }
 
+  isBucketLoadingMore(bucket: string): boolean {
+    return this.loadingMoreBuckets.has(bucket);
+  }
+
   isBucketDirty(bucket: string): boolean {
     return this.dirtyBuckets.has(bucket);
+  }
+
+  hasMore(bucket: string): boolean {
+    const pagination = this.paginationByBucket[bucket];
+    if (!pagination) return false;
+    return pagination.currentPage < pagination.totalPages;
   }
 
   setHubStatus(status: FeedHubStatus): void {
@@ -117,6 +135,7 @@ export default class FeedStore {
     field:
       | "dirtyBuckets"
       | "loadingBuckets"
+      | "loadingMoreBuckets"
       | "loadedBuckets"
       | "hydratedShelves",
     mutate: (set: Set<string>) => void,
@@ -132,6 +151,25 @@ export default class FeedStore {
 
   private setShelfIds(key: string, ids: string[]): void {
     this.shelves = { ...this.shelves, [key]: ids };
+  }
+
+  private setPagination(bucket: string, pagination: Pagination | null): void {
+    this.paginationByBucket = {
+      ...this.paginationByBucket,
+      [bucket]: pagination,
+    };
+  }
+
+  private appendUniqueIds(existing: string[], incoming: string[]): string[] {
+    if (incoming.length === 0) return existing;
+    const seen = new Set(existing);
+    const next = [...existing];
+    for (const id of incoming) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      next.push(id);
+    }
+    return next;
   }
 
   private putInBucket(
@@ -192,14 +230,19 @@ export default class FeedStore {
     });
     this.lastError = null;
     try {
-      const items = await agent.Feed.list({
+      const pageSize =
+        opts.pageSize ?? opts.limit ?? FEED_PAGE_SIZE;
+      const result = await agent.Feed.list({
         category: bucket,
         groupIds: this.groupIdsFor(bucket),
         query: opts.query,
-        limit: opts.limit,
+        pageNumber: opts.pageNumber ?? 1,
+        pageSize,
         soldStatus: opts.soldStatus,
         maxDays: opts.maxDays,
+        ...(opts.limit != null ? { limit: opts.limit } : {}),
       });
+      const items = result.data ?? [];
 
       runInAction(() => {
         for (const item of items) {
@@ -214,6 +257,7 @@ export default class FeedStore {
                 this.liveHeadIds.has(id),
               );
         this.setListIds(bucket, merged);
+        this.setPagination(bucket, result.pagination ?? null);
 
         if (opts.asShelf || this.hydratedShelves.has(bucket)) {
           this.setShelfIds(bucket, merged.slice(0, opts.limit ?? FEED_SHELF_LIMIT));
@@ -237,6 +281,61 @@ export default class FeedStore {
     } finally {
       runInAction(() => {
         this.touchSet("loadingBuckets", (s) => {
+          s.delete(bucket);
+        });
+      });
+    }
+  }
+
+  /**
+   * Append the next page for a category list (infinite scroll).
+   * No-op when already loading, no more pages, or For You.
+   */
+  async loadMore(bucket: string, opts: LoadBucketOpts = {}): Promise<void> {
+    if (bucket === "for-you") return;
+    if (this.loadingBuckets.has(bucket) || this.loadingMoreBuckets.has(bucket)) {
+      return;
+    }
+    if (!this.hasMore(bucket)) return;
+
+    const pagination = this.paginationByBucket[bucket];
+    const nextPage = (pagination?.currentPage ?? 1) + 1;
+    const pageSize = pagination?.itemsPerPage ?? opts.pageSize ?? FEED_PAGE_SIZE;
+
+    this.touchSet("loadingMoreBuckets", (s) => {
+      s.add(bucket);
+    });
+    this.lastError = null;
+
+    try {
+      const result = await agent.Feed.list({
+        category: bucket,
+        groupIds: this.groupIdsFor(bucket),
+        query: opts.query,
+        pageNumber: nextPage,
+        pageSize,
+        soldStatus: opts.soldStatus,
+        maxDays: opts.maxDays,
+      });
+      const items = result.data ?? [];
+
+      runInAction(() => {
+        for (const item of items) {
+          this.upsertItem(item);
+        }
+        const httpIds = items.map((i) => i.id);
+        const existing = this.lists[bucket] ?? [];
+        this.setListIds(bucket, this.appendUniqueIds(existing, httpIds));
+        this.setPagination(bucket, result.pagination ?? null);
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.lastError =
+          error instanceof Error ? error.message : "Failed to load more feed";
+      });
+    } finally {
+      runInAction(() => {
+        this.touchSet("loadingMoreBuckets", (s) => {
           s.delete(bucket);
         });
       });
@@ -287,12 +386,13 @@ export default class FeedStore {
     });
 
     try {
-      const items = await agent.Feed.list({
+      const result = await agent.Feed.list({
         category: bucket,
         groupIds,
         pageSize,
         ...(bucket === "sold" ? { maxDays: 1 } : {}),
       });
+      const items = result.data ?? [];
 
       runInAction(() => {
         for (const item of items) {
@@ -554,8 +654,10 @@ export default class FeedStore {
     this.items.clear();
     this.lists = {};
     this.shelves = {};
+    this.paginationByBucket = {};
     this.dirtyBuckets = new Set();
     this.loadingBuckets = new Set();
+    this.loadingMoreBuckets = new Set();
     this.loadedBuckets = new Set();
     this.hydratedShelves = new Set();
     this.pendingFeeds = [];

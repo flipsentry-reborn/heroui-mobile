@@ -47,13 +47,14 @@ import {
   type UpdateHomeSearchInput,
 } from "@/mocks/services/home";
 import {
-  getFeed,
   getFeedById,
+  getFeedPage,
   getLocalComps,
   toggleFavorite,
   type GetFeedParams,
   type GetLocalCompsParams,
 } from "@/mocks/services/feed";
+import type { PaginatedResult } from "@/models/pagination";
 import {
   getSubscription,
   getSubscriptionStatus,
@@ -115,8 +116,8 @@ const Account = USE_MOCK ? mockAccountApi : liveAccount;
 // ─── Feed ──────────────────────────────────────────────────────────────────
 
 const mockFeedApi = {
-  list: async (params?: GetFeedParams): Promise<FeedItem[]> =>
-    getFeed(params ?? {}),
+  list: async (params?: GetFeedParams): Promise<PaginatedResult<FeedItem[]>> =>
+    getFeedPage(params ?? {}),
   getTabAvailability: async () => ({
     showFeatured: true,
     showSold: true,
@@ -219,17 +220,27 @@ function mapLocalCompToFeedItem(comp: LocalCompItem): FeedItem {
 }
 
 const liveFeedApi = {
-  list: async (params?: GetFeedParams): Promise<FeedItem[]> => {
+  list: async (params?: GetFeedParams): Promise<PaginatedResult<FeedItem[]>> => {
     const category = params?.category ?? "all";
     if (category === "sold") {
       const result = await liveSoldListings.list(
         buildLiveSoldParams(params ?? {}),
       );
-      return result.data ?? [];
+      return {
+        data: result.data ?? [],
+        pagination: result.pagination,
+      };
     }
     const result = await liveFeed.list(buildLiveFeedParams(params ?? {}));
-    const items = result.data ?? [];
-    return applyClientCategoryFilter(items, category, params?.groupIds);
+    const items = applyClientCategoryFilter(
+      result.data ?? [],
+      category,
+      params?.groupIds,
+    );
+    return {
+      data: items,
+      pagination: result.pagination,
+    };
   },
   getTabAvailability: () => liveFeed.getTabAvailability(),
   setClicked: (id: string) => liveFeed.setClicked(id),
@@ -283,15 +294,8 @@ const FeedHub = USE_MOCK ? mockFeedHubApi : liveFeedHubApi;
 
 const SoldListings = {
   list: USE_MOCK
-    ? async (params?: GetFeedParams) => ({
-        data: await getFeed({ ...params, category: "sold" }),
-        pagination: {
-          currentPage: 1,
-          itemsPerPage: 40,
-          totalItems: 0,
-          totalPages: 1,
-        },
-      })
+    ? async (params?: GetFeedParams) =>
+        getFeedPage({ ...params, category: "sold" })
     : (params?: URLSearchParams) => liveSoldListings.list(params),
 };
 

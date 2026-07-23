@@ -38,6 +38,8 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
   const items = feedStore.getList(category);
   const loading =
     feedStore.isBucketLoading(category) && items.length === 0;
+  const loadingMore = feedStore.isBucketLoadingMore(category);
+  const hasMore = feedStore.hasMore(category);
 
   const load = useCallback(
     async (opts?: { refresh?: boolean }) => {
@@ -62,6 +64,14 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
     },
     [category, feedStore, isSold, maxDays, query, soldStatus],
   );
+
+  const loadMore = useCallback(() => {
+    if (category === "for-you") return;
+    void feedStore.loadMore(category, {
+      query,
+      ...(isSold ? { soldStatus, maxDays } : {}),
+    });
+  }, [category, feedStore, isSold, maxDays, query, soldStatus]);
 
   useFocusEffect(
     useCallback(() => {
@@ -110,9 +120,12 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
         items={items}
         loading={loading}
         refreshing={refreshing}
+        loadingMore={loadingMore}
+        hasMore={hasMore}
         onRefresh={() => {
           void load({ refresh: true });
         }}
+        onEndReached={loadMore}
         onPressItem={onPressItem}
         onToggleFavorite={(id) => {
           void handleToggleFavorite(id);

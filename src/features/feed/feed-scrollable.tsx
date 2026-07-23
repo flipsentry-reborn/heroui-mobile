@@ -4,7 +4,7 @@ import type { JSX } from "react";
 import { useCallback } from "react";
 import { RefreshControl, View } from "react-native";
 import { EmptyState } from "heroui-native-pro";
-import { SkeletonGroup, useThemeColor } from "heroui-native";
+import { SkeletonGroup, Spinner, useThemeColor } from "heroui-native";
 import { withUniwind } from "uniwind";
 
 import { FEED_GRID_DRAW_DISTANCE } from "@/features/feed/feed-flash-list";
@@ -17,7 +17,10 @@ interface FeedScrollableProps {
   items: FeedModel[];
   loading: boolean;
   refreshing: boolean;
+  loadingMore?: boolean;
+  hasMore?: boolean;
   onRefresh: () => void;
+  onEndReached?: () => void;
   onPressItem?: (id: string) => void;
   onToggleFavorite?: (id: string) => void;
   /** Extra space above the first row so cards aren’t flush under the header. */
@@ -56,7 +59,10 @@ export function FeedScrollable({
   items,
   loading,
   refreshing,
+  loadingMore = false,
+  hasMore = false,
   onRefresh,
+  onEndReached,
   onPressItem,
   onToggleFavorite,
   topInset = 4,
@@ -76,6 +82,13 @@ export function FeedScrollable({
   );
 
   const keyExtractor = useCallback((item: FeedModel) => item.id, []);
+
+  const handleEndReached = useCallback(() => {
+    if (!onEndReached || loadingMore || !hasMore || loading || refreshing) {
+      return;
+    }
+    onEndReached();
+  }, [hasMore, loading, loadingMore, onEndReached, refreshing]);
 
   if (loading && items.length === 0) {
     return (
@@ -103,6 +116,15 @@ export function FeedScrollable({
             onRefresh={onRefresh}
             tintColor={accent}
           />
+        }
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.55}
+        ListFooterComponent={
+          loadingMore ? (
+            <View className="items-center py-6">
+              <Spinner size="lg" color={accent} />
+            </View>
+          ) : null
         }
         ListEmptyComponent={
           <EmptyState className="px-6 py-12">

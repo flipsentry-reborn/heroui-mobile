@@ -1,4 +1,5 @@
 import type { FeedItem } from "@/models/feed";
+import type { Pagination } from "@/models/pagination";
 import { isCarListing, resolveDisplayValuation } from "@/models/feed";
 import { MOCK_FEED_ITEMS } from "@/mocks/data/feed";
 import { getLocalCompsForFeed } from "@/mocks/data/local-comps";
@@ -17,6 +18,8 @@ export type GetFeedParams = {
   groupIds?: string[];
   query?: string;
   limit?: number;
+  /** 1-based page for infinite scroll (default 1). */
+  pageNumber?: number;
   /** Live API page size (default 40). Catch-up uses 10. */
   pageSize?: number;
   /** Sold page: Sold / Pending chip filter. */
@@ -139,9 +142,59 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
         ? params.pageSize
         : null;
   if (take != null) {
-    return items.slice(0, take);
+    const page = Math.max(1, params.pageNumber ?? 1);
+    const start = (page - 1) * take;
+    return items.slice(start, start + take);
   }
   return items;
+}
+
+/** Paginated mock feed — mirrors live `/api/feed` pagination header shape. */
+export async function getFeedPage(
+  params: GetFeedParams = {},
+): Promise<{ data: FeedItem[]; pagination: Pagination }> {
+  const category = params.category ?? "all";
+  const query = (params.query ?? "").trim().toLowerCase();
+  const soldStatus = params.soldStatus ?? "all";
+  const maxDays = params.maxDays;
+  const pageSize =
+    params.pageSize != null && params.pageSize > 0
+      ? params.pageSize
+      : params.limit != null && params.limit > 0
+        ? params.limit
+        : 40;
+  const pageNumber = Math.max(1, params.pageNumber ?? 1);
+
+  await delay();
+
+  const filtered = MOCK_FEED_ITEMS.filter((item) => {
+    if (!matchesCategory(item, category, params.groupIds)) return false;
+    if (category === "sold") {
+      if (!matchesSoldStatus(item, soldStatus)) return false;
+      if (!matchesMaxDays(item, maxDays)) return false;
+    }
+    if (!query) return true;
+    return (
+      item.title.toLowerCase().includes(query) ||
+      item.description.toLowerCase().includes(query) ||
+      item.locationText.toLowerCase().includes(query)
+    );
+  });
+
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const start = (pageNumber - 1) * pageSize;
+  const data = filtered.slice(start, start + pageSize).map((item) => ({ ...item }));
+
+  return {
+    data,
+    pagination: {
+      currentPage: pageNumber,
+      itemsPerPage: pageSize,
+      totalItems,
+      totalPages,
+    },
+  };
 }
 
 /** Sync lookup for instant first paint on detail open (no artificial lag). */

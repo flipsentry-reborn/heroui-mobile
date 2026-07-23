@@ -3,13 +3,22 @@ import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { observer } from "mobx-react-lite";
 import type { ComponentProps, JSX } from "react";
-import { Pressable, View } from "react-native";
+import { useEffect } from "react";
+import { Animated, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PressableFeedback, Typography, useThemeColor } from "heroui-native";
+import { withUniwind } from "uniwind";
 
+import { useBottomChrome } from "@/contexts/bottom-chrome-context";
+import { useBottomChromeAutoHide } from "@/lib/useBottomChromeAutoHide";
 import { useStore } from "@/store/store";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
+
+const StyledAnimatedView = withUniwind(Animated.View);
+
+const TAB_ROW_MIN_HEIGHT = 52;
+const HIDE_EXTRA_OFFSET = 18;
 
 const TAB_ICONS: Record<string, { outline: IoniconName; filled: IoniconName }> = {
   home: { outline: "home-outline", filled: "home" },
@@ -44,6 +53,19 @@ export const AppTabBar = observer(function AppTabBar({
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 10);
   const { feedStore } = useStore();
+  const {
+    registerTabBarHandlers,
+    registerTabBarReset,
+  } = useBottomChrome();
+  const dockHideOffset = TAB_ROW_MIN_HEIGHT + bottomPad + HIDE_EXTRA_OFFSET;
+  const {
+    handleScroll,
+    handleSnap,
+    hideOpacity,
+    hideTranslateY,
+    resetVisibility,
+  } = useBottomChromeAutoHide(dockHideOffset);
+
   const [foreground, muted, background, accent] = useThemeColor([
     "foreground",
     "muted",
@@ -54,9 +76,32 @@ export const AppTabBar = observer(function AppTabBar({
   const feedRoute = state.routes.find((r) => r.name === "feed");
   const feedFocused =
     feedRoute != null && state.index === state.routes.indexOf(feedRoute);
+  const activeRouteName = state.routes[state.index]?.name;
+  const isFeedTab = activeRouteName === "feed";
+
+  useEffect(() => {
+    return registerTabBarHandlers(handleScroll, handleSnap);
+  }, [handleScroll, handleSnap, registerTabBarHandlers]);
+
+  useEffect(() => {
+    return registerTabBarReset(resetVisibility);
+  }, [registerTabBarReset, resetVisibility]);
+
+  useEffect(() => {
+    if (!isFeedTab) {
+      resetVisibility();
+    }
+  }, [isFeedTab, resetVisibility]);
 
   return (
-    <View pointerEvents="box-none" className="absolute inset-x-0 bottom-0 z-50 bg-transparent">
+    <StyledAnimatedView
+      pointerEvents="box-none"
+      className="absolute inset-x-0 bottom-0 z-50 bg-transparent"
+      style={{
+        transform: [{ translateY: hideTranslateY }],
+        opacity: hideOpacity,
+      }}
+    >
       <LinearGradient
         colors={[
           withAlpha(background, 0.62),
@@ -73,6 +118,7 @@ export const AppTabBar = observer(function AppTabBar({
           accessibilityRole="button"
           accessibilityLabel="New listings available, scroll to top"
           onPress={() => {
+            resetVisibility();
             feedStore.requestScrollToTop();
           }}
           hitSlop={{ top: 8, bottom: 8 }}
@@ -101,6 +147,7 @@ export const AppTabBar = observer(function AppTabBar({
           const onPress = () => {
             // Re-tap Feed while already on it → scroll active category to top.
             if (focused && route.name === "feed") {
+              resetVisibility();
               feedStore.requestScrollToTop();
               return;
             }
@@ -142,6 +189,6 @@ export const AppTabBar = observer(function AppTabBar({
           );
         })}
       </View>
-    </View>
+    </StyledAnimatedView>
   );
 });

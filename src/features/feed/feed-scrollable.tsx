@@ -13,6 +13,7 @@ import { EmptyState } from "heroui-native-pro";
 import { SkeletonGroup, Spinner, useThemeColor } from "heroui-native";
 import { useUniwind, withUniwind } from "uniwind";
 
+import { useBottomChrome } from "@/contexts/bottom-chrome-context";
 import { FEED_GRID_DRAW_DISTANCE } from "@/features/feed/feed-flash-list";
 import { FeedItem } from "@/features/feed/feed-item";
 import type { FeedItem as FeedModel } from "@/models/feed";
@@ -106,6 +107,7 @@ export function FeedScrollable({
   bottomInset = 96,
 }: FeedScrollableProps): JSX.Element {
   const { feedStore } = useStore();
+  const { onFeedScroll, onFeedScrollEnd, resetTabBar } = useBottomChrome();
   const accent = useThemeColor("accent");
   const { theme } = useUniwind();
   const indicatorStyle = theme === "dark" ? "white" : "black";
@@ -113,6 +115,9 @@ export function FeedScrollable({
   const [isScrolled, setIsScrolled] = useState(false);
   const [frozenItems, setFrozenItems] = useState<FeedModel[] | null>(null);
   const isScrolledRef = useRef(false);
+  const lastScrollY = useRef(0);
+  const isActiveRef = useRef(isActive);
+  isActiveRef.current = isActive;
 
   const renderItem = useCallback<ListRenderItem<FeedModel>>(
     ({ item }) => (
@@ -141,8 +146,10 @@ export function FeedScrollable({
     setFrozenItems(null);
     setIsScrolled(false);
     isScrolledRef.current = false;
+    lastScrollY.current = 0;
+    resetTabBar();
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
-  }, [category, feedStore]);
+  }, [category, feedStore, resetTabBar]);
 
   // Active category owns scroll-to-top (re-tap Feed tab).
   useEffect(() => {
@@ -211,9 +218,22 @@ export function FeedScrollable({
           setFrozenItems(null);
         }
       }
+
+      // Twitter-style tab bar auto-hide (active page only).
+      if (isActiveRef.current) {
+        const scrollDiff = y - lastScrollY.current;
+        onFeedScroll(scrollDiff, y);
+      }
+      lastScrollY.current = y;
     },
-    [category, feedStore],
+    [category, feedStore, onFeedScroll],
   );
+
+  const handleScrollEnd = useCallback(() => {
+    if (isActiveRef.current) {
+      onFeedScrollEnd();
+    }
+  }, [onFeedScrollEnd]);
 
   const handleRefresh = useCallback(() => {
     if (category) {
@@ -256,6 +276,8 @@ export function FeedScrollable({
           />
         }
         onScroll={handleScroll}
+        onScrollEndDrag={handleScrollEnd}
+        onMomentumScrollEnd={handleScrollEnd}
         scrollEventThrottle={16}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.55}

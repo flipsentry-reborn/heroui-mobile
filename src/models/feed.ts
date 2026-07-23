@@ -381,7 +381,9 @@ export function isCarListing(
 ): boolean {
   if (!item) return false;
   const valuation = resolveDisplayValuation(item);
-  if (valuation?.valuationType === "car") return true;
+  const valuationType = valuation?.valuationType?.trim().toLowerCase();
+  if (valuationType === "car") return true;
+  if (valuationType === "iphone" || valuationType === "samsung") return false;
   const specs = item.vehicleSpecifications;
   if (
     specs &&

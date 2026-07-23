@@ -95,6 +95,7 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
     return (
       <FeedForYouPage
         query={query}
+        isActive={isActive}
         onPressItem={onPressItem}
         onOpenCategory={onOpenCategory}
       />

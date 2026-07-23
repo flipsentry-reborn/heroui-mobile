@@ -7,7 +7,14 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshControl, Platform, ScrollView, View } from "react-native";
+import {
+  RefreshControl,
+  Platform,
+  ScrollView,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from "react-native";
 import {
   Accordion,
   PressableFeedback,
@@ -19,6 +26,7 @@ import {
 import { Badge } from "heroui-native-pro";
 import { useUniwind, withUniwind } from "uniwind";
 
+import { useBottomChrome } from "@/contexts/bottom-chrome-context";
 import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import {
   FEED_FOR_YOU_DRAW_DISTANCE,
@@ -36,6 +44,8 @@ const StyledIonicons = withUniwind(Ionicons);
 
 interface FeedForYouPageProps {
   query: string;
+  /** True when this page is the active pager tab. */
+  isActive?: boolean;
   onPressItem?: (id: string) => void;
   onOpenCategory?: (key: string) => void;
 }
@@ -176,11 +186,13 @@ function ShelfHeader({
 
 export const FeedForYouPage = observer(function FeedForYouPage({
   query,
+  isActive = false,
   onPressItem,
   onOpenCategory,
 }: FeedForYouPageProps): JSX.Element {
   const router = useRouter();
   const { searchStore, feedStore } = useStore();
+  const { onFeedScroll, onFeedScrollEnd } = useBottomChrome();
   const forYouShelves = searchStore.forYouShelves;
   const yourSearchChildren = searchStore.yourSearchChildren;
   const feedCategoryKeys = useMemo(
@@ -193,6 +205,9 @@ export const FeedForYouPage = observer(function FeedForYouPage({
   const [refreshing, setRefreshing] = useState(false);
   const hasLoaded = useRef(false);
   const skipQueryEffect = useRef(true);
+  const lastScrollY = useRef(0);
+  const isActiveRef = useRef(isActive);
+  isActiveRef.current = isActive;
 
   const openCategory = useCallback(
     (key: string) => {
@@ -271,6 +286,24 @@ export const FeedForYouPage = observer(function FeedForYouPage({
     },
     [feedStore],
   );
+
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const y = e.nativeEvent.contentOffset.y;
+      if (isActiveRef.current) {
+        const scrollDiff = y - lastScrollY.current;
+        onFeedScroll(scrollDiff, y);
+      }
+      lastScrollY.current = y;
+    },
+    [onFeedScroll],
+  );
+
+  const handleScrollEnd = useCallback(() => {
+    if (isActiveRef.current) {
+      onFeedScrollEnd();
+    }
+  }, [onFeedScrollEnd]);
 
   // Build during render (not useMemo) so MobX observer tracks getShelf / items.
   const rows: ForYouRow[] = [];
@@ -458,6 +491,10 @@ export const FeedForYouPage = observer(function FeedForYouPage({
           paddingTop: 2,
           paddingBottom: 112,
         }}
+        onScroll={handleScroll}
+        onScrollEndDrag={handleScrollEnd}
+        onMomentumScrollEnd={handleScrollEnd}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator
         indicatorStyle={indicatorStyle}
         persistentScrollbar={Platform.OS === "android"}

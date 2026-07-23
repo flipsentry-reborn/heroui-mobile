@@ -7,6 +7,7 @@ import type PagerView from "react-native-pager-view";
 import { FeedHeader } from "@/features/feed/feed-header";
 import { FeedPager } from "@/features/feed/feed-pager";
 import { FeedQuickFilterPage } from "@/features/feed/feed-quick-filter-page";
+import { useBottomChrome } from "@/contexts/bottom-chrome-context";
 import { debugLog } from "@/lib/debug-log";
 import { useStore } from "@/store/store";
 
@@ -15,6 +16,7 @@ const FEED_OPEN_LOG = "FeedOpen";
 const FeedScreen = observer(function FeedScreen(): JSX.Element {
   const router = useRouter();
   const { searchStore, feedStore } = useStore();
+  const { resetTabBar } = useBottomChrome();
   const pagerRef = useRef<PagerView>(null);
   const [searchText, setSearchText] = useState("");
   const [activeCategory, setActiveCategory] = useState("for-you");
@@ -42,12 +44,21 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
     (key: string) => {
       setQuickFilterOpen(false);
       setActiveCategory(key);
+      resetTabBar();
       const index = categories.findIndex((c) => c.key === key);
       if (index >= 0) {
         pagerRef.current?.setPage(index);
       }
     },
-    [categories],
+    [categories, resetTabBar],
+  );
+
+  const handleCategoryChange = useCallback(
+    (key: string) => {
+      setActiveCategory(key);
+      resetTabBar();
+    },
+    [resetTabBar],
   );
 
   const handlePressItem = useCallback(
@@ -89,7 +100,10 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
         activeCategory={activeCategory}
         onCategorySelect={handleCategorySelect}
         quickFilterActive={quickFilterOpen}
-        onQuickFilterPress={() => setQuickFilterOpen((open) => !open)}
+        onQuickFilterPress={() => {
+          resetTabBar();
+          setQuickFilterOpen((open) => !open);
+        }}
       />
       {quickFilterOpen ? (
         <FeedQuickFilterPage />
@@ -99,7 +113,7 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
           categories={categories}
           activeCategory={activeCategory}
           searchText={searchText}
-          onCategoryChange={setActiveCategory}
+          onCategoryChange={handleCategoryChange}
           onOpenCategory={handleCategorySelect}
           onPressItem={handlePressItem}
         />

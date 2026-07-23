@@ -62,6 +62,7 @@ export default function FeedCategoryScreen(): JSX.Element {
       <FeedCategoryPage
         category={category}
         query=""
+        isActive
         onPressItem={handlePressItem}
       />
     </View>

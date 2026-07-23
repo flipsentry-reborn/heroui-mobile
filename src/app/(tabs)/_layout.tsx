@@ -5,6 +5,7 @@ import { observer } from "mobx-react-lite";
 import { useThemeColor } from "heroui-native";
 
 import { AppTabBar } from "@/components/app-tab-bar";
+import { BottomChromeProvider } from "@/contexts/bottom-chrome-context";
 import { useStore } from "@/store/store";
 
 const TabsLayout = observer(function TabsLayout(): JSX.Element {
@@ -24,19 +25,21 @@ const TabsLayout = observer(function TabsLayout(): JSX.Element {
   }
 
   return (
-    <Tabs
-      tabBar={(props) => <AppTabBar {...(props as any)} />}
-      screenOptions={{
-        headerShown: false,
-        sceneStyle: { backgroundColor: background },
-      }}
-    >
-      <Tabs.Screen name="index" options={{ href: null }} />
-      <Tabs.Screen name="home" options={{ title: "Home" }} />
-      <Tabs.Screen name="feed" options={{ title: "Feed" }} />
-      <Tabs.Screen name="settings" options={{ title: "Settings" }} />
-      <Tabs.Screen name="community" options={{ title: "Community" }} />
-    </Tabs>
+    <BottomChromeProvider>
+      <Tabs
+        tabBar={(props) => <AppTabBar {...(props as any)} />}
+        screenOptions={{
+          headerShown: false,
+          sceneStyle: { backgroundColor: background },
+        }}
+      >
+        <Tabs.Screen name="index" options={{ href: null }} />
+        <Tabs.Screen name="home" options={{ title: "Home" }} />
+        <Tabs.Screen name="feed" options={{ title: "Feed" }} />
+        <Tabs.Screen name="settings" options={{ title: "Settings" }} />
+        <Tabs.Screen name="community" options={{ title: "Community" }} />
+      </Tabs>
+    </BottomChromeProvider>
   );
 });
 

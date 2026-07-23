@@ -24,7 +24,7 @@ const FEED_OPEN_LOG = "FeedOpen";
 const CATCH_UP_DEBOUNCE_MS = 600;
 /** Bound live queue while feed tabs are still loading. */
 const PENDING_FEEDS_MAX = 80;
-/** Default page size for category lists (infinite scroll). */
+/** Default page size for category lists (infinite scroll). Backend max is 50. */
 const FEED_PAGE_SIZE = 40;
 
 export type FeedHubStatus = "disconnected" | "connecting" | "connected";
@@ -216,12 +216,35 @@ export default class FeedStore {
     if (bucket === "for-you") return;
     if (this.loadingBuckets.has(bucket) && !opts.force) return;
 
+    const isShelf = !!opts.asShelf;
+    const existingPagination = this.paginationByBucket[bucket];
+    const poisonedShelfPage =
+      !isShelf &&
+      existingPagination != null &&
+      existingPagination.itemsPerPage < FEED_PAGE_SIZE;
+    // Shelf preview (For You) must not mark the category list as fully loaded,
+    // or category tabs reuse pageSize=6 forever.
     const shouldForce =
       opts.force ||
+      poisonedShelfPage ||
       this.dirtyBuckets.has(bucket) ||
-      !this.loadedBuckets.has(bucket);
+      (!isShelf && !this.loadedBuckets.has(bucket));
 
-    if (!shouldForce && this.loadedBuckets.has(bucket) && !opts.query) {
+    if (
+      !shouldForce &&
+      !isShelf &&
+      this.loadedBuckets.has(bucket) &&
+      !opts.query
+    ) {
+      return;
+    }
+    if (
+      !shouldForce &&
+      isShelf &&
+      this.hydratedShelves.has(bucket) &&
+      !opts.query &&
+      !opts.force
+    ) {
       return;
     }
 
@@ -230,8 +253,10 @@ export default class FeedStore {
     });
     this.lastError = null;
     try {
-      const pageSize =
-        opts.pageSize ?? opts.limit ?? FEED_PAGE_SIZE;
+      // Full category lists always use FEED_PAGE_SIZE. Never inherit shelf limit (6).
+      const pageSize = isShelf
+        ? (opts.limit ?? FEED_SHELF_LIMIT)
+        : (opts.pageSize ?? FEED_PAGE_SIZE);
       const result = await agent.Feed.list({
         category: bucket,
         groupIds: this.groupIdsFor(bucket),
@@ -240,7 +265,6 @@ export default class FeedStore {
         pageSize,
         soldStatus: opts.soldStatus,
         maxDays: opts.maxDays,
-        ...(opts.limit != null ? { limit: opts.limit } : {}),
       });
       const items = result.data ?? [];
 
@@ -249,6 +273,21 @@ export default class FeedStore {
           this.upsertItem(item);
         }
         const httpIds = items.map((i) => i.id);
+
+        if (isShelf) {
+          this.setShelfIds(
+            bucket,
+            httpIds.slice(0, opts.limit ?? FEED_SHELF_LIMIT),
+          );
+          this.touchSet("hydratedShelves", (s) => {
+            s.add(bucket);
+          });
+          this.touchSet("dirtyBuckets", (s) => {
+            s.delete(bucket);
+          });
+          return;
+        }
+
         const existing = this.lists[bucket] ?? [];
         const merged =
           opts.query || bucket === "sold"
@@ -259,11 +298,8 @@ export default class FeedStore {
         this.setListIds(bucket, merged);
         this.setPagination(bucket, result.pagination ?? null);
 
-        if (opts.asShelf || this.hydratedShelves.has(bucket)) {
-          this.setShelfIds(bucket, merged.slice(0, opts.limit ?? FEED_SHELF_LIMIT));
-          this.touchSet("hydratedShelves", (s) => {
-            s.add(bucket);
-          });
+        if (this.hydratedShelves.has(bucket)) {
+          this.setShelfIds(bucket, merged.slice(0, FEED_SHELF_LIMIT));
         }
 
         this.touchSet("loadedBuckets", (s) => {
@@ -300,7 +336,8 @@ export default class FeedStore {
 
     const pagination = this.paginationByBucket[bucket];
     const nextPage = (pagination?.currentPage ?? 1) + 1;
-    const pageSize = pagination?.itemsPerPage ?? opts.pageSize ?? FEED_PAGE_SIZE;
+    // Always use full list page size — never shelf size leftover in pagination.
+    const pageSize = opts.pageSize ?? FEED_PAGE_SIZE;
 
     this.touchSet("loadingMoreBuckets", (s) => {
       s.add(bucket);
@@ -360,7 +397,23 @@ export default class FeedStore {
   }
 
   async refreshIfDirty(bucket: string, opts?: LoadBucketOpts): Promise<void> {
-    if (!this.dirtyBuckets.has(bucket) && this.loadedBuckets.has(bucket)) {
+    // Shelf-only hydrate must not block a full category open.
+    if (
+      !opts?.asShelf &&
+      !this.dirtyBuckets.has(bucket) &&
+      this.loadedBuckets.has(bucket)
+    ) {
+      const pagination = this.paginationByBucket[bucket];
+      if (!pagination || pagination.itemsPerPage >= FEED_PAGE_SIZE) {
+        return;
+      }
+    }
+    if (
+      opts?.asShelf &&
+      !this.dirtyBuckets.has(bucket) &&
+      this.hydratedShelves.has(bucket) &&
+      !opts.force
+    ) {
       return;
     }
     await this.loadBucket(bucket, { ...opts, force: true });

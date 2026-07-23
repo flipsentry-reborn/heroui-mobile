@@ -46,18 +46,11 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
       if (category === "for-you") return;
       if (opts?.refresh) setRefreshing(true);
       try {
-        if (category === "best-picks") {
-          await feedStore.refreshIfDirty(category, {
-            query,
-            force: opts?.refresh,
-          });
-        } else {
-          await feedStore.loadBucket(category, {
-            query,
-            force: opts?.refresh,
-            ...(isSold ? { soldStatus, maxDays } : {}),
-          });
-        }
+        await feedStore.loadBucket(category, {
+          query,
+          force: opts?.refresh,
+          ...(isSold ? { soldStatus, maxDays } : {}),
+        });
       } finally {
         setRefreshing(false);
       }

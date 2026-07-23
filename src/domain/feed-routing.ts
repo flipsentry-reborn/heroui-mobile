@@ -4,7 +4,7 @@ import {
   type FeedItem,
 } from "@/models/feed";
 
-export const FEED_SHELF_LIMIT = 6;
+export const FEED_SHELF_LIMIT = 10;
 export const BEST_PICKS_MIN_BUY_SIGNAL = 10;
 
 function hasGroupOverlap(

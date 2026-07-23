@@ -10,7 +10,8 @@ export function buildLiveFeedParams(
   pageSize = 40,
 ): URLSearchParams {
   const qs = new URLSearchParams();
-  const size = params.pageSize ?? params.limit ?? pageSize;
+  // Prefer explicit pageSize; limit is only a shelf/preview hint from callers.
+  const size = params.pageSize ?? pageSize;
   const page = params.pageNumber ?? pageNumber;
   qs.append("pageNumber", String(page));
   qs.append("pageSize", String(size));
@@ -55,7 +56,7 @@ export function buildLiveSoldParams(
   pageSize = 40,
 ): URLSearchParams {
   const qs = new URLSearchParams();
-  const size = params.pageSize ?? params.limit ?? pageSize;
+  const size = params.pageSize ?? pageSize;
   const page = params.pageNumber ?? pageNumber;
   qs.append("pageNumber", String(page));
   qs.append("pageSize", String(size));

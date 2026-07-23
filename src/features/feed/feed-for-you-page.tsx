@@ -28,6 +28,7 @@ import {
 } from "@/features/feed/feed-flash-list";
 import { FeedItem } from "@/features/feed/feed-item";
 import { feedCategoryHref } from "@/features/feed/feed-nav";
+import { FEED_SHELF_LIMIT } from "@/domain/feed-routing";
 import type { FeedItem as FeedModel } from "@/models/feed";
 import { useStore } from "@/store/store";
 
@@ -231,7 +232,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
         if (opts?.refresh || feedStore.isBucketDirty("best-picks")) {
           await feedStore.refreshIfDirty("best-picks", {
             force: true,
-            limit: 6,
+            limit: FEED_SHELF_LIMIT,
             asShelf: true,
             query,
           });

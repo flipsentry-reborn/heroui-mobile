@@ -23,6 +23,7 @@
     "@microsoft/signalr": "^10.0.0",
     "@number-flow/react": "^0.6.1",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@shopify/flash-list": "2.0.2",
     "@tiptap/core": "^3.27.4",
     "@tiptap/extension-link": "^3.27.4",
     "@tiptap/extension-underline": "^3.27.4",

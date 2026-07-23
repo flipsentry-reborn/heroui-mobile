@@ -55,7 +55,7 @@ interface AiEstimationIconProps {
 /**
  * Hot-path decorative icon for AI fair-price labels.
  * Uses a pre-decoded ImageRef when available, memory cache, and no transition
- * so recycled FlatList cells do not flash or re-decode.
+ * so recycled FlashList cells do not flash or re-decode.
  */
 export const AiEstimationIcon = memo(function AiEstimationIcon({
   size = 16,

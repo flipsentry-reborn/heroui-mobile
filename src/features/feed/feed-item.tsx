@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useRecyclingState } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import type { JSX } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { memo, useCallback } from "react";
 import { View } from "react-native";
 import {
   Card,
@@ -69,7 +70,7 @@ function formatPrice(price: number, symbol: string): string {
   return `${symbol}${formatted}`;
 }
 
-export function FeedItem({
+function FeedItemInner({
   feed,
   onPress,
   onToggleFavorite,
@@ -81,7 +82,11 @@ export function FeedItem({
 }: FeedItemProps): JSX.Element {
   const { feedStore } = useStore();
   const [surfaceSecondary] = useThemeColor(["surface-secondary"]);
-  const [showNewShimmer, setShowNewShimmer] = useState(Boolean(feed.isNew));
+  // Reset when the recycled cell binds a different listing (or isNew flips).
+  const [showNewShimmer, setShowNewShimmer] = useRecyclingState(
+    Boolean(feed.isNew),
+    [feed.id, feed.isNew],
+  );
   const imageUrl =
     feed.images.imageUrlHostedByUs ||
     feed.images.mainImageUrl.imageUrl ||
@@ -102,10 +107,6 @@ export function FeedItem({
     ? Math.round(IMAGE_H_RAIL * scale)
     : IMAGE_H_GRID;
 
-  useEffect(() => {
-    setShowNewShimmer(Boolean(feed.isNew));
-  }, [feed.id, feed.isNew]);
-
   const handleShimmerDone = useCallback(() => {
     setShowNewShimmer(false);
     debugLog.info(FEED_OPEN_LOG, "shimmer done → clearNewFlag", {
@@ -113,7 +114,7 @@ export function FeedItem({
       t: Date.now(),
     });
     feedStore.clearNewFlag(feed.id);
-  }, [feed.id, feedStore]);
+  }, [feed.id, feedStore, setShowNewShimmer]);
 
   const handlePress = useCallback(() => {
     debugLog.info(FEED_OPEN_LOG, "card press", {
@@ -124,6 +125,10 @@ export function FeedItem({
     });
     onPress?.(feed.id);
   }, [feed.id, feed.isNew, layout, onPress]);
+
+  const handleToggleFavorite = useCallback(() => {
+    onToggleFavorite?.(feed.id);
+  }, [feed.id, onToggleFavorite]);
 
   /** Rail (For You) slightly compact; grid category pages keep fuller type. */
   const priceClass = isRail
@@ -167,9 +172,13 @@ export function FeedItem({
               backgroundColor: surfaceSecondary,
             }}
             contentFit="cover"
+            cachePolicy="memory-disk"
+            recyclingKey={feed.id}
             transition={180}
           />
           <FeedDiagonalShimmer
+            // Remount when the recycled cell binds a new listing so the one-shot
+            // animation can start again (internal startedRef would otherwise stick).
             key={feed.id}
             active={showNewShimmer}
             onDone={handleShimmerDone}
@@ -178,7 +187,7 @@ export function FeedItem({
           {!hideFavorite ? (
             <PressableFeedback
               accessibilityLabel={feed.isFavorite ? "Unfavorite" : "Favorite"}
-              onPress={() => onToggleFavorite?.(feed.id)}
+              onPress={handleToggleFavorite}
               className={
                 feed.isFavorite
                   ? "absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-white/20"
@@ -312,3 +321,22 @@ export function FeedItem({
     </PressableFeedback>
   );
 }
+
+/** Stable props compare so FlashList parent re-renders skip unchanged cells. */
+function feedItemPropsEqual(
+  prev: FeedItemProps,
+  next: FeedItemProps,
+): boolean {
+  return (
+    prev.feed === next.feed &&
+    prev.layout === next.layout &&
+    prev.featured === next.featured &&
+    prev.hideFavorite === next.hideFavorite &&
+    prev.imageCornerLabel === next.imageCornerLabel &&
+    prev.imageCornerSide === next.imageCornerSide &&
+    prev.onPress === next.onPress &&
+    prev.onToggleFavorite === next.onToggleFavorite
+  );
+}
+
+export const FeedItem = memo(FeedItemInner, feedItemPropsEqual);

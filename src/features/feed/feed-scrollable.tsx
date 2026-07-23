@@ -1,11 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
+import { FlashList, type ListRenderItem } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
-import { FlatList, RefreshControl, View } from "react-native";
+import { useCallback } from "react";
+import { RefreshControl, View } from "react-native";
 import { EmptyState } from "heroui-native-pro";
 import { ScrollShadow, SkeletonGroup, useThemeColor } from "heroui-native";
 import { withUniwind } from "uniwind";
 
+import { FEED_GRID_DRAW_DISTANCE } from "@/features/feed/feed-flash-list";
 import { FeedItem } from "@/features/feed/feed-item";
 import type { FeedItem as FeedModel } from "@/models/feed";
 
@@ -65,6 +68,19 @@ export function FeedScrollable({
 }: FeedScrollableProps): JSX.Element {
   const [accent, background] = useThemeColor(["accent", "background"]);
 
+  const renderItem = useCallback<ListRenderItem<FeedModel>>(
+    ({ item }) => (
+      <FeedItem
+        feed={item}
+        onPress={onPressItem}
+        onToggleFavorite={onToggleFavorite}
+      />
+    ),
+    [onPressItem, onToggleFavorite],
+  );
+
+  const keyExtractor = useCallback((item: FeedModel) => item.id, []);
+
   if (loading && items.length === 0) {
     return (
       <ScrollShadow
@@ -87,16 +103,15 @@ export function FeedScrollable({
       color={background}
       size={shadowSize}
     >
-      <FlatList
-        key="feed-grid-2"
+      <FlashList
         data={items}
-        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
         numColumns={2}
-        columnWrapperStyle={{ paddingHorizontal: 0 }}
+        drawDistance={FEED_GRID_DRAW_DISTANCE}
         contentContainerStyle={{
           paddingTop: topInset,
           paddingBottom: bottomInset,
-          flexGrow: 1,
         }}
         refreshControl={
           <RefreshControl
@@ -105,13 +120,6 @@ export function FeedScrollable({
             tintColor={accent}
           />
         }
-        renderItem={({ item }) => (
-          <FeedItem
-            feed={item}
-            onPress={onPressItem}
-            onToggleFavorite={onToggleFavorite}
-          />
-        )}
         ListEmptyComponent={
           <EmptyState className="px-6 py-12">
             <EmptyState.Header>

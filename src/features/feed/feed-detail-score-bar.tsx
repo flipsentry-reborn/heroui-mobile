@@ -10,10 +10,10 @@ const TIER_ORDER: ValuationTier[] = ["overpriced", "fairPrice", "goodValue", "gr
 /** Matches the tier-cut rotate angle. */
 const CUT_DEG = 18;
 
-/** Tailwind violet-600 — Good tier (no theme token). */
-const GOOD_VALUE_FILL = "#7c3aed";
-/** Tailwind cyan-500 — Great tier (no theme token). */
-const GREAT_DEAL_FILL = "#06b6d4";
+/** Tailwind cyan-500 — Good tier (no theme token). */
+const GOOD_VALUE_FILL = "#06b6d4";
+/** Tailwind violet-600 — Great tier (no theme token). */
+const GREAT_DEAL_FILL = "#7c3aed";
 
 /** Detail page horizontal padding estimate so fill paints before onLayout. */
 const ESTIMATED_BAR_WIDTH = Math.max(200, Dimensions.get("window").width - 32);
@@ -26,8 +26,8 @@ const TIER_LABEL: Record<ValuationTier, string> = {
 };
 
 const TIER_TRACK_CLASS: Record<ValuationTier, string> = {
-  greatDeal: "bg-cyan-500",
-  goodValue: "bg-violet-600",
+  greatDeal: "bg-violet-600",
+  goodValue: "bg-cyan-500",
   fairPrice: "bg-warning",
   overpriced: "bg-danger",
 };

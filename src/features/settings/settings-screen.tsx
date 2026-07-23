@@ -34,7 +34,6 @@ import type {
   SettingsState,
   UserPreferences,
 } from "@/mocks/data/settings";
-import type { SubscriptionPlan } from "@/mocks/data/subscription";
 import {
   getSettings,
   updatePreferences,
@@ -89,12 +88,16 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
   const background = useThemeColor("background");
   const { userStore, subscriptionStore } = useStore();
   const [state, setState] = useState<SettingsState | null>(null);
-  const [activePlan, setActivePlan] = useState<SubscriptionPlan | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [hideOpen, setHideOpen] = useState(false);
 
   const load = useCallback(async () => {
-    const next = await getSettings();
+    const [next] = await Promise.all([
+      getSettings(),
+      subscriptionStore.load().catch(() => {
+        // keep last known subscription
+      }),
+    ]);
     applyAppearance(next.preferences.appearance);
     try {
       await userStore.loadPreferences();
@@ -115,17 +118,6 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
       // keep local prefs
     }
     setState(next);
-    try {
-      await subscriptionStore.load();
-    } catch {
-      // keep last known
-    }
-    const sub = subscriptionStore;
-    const plan =
-      sub.hasActiveSubscription && sub.currentTier != null
-        ? (sub.plans.find((p) => p.id === sub.currentTier) ?? null)
-        : null;
-    setActivePlan(plan);
   }, [subscriptionStore, userStore]);
 
   useFocusEffect(
@@ -135,6 +127,7 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
   );
 
   const prefs = state?.preferences;
+  const activePlan = subscriptionStore.activePlan;
   const planLabel =
     activePlan?.displayName ??
     (subscriptionStore.hasActiveTrial || state?.hasActiveTrial
@@ -151,6 +144,7 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
         numberConfirmed: userStore.user.numberConfirmed,
       }
     : state?.profile;
+  const showSkeleton = state == null || !subscriptionStore.hasLoaded;
 
   const patchPrefs = async (patch: Partial<UserPreferences>) => {
     try {
@@ -236,12 +230,12 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
           showsVerticalScrollIndicator={false}
           contentContainerClassName="pb-[110px] pt-2"
         >
-          {!state ? (
+          {showSkeleton ? (
             <SettingsScreenSkeleton />
           ) : (
             <>
           <SettingsProfileHeader
-            profile={profile ?? state.profile}
+            profile={profile ?? state!.profile}
             planLabel={planLabel}
             planAccent={activePlan?.accent}
             onPress={() => router.push("/settings/profile")}

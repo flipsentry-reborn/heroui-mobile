@@ -118,7 +118,6 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
           void handleToggleFavorite(id);
         }}
         topInset={4}
-        shadowSize={16}
       />
     </View>
   );

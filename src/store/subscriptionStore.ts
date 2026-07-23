@@ -29,8 +29,14 @@ export default class SubscriptionStore {
   /** Last computed status (from groups). */
   status: SubscriptionStatus | null = null;
 
+  private loadPromise: Promise<void> | null = null;
+
   constructor() {
-    makeAutoObservable(this, {}, { autoBind: true });
+    makeAutoObservable(
+      this,
+      { loadPromise: false },
+      { autoBind: true },
+    );
   }
 
   get activePlan(): SubscriptionPlan | null {
@@ -71,18 +77,24 @@ export default class SubscriptionStore {
   }
 
   async load(): Promise<void> {
-    if (this.loading) return;
+    if (this.loadPromise != null) return this.loadPromise;
+
     this.loading = true;
-    try {
-      const state = await agent.Subscription.get();
-      runInAction(() => {
-        this.applyState(state);
-      });
-    } finally {
-      runInAction(() => {
-        this.loading = false;
-      });
-    }
+    this.loadPromise = (async () => {
+      try {
+        const state = await agent.Subscription.get();
+        runInAction(() => {
+          this.applyState(state);
+        });
+      } finally {
+        runInAction(() => {
+          this.loading = false;
+          this.loadPromise = null;
+        });
+      }
+    })();
+
+    return this.loadPromise;
   }
 
   /** Recompute slot remaining from current search groups. */

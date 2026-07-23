@@ -3,7 +3,6 @@ import {
   FlashList,
   type ListRenderItem,
 } from "@shopify/flash-list";
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
@@ -12,7 +11,6 @@ import { RefreshControl, ScrollView, View } from "react-native";
 import {
   Accordion,
   PressableFeedback,
-  ScrollShadow,
   SkeletonGroup,
   Surface,
   Typography,
@@ -188,7 +186,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
     () => new Set(searchStore.feedCategories.map((c) => c.key)),
     [searchStore.feedCategories],
   );
-  const [accent, background] = useThemeColor(["accent", "background"]);
+  const accent = useThemeColor("accent");
   const [refreshing, setRefreshing] = useState(false);
   const hasLoaded = useRef(false);
   const skipQueryEffect = useRef(true);
@@ -431,32 +429,20 @@ export const FeedForYouPage = observer(function FeedForYouPage({
 
   if (loading) {
     return (
-      <ScrollShadow
+      <ScrollView
         className="flex-1"
-        LinearGradientComponent={LinearGradient}
-        color={background}
-        size={12}
+        contentContainerClassName="pb-28 pt-0.5"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          className="flex-1"
-          contentContainerClassName="pb-28 pt-0.5"
-          showsVerticalScrollIndicator={false}
-        >
-          <ShelfSkeleton />
-          <ShelfSkeleton />
-          <ShelfSkeleton />
-        </ScrollView>
-      </ScrollShadow>
+        <ShelfSkeleton />
+        <ShelfSkeleton />
+        <ShelfSkeleton />
+      </ScrollView>
     );
   }
 
   return (
-    <ScrollShadow
-      className="flex-1"
-      LinearGradientComponent={LinearGradient}
-      color={background}
-      size={12}
-    >
+    <View className="flex-1">
       <FlashList
         data={rows}
         renderItem={renderItem}
@@ -478,6 +464,6 @@ export const FeedForYouPage = observer(function FeedForYouPage({
           />
         }
       />
-    </ScrollShadow>
+    </View>
   );
 });

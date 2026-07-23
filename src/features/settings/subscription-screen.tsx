@@ -5,24 +5,18 @@ import type { JSX } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 import Animated, {
-  Easing,
   Extrapolation,
-  FadeIn,
-  FadeInDown,
-  FadeOut,
   interpolate,
-  LinearTransition,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, useThemeColor, useToast } from "heroui-native";
 import { useUniwind } from "uniwind";
 
 /** Soft edge fade while scrolling plans (top + bottom). */
-const SCROLL_EDGE_FADE = 96;
+const SCROLL_EDGE_FADE = 40;
 
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
 import { SubscriptionPlansSkeleton } from "@/features/settings/settings-skeletons";
@@ -45,23 +39,9 @@ import {
 } from "@/mocks/services/subscription";
 import { store } from "@/store/store";
 
-const FEATURE_STAGGER_MS = 70;
-const FEATURE_ENTER_MS = 380;
-
-function FeatureRow({
-  feature,
-  index,
-}: {
-  feature: string;
-  index: number;
-}): JSX.Element {
+function FeatureRow({ feature }: { feature: string }): JSX.Element {
   return (
-    <Animated.View
-      entering={FadeInDown.delay(index * FEATURE_STAGGER_MS)
-        .duration(FEATURE_ENTER_MS)
-        .easing(Easing.out(Easing.cubic))}
-      className="flex-row items-start gap-2.5"
-    >
+    <View className="flex-row items-start gap-2.5">
       <Ionicons
         name="checkmark"
         size={16}
@@ -79,7 +59,7 @@ function FeatureRow({
       >
         {feature}
       </Text>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -87,36 +67,17 @@ function PlanCard({
   plan,
   busy,
   isCurrent,
-  expanded,
-  onToggle,
   onSelect,
 }: {
   plan: SubscriptionPlan;
   busy: boolean;
   isCurrent: boolean;
-  expanded: boolean;
-  onToggle: () => void;
   onSelect: () => void;
 }): JSX.Element {
   const palette = PLAN_ACCENTS[plan.accent];
-  const chevron = useSharedValue(0);
-
-  useEffect(() => {
-    chevron.value = withTiming(expanded ? 1 : 0, {
-      duration: 320,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [chevron, expanded]);
-
-  const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${chevron.value * 180}deg` }],
-  }));
 
   return (
-    <Animated.View
-      layout={LinearTransition.duration(420).easing(Easing.out(Easing.cubic))}
-      className="overflow-hidden rounded-3xl border border-white/10"
-    >
+    <View className="overflow-hidden rounded-3xl border border-white/10">
       <LinearGradient
         colors={palette.gradient}
         start={{ x: 0.5, y: 0 }}
@@ -131,7 +92,7 @@ function PlanCard({
       />
       <SubscriptionParticleField />
 
-      <Pressable onPress={onToggle} className="gap-5 p-5">
+      <View className="gap-5 p-5">
         <View className="gap-2">
           <View className="flex-row items-center gap-2.5">
             <HeroBoltIcon from={palette.iconFrom} to={palette.iconTo} size={26} />
@@ -160,13 +121,6 @@ function PlanCard({
                 </Text>
               </View>
             ) : null}
-            <Animated.View style={chevronStyle}>
-              <Ionicons
-                name="chevron-down"
-                size={18}
-                color="rgba(255,255,255,0.55)"
-              />
-            </Animated.View>
           </View>
           <Text
             style={{
@@ -204,67 +158,36 @@ function PlanCard({
           </Text>
         </View>
 
-        {expanded ? (
-          <Animated.View
-            key={`${plan.id}-specs`}
-            entering={FadeIn.duration(280).easing(Easing.out(Easing.cubic))}
-            exiting={FadeOut.duration(160)}
-            layout={LinearTransition.duration(360)}
-            className="gap-4"
-          >
-            <View className="gap-2.5">
-              {plan.features.map((feature, index) => (
-                <FeatureRow key={feature} feature={feature} index={index} />
-              ))}
-            </View>
+        <View className="gap-4">
+          <View className="gap-2.5">
+            {plan.features.map((feature) => (
+              <FeatureRow key={feature} feature={feature} />
+            ))}
+          </View>
 
-            <Animated.View
-              entering={FadeInDown.delay(
-                plan.features.length * FEATURE_STAGGER_MS + 40,
-              )
-                .duration(FEATURE_ENTER_MS)
-                .easing(Easing.out(Easing.cubic))}
-              className="gap-1 border-t border-white/10 pt-4"
+          <View className="gap-1 border-t border-white/10 pt-4">
+            <Text
+              style={{
+                fontFamily: Fonts.headingSemi,
+                fontSize: 14,
+                lineHeight: 20,
+                color: "rgba(255,255,255,0.9)",
+              }}
             >
-              <Text
-                style={{
-                  fontFamily: Fonts.headingSemi,
-                  fontSize: 14,
-                  lineHeight: 20,
-                  color: "rgba(255,255,255,0.9)",
-                }}
-              >
-                {plan.renewalTitle}
-              </Text>
-              <Text
-                style={{
-                  fontFamily: Fonts.headingRegular,
-                  fontSize: 12,
-                  lineHeight: 18,
-                  color: "rgba(255,255,255,0.45)",
-                }}
-              >
-                {plan.renewalNote}
-              </Text>
-            </Animated.View>
-          </Animated.View>
-        ) : (
-          <Animated.View
-            key={`${plan.id}-hint`}
-            entering={FadeIn.duration(220)}
-            exiting={FadeOut.duration(120)}
-          >
+              {plan.renewalTitle}
+            </Text>
             <Text
               style={{
                 fontFamily: Fonts.headingRegular,
                 fontSize: 12,
-                color: "rgba(255,255,255,0.4)",
+                lineHeight: 18,
+                color: "rgba(255,255,255,0.45)",
               }}
             >
-              Tap to see what's included
+              {plan.renewalNote}
             </Text>
-          </Animated.View>
-        )}
+          </View>
+        </View>
 
         <Button
           variant={plan.featured ? "primary" : "secondary"}
@@ -286,8 +209,8 @@ function PlanCard({
             {isCurrent ? "Current plan" : plan.ctaLabel}
           </Button.Label>
         </Button>
-      </Pressable>
-    </Animated.View>
+      </View>
+    </View>
   );
 }
 
@@ -310,7 +233,6 @@ export function SubscriptionScreen(): JSX.Element {
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>(
     [],
   );
-  const [expandedId, setExpandedId] = useState<SubscriptionTier | null>(null);
 
   const scrollY = useSharedValue(0);
   const contentHeight = useSharedValue(0);
@@ -480,10 +402,6 @@ export function SubscriptionScreen(): JSX.Element {
                   plan={plan}
                   busy={busy}
                   isCurrent={currentTier === plan.id}
-                  expanded={expandedId === plan.id}
-                  onToggle={() =>
-                    setExpandedId((id) => (id === plan.id ? null : plan.id))
-                  }
                   onSelect={() => void handleSubscribe(plan.id)}
                 />
               ))}

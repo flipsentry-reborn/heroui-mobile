@@ -65,7 +65,8 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
     };
   }, [searchStore.searchGroups]);
 
-  const showSkeleton = !searchStore.hasLoaded;
+  const showSkeleton =
+    !searchStore.hasLoaded || !subscriptionStore.hasLoaded;
 
   useFocusEffect(
     useCallback(() => {

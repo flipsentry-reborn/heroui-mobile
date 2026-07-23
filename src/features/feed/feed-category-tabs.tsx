@@ -22,19 +22,16 @@ export function FeedCategoryTabs({
   activeCategory,
   onSelect,
 }: FeedCategoryTabsProps): JSX.Element {
-  const [muted, segmentForeground] = useThemeColor([
-    "muted",
-    "segment-foreground",
-  ]);
+  const [muted, foreground] = useThemeColor(["muted", "foreground"]);
 
   return (
     <Tabs
       value={activeCategory}
       onValueChange={(value) => onSelect(value)}
-      variant="primary"
+      variant="secondary"
       className="w-full gap-0 px-1 pt-1"
     >
-      <Tabs.List className="w-full max-w-full gap-0 !bg-background">
+      <Tabs.List className="w-full max-w-full gap-0">
         <Tabs.ScrollView scrollAlign="center">
           <Tabs.Indicator />
           {categories.map((category) => (
@@ -44,9 +41,9 @@ export function FeedCategoryTabs({
               className="min-h-9 px-2.5 py-1.5"
             >
               {({ isSelected }) => {
-                const labelColor = isSelected ? segmentForeground : muted;
+                const labelColor = isSelected ? foreground : muted;
                 const labelClass = isSelected
-                  ? "text-[15px] font-semibold tracking-tight text-segment-foreground"
+                  ? "text-[15px] font-semibold tracking-tight text-foreground"
                   : "text-[15px] font-medium tracking-tight text-muted";
 
                 return (

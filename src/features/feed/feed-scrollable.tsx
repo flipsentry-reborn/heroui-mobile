@@ -1,11 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { FlashList, type ListRenderItem } from "@shopify/flash-list";
-import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
 import { useCallback } from "react";
 import { RefreshControl, View } from "react-native";
 import { EmptyState } from "heroui-native-pro";
-import { ScrollShadow, SkeletonGroup, useThemeColor } from "heroui-native";
+import { SkeletonGroup, useThemeColor } from "heroui-native";
 import { withUniwind } from "uniwind";
 
 import { FEED_GRID_DRAW_DISTANCE } from "@/features/feed/feed-flash-list";
@@ -24,8 +23,6 @@ interface FeedScrollableProps {
   /** Extra space above the first row so cards aren’t flush under the header. */
   topInset?: number;
   bottomInset?: number;
-  /** ScrollShadow fade size (px). */
-  shadowSize?: number;
 }
 
 /** Matches FeedItem: 2-col card, 168px image, 3 text rows. */
@@ -64,9 +61,8 @@ export function FeedScrollable({
   onToggleFavorite,
   topInset = 4,
   bottomInset = 96,
-  shadowSize = 12,
 }: FeedScrollableProps): JSX.Element {
-  const [accent, background] = useThemeColor(["accent", "background"]);
+  const accent = useThemeColor("accent");
 
   const renderItem = useCallback<ListRenderItem<FeedModel>>(
     ({ item }) => (
@@ -83,26 +79,14 @@ export function FeedScrollable({
 
   if (loading && items.length === 0) {
     return (
-      <ScrollShadow
-        className="flex-1"
-        LinearGradientComponent={LinearGradient}
-        color={background}
-        size={shadowSize}
-      >
-        <View style={{ paddingTop: topInset }}>
-          <FeedSkeleton />
-        </View>
-      </ScrollShadow>
+      <View className="flex-1" style={{ paddingTop: topInset }}>
+        <FeedSkeleton />
+      </View>
     );
   }
 
   return (
-    <ScrollShadow
-      className="flex-1"
-      LinearGradientComponent={LinearGradient}
-      color={background}
-      size={shadowSize}
-    >
+    <View className="flex-1">
       <FlashList
         data={items}
         renderItem={renderItem}
@@ -139,6 +123,6 @@ export function FeedScrollable({
         }
         showsVerticalScrollIndicator={false}
       />
-    </ScrollShadow>
+    </View>
   );
 }

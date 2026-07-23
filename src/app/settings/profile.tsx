@@ -26,7 +26,6 @@ import {
 } from "@/features/settings/subscription-theme";
 import { Fonts } from "@/lib/fonts";
 import type { MockUserProfile } from "@/mocks/data/settings";
-import type { SubscriptionPlan } from "@/mocks/data/subscription";
 import { getSettings } from "@/mocks/services/settings";
 import { useStore } from "@/store/store";
 
@@ -51,14 +50,17 @@ const FREE_PALETTE = PLAN_ACCENTS.purple;
 const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
   const { userStore, subscriptionStore } = useStore();
   const [profile, setProfile] = useState<MockUserProfile | null>(null);
-  const [activePlan, setActivePlan] = useState<SubscriptionPlan | null>(null);
-  const [isTrial, setIsTrial] = useState(false);
   const background = useThemeColor("background");
   const { toast } = useToast();
 
   useEffect(() => {
     void (async () => {
-      const settings = await getSettings();
+      const [settings] = await Promise.all([
+        getSettings(),
+        subscriptionStore.load().catch(() => {
+          // keep last known subscription
+        }),
+      ]);
       if (userStore.user) {
         setProfile({
           firstName: userStore.user.firstName,
@@ -71,16 +73,6 @@ const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
       } else {
         setProfile(settings.profile);
       }
-      await subscriptionStore.load();
-      const plan =
-        subscriptionStore.hasActiveSubscription &&
-        subscriptionStore.currentTier != null
-          ? (subscriptionStore.plans.find(
-              (p) => p.id === subscriptionStore.currentTier,
-            ) ?? null)
-          : null;
-      setActivePlan(plan);
-      setIsTrial(subscriptionStore.hasActiveTrial && plan == null);
     })();
   }, [userStore.user, subscriptionStore]);
 
@@ -104,7 +96,7 @@ const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
     }
   };
 
-  if (!profile) {
+  if (!profile || !subscriptionStore.hasLoaded) {
     return (
       <View className="flex-1 bg-background">
         <ProfileScreenSkeleton />
@@ -112,6 +104,8 @@ const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
     );
   }
 
+  const activePlan = subscriptionStore.activePlan;
+  const isTrial = subscriptionStore.hasActiveTrial && activePlan == null;
   const fullName = `${profile.firstName} ${profile.lastName}`;
   const initials =
     `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase();

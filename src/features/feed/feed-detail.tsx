@@ -24,7 +24,7 @@ import { FeedDetailGallery } from "@/features/feed/feed-detail-gallery";
 import { StatusBadge, ValuationBadge } from "@/features/feed/feed-badge";
 import {
   FeedDetailMetaSection,
-  formatFoundIn,
+  formatFoundInSeconds,
 } from "@/features/feed/feed-detail-meta";
 import { FeedDetailScoreBar } from "@/features/feed/feed-detail-score-bar";
 import {
@@ -215,8 +215,8 @@ export function FeedDetail({
           }
           buySignal={valuation?.calculated ? valuation.buySignal : undefined}
           foundInLabel={
-            item.creationTime && item.createdAt
-              ? formatFoundIn(item.creationTime, item.createdAt, item.platform)
+            item.foundInSeconds != null
+              ? formatFoundInSeconds(item.foundInSeconds)
               : undefined
           }
           locationLabel={item.locationText || undefined}
@@ -285,17 +285,17 @@ export function FeedDetail({
             <View className="flex-row items-center gap-2">
               <Typography
                 type="body-sm"
-                weight="semibold"
-                className="text-[26px] leading-8 text-foreground"
+                weight="bold"
+                className="text-[26px] font-extrabold leading-8 text-accent"
               >
                 {formatPrice(item.price, item.currencySymbol)}
               </Typography>
               {valuation?.fairPrice != null ? (
                 <View className="min-w-0 flex-1 flex-row items-center gap-1">
-                  <AiEstimationIcon size={20} />
+                  <AiEstimationIcon size={22} />
                   <Typography
                     type="body-xs"
-                    className="min-w-0 shrink text-[14px] text-muted"
+                    className="min-w-0 shrink text-[16px] text-muted"
                     numberOfLines={1}
                   >
                     Avg. {formatPrice(valuation.fairPrice, item.currencySymbol)}

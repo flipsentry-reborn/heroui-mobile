@@ -8,6 +8,8 @@ const JWT_KEY = "jwt";
 export default class CommonStore {
   token: string | null = null;
   appLoaded = false;
+  /** One-shot notice for UI toast when bootstrap/getUser can't reach the API. */
+  pendingServerUnreachableToast = false;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -31,6 +33,16 @@ export default class CommonStore {
 
   setAppLoaded(): void {
     this.appLoaded = true;
+  }
+
+  queueServerUnreachableToast(): void {
+    this.pendingServerUnreachableToast = true;
+  }
+
+  consumeServerUnreachableToast(): boolean {
+    if (!this.pendingServerUnreachableToast) return false;
+    this.pendingServerUnreachableToast = false;
+    return true;
   }
 
   async loadToken(): Promise<void> {

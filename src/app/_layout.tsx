@@ -11,36 +11,35 @@ import {
 import * as SplashScreen from "expo-splash-screen";
 import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
-import { HeroUINativeProvider, useThemeColor } from "heroui-native";
+import { HeroUINativeProvider, useThemeColor, useToast } from "heroui-native";
+import { observer } from "mobx-react-lite";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { useUniwind } from "uniwind";
 
-import { setUnauthorizedHandler } from "@/api/http/client";
 import { prefetchAiEstimationIcon } from "@/components/icons/ai-estimation-icon";
 import {
   applyAppearance,
   loadCachedAppearance,
 } from "@/lib/appearance";
+import { SERVER_UNREACHABLE_MESSAGE } from "@/lib/user-error-message";
 import { SUBSCRIPTION_DARK_BACKGROUND } from "@/features/settings/subscription-theme";
-import { StoreProvider, store } from "@/store/store";
+import { StoreProvider, store, useStore } from "@/store/store";
 
 import "../global.css";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-setUnauthorizedHandler(() => {
-  void store.userStore.logout({ skipNavigate: false });
-});
-
-function RootLayoutContent(): JSX.Element {
+const RootLayoutContent = observer(function RootLayoutContent(): JSX.Element {
   const background = useThemeColor("background");
   const foreground = useThemeColor("foreground");
   const card = useThemeColor("surface");
   const border = useThemeColor("border");
   const { theme } = useUniwind();
   const isDark = theme === "dark";
+  const { toast } = useToast();
+  const { commonStore } = useStore();
 
   const navigationTheme = useMemo(() => {
     const base = isDark ? DarkTheme : DefaultTheme;
@@ -62,6 +61,17 @@ function RootLayoutContent(): JSX.Element {
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(background);
   }, [background]);
+
+  useEffect(() => {
+    if (!commonStore.pendingServerUnreachableToast) return;
+    if (!commonStore.consumeServerUnreachableToast()) return;
+    toast.show({
+      variant: "danger",
+      label: "Can't reach server",
+      description: SERVER_UNREACHABLE_MESSAGE,
+      duration: 5000,
+    });
+  }, [commonStore, commonStore.pendingServerUnreachableToast, toast]);
 
   // Root + stack container must share theme bg — otherwise pop/gesture reveals black/white under screens.
   const rootStyle = useMemo(
@@ -119,7 +129,7 @@ function RootLayoutContent(): JSX.Element {
       <StatusBar style={isDark ? "light" : "dark"} />
     </ThemeProvider>
   );
-}
+});
 
 export default function RootLayout(): JSX.Element | null {
   const [fontsLoaded, fontError] = useFonts({

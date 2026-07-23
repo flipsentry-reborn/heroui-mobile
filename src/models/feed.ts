@@ -151,6 +151,8 @@ export interface FeedItem {
   searchGroupIds?: string[];
   keywordTags: KeywordTags;
   createdAt: string;
+  /** Seconds from listing to found (minus platform lag); from backend. */
+  foundInSeconds?: number;
   seenAt: string[];
   viewedAt?: string[];
   isFavorite: boolean;

@@ -13,8 +13,8 @@ const BADGE_SIZE_CLASS: Record<BadgeScale, string> = {
 };
 
 const BADGE_LABEL_CLASS: Record<BadgeScale, string> = {
-  default: "text-xs font-bold leading-none !text-white",
-  detail: "text-sm font-bold leading-none !text-white",
+  default: "text-xs font-extrabold leading-none !text-white",
+  detail: "text-sm font-extrabold leading-none !text-white",
 };
 
 /**

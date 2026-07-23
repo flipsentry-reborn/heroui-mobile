@@ -4,6 +4,10 @@ import { makeAutoObservable, runInAction } from "mobx";
 
 import agent, { resetAgent } from "@/api/agent";
 import type CommonStore from "@/store/commonStore";
+import {
+  getHttpStatus,
+  isServerUnreachableError,
+} from "@/lib/user-error-message";
 import type {
   User,
   UserLoginFormValues,
@@ -49,6 +53,11 @@ export default class UserStore {
     return !!this.user;
   }
 
+  /** JWT present — session should not be treated as logged out on transient API failures. */
+  get hasSession(): boolean {
+    return !!this.commonStore.token;
+  }
+
   get isPhoneVerified(): boolean {
     return this.user?.numberConfirmed ?? false;
   }
@@ -58,6 +67,10 @@ export default class UserStore {
     this.user = user;
   }
 
+  /**
+   * Load current user with the stored JWT.
+   * Only a 401 clears the session — network/5xx must not log the user out.
+   */
   async getUser(): Promise<User | null> {
     try {
       const user = await agent.Account.current();
@@ -65,23 +78,38 @@ export default class UserStore {
         this.applyUser(user);
       });
       return user;
-    } catch {
-      runInAction(() => {
-        this.user = null;
-      });
-      this.commonStore.setToken(null);
-      return null;
+    } catch (error) {
+      if (getHttpStatus(error) === 401) {
+        // During bootstrap the index gate routes on hasSession; once UI is up, navigate away.
+        await this.logout({ skipNavigate: !this.bootstrapped });
+        return null;
+      }
+      if (isServerUnreachableError(error)) {
+        this.commonStore.queueServerUnreachableToast();
+      }
+      throw error;
     }
   }
 
   async bootstrap(): Promise<void> {
     await this.commonStore.loadToken();
     if (this.commonStore.token) {
-      await this.getUser();
+      try {
+        await this.getUser();
+      } catch {
+        // Keep JWT; auth gates use hasSession so a down API does not look like logout.
+      }
     }
     runInAction(() => {
       this.bootstrapped = true;
     });
+  }
+
+  /** Retry /api/user after a transient outage, then start hubs if verified. */
+  async restoreSession(): Promise<User | null> {
+    const user = await this.getUser();
+    await this.notifySessionReady();
+    return user;
   }
 
   async login(creds: UserLoginFormValues): Promise<void> {

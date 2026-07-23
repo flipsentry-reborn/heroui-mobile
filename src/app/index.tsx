@@ -8,6 +8,7 @@ import { useStore } from "@/store/store";
 
 /**
  * Auth gate: welcome → login/register → verify phone → tabs.
+ * Session is keyed on JWT presence so a temporary API outage does not look like logout.
  */
 const IndexGate = observer(function IndexGate(): JSX.Element {
   const { userStore, commonStore } = useStore();
@@ -20,8 +21,13 @@ const IndexGate = observer(function IndexGate(): JSX.Element {
     );
   }
 
-  if (!userStore.isLoggedIn || !commonStore.token) {
+  if (!userStore.hasSession) {
     return <Redirect href={"/welcome" as Href} />;
+  }
+
+  // Token exists but /api/user failed (network/5xx) — enter app; toast is shown from root.
+  if (!userStore.isLoggedIn) {
+    return <Redirect href={"/feed" as Href} />;
   }
 
   if (!userStore.isPhoneVerified) {

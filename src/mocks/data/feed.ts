@@ -109,6 +109,7 @@ type ExtraListing = {
   listingUrl?: string;
   reviewScore?: number;
   reviewCount?: number;
+  foundInSeconds?: number;
 };
 
 function extraListing(item: ExtraListing): FeedItem {
@@ -130,6 +131,7 @@ function extraListing(item: ExtraListing): FeedItem {
     searchGroupIds: item.searchGroupIds,
     keywordTags: { title: [], description: [] },
     createdAt: created,
+    foundInSeconds: item.foundInSeconds ?? 45,
     seenAt: [],
     isFavorite: item.isFavorite ?? false,
     favoritedAt:
@@ -266,6 +268,7 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  searchGroupIds: ["g1"],
  keywordTags: { title: [], description: [] },
  createdAt: new Date(now - 1000 * 60 * 18).toISOString(),
+ foundInSeconds: 52,
  seenAt: [],
  isFavorite: true,
  favoritedAt: new Date(now - 1000 * 60 * 5).toISOString(),
@@ -362,6 +365,7 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  searchSettingIds: ["group-iphones"],
  keywordTags: { title: [], description: [] },
  createdAt: new Date(now - 1000 * 60 * 480).toISOString(),
+ foundInSeconds: 182,
  seenAt: [],
  isFavorite: false,
  favoritedAt: null,
@@ -442,6 +446,7 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  searchSettingIds: ["group-cars"],
  keywordTags: { title: [], description: [] },
  createdAt: new Date(now - 1000 * 60 * 300).toISOString(),
+ foundInSeconds: 95,
  seenAt: [],
  isFavorite: false,
  favoritedAt: null,
@@ -542,6 +547,7 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  searchSettingIds: ["group-custom"],
  keywordTags: { title: [], description: [] },
  createdAt: new Date(now - 1000 * 60 * 140).toISOString(),
+ foundInSeconds: 38,
  seenAt: [],
  isFavorite: true,
  favoritedAt: new Date(now - 1000 * 60 * 60).toISOString(),
@@ -586,6 +592,7 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  searchSettingIds: ["group-cars"],
  keywordTags: { title: [], description: [] },
  createdAt: new Date(now - 1000 * 60 * 487).toISOString(),
+ foundInSeconds: 210,
  seenAt: [],
  isFavorite: false,
  favoritedAt: null,
@@ -660,6 +667,7 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  searchSettingIds: ["group-iphones"],
  keywordTags: { title: [], description: [] },
  createdAt: new Date(now - 1000 * 60 * 360).toISOString(),
+ foundInSeconds: 67,
  seenAt: [],
  isFavorite: false,
  favoritedAt: null,

@@ -1,10 +1,42 @@
+import { HTTPError, isHTTPError, isNetworkError, isTimeoutError } from "ky";
+
 const FALLBACK = "Something went wrong";
+
+export const SERVER_UNREACHABLE_MESSAGE =
+  "We can't reach the server. Please try again — this usually resolves within 5 minutes.";
 
 /** Ky / fetch-style messages that embed method + absolute URL. */
 const REQUEST_FAILED_RE =
   /^Request failed with status code\s+\d+/i;
 
 const ABSOLUTE_URL_RE = /https?:\/\/[^\s]+/gi;
+
+/** HTTP status from ky HTTPError or errors normalized by the HTTP client. */
+export function getHttpStatus(error: unknown): number | undefined {
+  if (isHTTPError(error) || error instanceof HTTPError) {
+    return error.response.status;
+  }
+  if (error && typeof error === "object") {
+    if ("status" in error && typeof (error as { status: unknown }).status === "number") {
+      return (error as { status: number }).status;
+    }
+    const response = (error as { response?: { status?: unknown } }).response;
+    if (response && typeof response.status === "number") {
+      return response.status;
+    }
+  }
+  return undefined;
+}
+
+/** True when the request never got a usable API response (down / timeout / offline). */
+export function isServerUnreachableError(error: unknown): boolean {
+  if (isTimeoutError(error) || isNetworkError(error)) return true;
+  const status = getHttpStatus(error);
+  if (status != null) {
+    return status >= 500;
+  }
+  return true;
+}
 
 /**
  * Safe copy for UI toasts / inline form errors.

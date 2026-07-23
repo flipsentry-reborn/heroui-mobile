@@ -4,7 +4,6 @@ import { API_URL } from "@/api/config";
 import { userMessageForHttpStatus } from "@/lib/user-error-message";
 
 let authToken: string | null = null;
-let onUnauthorized: (() => void) | null = null;
 
 export function setAuthToken(token: string | null): void {
   authToken = token;
@@ -12,11 +11,6 @@ export function setAuthToken(token: string | null): void {
 
 export function getAuthToken(): string | null {
   return authToken;
-}
-
-/** Register a handler invoked on 401 responses (e.g. clear session). */
-export function setUnauthorizedHandler(handler: (() => void) | null): void {
-  onUnauthorized = handler;
 }
 
 export function resetHttpClient(): void {
@@ -51,10 +45,6 @@ async function normalizeHttpError(error: unknown): Promise<unknown> {
     }
   }
 
-  if (status === 401 && authToken) {
-    onUnauthorized?.();
-  }
-
   if (status === 400 && data && typeof data === "object") {
     if (data.errors && typeof data.errors === "object") {
       const modelStateErrors: string[] = [];
@@ -66,19 +56,25 @@ async function normalizeHttpError(error: unknown): Promise<unknown> {
     }
     const message = data.error || data.message;
     if (typeof message === "string" && message.trim()) {
-      return new Error(message.trim());
+      return withHttpStatus(new Error(message.trim()), status);
     }
   }
 
   if (data && typeof data === "object") {
     const message = data.error || data.message;
     if (typeof message === "string" && message.trim()) {
-      return new Error(message.trim());
+      return withHttpStatus(new Error(message.trim()), status);
     }
   }
 
   // Ky's default message includes "POST https://…". Strip that for UI.
   error.message = userMessageForHttpStatus(status);
+  return error;
+}
+
+/** Attach status so call sites can distinguish 401 vs network after body parsing. */
+function withHttpStatus(error: Error, status: number): Error {
+  (error as Error & { status: number }).status = status;
   return error;
 }
 

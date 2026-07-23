@@ -111,17 +111,17 @@ export function FeedDetailStickyHeader({
           <View className="flex-row items-center gap-2">
             <Typography
               type="body-sm"
-              weight="semibold"
-              className="text-[18px] leading-6 text-foreground"
+              weight="bold"
+              className="text-[18px] font-extrabold leading-6 text-accent"
             >
               {priceLabel}
             </Typography>
             {estPriceLabel ? (
               <View className="min-w-0 flex-1 flex-row items-center gap-1">
-                <AiEstimationIcon size={18} />
+                <AiEstimationIcon size={19} />
                 <Typography
                   type="body-xs"
-                  className="min-w-0 shrink text-[13px] text-muted"
+                  className="min-w-0 shrink text-[14px] text-muted"
                   numberOfLines={1}
                 >
                   Avg. {estPriceLabel}

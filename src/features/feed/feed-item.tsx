@@ -161,15 +161,15 @@ function FeedItemInner({
       ? "text-[13px] leading-4"
       : "text-xs";
   const estClass = isRail
-    ? "text-[10px] text-muted"
+    ? "text-[11px] text-muted"
     : isList
-      ? "text-[13px] text-muted"
-      : "text-[11px] text-muted";
+      ? "text-[14px] text-muted"
+      : "text-[12px] text-muted";
   const dimClass = "text-muted";
   const platformSize = isRail ? 13 : isList ? 16 : 14;
   const badgeScale = isList ? "detail" : "default";
   const favoriteSize = isList ? 15 : 13;
-  const aiIconSize = isRail ? 15 : isList ? 18 : 16;
+  const aiIconSize = isRail ? 16 : isList ? 19 : 17;
 
   return (
     <PressableFeedback
@@ -272,7 +272,7 @@ function FeedItemInner({
             <Typography
               type="body-sm"
               weight="bold"
-              className={`${priceClass} text-foreground`}
+              className={`${priceClass} font-extrabold text-accent`}
               numberOfLines={1}
             >
               {formatPrice(feed.price, feed.currencySymbol)}

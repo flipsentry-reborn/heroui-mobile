@@ -1,3 +1,5 @@
+import { isHTTPError } from "ky";
+
 import { requests } from "@/api/http/client";
 import type { PaginatedResult } from "@/models/pagination";
 import type { UserActiveSetting } from "@/models/create-search-setting";
@@ -63,11 +65,7 @@ export const liveSearch = {
         "/api/search-setting/user-active-subscription-search-setting",
       );
     } catch (error: unknown) {
-      const status =
-        error && typeof error === "object" && "response" in error
-          ? (error as { response?: { status?: number } }).response?.status
-          : undefined;
-      if (status === 404) {
+      if (isHTTPError(error) && error.response.status === 404) {
         return requests.get<UserActiveSetting>(
           "/api/search-setting/user-active-setting",
         );

@@ -169,9 +169,12 @@ export default function RootLayout(): JSX.Element | null {
   // Dialog portals (PortalHost siblings of app content) still get gestures.
   // KeyboardProvider: HeroUI Native–recommended keyboard avoidance
   // (react-native-keyboard-controller) for auth forms and TextFields.
+  // statusBarTranslucent + navigationBarTranslucent: without these, the
+  // provider pads top/bottom to mimic a non-edge-to-edge RN app, which
+  // doubles safe-area insets on screens (huge notch gap after login work).
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardProvider>
+      <KeyboardProvider statusBarTranslucent navigationBarTranslucent>
         <HeroUINativeProvider
           config={{
             devInfo: { stylingPrinciples: false },

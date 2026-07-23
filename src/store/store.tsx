@@ -90,7 +90,10 @@ async function ensureRealtimeSession(): Promise<void> {
 }
 
 async function hydrate(): Promise<void> {
-  await stores.userStore.bootstrap();
+  await Promise.all([
+    stores.userStore.bootstrap(),
+    stores.feedStore.loadLayoutMode(),
+  ]);
   await ensureRealtimeSession();
 }
 

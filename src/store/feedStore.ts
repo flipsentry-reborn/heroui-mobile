@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { makeAutoObservable, observable, runInAction } from "mobx";
 
 import agent from "@/api/agent";
@@ -11,6 +12,12 @@ import {
   mergeHttpPageWithLiveHead,
   prependId,
 } from "@/domain/feed-routing";
+import {
+  DEFAULT_FEED_LAYOUT_MODE,
+  FEED_LAYOUT_STORAGE_KEY,
+  isFeedLayoutMode,
+  type FeedLayoutMode,
+} from "@/features/feed/layout-mode";
 import { debugLog } from "@/lib/debug-log";
 import { toUserErrorMessage } from "@/lib/user-error-message";
 import type { FeedImageUpdateData, FeedItem } from "@/models/feed";
@@ -63,6 +70,9 @@ export default class FeedStore {
   hubStatus: FeedHubStatus = "disconnected";
   activeCategory = "for-you";
   lastError: string | null = null;
+  /** Category feed layout: list (1-col) or grid (2-col). Persisted locally. */
+  layoutMode: FeedLayoutMode = DEFAULT_FEED_LAYOUT_MODE;
+  layoutModeHydrated = false;
 
   private searchStore: SearchStore | null = null;
   private pendingFeeds: FeedItem[] = [];
@@ -82,6 +92,29 @@ export default class FeedStore {
 
   setActiveCategory(key: string): void {
     this.activeCategory = key;
+  }
+
+  setLayoutMode(mode: FeedLayoutMode): void {
+    if (this.layoutMode === mode) return;
+    this.layoutMode = mode;
+    void AsyncStorage.setItem(FEED_LAYOUT_STORAGE_KEY, mode).catch(() => {
+      // best-effort local prefs
+    });
+  }
+
+  async loadLayoutMode(): Promise<void> {
+    try {
+      const saved = await AsyncStorage.getItem(FEED_LAYOUT_STORAGE_KEY);
+      if (isFeedLayoutMode(saved)) {
+        runInAction(() => {
+          this.layoutMode = saved;
+        });
+      }
+    } finally {
+      runInAction(() => {
+        this.layoutModeHydrated = true;
+      });
+    }
   }
 
   getList(bucket: string): FeedItem[] {

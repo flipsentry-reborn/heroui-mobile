@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { FlashList, type FlashListRef, type ListRenderItem } from "@shopify/flash-list";
+import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -21,7 +22,7 @@ import { useStore } from "@/store/store";
 
 const StyledIonicons = withUniwind(Ionicons);
 
-/** Past this offset, live prepends freeze so taps don't miss in the 2-col grid. */
+/** Past this offset, live prepends freeze so taps don't miss in a multi-col grid. */
 const SCROLLED_THRESHOLD = 48;
 
 interface FeedScrollableProps {
@@ -43,18 +44,23 @@ interface FeedScrollableProps {
   bottomInset?: number;
 }
 
-/** Matches FeedItem: 2-col card, 168px image, 3 text rows. */
-function FeedSkeleton(): JSX.Element {
+/** Matches FeedItem: grid card, 168px (2-col) / 240px (1-col) image. */
+function FeedSkeleton({ columns }: { columns: 1 | 2 }): JSX.Element {
+  const count = columns === 1 ? 4 : 6;
+  const imageH = columns === 1 ? "h-[212px]" : "h-[168px]";
   return (
     <SkeletonGroup
       isLoading
       isSkeletonOnly
       className="flex-row flex-wrap pt-1"
     >
-      {[0, 1, 2, 3, 4, 5].map((key) => (
-        <View key={key} className="mb-0.5 w-1/2 px-px">
+      {Array.from({ length: count }, (_, key) => (
+        <View
+          key={key}
+          className={`px-px ${columns === 1 ? "mb-2.5 w-full" : "mb-0.5 w-1/2"}`}
+        >
           <View className="overflow-hidden rounded-lg">
-            <SkeletonGroup.Item className="h-[168px] w-full rounded-lg" />
+            <SkeletonGroup.Item className={`${imageH} w-full rounded-lg`} />
             <View className="gap-0.5 px-1.5 pb-1.5 pt-1">
               <View className="flex-row items-center gap-1.5">
                 <SkeletonGroup.Item className="h-4 w-14 rounded-md" />
@@ -91,7 +97,7 @@ function findSequenceStart(
   return -1;
 }
 
-export function FeedScrollable({
+export const FeedScrollable = observer(function FeedScrollable({
   items,
   loading,
   refreshing,
@@ -107,6 +113,7 @@ export function FeedScrollable({
   bottomInset = 96,
 }: FeedScrollableProps): JSX.Element {
   const { feedStore } = useStore();
+  const numColumns: 1 | 2 = feedStore.layoutMode === "list" ? 1 : 2;
   const { onFeedScroll, onFeedScrollEnd, resetTabBar } = useBottomChrome();
   const accent = useThemeColor("accent");
   const { theme } = useUniwind();
@@ -123,11 +130,12 @@ export function FeedScrollable({
     ({ item }) => (
       <FeedItem
         feed={item}
+        layout={numColumns === 1 ? "list" : "grid"}
         onPress={onPressItem}
         onToggleFavorite={onToggleFavorite}
       />
     ),
-    [onPressItem, onToggleFavorite],
+    [numColumns, onPressItem, onToggleFavorite],
   );
 
   const keyExtractor = useCallback((item: FeedModel) => item.id, []);
@@ -249,7 +257,7 @@ export function FeedScrollable({
   if (loading && items.length === 0) {
     return (
       <View className="flex-1" style={{ paddingTop: topInset }}>
-        <FeedSkeleton />
+        <FeedSkeleton columns={numColumns} />
       </View>
     );
   }
@@ -257,12 +265,13 @@ export function FeedScrollable({
   return (
     <View className="flex-1">
       <FlashList
+        key={`feed-${numColumns}`}
         ref={listRef}
         data={listData}
-        extraData={`${listData.length}:${listData[0]?.id ?? ""}`}
+        extraData={`${numColumns}:${listData.length}:${listData[0]?.id ?? ""}`}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
-        numColumns={2}
+        numColumns={numColumns}
         drawDistance={FEED_GRID_DRAW_DISTANCE}
         contentContainerStyle={{
           paddingTop: topInset,
@@ -311,4 +320,4 @@ export function FeedScrollable({
       />
     </View>
   );
-}
+});

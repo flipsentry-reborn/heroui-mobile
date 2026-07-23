@@ -38,10 +38,12 @@ const FEED_OPEN_LOG = "FeedOpen";
  * Image sizing is layout-split so For You shelves can grow without
  * affecting category / grid feed cards:
  * - grid  → IMAGE_H_GRID (2-col pages, detail similar, etc.)
+ * - list  → IMAGE_H_LIST (1-col full-width cards)
  * - rail  → IMAGE_H_RAIL + RAIL_WIDTH (For You horizontal shelves)
  * - featured shelves also multiply rail by FEATURED_SCALE (~7%)
  */
 const IMAGE_H_GRID = 168;
+const IMAGE_H_LIST = 212;
 /** Wider rail cards for For You shelves (not square). */
 const IMAGE_H_RAIL = 142;
 const RAIL_WIDTH = 200;
@@ -52,8 +54,8 @@ interface FeedItemProps {
   feed: FeedModel;
   onPress?: (id: string) => void;
   onToggleFavorite?: (id: string) => void;
-  /** grid = 2-col feed; rail = horizontal For You shelf card */
-  layout?: "grid" | "rail";
+  /** grid = 2-col feed; list = 1-col same card; rail = For You shelf */
+  layout?: "grid" | "list" | "rail";
   /** Slightly larger rail cards for featured shelves. */
   featured?: boolean;
   /** Small label on the image (e.g. Community “2 days ago”). */
@@ -101,11 +103,14 @@ function FeedItemInner({
       : null;
   const primaryLocation = feed.locationText?.split(",")[0]?.trim() || null;
   const isRail = layout === "rail";
+  const isList = layout === "list";
   const scale = isRail && featured ? FEATURED_SCALE : 1;
   const railW = Math.round(RAIL_WIDTH * scale);
   const imageH = isRail
     ? Math.round(IMAGE_H_RAIL * scale)
-    : IMAGE_H_GRID;
+    : isList
+      ? IMAGE_H_LIST
+      : IMAGE_H_GRID;
 
   const handleShimmerDone = useCallback(() => {
     setShowNewShimmer(false);
@@ -130,32 +135,51 @@ function FeedItemInner({
     onToggleFavorite?.(feed.id);
   }, [feed.id, onToggleFavorite]);
 
-  /** Rail (For You) slightly compact; grid category pages keep fuller type. */
+  /** Rail compact; list (1-col) larger; grid mid. */
   const priceClass = isRail
     ? featured
       ? "text-[14px] leading-[18px]"
       : "text-[13px] leading-[18px]"
-    : featured
-      ? "text-[16px] leading-5"
-      : "text-[15px] leading-5";
+    : isList
+      ? "text-[17px] leading-6"
+      : featured
+        ? "text-[16px] leading-5"
+        : "text-[15px] leading-5";
   const titleClass = isRail
     ? featured
       ? "text-[13px] leading-[17px]"
       : "text-[12px] leading-4"
-    : featured
+    : isList
       ? "text-[15px] leading-5"
-      : "text-sm leading-5";
-  const metaClass = isRail ? "text-[11px] leading-[14px]" : "text-xs";
+      : featured
+        ? "text-[15px] leading-5"
+        : "text-sm leading-5";
+  const metaClass = isRail
+    ? "text-[11px] leading-[14px]"
+    : isList
+      ? "text-[13px] leading-4"
+      : "text-xs";
   const estClass = isRail
     ? "text-[10px] text-muted"
-    : "text-[11px] text-muted";
+    : isList
+      ? "text-[13px] text-muted"
+      : "text-[11px] text-muted";
   const dimClass = "text-muted";
-  const platformSize = isRail ? 13 : 14;
+  const platformSize = isRail ? 13 : isList ? 16 : 14;
+  const badgeScale = isList ? "detail" : "default";
+  const favoriteSize = isList ? 15 : 13;
+  const aiIconSize = isRail ? 15 : isList ? 18 : 16;
 
   return (
     <PressableFeedback
       onPress={handlePress}
-      className={isRail ? "mr-1.5" : "mb-0.5 flex-1 px-px"}
+      className={
+        isRail
+          ? "mr-1.5"
+          : isList
+            ? "mb-2.5 flex-1 px-px"
+            : "mb-0.5 flex-1 px-px"
+      }
       style={isRail ? { width: railW } : undefined}
       animation={{ scale: { value: 0.98 } }}
     >
@@ -190,14 +214,18 @@ function FeedItemInner({
               onPress={handleToggleFavorite}
               className={
                 feed.isFavorite
-                  ? "absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-white/20"
-                  : "absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-white/10"
+                  ? `absolute right-1.5 top-1.5 items-center justify-center rounded-full bg-white/20 ${
+                      isList ? "h-8 w-8" : "h-7 w-7"
+                    }`
+                  : `absolute right-1.5 top-1.5 items-center justify-center rounded-full bg-white/10 ${
+                      isList ? "h-8 w-8" : "h-7 w-7"
+                    }`
               }
               animation={{ scale: { value: 0.9 } }}
             >
               <Ionicons
                 name={feed.isFavorite ? "star" : "star-outline"}
-                size={13}
+                size={favoriteSize}
                 color="rgba(255,255,255,0.95)"
               />
             </PressableFeedback>
@@ -205,15 +233,18 @@ function FeedItemInner({
 
           {(valuation?.calculated || statusBadges.length > 0) && (
             <View
-              className={`absolute bottom-[5px] left-[5px] flex-row flex-wrap gap-[3px] ${
-                imageCornerLabel ? "right-16" : "right-[5px]"
-              }`}
+              className={`absolute bottom-[5px] left-[5px] flex-row flex-wrap ${
+                isList ? "gap-1" : "gap-[3px]"
+              } ${imageCornerLabel ? "right-16" : "right-[5px]"}`}
             >
               {valuation?.calculated ? (
-                <ValuationBadge buySignal={valuation.buySignal} />
+                <ValuationBadge
+                  buySignal={valuation.buySignal}
+                  scale={badgeScale}
+                />
               ) : null}
               {statusBadges.slice(0, 2).map((badge) => (
-                <StatusBadge key={badge} label={badge} />
+                <StatusBadge key={badge} label={badge} scale={badgeScale} />
               ))}
             </View>
           )}
@@ -231,8 +262,11 @@ function FeedItemInner({
           ) : null}
         </View>
 
-        {/* Exactly 3 rows: price, title (ellipsis), meta */}
-        <Card.Body className="gap-0.5 bg-transparent px-1.5 pb-1.5 pt-1">
+        <Card.Body
+          className={`bg-transparent px-1.5 pb-1.5 pt-1 ${
+            isList ? "gap-1" : "gap-0.5"
+          }`}
+        >
           <View className="flex-row items-center gap-1">
             <Typography
               type="body-sm"
@@ -244,7 +278,7 @@ function FeedItemInner({
             </Typography>
             {valuation?.fairPrice != null ? (
               <View className="min-w-0 flex-1 flex-row items-center gap-0.5">
-                <AiEstimationIcon size={isRail ? 15 : 16} />
+                <AiEstimationIcon size={aiIconSize} />
                 <Typography
                   type="body-xs"
                   className={`min-w-0 shrink ${estClass}`}

@@ -18,6 +18,7 @@ import { withUniwind } from "uniwind";
 
 import { DeleteAccountSheets } from "@/features/settings/delete-account-sheets";
 import { HideListingsSheet } from "@/features/settings/hide-listings-sheet";
+import { LayoutSelect } from "@/features/settings/layout-select";
 import { SettingsProfileHeader } from "@/features/settings/settings-profile-header";
 import { SettingsScreenSkeleton } from "@/features/settings/settings-skeletons";
 import { SettingsSubscriptionCard } from "@/features/settings/settings-subscription-card";
@@ -86,7 +87,7 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
   const router = useRouter();
   const { toast } = useToast();
   const background = useThemeColor("background");
-  const { userStore, subscriptionStore } = useStore();
+  const { userStore, subscriptionStore, feedStore } = useStore();
   const [state, setState] = useState<SettingsState | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [hideOpen, setHideOpen] = useState(false);
@@ -210,6 +211,7 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
   };
 
   const distanceUnit = prefs?.distanceUnit ?? "mi";
+  const layoutMode = feedStore.layoutMode;
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -276,6 +278,20 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
               title="Hide listings"
               description="Spam, dealers, damage, and titles"
               onPress={() => setHideOpen(true)}
+            />
+            <SettingsRow
+              icon="grid-outline"
+              title="Feed layout"
+              description={
+                layoutMode === "list" ? "1 column" : "2 columns"
+              }
+              showChevron={false}
+              right={
+                <LayoutSelect
+                  value={layoutMode}
+                  onChange={(mode) => feedStore.setLayoutMode(mode)}
+                />
+              }
             />
             <SettingsRow
               icon="resize-outline"

@@ -66,11 +66,10 @@ export const AppTabBar = observer(function AppTabBar({
     resetVisibility,
   } = useBottomChromeAutoHide(dockHideOffset);
 
-  const [foreground, muted, background, accent] = useThemeColor([
+  const [foreground, muted, background] = useThemeColor([
     "foreground",
     "muted",
     "background",
-    "accent",
   ]);
   const showNewItems = feedStore.showNewItemsIndicator;
   const feedRoute = state.routes.find((r) => r.name === "feed");
@@ -124,7 +123,7 @@ export const AppTabBar = observer(function AppTabBar({
           hitSlop={{ top: 8, bottom: 8 }}
           className="absolute inset-x-0 top-0 z-10 h-3 justify-start"
         >
-          <View className="h-1 w-full" style={{ backgroundColor: accent }} />
+          <View className="h-1 w-full bg-[#FF3B30]" />
         </Pressable>
       ) : null}
       <View

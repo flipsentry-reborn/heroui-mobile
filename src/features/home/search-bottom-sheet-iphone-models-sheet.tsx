@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import type { JSX } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import Animated, {
   FadeIn,
   LinearTransition,
@@ -27,6 +27,7 @@ import {
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
+import agent from "@/api/agent";
 import { sanitizePriceInput } from "@/features/home/search-bottom-sheet-price-sheet";
 import {
   SHEET_BACKGROUND_CLASS_NAME,
@@ -34,12 +35,7 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import {
-  getIphoneModelDefaults,
-  MOCK_IPHONE_SERIES,
-  type IphoneModelOption,
-  type IphoneSeries,
-} from "@/mocks/data/iphone";
+import type { IphoneModel, IphoneModelGroup } from "@/models/iphone";
 
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
 const StyledAnimatedView = withUniwind(Animated.View);
@@ -53,15 +49,59 @@ const DEPTH_LAYOUT_TRANSITION = LinearTransition.springify()
   .stiffness(1000)
   .mass(2);
 
-const ALL_MODELS = MOCK_IPHONE_SERIES.flatMap((series) => series.models);
-
 export interface IphoneModelSelection {
   id: string;
   min: string;
   max: string;
 }
 
+export interface IphoneCatalogLocation {
+  latitude?: number;
+  longitude?: number;
+  country?: string;
+}
+
 type PriceDraft = { min: string; max: string };
+
+type SeriesView = {
+  id: string;
+  title: string;
+  models: Array<{
+    id: string;
+    label: string;
+    defaultMinPrice: number;
+    defaultMaxPrice: number;
+  }>;
+};
+
+function toSeriesView(groups: IphoneModelGroup[]): SeriesView[] {
+  return groups.map((group) => ({
+    id: group.key,
+    title: group.label,
+    models: group.models.map((model) => ({
+      id: model.model,
+      label: formatModelLabel(model),
+      defaultMinPrice: model.minPrice,
+      defaultMaxPrice: model.maxPrice,
+    })),
+  }));
+}
+
+function formatModelLabel(model: IphoneModel): string {
+  if (model.displayName) {
+    return model.displayName.replace(/^iPhone\s+/i, "").trim() || model.displayName;
+  }
+  return model.model
+    .replace(/^Iphone/, "")
+    .replace(/ProMax/, " Pro Max")
+    .replace(/Pro/, " Pro")
+    .replace(/Plus/, " Plus")
+    .replace(/Max/, " Max")
+    .replace(/Air/, " Air")
+    .replace(/Mini/, " Mini")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
 
 export function formatIphoneModelsLabel(
   selections: IphoneModelSelection[],
@@ -121,7 +161,7 @@ function ModelRow({
   onMinChange,
   onMaxChange,
 }: {
-  model: IphoneModelOption;
+  model: SeriesView["models"][number];
   selected: boolean;
   min: string;
   max: string;
@@ -171,14 +211,10 @@ function ModelRow({
   );
 }
 
-function defaultPriceFor(id: string): PriceDraft {
-  return getIphoneModelDefaults(id) ?? { min: "", max: "" };
-}
-
 function SeriesDepthItem({
   series,
   index,
-  seriesCount,
+  seriesList,
   seriesSelected,
   seriesAllSelected,
   selectedSet,
@@ -188,9 +224,9 @@ function SeriesDepthItem({
   onMinChange,
   onMaxChange,
 }: {
-  series: IphoneSeries;
+  series: SeriesView;
   index: number;
-  seriesCount: number;
+  seriesList: SeriesView[];
   seriesSelected: number;
   seriesAllSelected: boolean;
   selectedSet: Set<string>;
@@ -203,6 +239,7 @@ function SeriesDepthItem({
   const { value } = useAccordion();
   const { isExpanded } = useAccordionItem();
   const scale = useSharedValue(isExpanded ? 1 : 0.97);
+  const seriesCount = seriesList.length;
 
   useEffect(() => {
     scale.value = withTiming(isExpanded ? 1 : 0.97, { duration: 200 });
@@ -218,9 +255,9 @@ function SeriesDepthItem({
     return new Set<string>();
   }, [value]);
 
-  const prevId = index > 0 ? MOCK_IPHONE_SERIES[index - 1]?.id : undefined;
+  const prevId = index > 0 ? seriesList[index - 1]?.id : undefined;
   const nextId =
-    index < seriesCount - 1 ? MOCK_IPHONE_SERIES[index + 1]?.id : undefined;
+    index < seriesCount - 1 ? seriesList[index + 1]?.id : undefined;
   const isBeforeSelected = nextId != null && expandedIds.has(nextId);
   const isAfterSelected = prevId != null && expandedIds.has(prevId);
 
@@ -312,16 +349,114 @@ function IphoneModelsSheetContent({
   selections,
   onSelectionsChange,
   onPersist,
+  location,
+  isCreateMode,
 }: {
   selections: IphoneModelSelection[];
   onSelectionsChange: (next: IphoneModelSelection[]) => void;
   onPersist: (next: IphoneModelSelection[]) => void;
+  location?: IphoneCatalogLocation;
+  isCreateMode: boolean;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const [showError, setShowError] = useState(false);
   const [expandedSeries, setExpandedSeries] = useState<string[]>([]);
+  const [seriesList, setSeriesList] = useState<SeriesView[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [defaultsById, setDefaultsById] = useState<Record<string, PriceDraft>>(
+    {},
+  );
+  const [initialized, setInitialized] = useState(false);
   const snapPoints = useMemo(() => ["90%"], []);
   const dismiss = () => onOpenChange(false);
+
+  const allModels = useMemo(
+    () => seriesList.flatMap((series) => series.models),
+    [seriesList],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const catalog = await agent.IphoneModels.listGrouped({
+          latitude: location?.latitude,
+          longitude: location?.longitude,
+          country: location?.country,
+        });
+        if (cancelled) return;
+
+        const grouped = (catalog.groups ?? [])
+          .map((group) => ({
+            ...group,
+            models: group.models.filter((model) => model.model !== "IphoneAll"),
+          }))
+          .filter((group) => group.models.length > 0);
+
+        const series = toSeriesView(grouped);
+        const defaults: Record<string, PriceDraft> = {};
+        for (const model of series.flatMap((item) => item.models)) {
+          defaults[model.id] = {
+            min: String(model.defaultMinPrice),
+            max: String(model.defaultMaxPrice),
+          };
+        }
+
+        setSeriesList(series);
+        setDefaultsById(defaults);
+
+        const existingMap = new Map(
+          selections.map((item) => [item.id, item] as const),
+        );
+        const shouldSelectAll =
+          isCreateMode && selections.length === 0;
+
+        if (shouldSelectAll) {
+          const allSelected = series.flatMap((item) =>
+            item.models.map((model) => ({
+              id: model.id,
+              min: String(model.defaultMinPrice),
+              max: String(model.defaultMaxPrice),
+            })),
+          );
+          onSelectionsChange(allSelected);
+        } else if (selections.length > 0) {
+          // Refresh prices for selected models that lack values.
+          const next = selections.map((item) => {
+            const fallback = defaults[item.id];
+            return {
+              id: item.id,
+              min: item.min || fallback?.min || "",
+              max: item.max || fallback?.max || "",
+            };
+          });
+          // Drop selections no longer in catalog.
+          const valid = next.filter((item) => existingMap.has(item.id) && defaults[item.id]);
+          if (valid.length !== selections.length) {
+            onSelectionsChange(
+              next.filter((item) => defaults[item.id] != null),
+            );
+          }
+        }
+        setInitialized(true);
+      } catch {
+        if (cancelled) return;
+        setLoadError("Failed to load iPhone models.");
+        setSeriesList([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+    // Intentionally once per sheet session (key remounts on open).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const expandSeries = (seriesId: string) => {
     setExpandedSeries((prev) =>
@@ -335,7 +470,8 @@ function IphoneModelsSheetContent({
   );
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const selectedCount = selections.length;
-  const allSelected = selectedCount === ALL_MODELS.length && selectedCount > 0;
+  const allSelected =
+    allModels.length > 0 && selectedCount === allModels.length;
 
   const [prices, setPrices] = useState<Record<string, PriceDraft>>(() =>
     Object.fromEntries(
@@ -345,20 +481,20 @@ function IphoneModelsSheetContent({
 
   useEffect(() => {
     setPrices((prev) => {
-      const next = { ...prev };
+      const next = { ...prev, ...defaultsById };
       for (const item of selections) {
         next[item.id] = { min: item.min, max: item.max };
       }
       return next;
     });
-  }, [selections]);
+  }, [selections, defaultsById]);
 
   useEffect(() => {
     if (selectedCount > 0) setShowError(false);
   }, [selectedCount]);
 
   const getPrice = (id: string): PriceDraft =>
-    prices[id] ?? defaultPriceFor(id);
+    prices[id] ?? defaultsById[id] ?? { min: "", max: "" };
 
   const selectionFor = (id: string): IphoneModelSelection => {
     const price = getPrice(id);
@@ -367,7 +503,7 @@ function IphoneModelsSheetContent({
 
   const setPriceField = (id: string, field: "min" | "max", value: string) => {
     setPrices((prev) => {
-      const current = prev[id] ?? defaultPriceFor(id);
+      const current = prev[id] ?? defaultsById[id] ?? { min: "", max: "" };
       return { ...prev, [id]: { ...current, [field]: value } };
     });
 
@@ -387,7 +523,7 @@ function IphoneModelsSheetContent({
     onSelectionsChange([...selections, selectionFor(id)]);
   };
 
-  const selectModels = (models: IphoneModelOption[]) => {
+  const selectModels = (models: SeriesView["models"]) => {
     const next = new Map(selections.map((item) => [item.id, item]));
     for (const model of models) {
       if (!next.has(model.id)) {
@@ -397,12 +533,12 @@ function IphoneModelsSheetContent({
     onSelectionsChange([...next.values()]);
   };
 
-  const deselectModels = (models: IphoneModelOption[]) => {
+  const deselectModels = (models: SeriesView["models"]) => {
     const ids = new Set(models.map((model) => model.id));
     onSelectionsChange(selections.filter((item) => !ids.has(item.id)));
   };
 
-  const toggleSeries = (seriesId: string, models: IphoneModelOption[]) => {
+  const toggleSeries = (seriesId: string, models: SeriesView["models"]) => {
     const allInSeries = models.every((model) => selectedSet.has(model.id));
     if (allInSeries) {
       deselectModels(models);
@@ -417,7 +553,7 @@ function IphoneModelsSheetContent({
       onSelectionsChange([]);
       return;
     }
-    selectModels(ALL_MODELS);
+    selectModels(allModels);
   };
 
   const handleSave = () => {
@@ -455,17 +591,23 @@ function IphoneModelsSheetContent({
             </Typography>
             <CountBadge value={selectedCount} />
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={allSelected ? "Clear all models" : "Select all models"}
-            onPress={handleSelectAll}
-            className="min-w-16 items-end py-1"
-            hitSlop={8}
-          >
-            <Typography type="body-sm" className="text-sky-400">
-              {allSelected ? "Clear" : "Select all"}
-            </Typography>
-          </Pressable>
+          {loading || loadError != null ? (
+            <View className="min-w-16" />
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                allSelected ? "Clear all models" : "Select all models"
+              }
+              onPress={handleSelectAll}
+              className="min-w-16 items-end py-1"
+              hitSlop={8}
+            >
+              <Typography type="body-sm" className="text-sky-400">
+                {allSelected ? "Clear" : "Select all"}
+              </Typography>
+            </Pressable>
+          )}
         </View>
 
         <StyledBottomSheetScrollView
@@ -474,56 +616,72 @@ function IphoneModelsSheetContent({
           className="flex-1"
           contentContainerClassName="gap-3 px-3 pb-4 pt-3"
         >
-          <Accordion
-            selectionMode="multiple"
-            value={expandedSeries}
-            onValueChange={(next: string | string[] | undefined) => {
-              setExpandedSeries(
-                Array.isArray(next) ? next : next != null ? [next] : [],
-              );
-            }}
-            isCollapsible
-            hideSeparator
-            animation={{
-              layout: {
-                value: DEPTH_LAYOUT_TRANSITION,
-              },
-            }}
-            className="w-full overflow-visible"
-          >
-            {MOCK_IPHONE_SERIES.map((series, index) => {
-              const seriesSelected = series.models.filter((model) =>
-                selectedSet.has(model.id),
-              ).length;
-              const seriesAllSelected =
-                seriesSelected === series.models.length &&
-                series.models.length > 0;
+          {loading || !initialized ? (
+            <View className="items-center gap-3 py-16">
+              <ActivityIndicator />
+              <Typography type="body-sm" className="text-muted">
+                Loading iPhone models…
+              </Typography>
+            </View>
+          ) : loadError != null ? (
+            <Typography
+              type="body-sm"
+              className="px-2 py-8 text-center text-danger"
+            >
+              {loadError}
+            </Typography>
+          ) : (
+            <Accordion
+              selectionMode="multiple"
+              value={expandedSeries}
+              onValueChange={(next: string | string[] | undefined) => {
+                setExpandedSeries(
+                  Array.isArray(next) ? next : next != null ? [next] : [],
+                );
+              }}
+              isCollapsible
+              hideSeparator
+              animation={{
+                layout: {
+                  value: DEPTH_LAYOUT_TRANSITION,
+                },
+              }}
+              className="w-full overflow-visible"
+            >
+              {seriesList.map((series, index) => {
+                const seriesSelected = series.models.filter((model) =>
+                  selectedSet.has(model.id),
+                ).length;
+                const seriesAllSelected =
+                  seriesSelected === series.models.length &&
+                  series.models.length > 0;
 
-              return (
-                <Accordion.Item
-                  key={series.id}
-                  value={series.id}
-                  className="overflow-visible"
-                >
-                  <SeriesDepthItem
-                    series={series}
-                    index={index}
-                    seriesCount={MOCK_IPHONE_SERIES.length}
-                    seriesSelected={seriesSelected}
-                    seriesAllSelected={seriesAllSelected}
-                    selectedSet={selectedSet}
-                    getPrice={getPrice}
-                    onToggleSeries={() =>
-                      toggleSeries(series.id, series.models)
-                    }
-                    onToggleModel={toggleModel}
-                    onMinChange={(id, value) => setPriceField(id, "min", value)}
-                    onMaxChange={(id, value) => setPriceField(id, "max", value)}
-                  />
-                </Accordion.Item>
-              );
-            })}
-          </Accordion>
+                return (
+                  <Accordion.Item
+                    key={series.id}
+                    value={series.id}
+                    className="overflow-visible"
+                  >
+                    <SeriesDepthItem
+                      series={series}
+                      index={index}
+                      seriesList={seriesList}
+                      seriesSelected={seriesSelected}
+                      seriesAllSelected={seriesAllSelected}
+                      selectedSet={selectedSet}
+                      getPrice={getPrice}
+                      onToggleSeries={() =>
+                        toggleSeries(series.id, series.models)
+                      }
+                      onToggleModel={toggleModel}
+                      onMinChange={(id, value) => setPriceField(id, "min", value)}
+                      onMaxChange={(id, value) => setPriceField(id, "max", value)}
+                    />
+                  </Accordion.Item>
+                );
+              })}
+            </Accordion>
+          )}
 
           {showError ? (
             <Typography type="body-xs" className="px-1 text-danger">
@@ -544,7 +702,9 @@ function IphoneModelsSheetContent({
             <Button
               variant="primary"
               className="min-h-12 flex-1 rounded-2xl"
-              isDisabled={selectedCount === 0}
+              isDisabled={
+                loading || loadError != null || selectedCount === 0
+              }
               onPress={handleSave}
             >
               <Button.Label>Save</Button.Label>
@@ -561,6 +721,9 @@ interface SearchBottomSheetIphoneModelsSheetProps {
   onOpenChange: (open: boolean) => void;
   selections: IphoneModelSelection[];
   onSelectionsChange: (selections: IphoneModelSelection[]) => void;
+  location?: IphoneCatalogLocation;
+  /** When true and selections empty, catalog load selects every model. */
+  isCreateMode?: boolean;
 }
 
 export function SearchBottomSheetIphoneModelsSheet({
@@ -568,6 +731,8 @@ export function SearchBottomSheetIphoneModelsSheet({
   onOpenChange,
   selections,
   onSelectionsChange,
+  location,
+  isCreateMode = false,
 }: SearchBottomSheetIphoneModelsSheetProps): JSX.Element | null {
   const [draft, setDraft] = useState(selections);
   const [sessionKey, setSessionKey] = useState(0);
@@ -587,6 +752,8 @@ export function SearchBottomSheetIphoneModelsSheet({
         selections={draft}
         onSelectionsChange={setDraft}
         onPersist={onSelectionsChange}
+        location={location}
+        isCreateMode={isCreateMode}
       />
     </SheetShell>
   );

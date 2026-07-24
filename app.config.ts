@@ -5,12 +5,14 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
  *
  * - EXPO_PUBLIC_USE_MOCK=true|false (default true)
  * - EXPO_PUBLIC_API_URL (default http://192.168.0.106:9000)
+ * - EXPO_PUBLIC_GOOGLE_MAPS_API_KEY (Places / Geocoding / Maps SDK)
  */
 export default ({ config }: ConfigContext): ExpoConfig => {
   const useMock =
     (process.env.EXPO_PUBLIC_USE_MOCK ?? "true").toLowerCase() !== "false";
   const apiUrl =
     process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.0.106:9000";
+  const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 
   return {
     ...config,
@@ -40,6 +42,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       predictiveBackGestureEnabled: false,
       // @ts-expect-error Expo Android type lag — cleartext needed for LAN HTTP API
       usesCleartextTraffic: true,
+      config: {
+        googleMaps: {
+          apiKey: googleMapsApiKey,
+        },
+      },
     },
     plugins: [
       "expo-router",
@@ -61,6 +68,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     extra: {
       useMock,
       apiUrl,
+      googleMapsApiKey,
     },
   };
 };

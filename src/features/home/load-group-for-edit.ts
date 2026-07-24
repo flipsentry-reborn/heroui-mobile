@@ -1,7 +1,5 @@
 import { intervalSecondsToRunSpeed } from "@/domain/search-rules";
-import { MOCK_CAR_MAKES } from "@/mocks/data/car";
 import type { SearchGroup } from "@/mocks/data/home";
-import { MOCK_IPHONE_SERIES } from "@/mocks/data/iphone";
 import {
   DEFAULT_RADIUS_MILES,
   locationsFixture,
@@ -12,8 +10,6 @@ import {
 } from "@/mocks/data/locations";
 import type { CarMakesSelection } from "@/features/home/search-bottom-sheet-car-makes-sheet";
 import type { IphoneModelSelection } from "@/features/home/search-bottom-sheet-iphone-models-sheet";
-
-const ALL_IPHONE_MODELS = MOCK_IPHONE_SERIES.flatMap((series) => series.models);
 
 function normalizeLocationKey(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -43,43 +39,70 @@ export function findLocationByName(locationName: string): LocationResult | null 
   return null;
 }
 
-function syntheticLocation(locationName: string): LocationResult {
+function syntheticLocation(
+  locationName: string,
+  coords?: { latitude?: number; longitude?: number; country?: string; timeZoneId?: string },
+): LocationResult {
   const name = locationName.split(",")[0]?.trim() || locationName || "Location";
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "location";
   return {
-    id: `edit-${slug}`,
+    id: `edit-${slug}-${coords?.latitude ?? 0}-${coords?.longitude ?? 0}`,
     name,
     displayName: locationName || name,
-    secondaryText: "",
-    latitude: 0,
-    longitude: 0,
+    secondaryText: coords?.country ?? "",
+    latitude: coords?.latitude ?? 0,
+    longitude: coords?.longitude ?? 0,
+    countryCode: coords?.country,
+    timeZoneId: coords?.timeZoneId,
   };
 }
 
-function resolvePlace(locationName: string): LocationResult {
-  return findLocationByName(locationName) ?? syntheticLocation(locationName);
+function resolvePlace(
+  locationName: string,
+  coords?: { latitude?: number; longitude?: number; country?: string; timeZoneId?: string },
+): LocationResult {
+  const fromFixture = findLocationByName(locationName);
+  if (fromFixture != null) {
+    if (coords?.latitude != null && coords?.longitude != null) {
+      return {
+        ...fromFixture,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        countryCode: coords.country ?? fromFixture.countryCode,
+        timeZoneId: coords.timeZoneId ?? fromFixture.timeZoneId,
+      };
+    }
+    return fromFixture;
+  }
+  return syntheticLocation(locationName, coords);
 }
 
 export function buildLocationDraftFromGroup(group: SearchGroup): LocationDraft {
-  const main = resolvePlace(group.locationName);
+  const centerSetting = group.settings[0];
+  const main = resolvePlace(group.locationName, {
+    latitude: centerSetting?.latitude,
+    longitude: centerSetting?.longitude,
+    country: centerSetting?.country,
+    timeZoneId: centerSetting?.timeZoneId,
+  });
   const platforms = [
     ...new Set(group.settings.map((setting) => setting.platform)),
   ] as LocationPlatform[];
 
   const otherSpeeds: Record<string, LocationRunSpeed> = {};
+  const placesById: Record<string, LocationResult> = { [main.id]: main };
   const speedByPlaceId = new Map<string, LocationRunSpeed>();
 
   for (const setting of group.settings) {
-    const place =
-      findLocationByName(setting.locationName) ??
-      (normalizeLocationKey(setting.locationName).startsWith(
-        normalizeLocationKey(main.name),
-      )
-        ? main
-        : resolvePlace(setting.locationName));
+    const place = resolvePlace(setting.locationName, {
+      latitude: setting.latitude,
+      longitude: setting.longitude,
+      country: setting.country,
+      timeZoneId: setting.timeZoneId,
+    });
+    placesById[place.id] = place;
     const speed = intervalSecondsToRunSpeed(setting.runIntervalSeconds);
     if (speed == null) continue;
-    // First interval wins per place (fixtures keep one speed per location).
     if (!speedByPlaceId.has(place.id)) {
       speedByPlaceId.set(place.id, speed);
     }
@@ -89,14 +112,16 @@ export function buildLocationDraftFromGroup(group: SearchGroup): LocationDraft {
     otherSpeeds[id] = speed;
   }
 
-  // Ensure center has a speed entry when any setting maps to it.
   if (otherSpeeds[main.id] == null) {
-    const centerSetting = group.settings.find((setting) => {
-      const place = findLocationByName(setting.locationName);
-      return place?.id === main.id || setting.locationName === group.locationName;
+    const matchedCenter = group.settings.find((setting) => {
+      const place = resolvePlace(setting.locationName, {
+        latitude: setting.latitude,
+        longitude: setting.longitude,
+      });
+      return place.id === main.id || setting.locationName === group.locationName;
     });
-    if (centerSetting != null) {
-      const speed = intervalSecondsToRunSpeed(centerSetting.runIntervalSeconds);
+    if (matchedCenter != null) {
+      const speed = intervalSecondsToRunSpeed(matchedCenter.runIntervalSeconds);
       if (speed != null) otherSpeeds[main.id] = speed;
     }
   }
@@ -106,6 +131,7 @@ export function buildLocationDraftFromGroup(group: SearchGroup): LocationDraft {
     radiusMiles: group.radiusMiles || DEFAULT_RADIUS_MILES,
     platforms: platforms.length > 0 ? platforms : ["facebook"],
     otherSpeeds,
+    placesById,
   };
 }
 
@@ -127,41 +153,33 @@ function optionalNumberString(value: number | undefined): string {
   return value != null && Number.isFinite(value) ? String(value) : "";
 }
 
-function carMakesFromQuery(makes: string[] | undefined): CarMakesSelection {
-  if (makes == null || makes.length === 0) {
+function carMakesFromQuery(
+  carQuery: SearchGroup["carQuery"],
+): CarMakesSelection {
+  if (carQuery == null || carQuery.anyMake) {
     return { anyMake: true, selectedIds: [] };
   }
-  const selectedIds = makes
-    .map((label) => {
-      const key = label.trim().toLowerCase();
-      return (
-        MOCK_CAR_MAKES.find(
-          (make) =>
-            make.label.toLowerCase() === key || make.id.toLowerCase() === key,
-        )?.id ?? null
-      );
-    })
-    .filter((id): id is string => id != null);
-  if (selectedIds.length === 0) {
+  const makes = (carQuery.vehicleSelection ?? [])
+    .map((item) => item.make?.trim())
+    .filter((make): make is string => !!make);
+  if (makes.length === 0) {
     return { anyMake: true, selectedIds: [] };
   }
-  return { anyMake: false, selectedIds };
+  return { anyMake: false, selectedIds: makes };
 }
 
-function iphoneSelectionsFromLabel(customLabel: string | undefined): IphoneModelSelection[] {
-  if (customLabel == null || !customLabel.trim()) return [];
-  const ids = customLabel
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-  return ids
-    .map((id) => {
-      const model = ALL_IPHONE_MODELS.find((item) => item.id === id);
-      if (model == null) return null;
+function iphoneSelectionsFromQuery(
+  iphoneQuery: SearchGroup["iphoneQuery"],
+): IphoneModelSelection[] {
+  if (iphoneQuery == null || iphoneQuery.length === 0) return [];
+  return iphoneQuery
+    .map((item) => {
+      const model = item.model?.trim();
+      if (!model) return null;
       return {
-        id: model.id,
-        min: String(model.defaultMinPrice),
-        max: String(model.defaultMaxPrice),
+        id: model,
+        min: optionalNumberString(item.minPrice),
+        max: optionalNumberString(item.maxPrice),
       };
     })
     .filter((item): item is IphoneModelSelection => item != null);
@@ -174,11 +192,11 @@ export function loadGroupForEdit(group: SearchGroup): EditFormPrefill {
     customQuery: group.searchType === "custom" ? (group.customLabel ?? "") : "",
     iphoneSelections:
       group.searchType === "iphone"
-        ? iphoneSelectionsFromLabel(group.customLabel)
+        ? iphoneSelectionsFromQuery(group.iphoneQuery)
         : [],
     carMakes:
       group.searchType === "car"
-        ? carMakesFromQuery(carQuery?.makes)
+        ? carMakesFromQuery(carQuery)
         : { anyMake: true, selectedIds: [] },
     minPrice: optionalNumberString(carQuery?.minPrice),
     maxPrice: optionalNumberString(carQuery?.maxPrice),

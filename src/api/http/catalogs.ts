@@ -1,8 +1,10 @@
 import { isHTTPError } from "ky";
 
 import { requests } from "@/api/http/client";
-import type { PaginatedResult } from "@/models/pagination";
+import type { CarMake } from "@/models/car-make";
 import type { UserActiveSetting } from "@/models/create-search-setting";
+import type { IphoneModel, IphoneModelCatalog } from "@/models/iphone";
+import type { PaginatedResult } from "@/models/pagination";
 
 export const livePlatform = {
   getAvailable: (country: string) =>
@@ -10,7 +12,7 @@ export const livePlatform = {
 };
 
 export const liveIphoneModels = {
-  list: () => requests.get<unknown[]>("/api/search-setting/iphone-models"),
+  list: () => requests.get<IphoneModel[]>("/api/search-setting/iphone-models"),
   listGrouped: (params?: {
     latitude?: number;
     longitude?: number;
@@ -25,7 +27,7 @@ export const liveIphoneModels = {
       query.append("longitude", params.longitude.toString());
     }
     if (params?.country) query.append("country", params.country);
-    return requests.get<unknown>(
+    return requests.get<IphoneModelCatalog>(
       "/api/search-setting/iphone-model-groups",
       query,
     );
@@ -55,7 +57,7 @@ export const liveSamsungModels = {
 };
 
 export const liveCarMakes = {
-  list: () => requests.get<unknown[]>("/api/search-setting/car-makes"),
+  list: () => requests.get<CarMake[]>("/api/search-setting/car-makes"),
 };
 
 export const liveSearch = {

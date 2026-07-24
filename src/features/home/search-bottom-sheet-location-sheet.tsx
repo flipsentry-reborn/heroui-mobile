@@ -25,7 +25,10 @@ import {
 import { LocationMainSearch } from "@/features/home/location-main-search";
 import { LocationMap } from "@/features/home/location-map";
 import { LocationOtherList } from "@/features/home/location-other-list";
-import { LocationPlatformsSection } from "@/features/home/location-platforms-section";
+import {
+  LocationPlatformsRow,
+  LocationPlatformsSheet,
+} from "@/features/home/location-platforms-section";
 import { LocationRadius } from "@/features/home/location-radius";
 import {
   SHEET_BACKGROUND_CLASS_NAME,
@@ -33,18 +36,21 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
+import agent from "@/api/agent";
+import {
+  enrichMainFromOriginal,
+  suggestedLocationToResult,
+} from "@/lib/location-suggest";
+import type { SuggestLocationsResult } from "@/models/search-group";
 import {
   DEFAULT_RADIUS_MILES,
   isLocationSpeedSelected,
-  locationsFixture,
   type LocationPlatform,
   type LocationResult,
   type LocationRunSpeed,
 } from "@/mocks/data/locations";
 import {
   getLocationDraft,
-  getNearbyLocations,
-  searchLocations,
   setLocationDraft,
 } from "@/mocks/services/location";
 import { useStore } from "@/store/store";
@@ -83,9 +89,11 @@ function LocationSheetContent({
   onQueryChange,
   onSelectMain,
   onRadiusChange,
-  onPlatformsChange,
+  onRadiusChangeEnd,
+  onPlatformsPress,
   onOtherSpeedChange,
   onPersist,
+  childSheetOpen,
 }: {
   main: LocationResult | null;
   radiusMiles: number;
@@ -110,9 +118,11 @@ function LocationSheetContent({
   onQueryChange: (value: string) => void;
   onSelectMain: (place: LocationResult) => void;
   onRadiusChange: (miles: number) => void;
-  onPlatformsChange: (next: LocationPlatform[]) => void;
+  onRadiusChangeEnd: (miles: number) => void;
+  onPlatformsPress: () => void;
   onOtherSpeedChange: (id: string, speed: LocationRunSpeed) => void;
   onPersist: () => void;
+  childSheetOpen?: boolean;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const snapPoints = useMemo(() => ["92%"], []);
@@ -169,9 +179,10 @@ function LocationSheetContent({
       snapPoints={snapPoints}
       enableOverDrag={false}
       enableDynamicSizing={false}
-      keyboardBehavior="extend"
-      keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustResize"
+      enableContentPanningGesture={!childSheetOpen}
+      keyboardBehavior={childSheetOpen ? undefined : "extend"}
+      keyboardBlurBehavior={childSheetOpen ? undefined : "restore"}
+      android_keyboardInputMode={childSheetOpen ? undefined : "adjustResize"}
       className={SHEET_CONTENT_CLASS_NAME}
       backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
       handleComponent={null}
@@ -207,17 +218,20 @@ function LocationSheetContent({
 
           {main != null ? (
             <>
-              <LocationRadius value={radiusMiles} onChange={onRadiusChange} />
-              <LocationPlatformsSection
+              <LocationRadius
+                value={radiusMiles}
+                onChange={onRadiusChange}
+                onChangeEnd={onRadiusChangeEnd}
+              />
+              <LocationPlatformsRow
                 platforms={platforms}
-                onPlatformsChange={onPlatformsChange}
+                onPress={onPlatformsPress}
               />
               <LocationOtherList
                 places={multiPlaces}
                 speeds={otherSpeeds}
                 onSpeedChange={onOtherSpeedChange}
                 loading={nearbyLoading}
-                centerId={main.id}
                 disabled={locationsDisabled}
                 speedOptionsByLocation={speedOptionsByLocation}
               />
@@ -278,6 +292,10 @@ export const SearchBottomSheetLocationSheet = observer(
     const [radiusMiles, setRadiusMiles] = useState(
       draft.radiusMiles || DEFAULT_RADIUS_MILES,
     );
+    /** Only updates on slider release — drives SuggestLocations. */
+    const [committedRadiusMiles, setCommittedRadiusMiles] = useState(
+      draft.radiusMiles || DEFAULT_RADIUS_MILES,
+    );
     const [platforms, setPlatforms] = useState<LocationPlatform[]>(
       draft.platforms?.length ? draft.platforms : ["facebook"],
     );
@@ -291,15 +309,21 @@ export const SearchBottomSheetLocationSheet = observer(
     const [nearbyLoading, setNearbyLoading] = useState(false);
     const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
     const [showValidation, setShowValidation] = useState(false);
+    const [platformsSheetOpen, setPlatformsSheetOpen] = useState(false);
 
     const intervalOptions =
       intervalOptionsProp ?? subscriptionStore.intervalOptions;
 
     useEffect(() => {
-      if (!isOpen) return;
+      if (!isOpen) {
+        setPlatformsSheetOpen(false);
+        return;
+      }
       const next = getLocationDraft();
       setMain(next.main);
-      setRadiusMiles(next.radiusMiles || DEFAULT_RADIUS_MILES);
+      const nextRadius = next.radiusMiles || DEFAULT_RADIUS_MILES;
+      setRadiusMiles(nextRadius);
+      setCommittedRadiusMiles(nextRadius);
       setPlatforms(
         next.platforms?.length > 0 ? next.platforms : ["facebook"],
       );
@@ -321,9 +345,13 @@ export const SearchBottomSheetLocationSheet = observer(
 
       let cancelled = false;
       const timer = setTimeout(() => {
-        void searchLocations(term).then((results) => {
-          if (!cancelled) setPredictions(results);
-        });
+        void agent.Locations.search(term)
+          .then((results) => {
+            if (!cancelled) setPredictions(results);
+          })
+          .catch(() => {
+            if (!cancelled) setPredictions([]);
+          });
       }, 180);
 
       return () => {
@@ -337,33 +365,75 @@ export const SearchBottomSheetLocationSheet = observer(
         if (main == null) setNearby([]);
         return;
       }
+      // Wait until Place Details resolved (live Google predictions start at 0,0).
+      if (main.latitude === 0 && main.longitude === 0) {
+        return;
+      }
 
       let cancelled = false;
       setNearbyLoading(true);
-      void getNearbyLocations(main).then((results) => {
-        if (cancelled) return;
-        setNearby(results);
-        setOtherSpeeds((prev) => {
-          const next: Record<string, LocationRunSpeed> = {};
-          if (prev[main.id] != null) next[main.id] = prev[main.id];
-          for (const place of results) {
-            if (prev[place.id] != null) next[place.id] = prev[place.id];
+      void agent.GroupSearch.suggestLocations({
+        latitude: main.latitude,
+        longitude: main.longitude,
+        radiusMiles: committedRadiusMiles,
+        centerLocationName: main.displayName || main.name,
+      })
+        .then((result: SuggestLocationsResult) => {
+          if (cancelled) return;
+          const results = result.suggestedLocations.map(
+            suggestedLocationToResult,
+          );
+          setNearby(results);
+          if (result.originalLocation != null) {
+            setMain((prev) =>
+              prev == null
+                ? prev
+                : enrichMainFromOriginal(prev, result.originalLocation),
+            );
           }
-          // Keep selected speeds for edit-prefilled places outside nearby.
-          for (const [id, speed] of Object.entries(prev)) {
-            if (isLocationSpeedSelected(speed) && next[id] == null) {
-              next[id] = speed;
+          setOtherSpeeds((prev) => {
+            const next: Record<string, LocationRunSpeed> = {};
+            if (prev[main.id] != null) next[main.id] = prev[main.id];
+            for (const place of results) {
+              if (prev[place.id] != null) next[place.id] = prev[place.id];
             }
-          }
-          return next;
+            // Keep selected speeds for edit-prefilled places outside nearby.
+            for (const [id, speed] of Object.entries(prev)) {
+              if (isLocationSpeedSelected(speed) && next[id] == null) {
+                next[id] = speed;
+              }
+            }
+            return next;
+          });
+          setNearbyLoading(false);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setNearby([]);
+          setNearbyLoading(false);
         });
-        setNearbyLoading(false);
-      });
 
       return () => {
         cancelled = true;
       };
-    }, [main, isOpen]);
+    }, [
+      main?.id,
+      main?.latitude,
+      main?.longitude,
+      committedRadiusMiles,
+      isOpen,
+    ]);
+
+    const placesById = useMemo(() => {
+      const map: Record<string, LocationResult> = {
+        ...(getLocationDraft().placesById ?? {}),
+      };
+      if (main != null) map[main.id] = main;
+      for (const place of nearby) {
+        map[place.id] = place;
+      }
+      return map;
+    }, [main, nearby]);
 
     const multiPlaces = useMemo(() => {
       if (main == null) return nearby;
@@ -374,14 +444,14 @@ export const SearchBottomSheetLocationSheet = observer(
       }
       for (const [id, speed] of Object.entries(otherSpeeds)) {
         if (!isLocationSpeedSelected(speed) || byId.has(id)) continue;
-        const fromFixture = locationsFixture.find((place) => place.id === id);
-        if (fromFixture != null) {
-          byId.set(id, fromFixture);
+        const fromCache = placesById[id];
+        if (fromCache != null) {
+          byId.set(id, fromCache);
         }
       }
       const rest = [...byId.values()].filter((place) => place.id !== main.id);
       return [main, ...rest];
-    }, [main, nearby, otherSpeeds]);
+    }, [main, nearby, otherSpeeds, placesById]);
 
     const draftSpeeds = useMemo(
       () => toDraftSpeeds(multiPlaces, otherSpeeds),
@@ -448,13 +518,31 @@ export const SearchBottomSheetLocationSheet = observer(
     };
 
     const handleSelectMain = (place: LocationResult) => {
-      setMain(place);
-      setQuery(place.displayName);
       setShowPredictions(false);
       setPredictions([]);
       setOtherSpeeds({});
       setRowErrors({});
       setShowValidation(false);
+      setQuery(place.displayName);
+
+      // Live Google predictions need Place Details before we have coords.
+      if (
+        place.placeId != null &&
+        (place.latitude === 0 || place.longitude === 0)
+      ) {
+        void agent.Locations.resolve(place)
+          .then((resolved) => {
+            setMain(resolved);
+            setQuery(resolved.displayName);
+          })
+          .catch((error) => {
+            console.warn("[LocationSheet] Failed to resolve place:", error);
+            setMain(null);
+          });
+        return;
+      }
+
+      setMain(place);
     };
 
     const handlePlatformsChange = (next: LocationPlatform[]) => {
@@ -569,42 +657,60 @@ export const SearchBottomSheetLocationSheet = observer(
         setShowValidation(true);
         return;
       }
+      const nextPlaces: Record<string, LocationResult> = { ...placesById };
+      for (const place of multiPlaces) {
+        nextPlaces[place.id] = place;
+      }
       setLocationDraft({
         main,
         radiusMiles,
         platforms,
         otherSpeeds,
+        placesById: nextPlaces,
       });
     };
 
     return (
-      <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
-        <LocationSheetContent
-          main={main}
-          radiusMiles={radiusMiles}
+      <>
+        <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
+          <LocationSheetContent
+            main={main}
+            radiusMiles={radiusMiles}
+            platforms={platforms}
+            otherSpeeds={otherSpeeds}
+            query={query}
+            predictions={predictions}
+            showPredictions={showPredictions}
+            multiPlaces={multiPlaces}
+            nearbyLoading={nearbyLoading}
+            selectedForMap={selectedForMap}
+            locationsDisabled={locationsDisabled}
+            speedOptionsByLocation={speedOptionsByLocation}
+            rowErrors={rowErrors}
+            listError={listError}
+            platformsError={platformsError}
+            intervalOptions={intervalOptions}
+            canSave={canSave}
+            childSheetOpen={platformsSheetOpen}
+            onQueryChange={handleQueryChange}
+            onSelectMain={handleSelectMain}
+            onRadiusChange={setRadiusMiles}
+            onRadiusChangeEnd={(miles) => {
+              setRadiusMiles(miles);
+              setCommittedRadiusMiles(miles);
+            }}
+            onPlatformsPress={() => setPlatformsSheetOpen(true)}
+            onOtherSpeedChange={handleOtherSpeedChange}
+            onPersist={handlePersist}
+          />
+        </SheetShell>
+        <LocationPlatformsSheet
+          isOpen={platformsSheetOpen}
+          onOpenChange={setPlatformsSheetOpen}
           platforms={platforms}
-          otherSpeeds={otherSpeeds}
-          query={query}
-          predictions={predictions}
-          showPredictions={showPredictions}
-          multiPlaces={multiPlaces}
-          nearbyLoading={nearbyLoading}
-          selectedForMap={selectedForMap}
-          locationsDisabled={locationsDisabled}
-          speedOptionsByLocation={speedOptionsByLocation}
-          rowErrors={rowErrors}
-          listError={listError}
-          platformsError={platformsError}
-          intervalOptions={intervalOptions}
-          canSave={canSave}
-          onQueryChange={handleQueryChange}
-          onSelectMain={handleSelectMain}
-          onRadiusChange={setRadiusMiles}
           onPlatformsChange={handlePlatformsChange}
-          onOtherSpeedChange={handleOtherSpeedChange}
-          onPersist={handlePersist}
         />
-      </SheetShell>
+      </>
     );
   },
 );

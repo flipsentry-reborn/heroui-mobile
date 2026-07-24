@@ -194,10 +194,26 @@ type FilterMenuItem = {
 
 const MAX_FILTER_MAKES_SHOWN = 4;
 
-function formatMakesFilterDescription(makes: string[] | undefined): string {
-  if (makes == null || makes.length === 0) return "Any make";
+function formatMakesFilterDescription(
+  carQuery: SearchGroup["carQuery"],
+): string {
+  if (carQuery == null || carQuery.anyMake) return "Any make";
+  const makes = (carQuery.vehicleSelection ?? [])
+    .map((item) => item.make?.trim())
+    .filter((make): make is string => !!make);
+  if (makes.length === 0) return "Any make";
   if (makes.length <= MAX_FILTER_MAKES_SHOWN) return makes.join(", ");
   return `${makes.slice(0, MAX_FILTER_MAKES_SHOWN).join(", ")}, More...`;
+}
+
+function formatIphoneModelsDescription(
+  iphoneQuery: SearchGroup["iphoneQuery"],
+): string {
+  if (iphoneQuery == null || iphoneQuery.length === 0) return "None";
+  if (iphoneQuery.length === 1) {
+    return iphoneQuery[0]?.model.replace(/^Iphone/, "iPhone ") ?? "1 model";
+  }
+  return `${iphoneQuery.length} models`;
 }
 
 function platformsForFilterMenu(
@@ -232,7 +248,7 @@ function filterMenuItems(group: SearchGroup): FilterMenuItem[] {
       {
         key: "makes",
         title: "Makes",
-        description: formatMakesFilterDescription(q?.makes),
+        description: formatMakesFilterDescription(q),
       },
       {
         key: "price",
@@ -270,15 +286,10 @@ function filterMenuItems(group: SearchGroup): FilterMenuItem[] {
       },
     );
   } else if (group.searchType === "iphone") {
-    const modelCount =
-      group.customLabel
-        ?.split(",")
-        .map((part) => part.trim())
-        .filter(Boolean).length ?? 0;
     items.push({
       key: "models",
       title: "Models",
-      description: modelCount > 0 ? String(modelCount) : "Any model",
+      description: formatIphoneModelsDescription(group.iphoneQuery),
     });
   }
 

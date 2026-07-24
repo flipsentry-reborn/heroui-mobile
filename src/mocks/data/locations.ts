@@ -5,6 +5,15 @@ export interface LocationResult {
   secondaryText: string;
   latitude: number;
   longitude: number;
+  /** Google Places place_id — present for live autocomplete predictions. */
+  placeId?: string;
+  /** Present when sourced from SuggestLocations / GeoNames. */
+  geoNameId?: number;
+  countryCode?: string;
+  timeZoneId?: string;
+  distanceMiles?: number;
+  isCenter?: boolean;
+  selected?: boolean;
 }
 
 /** US places for mock autocomplete + nearby suggestions. */
@@ -206,11 +215,14 @@ export interface LocationDraft {
   platforms: LocationPlatform[];
   /** Per location id (incl. center) → speed. Missing keys default to `none`. */
   otherSpeeds: Record<string, LocationRunSpeed>;
+  /** Places keyed by id so create/save can resolve lat/lng for suggested locations. */
+  placesById?: Record<string, LocationResult>;
 }
 
 export const defaultLocationDraft: LocationDraft = {
-  main: locationsFixture[0] ?? null,
+  main: null,
   radiusMiles: DEFAULT_RADIUS_MILES,
   platforms: ["facebook"],
   otherSpeeds: {},
+  placesById: {},
 };

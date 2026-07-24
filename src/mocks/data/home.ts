@@ -3,6 +3,11 @@
  * Slot / tier rules live in domain + SubscriptionStore; this is the persisted list shape.
  */
 
+import type {
+  CarQuery as DomainCarQuery,
+  IphoneQuery,
+} from "@/models/create-search-setting";
+
 export type HomePlatform = "facebook" | "offerUp" | "craigslist" | "kijiji";
 export type SearchType = "car" | "iphone" | "custom";
 
@@ -12,17 +17,15 @@ export interface SearchSetting {
   locationName: string;
   isActive: boolean;
   runIntervalSeconds: number;
+  /** Present from live GroupSearch settings. */
+  latitude?: number;
+  longitude?: number;
+  country?: string;
+  timeZoneId?: string;
 }
 
-export interface CarQuery {
-  makes: string[];
-  minPrice?: number;
-  maxPrice?: number;
-  minYear?: number;
-  maxYear?: number;
-  minMileage?: number;
-  maxMileage?: number;
-}
+/** Backend-aligned car query (anyMake + vehicleSelection). */
+export type CarQuery = DomainCarQuery;
 
 export interface SearchGroup {
   id: string;
@@ -30,6 +33,7 @@ export interface SearchGroup {
   locationName: string;
   radiusMiles: number;
   carQuery?: CarQuery;
+  iphoneQuery?: IphoneQuery[];
   customLabel?: string;
   settings: SearchSetting[];
   /** ISO timestamp — set on create. */
@@ -48,6 +52,8 @@ export interface HomePlan {
   tier: "starter" | "hunter" | "master";
   displayName: string;
   maxSearches: number;
+  /** Slots still available for new/active settings. */
+  remainingSearches: number;
   usedSearches: number;
   credits: CreditBucket[];
 }
@@ -78,7 +84,8 @@ export const homeGroupsFixture: SearchGroup[] = [
     locationName: "Atlanta, GA, USA",
     radiusMiles: 35,
     carQuery: {
-      makes: ["Honda", "Toyota"],
+      anyMake: false,
+      vehicleSelection: [{ make: "Honda" }, { make: "Toyota" }],
       minPrice: 5000,
       maxPrice: 18000,
       minYear: 2016,
@@ -99,6 +106,10 @@ export const homeGroupsFixture: SearchGroup[] = [
     locationName: "Atlanta, GA, USA",
     radiusMiles: 25,
     customLabel: "iPhone 13–15 Pro",
+    iphoneQuery: [
+      { model: "Iphone13Pro", minPrice: 300, maxPrice: 550 },
+      { model: "Iphone14Pro", minPrice: 380, maxPrice: 700 },
+    ],
     settings: [
       setting("g2-fb", "facebook", "Atlanta, GA", true, 180),
       setting("g2-ou", "offerUp", "Decatur, GA", true, 180),
@@ -112,7 +123,8 @@ export const homeGroupsFixture: SearchGroup[] = [
     locationName: "Miami, FL, USA",
     radiusMiles: 40,
     carQuery: {
-      makes: ["BMW", "Mercedes-Benz"],
+      anyMake: false,
+      vehicleSelection: [{ make: "BMW" }, { make: "Mercedes-Benz" }],
       minPrice: 12000,
       maxPrice: 35000,
       minYear: 2015,
@@ -147,6 +159,7 @@ export const homeFixture: HomeState = {
     tier: "hunter",
     displayName: "Hunter",
     maxSearches: 15,
+    remainingSearches: 5,
     usedSearches: 10,
     credits: [
       { intervalSeconds: 180, total: 10, remaining: 3 },

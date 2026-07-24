@@ -30,7 +30,6 @@ interface LocationOtherListProps {
   speeds: Record<string, LocationRunSpeed>;
   onSpeedChange: (id: string, speed: LocationRunSpeed) => void;
   loading?: boolean;
-  centerId?: string | null;
   disabled?: boolean;
   /** Tier-filtered speeds with enable flags per location. */
   speedOptionsByLocation?: Record<string, LocationSpeedOptionState[]>;
@@ -174,7 +173,6 @@ export function LocationOtherList({
   speeds,
   onSpeedChange,
   loading = false,
-  centerId = null,
   disabled = false,
   speedOptionsByLocation = {},
 }: LocationOtherListProps): JSX.Element {
@@ -208,7 +206,6 @@ export function LocationOtherList({
           {places.map((place, index) => {
             const speed = speeds[place.id] ?? "none";
             const isLast = index === places.length - 1;
-            const isCenter = centerId != null && place.id === centerId;
             const options =
               speedOptionsByLocation[place.id] ?? defaultOptions;
 
@@ -216,21 +213,12 @@ export function LocationOtherList({
               <View key={place.id}>
                 <ListGroup.Item disabled className="py-3.5">
                   <ListGroup.ItemContent className="min-w-0 flex-1">
-                    <View className="min-w-0 flex-row items-center gap-2">
-                      <ListGroup.ItemTitle
-                        className="shrink text-[15px] font-normal text-foreground"
-                        numberOfLines={1}
-                      >
-                        {place.name}
-                      </ListGroup.ItemTitle>
-                      {isCenter ? (
-                        <View className="rounded-full bg-default px-2 py-0.5">
-                          <Typography type="body-xs" className="text-muted">
-                            Center
-                          </Typography>
-                        </View>
-                      ) : null}
-                    </View>
+                    <ListGroup.ItemTitle
+                      className="text-[15px] font-normal text-foreground"
+                      numberOfLines={1}
+                    >
+                      {place.name}
+                    </ListGroup.ItemTitle>
                   </ListGroup.ItemContent>
                   <ListGroup.ItemSuffix>
                     <LocationSpeedSelect

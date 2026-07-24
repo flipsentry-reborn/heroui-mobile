@@ -30,13 +30,19 @@ import {
 } from "@/api/http/client";
 import { liveFeed, liveSoldListings } from "@/api/http/feed";
 import { liveGroupSearch } from "@/api/http/group-search";
+import { livePlaces } from "@/api/http/places";
 import { liveSubscription } from "@/api/http/subscription";
 import type { SearchGroup } from "@/mocks/data/home";
+import type { LocationResult } from "@/mocks/data/locations";
 import type {
   SubscriptionState,
   SubscriptionTier,
 } from "@/mocks/data/subscription";
 import * as mockAccount from "@/mocks/services/account";
+import {
+  listCarMakes as mockListCarMakes,
+  listIphoneModelGroups as mockListIphoneModelGroups,
+} from "@/mocks/services/catalogs";
 import {
   createGroup,
   deleteGroup,
@@ -46,6 +52,15 @@ import {
   type CreateHomeSearchInput,
   type UpdateHomeSearchInput,
 } from "@/mocks/services/home";
+import {
+  mockMatchPlatforms,
+  mockSuggestLocations,
+  searchLocations as mockSearchLocations,
+} from "@/mocks/services/location";
+import type {
+  MatchPlatformsInput,
+  SuggestLocationsInput,
+} from "@/models/search-group";
 import {
   getFeedById,
   getFeedPage,
@@ -310,8 +325,9 @@ const mockGroupSearch = {
   delete: (id: string): Promise<boolean> => deleteGroup(id),
   setActive: (id: string, isActive: boolean): Promise<SearchGroup | null> =>
     toggleGroupActive(id, isActive),
-  suggestLocations: async () => ({ locations: [] }),
-  matchPlatforms: async () => ({ settings: [] }),
+  suggestLocations: (params: SuggestLocationsInput) =>
+    mockSuggestLocations(params),
+  matchPlatforms: (params: MatchPlatformsInput) => mockMatchPlatforms(params),
   recentMaps: async () => [],
   get: async (id: string) => {
     const groups = await listGroups();
@@ -372,7 +388,7 @@ const Platform = USE_MOCK
 const IphoneModels = USE_MOCK
   ? {
       list: async () => [],
-      listGrouped: async () => ({ groups: [] }),
+      listGrouped: mockListIphoneModelGroups,
     }
   : liveIphoneModels;
 
@@ -384,7 +400,7 @@ const SamsungModels = USE_MOCK
   : liveSamsungModels;
 
 const CarMakes = USE_MOCK
-  ? { list: async () => [] }
+  ? { list: mockListCarMakes }
   : liveCarMakes;
 
 const Search = USE_MOCK
@@ -422,12 +438,23 @@ const Onboarding = USE_MOCK
     }
   : liveOnboarding;
 
+// ─── Locations (autocomplete) ──────────────────────────────────────────────
+
+const mockLocations = {
+  search: (query: string): Promise<LocationResult[]> =>
+    mockSearchLocations(query),
+  resolve: async (place: LocationResult): Promise<LocationResult> => place,
+};
+
+const Locations = USE_MOCK ? mockLocations : livePlaces;
+
 const agent = {
   Account,
   Feed,
   FeedHub,
   SoldListings,
   GroupSearch,
+  Locations,
   Platform,
   IphoneModels,
   SamsungModels,

@@ -6,6 +6,13 @@ import {
   type LocationPlatform,
   type LocationResult,
 } from "@/mocks/data/locations";
+import { buildMockSuggestLocationsResult } from "@/lib/location-suggest";
+import type {
+  MatchPlatformsInput,
+  MatchPlatformsResult,
+  SuggestLocationsInput,
+  SuggestLocationsResult,
+} from "@/models/search-group";
 
 export { defaultLocationDraft };
 
@@ -22,6 +29,7 @@ function normalizeDraft(value: LocationDraft): LocationDraft {
         ? value.platforms
         : (["facebook"] as LocationPlatform[]),
     otherSpeeds: value.otherSpeeds ?? {},
+    placesById: value.placesById ?? {},
   };
 }
 
@@ -61,6 +69,7 @@ export async function searchLocations(
   );
 }
 
+/** Fixture fallback — prefer agent.GroupSearch.suggestLocations. */
 export async function getNearbyLocations(
   main: LocationResult,
   maxResults = 8,
@@ -78,6 +87,25 @@ export async function getNearbyLocations(
     .map((entry) => entry.place);
 
   return structuredClone(ranked);
+}
+
+export async function mockSuggestLocations(
+  params: SuggestLocationsInput,
+): Promise<SuggestLocationsResult> {
+  await delay(80);
+  return buildMockSuggestLocationsResult(params, locationsFixture);
+}
+
+export async function mockMatchPlatforms(
+  _params: MatchPlatformsInput,
+): Promise<MatchPlatformsResult> {
+  await delay(80);
+  return {
+    totalSlotsUsed: 0,
+    totalSlotsAvailable: 0,
+    remainingSlots: 0,
+    platforms: {},
+  };
 }
 
 export function getLocationDraft(): LocationDraft {

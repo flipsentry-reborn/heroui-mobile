@@ -10,12 +10,21 @@ import {
 
 interface LocationRadiusProps {
   value: number;
+  /** Fires while dragging — update label / map only. */
   onChange: (miles: number) => void;
+  /** Fires on thumb release — commit radius (e.g. re-suggest locations). */
+  onChangeEnd?: (miles: number) => void;
+}
+
+function toMiles(next: number | number[]): number | null {
+  const miles = Array.isArray(next) ? next[0] : next;
+  return typeof miles === "number" ? miles : null;
 }
 
 export function LocationRadius({
   value,
   onChange,
+  onChangeEnd,
 }: LocationRadiusProps): JSX.Element {
   return (
     <View className="gap-2.5">
@@ -35,8 +44,12 @@ export function LocationRadius({
           maxValue={MAX_RADIUS_MILES}
           step={RADIUS_STEP_MILES}
           onChange={(next) => {
-            const miles = Array.isArray(next) ? next[0] : next;
-            if (typeof miles === "number") onChange(miles);
+            const miles = toMiles(next);
+            if (miles != null) onChange(miles);
+          }}
+          onChangeEnd={(next) => {
+            const miles = toMiles(next);
+            if (miles != null) onChangeEnd?.(miles);
           }}
         >
           <Slider.Track>

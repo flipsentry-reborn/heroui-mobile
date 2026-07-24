@@ -1,35 +1,31 @@
+import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
-import { useEffect } from "react";
-import { View } from "react-native";
-import Animated, {
-  LinearTransition,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import { useEffect, useState } from "react";
+import { Pressable, View } from "react-native";
 import {
-  Accordion,
+  BottomSheet,
+  Button,
   Checkbox,
-  cn,
   ControlField,
   Label,
   Separator,
   Typography,
-  useAccordionItem,
+  useBottomSheet,
+  useThemeColor,
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
 import PlatformIcon from "@/components/icons/PlatformIcon";
 import { SEARCH_PLATFORMS } from "@/features/home/search-bottom-sheet-platforms-sheet";
+import {
+  SHEET_BACKGROUND_CLASS_NAME,
+  SHEET_CONTENT_CLASS_NAME,
+  SHEET_CONTENT_CONTAINER_CLASS_NAME,
+} from "@/features/home/sheet-chrome";
+import { SheetShell } from "@/features/home/sheet-shell";
 import type { LocationPlatform } from "@/mocks/data/locations";
 
-const StyledAnimatedView = withUniwind(Animated.View);
-
-/** Matches HeroUI Native / search-cards `AccordionWithDepthEffect` layout spring. */
-const DEPTH_LAYOUT_TRANSITION = LinearTransition.springify()
-  .damping(70)
-  .stiffness(1000)
-  .mass(2);
+const StyledIonicons = withUniwind(Ionicons);
 
 function togglePlatform(
   platforms: LocationPlatform[],
@@ -45,57 +41,40 @@ function togglePlatform(
   return platforms.filter((id) => id !== platform);
 }
 
-function PlatformsDepthItem({
+function PlatformsSheetContent({
   platforms,
   onPlatformsChange,
 }: {
   platforms: LocationPlatform[];
   onPlatformsChange: (next: LocationPlatform[]) => void;
 }): JSX.Element {
-  const { isExpanded } = useAccordionItem();
-  const scale = useSharedValue(isExpanded ? 1 : 0.97);
+  const { onOpenChange } = useBottomSheet();
+  const [draft, setDraft] = useState(platforms);
+  const dismiss = () => onOpenChange(false);
 
   useEffect(() => {
-    scale.value = withTiming(isExpanded ? 1 : 0.97, { duration: 200 });
-  }, [isExpanded, scale]);
-
-  const depthStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+    setDraft(platforms);
+  }, [platforms]);
 
   return (
-    <Animated.View layout={DEPTH_LAYOUT_TRANSITION} style={depthStyle}>
-      <StyledAnimatedView
-        layout={DEPTH_LAYOUT_TRANSITION}
-        className={cn(
-          "overflow-hidden bg-surface",
-          isExpanded ? "rounded-2xl" : "rounded-3xl",
-        )}
-      >
-        <Accordion.Trigger className="gap-2 px-4 py-3.5">
-          <Typography
-            type="body-sm"
-            weight="semibold"
-            className="text-foreground"
-          >
+    <BottomSheet.Content
+      enableDynamicSizing
+      enableOverDrag={false}
+      className={SHEET_CONTENT_CLASS_NAME}
+      backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
+      handleComponent={null}
+      contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
+    >
+      <View>
+        <View className="items-center px-5 pb-1 pt-4">
+          <Typography type="body" weight="normal">
             Platforms
           </Typography>
-          <View className="min-w-0 flex-1 flex-row items-center justify-end gap-2">
-            {platforms.length > 0 ? (
-              platforms.map((platform) => (
-                <PlatformIcon key={platform} platform={platform} size={20} />
-              ))
-            ) : (
-              <Typography type="body-sm" className="text-muted">
-                None
-              </Typography>
-            )}
-          </View>
-          <Accordion.Indicator />
-        </Accordion.Trigger>
-        <Accordion.Content className="px-0 pb-1 pt-0">
+        </View>
+
+        <View className="mx-3 mb-2 overflow-hidden rounded-3xl bg-surface shadow-surface">
           {SEARCH_PLATFORMS.map((platform, index) => {
-            const isSelected = platforms.includes(platform.id);
+            const isSelected = draft.includes(platform.id);
             const isLast = index === SEARCH_PLATFORMS.length - 1;
 
             return (
@@ -103,9 +82,7 @@ function PlatformsDepthItem({
                 <ControlField
                   isSelected={isSelected}
                   onSelectedChange={(next) =>
-                    onPlatformsChange(
-                      togglePlatform(platforms, platform.id, next),
-                    )
+                    setDraft(togglePlatform(draft, platform.id, next))
                   }
                   className="items-center gap-3 px-4 py-3.5"
                 >
@@ -121,41 +98,99 @@ function PlatformsDepthItem({
               </View>
             );
           })}
-        </Accordion.Content>
-      </StyledAnimatedView>
-    </Animated.View>
+        </View>
+
+        <View className="flex-row gap-3 px-5 pb-6 pt-2">
+          <Button
+            variant="tertiary"
+            className="min-h-12 flex-1 rounded-2xl bg-surface"
+            onPress={dismiss}
+          >
+            <Button.Label>Cancel</Button.Label>
+          </Button>
+          <Button
+            variant="primary"
+            className="min-h-12 flex-1 rounded-2xl"
+            onPress={() => {
+              onPlatformsChange(draft);
+              dismiss();
+            }}
+          >
+            <Button.Label>Save</Button.Label>
+          </Button>
+        </View>
+      </View>
+    </BottomSheet.Content>
   );
 }
 
-interface LocationPlatformsSectionProps {
+interface LocationPlatformsRowProps {
+  platforms: LocationPlatform[];
+  onPress: () => void;
+}
+
+/** Non-expandable row — opens platforms sheet via parent (keeps sheet out of scroll tree). */
+export function LocationPlatformsRow({
+  platforms,
+  onPress,
+}: LocationPlatformsRowProps): JSX.Element {
+  const [muted] = useThemeColor(["muted"]);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      className="overflow-hidden rounded-3xl bg-surface shadow-surface"
+    >
+      <View className="flex-row items-center gap-2 px-4 py-3.5">
+        <Typography
+          type="body-sm"
+          weight="semibold"
+          className="text-foreground"
+        >
+          Platforms
+        </Typography>
+        <View className="min-w-0 flex-1 flex-row items-center justify-end gap-2">
+          {platforms.length > 0 ? (
+            platforms.map((platform) => (
+              <PlatformIcon key={platform} platform={platform} size={20} />
+            ))
+          ) : (
+            <Typography type="body-sm" className="text-muted">
+              None
+            </Typography>
+          )}
+        </View>
+        <StyledIonicons
+          name="chevron-forward"
+          size={16}
+          className="text-muted"
+          color={muted}
+        />
+      </View>
+    </Pressable>
+  );
+}
+
+interface LocationPlatformsSheetProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
   platforms: LocationPlatform[];
   onPlatformsChange: (next: LocationPlatform[]) => void;
 }
 
-/** Depth accordion for platform pickers (replaces nested Platforms bottom sheet). */
-export function LocationPlatformsSection({
+/** Nested sheet — render as sibling of location SheetShell, not inside its ScrollView. */
+export function LocationPlatformsSheet({
+  isOpen,
+  onOpenChange,
   platforms,
   onPlatformsChange,
-}: LocationPlatformsSectionProps): JSX.Element {
+}: LocationPlatformsSheetProps): JSX.Element | null {
   return (
-    <Accordion
-      selectionMode="single"
-      isCollapsible
-      hideSeparator
-      defaultValue={["platforms"]}
-      className="w-auto overflow-visible"
-      animation={{
-        layout: {
-          value: DEPTH_LAYOUT_TRANSITION,
-        },
-      }}
-    >
-      <Accordion.Item value="platforms" className="overflow-visible">
-        <PlatformsDepthItem
-          platforms={platforms}
-          onPlatformsChange={onPlatformsChange}
-        />
-      </Accordion.Item>
-    </Accordion>
+    <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
+      <PlatformsSheetContent
+        platforms={platforms}
+        onPlatformsChange={onPlatformsChange}
+      />
+    </SheetShell>
   );
 }

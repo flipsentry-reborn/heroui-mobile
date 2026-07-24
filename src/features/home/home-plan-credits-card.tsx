@@ -89,7 +89,7 @@ export function HomePlanCreditsCard({
               color: palette.text,
             }}
           >
-            {homePlan.usedSearches} / {homePlan.maxSearches}
+            {homePlan.remainingSearches} / {homePlan.maxSearches}
           </Text>
           <Text
             style={{
@@ -98,7 +98,7 @@ export function HomePlanCreditsCard({
               color: palette.textMuted,
             }}
           >
-            active searches
+            remaining searches
           </Text>
         </View>
 

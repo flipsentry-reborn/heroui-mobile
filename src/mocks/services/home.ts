@@ -93,8 +93,7 @@ export function buildHomePlan(
   tier: FlipSentryTier | null,
   groupList: SearchGroup[],
 ): HomePlan {
-  const effectiveTier: FlipSentryTier = tier ?? "hunter";
-  const allowed = getAllowedSlotSettings(effectiveTier);
+  const allowed = getAllowedSlotSettings(tier);
   const usedByInterval = countUsedSlotsByInterval(
     groupList.flatMap((g) => g.settings),
   );
@@ -105,13 +104,18 @@ export function buildHomePlan(
     remaining:
       remaining.find((r) => r.interval === s.interval)?.value ?? 0,
   }));
-  const usedSlots = sumSlotValues(allowed) - sumSlotValues(remaining);
+  const maxSearches = totalSlotsForTier(tier);
+  const remainingSearches = sumSlotValues(remaining);
+  const usedSearches = Math.max(0, maxSearches - remainingSearches);
+  const effectiveTier: FlipSentryTier = tier ?? "hunter";
 
   return {
     tier: effectiveTier,
-    displayName: TIER_DISPLAY_NAMES[effectiveTier],
-    maxSearches: totalSlotsForTier(effectiveTier),
-    usedSearches: usedSlots,
+    displayName:
+      tier != null ? TIER_DISPLAY_NAMES[tier] : "Not subscribed",
+    maxSearches,
+    remainingSearches,
+    usedSearches,
     credits,
   };
 }
@@ -153,7 +157,7 @@ export interface CreateHomeSearchInput {
   customLabel?: string;
   containsText?: string[];
   excludeText?: string[];
-  /** Geo fields used by live GroupSearch (mode: basic). */
+  /** Geo fields used by live GroupSearch. */
   latitude?: number;
   longitude?: number;
   country?: string;
@@ -221,6 +225,7 @@ export async function createGroup(
     locationName: input.locationName,
     radiusMiles: input.radiusMiles,
     carQuery: input.carQuery,
+    iphoneQuery: input.iphoneQuery,
     customLabel: input.customLabel,
     settings,
     createdAt,
@@ -275,6 +280,7 @@ export async function updateGroup(
     locationName: input.locationName,
     radiusMiles: input.radiusMiles,
     carQuery: input.carQuery,
+    iphoneQuery: input.iphoneQuery,
     customLabel: input.customLabel,
     settings,
     createdAt: existing.createdAt ?? nowIso(),

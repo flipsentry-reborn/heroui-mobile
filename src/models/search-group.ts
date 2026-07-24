@@ -41,17 +41,6 @@ export const toBackendSearchType = (
   }
 };
 
-export interface CoveragePoint {
-  lat: number;
-  lng: number;
-}
-
-export interface CoverageArea {
-  points: CoveragePoint[];
-}
-
-export type SearchGroupLocationMode = "basic" | "advanced";
-
 export type SearchGroupActivationStatus =
   | "active"
   | "partial"
@@ -71,21 +60,21 @@ export interface SearchGroupSetting {
   runIntervalSeconds: number;
 }
 
-/** Full domain group (mobile-app shape). UI may use a thinner home view model. */
+/** Radius-only group (matches backend SearchGroupDto). */
 export interface SearchGroup {
   id: string;
   searchType: SearchType;
-  mode: SearchGroupLocationMode;
   latitude: number;
   longitude: number;
-  basicRadiusMiles?: number;
-  radiusMiles?: number;
+  radiusMiles: number;
   locationName: string;
   country: string;
   isActive: boolean;
   activationStatus?: SearchGroupActivationStatus;
   activationMessage?: string;
-  coverageArea?: CoverageArea;
+  totalSettingsCount?: number;
+  activeSettingsCount?: number;
+  inactiveSettingsCount?: number;
   iphoneQuery?: IphoneQuery[];
   samsungQuery?: SamsungQuery[];
   carQuery?: CarQuery;
@@ -114,14 +103,11 @@ export interface GroupSearchSettingInput {
 
 export interface CreateSearchGroup {
   searchType: BackendSearchType | string;
-  mode?: SearchGroupLocationMode;
-  latitude?: number;
-  longitude?: number;
-  basicRadiusMiles?: number;
-  radiusMiles?: number;
+  latitude: number;
+  longitude: number;
+  radiusMiles: number;
   locationName: string;
   country: string;
-  coverageArea?: CoverageArea;
   iphoneQuery?: IphoneQuery[];
   samsungQuery?: SamsungQuery[];
   carQuery?: CarQuery;
@@ -130,22 +116,16 @@ export interface CreateSearchGroup {
   excludeText?: string[];
   titleIncluders?: string[];
   descriptionIncluders?: string[];
-  runIntervalSeconds?: number;
-  platforms?: SearchPlatform[];
-  settings?: GroupSearchSettingInput[];
+  settings: GroupSearchSettingInput[];
 }
 
-/** Kept for phase 2 edit flow. */
 export interface UpdateSearchGroup {
-  mode?: SearchGroupLocationMode;
   latitude?: number;
   longitude?: number;
-  basicRadiusMiles?: number;
   radiusMiles?: number;
   locationName?: string;
   country?: string;
   isActive?: boolean;
-  coverageArea?: CoverageArea;
   iphoneQuery?: IphoneQuery[];
   samsungQuery?: SamsungQuery[];
   carQuery?: CarQuery;
@@ -154,8 +134,6 @@ export interface UpdateSearchGroup {
   excludeText?: string[];
   titleIncluders?: string[];
   descriptionIncluders?: string[];
-  runIntervalSeconds?: number;
-  platforms?: SearchPlatform[];
   settings?: GroupSearchSettingInput[];
 }
 
@@ -164,35 +142,93 @@ export interface IntervalSetting {
   value: number;
 }
 
-export interface SuggestLocationsInput {
+/** Matches backend SuggestedLocationDto (Google SuggestLocations). */
+export interface SuggestedLocation {
+  geoNameId: number;
+  name: string;
+  countryCode: string;
   latitude: number;
   longitude: number;
-  country: string;
-  radiusMiles: number;
-  count?: number;
+  timeZoneId: string;
+  distanceMiles: number;
+  isCenter: boolean;
+  selected: boolean;
 }
 
 export interface SuggestLocationsResult {
-  locations: Array<{
-    latitude: number;
-    longitude: number;
-    locationName: string;
-    country: string;
-    distanceMiles?: number;
-  }>;
+  centerLatitude: number;
+  centerLongitude: number;
+  searchRadiusMiles: number;
+  countryCode: string;
+  additionalLocationCount: number;
+  originalLocation: SuggestedLocation;
+  suggestedLocations: SuggestedLocation[];
+}
+
+export interface SuggestLocationsInput {
+  latitude: number;
+  longitude: number;
+  radiusMiles: number;
+  centerLocationName?: string;
+}
+
+export interface RecentMap {
+  id: string;
+  latitude: number;
+  longitude: number;
+  basicRadiusMiles: number;
+  locationName: string;
+  country: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface MatchPlatformsInput {
-  locations: Array<{
+  isEditing?: boolean;
+  originalLocation: {
+    geoNameId: number;
+    name: string;
+    countryCode?: string;
     latitude: number;
     longitude: number;
-    locationName: string;
-    country: string;
+  };
+  selectedLocations: Array<{
+    geoNameId: number;
+    name: string;
+    countryCode?: string;
+    latitude: number;
+    longitude: number;
+  }>;
+  candidateLocations?: Array<{
+    geoNameId: number;
+    name: string;
+    countryCode?: string;
+    latitude: number;
+    longitude: number;
   }>;
   platforms: string[];
-  runIntervalSeconds?: number;
+  settings: IntervalSetting[];
+}
+
+export interface LocationWithInterval {
+  geoNameId: number;
+  name: string;
+  countryCode: string;
+  latitude: number;
+  longitude: number;
+  distanceMiles: number;
+  isCenter: boolean;
+  intervalSeconds: number;
+}
+
+export interface PlatformPlan {
+  platform: string;
+  locations: LocationWithInterval[];
 }
 
 export interface MatchPlatformsResult {
-  settings: GroupSearchSettingInput[];
+  totalSlotsUsed: number;
+  totalSlotsAvailable: number;
+  remainingSlots: number;
+  platforms: Record<string, PlatformPlan>;
 }

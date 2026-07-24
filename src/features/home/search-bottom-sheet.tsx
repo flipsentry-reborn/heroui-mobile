@@ -53,7 +53,6 @@ import {
   getSearchYearRangeError,
   validateLocationDraft,
 } from "@/domain/search-rules";
-import { MOCK_CAR_MAKES } from "@/mocks/data/car";
 import type { HomePlatform, SearchGroup, SearchType } from "@/mocks/data/home";
 import {
   isLocationSpeedSelected,
@@ -101,16 +100,58 @@ function PlatformsRowValue({
 
 function resolveLocationName(
   locationId: string,
-  mainName: string | undefined,
-  mainId: string | undefined,
+  draft: ReturnType<typeof getLocationDraft>,
 ): string {
-  if (mainId != null && locationId === mainId && mainName != null) {
-    return mainName;
+  if (draft.main != null && locationId === draft.main.id) {
+    return draft.main.displayName || draft.main.name;
+  }
+  const cached = draft.placesById?.[locationId];
+  if (cached != null) {
+    return cached.displayName || cached.name;
   }
   return (
     locationsFixture.find((place) => place.id === locationId)?.name ??
     locationId
   );
+}
+
+function resolveLocationCoords(
+  locationId: string,
+  draft: ReturnType<typeof getLocationDraft>,
+  fallback: { latitude: number; longitude: number },
+): {
+  latitude: number;
+  longitude: number;
+  country?: string;
+  timeZoneId?: string;
+} {
+  if (draft.main != null && locationId === draft.main.id) {
+    return {
+      latitude: draft.main.latitude,
+      longitude: draft.main.longitude,
+      country: draft.main.countryCode,
+      timeZoneId: draft.main.timeZoneId,
+    };
+  }
+  const cached = draft.placesById?.[locationId];
+  if (cached != null) {
+    return {
+      latitude: cached.latitude,
+      longitude: cached.longitude,
+      country: cached.countryCode,
+      timeZoneId: cached.timeZoneId,
+    };
+  }
+  const fromFixture = locationsFixture.find((l) => l.id === locationId);
+  if (fromFixture != null) {
+    return {
+      latitude: fromFixture.latitude,
+      longitude: fromFixture.longitude,
+      country: fromFixture.countryCode,
+      timeZoneId: fromFixture.timeZoneId,
+    };
+  }
+  return fallback;
 }
 
 function toHomePlatform(platform: string): HomePlatform {
@@ -126,9 +167,48 @@ function toHomePlatform(platform: string): HomePlatform {
   return "facebook";
 }
 
+function LocationRowValue({
+  placeName,
+  radiusMiles,
+  muted,
+}: {
+  placeName: string | null;
+  radiusMiles: number | null;
+  muted: string;
+}): JSX.Element {
+  if (placeName == null || radiusMiles == null) {
+    return (
+      <View className="flex-row items-center gap-1">
+        <Typography type="body-sm" className="text-muted">
+          Set location
+        </Typography>
+        <Ionicons name="chevron-forward" size={16} color={muted} />
+      </View>
+    );
+  }
+
+  // Name may truncate; mileage always stays visible.
+  return (
+    <View className="max-w-[220px] min-w-0 flex-row items-center gap-1.5">
+      <Typography
+        type="body-sm"
+        className="min-w-0 shrink text-muted"
+        numberOfLines={1}
+      >
+        {placeName}
+      </Typography>
+      <Typography type="body-sm" className="shrink-0 text-muted">
+        {radiusMiles} mi
+      </Typography>
+      <Ionicons name="chevron-forward" size={16} color={muted} />
+    </View>
+  );
+}
+
 function SearchSheetContent({
   title,
-  locationLabel,
+  locationPlaceName,
+  locationRadiusMiles,
   onLocationPress,
   selectedPlatforms,
   searchType,
@@ -159,7 +239,8 @@ function SearchSheetContent({
   onConfirm,
 }: {
   title: string;
-  locationLabel: string;
+  locationPlaceName: string | null;
+  locationRadiusMiles: number | null;
   /** Location and Platforms both open the location sheet. */
   onLocationPress?: () => void;
   selectedPlatforms: HomePlatform[];
@@ -251,16 +332,11 @@ function SearchSheetContent({
             disabled={!hasSearchType}
             right={
               hasSearchType ? (
-                <View className="flex-row items-center gap-1">
-                  <Typography
-                    type="body-sm"
-                    className="max-w-[200px] text-muted"
-                    numberOfLines={1}
-                  >
-                    {locationLabel}
-                  </Typography>
-                  <Ionicons name="chevron-forward" size={16} color={muted} />
-                </View>
+                <LocationRowValue
+                  placeName={locationPlaceName}
+                  radiusMiles={locationRadiusMiles}
+                  muted={muted}
+                />
               ) : (
                 <View className="h-5 w-4" />
               )
@@ -363,7 +439,7 @@ interface SearchBottomSheetProps {
 export const SearchBottomSheet = observer(function SearchBottomSheet({
   visible,
   onClose,
-  locationLabel = "Set location",
+  locationLabel: _locationLabel = "Set location",
   onLocationLabelChange,
   editingGroup = null,
   initialSection = null,
@@ -444,12 +520,9 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     );
   }, [draftSnapshot, editIntervalOptions]);
 
-  /** Short location label on the Location row (platforms shown on Platforms row). */
-  const locationRowLabel = useMemo(() => {
-    const draft = draftSnapshot;
-    if (draft.main == null) return "Set location";
-    return `${draft.main.name} (${draft.radiusMiles} mi)`;
-  }, [draftSnapshot]);
+  const locationPlaceName = draftSnapshot.main?.name ?? null;
+  const locationRadiusMiles =
+    draftSnapshot.main != null ? draftSnapshot.radiusMiles : null;
 
   useEffect(() => {
     if (!visible) {
@@ -458,7 +531,13 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
       setRevealParentAfterShortcut(false);
       return;
     }
-    if (editingGroup == null) return;
+    if (editingGroup == null) {
+      // New Search always starts with an empty location (no fixture prefill).
+      resetLocationDraft();
+      setLocationTick((value) => value + 1);
+      onLocationLabelChange?.(formatLocationLabel(getLocationDraft()));
+      return;
+    }
     if (prefilledGroupIdRef.current === editingGroup.id) return;
     prefilledGroupIdRef.current = editingGroup.id;
     const prefill = loadGroupForEdit(editingGroup);
@@ -557,11 +636,9 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     setMaxYear("");
     setMinMileage("");
     setMaxMileage("");
-    // Edit prefill mutates the shared draft; restore defaults so create stays clean.
-    if (isEditing) {
-      resetLocationDraft();
-      setLocationTick((value) => value + 1);
-    }
+    // Shared draft is reused across create/edit — always restore empty defaults on close.
+    resetLocationDraft();
+    setLocationTick((value) => value + 1);
     searchStore.clearError();
   };
 
@@ -606,11 +683,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     const locationSpeeds = Object.entries(draft.otherSpeeds).map(
       ([locationId, speed]) => ({
         locationId,
-        locationName: resolveLocationName(
-          locationId,
-          draft.main?.name,
-          draft.main?.id,
-        ),
+        locationName: resolveLocationName(locationId, draft),
         speed: speed as LocationRunSpeed,
       }),
     );
@@ -629,35 +702,17 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
       return;
     }
 
-    const makes =
-      carMakes.anyMake || carMakes.selectedIds.length === 0
-        ? undefined
-        : carMakes.selectedIds.map(
-            (id) =>
-              MOCK_CAR_MAKES.find((make) => make.id === id)?.label ?? id,
-          );
+    const anyMake =
+      carMakes.anyMake || carMakes.selectedIds.length === 0;
 
     const mainLat = draft.main.latitude;
     const mainLng = draft.main.longitude;
     const country =
-      /,?\s*Canada$/i.test(draft.main.displayName ?? "") ||
+      draft.main.countryCode ??
+      (/,?\s*Canada$/i.test(draft.main.displayName ?? "") ||
       /,?\s*CA$/i.test(draft.main.displayName ?? "")
         ? "CA"
-        : "US";
-
-    const resolveLocationCoords = (locationId: string) => {
-      if (locationId === draft.main?.id || locationId === "main") {
-        return { latitude: mainLat, longitude: mainLng };
-      }
-      const fromFixture = locationsFixture.find((l) => l.id === locationId);
-      if (fromFixture) {
-        return {
-          latitude: fromFixture.latitude,
-          longitude: fromFixture.longitude,
-        };
-      }
-      return { latitude: mainLat, longitude: mainLng };
-    };
+        : "US");
 
     const payload = {
       searchType,
@@ -667,25 +722,29 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
       latitude: mainLat,
       longitude: mainLng,
       country,
+      timeZoneId: draft.main.timeZoneId,
       settings: settingRows.map((row) => {
-        const coords = resolveLocationCoords(row.locationId);
+        const coords = resolveLocationCoords(row.locationId, draft, {
+          latitude: mainLat,
+          longitude: mainLng,
+        });
         return {
           platform: toHomePlatform(row.platform),
-          locationName: resolveLocationName(
-            row.locationId,
-            draft.main?.name,
-            draft.main?.id,
-          ),
+          locationName: resolveLocationName(row.locationId, draft),
           runIntervalSeconds: row.runIntervalSeconds,
           latitude: coords.latitude,
           longitude: coords.longitude,
-          country,
+          country: coords.country ?? country,
+          timeZoneId: coords.timeZoneId ?? draft.main?.timeZoneId,
         };
       }),
       carQuery:
         searchType === "car"
           ? {
-              makes: makes ?? [],
+              anyMake,
+              vehicleSelection: anyMake
+                ? []
+                : carMakes.selectedIds.map((make) => ({ make })),
               minPrice: parseOptionalNumber(minPrice),
               maxPrice: parseOptionalNumber(maxPrice),
               minYear: parseOptionalNumber(minYear),
@@ -695,17 +754,13 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
             }
           : undefined,
       customLabel:
-        searchType === "custom"
-          ? customQuery.trim()
-          : searchType === "iphone"
-            ? iphoneSelections.map((s) => s.id).join(", ")
-            : undefined,
+        searchType === "custom" ? customQuery.trim() : undefined,
       iphoneQuery:
         searchType === "iphone"
           ? iphoneSelections.map((s) => ({
               model: s.id,
-              minPrice: parseOptionalNumber(minPrice),
-              maxPrice: parseOptionalNumber(maxPrice),
+              minPrice: parseOptionalNumber(s.min),
+              maxPrice: parseOptionalNumber(s.max),
             }))
           : undefined,
     };
@@ -731,7 +786,8 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
       >
         <SearchSheetContent
           title={isEditing ? "Edit Search" : "New Search"}
-          locationLabel={locationRowLabel || locationLabel}
+          locationPlaceName={locationPlaceName}
+          locationRadiusMiles={locationRadiusMiles}
           onLocationPress={() => setLocationOpen(true)}
           selectedPlatforms={selectedPlatforms}
           searchType={searchType}
@@ -816,6 +872,16 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
         onOpenChange={closeShortcutThenRevealParent(setIphoneModelsOpen)}
         selections={iphoneSelections}
         onSelectionsChange={setIphoneSelections}
+        isCreateMode={!isEditing}
+        location={{
+          latitude: draftSnapshot.main?.latitude,
+          longitude: draftSnapshot.main?.longitude,
+          country:
+            draftSnapshot.main?.countryCode ??
+            (/,?\s*Canada$/i.test(draftSnapshot.main?.displayName ?? "")
+              ? "CA"
+              : "US"),
+        }}
       />
 
       <SearchBottomSheetCarMakesSheet

@@ -1,5 +1,5 @@
 /**
- * Live GroupSearch REST — basic radius only (no population / advanced point mode).
+ * Live GroupSearch REST — radius-only (no coverage / advanced mode).
  */
 
 import { requests } from "@/api/http/client";
@@ -16,12 +16,12 @@ import type { SearchPlatform } from "@/models/create-search-setting";
 import type {
   CreateSearchGroup,
   SearchGroup as DomainSearchGroup,
-  SearchGroupLocationMode,
   SearchType,
   SuggestLocationsInput,
   SuggestLocationsResult,
   MatchPlatformsInput,
   MatchPlatformsResult,
+  RecentMap,
   UpdateSearchGroup,
 } from "@/models/search-group";
 import { normalizeSearchType, toBackendSearchType } from "@/models/search-group";
@@ -42,17 +42,14 @@ interface ApiSearchSetting {
 interface ApiGroupSearch {
   id: string;
   searchType: string;
-  mode?: string | null;
   latitude?: number;
   longitude?: number;
-  basicRadiusMiles?: number | null;
   radiusMiles?: number | null;
   locationName: string;
   country: string;
   isActive?: boolean;
   activationStatus?: string | null;
   activationMessage?: string | null;
-  coverageArea?: { points: Array<{ lat: number; lng: number }> };
   iphoneQuery?: DomainSearchGroup["iphoneQuery"];
   samsungQuery?: DomainSearchGroup["samsungQuery"];
   carQuery?: DomainSearchGroup["carQuery"];
@@ -66,9 +63,6 @@ interface ApiGroupSearch {
   searchSettings?: ApiSearchSetting[];
   createdAt: string;
   updatedAt: string;
-  derivedCenterLat?: number;
-  derivedCenterLon?: number;
-  derivedRadiusMiles?: number;
 }
 
 function mapPlatformToHome(platform: string): HomePlatform {
@@ -102,13 +96,11 @@ export function mapApiGroupToHome(group: ApiGroupSearch): HomeSearchGroup {
     locationName: s.locationName,
     isActive: s.isActive,
     runIntervalSeconds: s.runIntervalSeconds,
+    latitude: s.latitude,
+    longitude: s.longitude,
+    country: s.country,
+    timeZoneId: s.timeZoneId,
   }));
-  const radius =
-    group.basicRadiusMiles ??
-    group.derivedRadiusMiles ??
-    group.radiusMiles ??
-    settings[0]?.runIntervalSeconds ??
-    25;
   const searchType = toHomeSearchType(normalizeSearchType(group.searchType));
   const customLabel =
     typeof group.customQuery === "object" && group.customQuery != null
@@ -120,14 +112,9 @@ export function mapApiGroupToHome(group: ApiGroupSearch): HomeSearchGroup {
     searchType,
     locationName: group.locationName,
     radiusMiles:
-      typeof group.basicRadiusMiles === "number"
-        ? group.basicRadiusMiles
-        : typeof group.radiusMiles === "number"
-          ? group.radiusMiles
-          : typeof group.derivedRadiusMiles === "number"
-            ? group.derivedRadiusMiles
-            : 25,
-    carQuery: group.carQuery as HomeSearchGroup["carQuery"],
+      typeof group.radiusMiles === "number" ? group.radiusMiles : 25,
+    carQuery: group.carQuery,
+    iphoneQuery: group.iphoneQuery,
     customLabel,
     settings,
     createdAt: group.createdAt,
@@ -148,7 +135,6 @@ function buildCreatePayload(input: CreateHomeSearchInput): CreateSearchGroup {
   const lng = input.longitude ?? -84.388;
   const country = input.country ?? defaultCountry(input.locationName);
   const timeZoneId = input.timeZoneId ?? "America/New_York";
-  const mode: SearchGroupLocationMode = "basic";
 
   const settings = input.settings.map((s) => ({
     platform: mapPlatformToApi(s.platform),
@@ -163,14 +149,11 @@ function buildCreatePayload(input: CreateHomeSearchInput): CreateSearchGroup {
 
   const payload: CreateSearchGroup = {
     searchType: toBackendSearchType(input.searchType as SearchType),
-    mode,
     latitude: lat,
     longitude: lng,
-    basicRadiusMiles: input.radiusMiles,
     radiusMiles: input.radiusMiles,
     locationName: input.locationName,
     country,
-    platforms: settings.map((s) => s.platform),
     settings,
     containsText: input.containsText,
     excludeText: input.excludeText,
@@ -189,6 +172,26 @@ function buildCreatePayload(input: CreateHomeSearchInput): CreateSearchGroup {
   return payload;
 }
 
+function buildUpdatePayload(input: UpdateHomeSearchInput): UpdateSearchGroup {
+  const created = buildCreatePayload(input);
+  return {
+    latitude: created.latitude,
+    longitude: created.longitude,
+    radiusMiles: created.radiusMiles,
+    locationName: created.locationName,
+    country: created.country,
+    iphoneQuery: created.iphoneQuery,
+    samsungQuery: created.samsungQuery,
+    carQuery: created.carQuery,
+    customQuery: created.customQuery,
+    containsText: created.containsText,
+    excludeText: created.excludeText,
+    titleIncluders: created.titleIncluders,
+    descriptionIncluders: created.descriptionIncluders,
+    settings: created.settings,
+  };
+}
+
 export const liveGroupSearch = {
   suggestLocations: (params: SuggestLocationsInput) =>
     requests.post<SuggestLocationsResult>(
@@ -200,7 +203,8 @@ export const liveGroupSearch = {
       "/api/group-search/match-platforms",
       params,
     ),
-  recentMaps: () => requests.get<unknown[]>("/api/group-search/recent-maps"),
+  recentMaps: () =>
+    requests.get<RecentMap[]>("/api/group-search/recent-maps"),
   list: async (): Promise<HomeSearchGroup[]> => {
     const groups = await requests.get<ApiGroupSearch[]>("/api/group-search");
     return groups.map(mapApiGroupToHome);
@@ -220,12 +224,9 @@ export const liveGroupSearch = {
     id: string,
     input: UpdateHomeSearchInput,
   ): Promise<HomeSearchGroup> => {
-    const body: UpdateSearchGroup = {
-      ...buildCreatePayload(input),
-    };
     const updated = await requests.put<ApiGroupSearch>(
       `/api/group-search/${id}`,
-      body,
+      buildUpdatePayload(input),
     );
     return mapApiGroupToHome(updated);
   },

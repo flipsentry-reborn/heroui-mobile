@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetScrollView, BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import type { JSX } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import {
   BottomSheet,
   Button,
@@ -14,13 +14,14 @@ import {
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
+import agent from "@/api/agent";
 import {
   SHEET_BACKGROUND_CLASS_NAME,
   SHEET_CONTENT_CLASS_NAME,
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import { MOCK_CAR_MAKES } from "@/mocks/data/car";
+import type { CarMake } from "@/models/car-make";
 
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
 
@@ -86,68 +87,106 @@ function CarMakesSheetContent({
   const { onOpenChange } = useBottomSheet();
   const [muted, foreground] = useThemeColor(["muted", "foreground"]);
   const [query, setQuery] = useState("");
+  const [makes, setMakes] = useState<CarMake[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const snapPoints = useMemo(() => ["90%"], []);
   const dismiss = () => onOpenChange(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await agent.CarMakes.list();
+        if (cancelled) return;
+        setMakes(data);
+      } catch {
+        if (cancelled) return;
+        setError("Failed to load car makes.");
+        setMakes([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const makeNames = useMemo(() => makes.map((make) => make.make), [makes]);
 
   const selectedSet = useMemo(
     () => new Set(selection.selectedIds),
     [selection.selectedIds],
   );
+
   const filteredMakes = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (q === "") return MOCK_CAR_MAKES;
-    return MOCK_CAR_MAKES.filter((make) =>
-      make.label.toLowerCase().includes(q),
-    );
-  }, [query]);
-
-  const allSpecificSelected =
-    !selection.anyMake &&
-    selection.selectedIds.length === MOCK_CAR_MAKES.length;
+    if (q === "") return makes;
+    return makes.filter((make) => make.make.toLowerCase().includes(q));
+  }, [makes, query]);
 
   const selectAny = () => {
     onSelectionChange({ anyMake: true, selectedIds: [] });
   };
 
-  const toggleMake = (id: string) => {
+  const clearAll = () => {
+    onSelectionChange({ anyMake: false, selectedIds: [] });
+  };
+
+  /** List row: tap All makes on → anyMake; tap again → clear everything. */
+  const toggleAllMakesRow = () => {
+    if (makeNames.length === 0) return;
     if (selection.anyMake) {
-      onSelectionChange({ anyMake: false, selectedIds: [id] });
+      clearAll();
       return;
     }
-    if (selectedSet.has(id)) {
-      const nextIds = selection.selectedIds.filter((item) => item !== id);
-      if (nextIds.length === 0) {
-        onSelectionChange({ anyMake: true, selectedIds: [] });
-        return;
-      }
+    selectAny();
+  };
+
+  /** Header: Select all → All makes; Clear → nothing selected. */
+  const handleHeaderSelectAll = () => {
+    if (makeNames.length === 0) return;
+    if (selection.anyMake || selection.selectedIds.length > 0) {
+      clearAll();
+      return;
+    }
+    selectAny();
+  };
+
+  const toggleMake = (makeName: string) => {
+    if (selection.anyMake) return;
+
+    if (selectedSet.has(makeName)) {
+      const nextIds = selection.selectedIds.filter((item) => item !== makeName);
       onSelectionChange({ anyMake: false, selectedIds: nextIds });
       return;
     }
     onSelectionChange({
       anyMake: false,
-      selectedIds: [...selection.selectedIds, id],
-    });
-  };
-
-  const handleSelectAll = () => {
-    if (allSpecificSelected) {
-      selectAny();
-      return;
-    }
-    onSelectionChange({
-      anyMake: false,
-      selectedIds: MOCK_CAR_MAKES.map((make) => make.id),
+      selectedIds: [...selection.selectedIds, makeName],
     });
   };
 
   const handleSave = () => {
-    if (selection.anyMake || selection.selectedIds.length === 0) {
+    if (selection.anyMake) {
       onPersist({ anyMake: true, selectedIds: [] });
+    } else if (selection.selectedIds.length === 0) {
+      return;
     } else {
       onPersist({ anyMake: false, selectedIds: selection.selectedIds });
     }
     dismiss();
   };
+
+  const individualsLocked = selection.anyMake;
+  const canSave =
+    !loading &&
+    error == null &&
+    (selection.anyMake || selection.selectedIds.length > 0);
 
   return (
     <BottomSheet.Content
@@ -171,14 +210,26 @@ function CarMakesSheetContent({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={
-              allSpecificSelected ? "Clear make selection" : "Select all makes"
+              selection.anyMake || selection.selectedIds.length > 0
+                ? "Clear all makes"
+                : "Select all makes"
             }
-            onPress={handleSelectAll}
+            disabled={loading || makeNames.length === 0}
+            onPress={handleHeaderSelectAll}
             className="min-w-16 items-end py-1"
             hitSlop={8}
           >
-            <Typography type="body-sm" className="text-sky-400">
-              {allSpecificSelected ? "Clear" : "Select all"}
+            <Typography
+              type="body-sm"
+              className={
+                loading || makeNames.length === 0
+                  ? "text-muted"
+                  : "text-sky-400"
+              }
+            >
+              {selection.anyMake || selection.selectedIds.length > 0
+                ? "Clear"
+                : "Select all"}
             </Typography>
           </Pressable>
         </View>
@@ -189,48 +240,75 @@ function CarMakesSheetContent({
           className="flex-1"
           contentContainerClassName="gap-3 px-3 pb-4 pt-3"
         >
-          <ListGroup className="overflow-hidden rounded-3xl p-0">
-            <View className="px-4 pb-2 pt-3">
-              <BottomSheetTextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Search makes"
-                placeholderTextColor={muted}
-                autoCorrect={false}
-                autoCapitalize="none"
-                style={{
-                  height: 40,
-                  color: foreground,
-                  fontSize: 15,
-                }}
-              />
+          {loading ? (
+            <View className="items-center gap-3 py-16">
+              <ActivityIndicator />
+              <Typography type="body-sm" className="text-muted">
+                Loading car makes…
+              </Typography>
             </View>
-            <Separator className="mx-4 bg-muted/40" />
-
-            <MakeRow
-              label="All makes"
-              selected={selection.anyMake || selection.selectedIds.length === 0}
-              onToggle={selectAny}
-            />
-            <Separator className="mx-4 bg-muted/40" />
-
-            {filteredMakes.map((make, index) => (
-              <View key={make.id}>
-                <MakeRow
-                  label={make.label}
-                  selected={!selection.anyMake && selectedSet.has(make.id)}
-                  onToggle={() => toggleMake(make.id)}
+          ) : error != null ? (
+            <Typography type="body-sm" className="px-2 py-8 text-center text-danger">
+              {error}
+            </Typography>
+          ) : (
+            <ListGroup className="overflow-hidden rounded-3xl p-0">
+              <View className="px-4 pb-2 pt-3">
+                <BottomSheetTextInput
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Search makes"
+                  placeholderTextColor={muted}
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                  editable={!individualsLocked}
+                  style={{
+                    height: 40,
+                    color: foreground,
+                    fontSize: 15,
+                    opacity: individualsLocked ? 0.4 : 1,
+                  }}
                 />
-                {index < filteredMakes.length - 1 ? (
-                  <Separator className="mx-4 bg-muted/40" />
-                ) : null}
               </View>
-            ))}
-          </ListGroup>
+              <Separator className="mx-4 bg-muted/40" />
 
-          {filteredMakes.length === 0 ? (
+              <MakeRow
+                label="All makes"
+                selected={selection.anyMake}
+                onToggle={toggleAllMakesRow}
+              />
+              <Separator className="mx-4 bg-muted/40" />
+
+              {filteredMakes.map((make, index) => (
+                <View key={make.make}>
+                  <MakeRow
+                    label={make.make}
+                    selected={
+                      selection.anyMake || selectedSet.has(make.make)
+                    }
+                    disabled={individualsLocked}
+                    onToggle={() => toggleMake(make.make)}
+                  />
+                  {index < filteredMakes.length - 1 ? (
+                    <Separator className="mx-4 bg-muted/40" />
+                  ) : null}
+                </View>
+              ))}
+            </ListGroup>
+          )}
+
+          {!loading && error == null && filteredMakes.length === 0 ? (
             <Typography type="body-xs" className="px-1 text-muted">
               No makes match “{query.trim()}”.
+            </Typography>
+          ) : null}
+
+          {!loading &&
+          error == null &&
+          !selection.anyMake &&
+          selection.selectedIds.length === 0 ? (
+            <Typography type="body-xs" className="px-1 text-muted">
+              Select at least one make, or choose All makes.
             </Typography>
           ) : null}
         </StyledBottomSheetScrollView>
@@ -246,6 +324,7 @@ function CarMakesSheetContent({
           <Button
             variant="primary"
             className="min-h-12 flex-1 rounded-2xl"
+            isDisabled={!canSave}
             onPress={handleSave}
           >
             <Button.Label>Save</Button.Label>

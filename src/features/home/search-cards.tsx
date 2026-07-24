@@ -335,30 +335,6 @@ function SearchCardActionsMenu({
       <Menu.Portal>
         <Menu.Overlay className="bg-backdrop" />
         <Menu.Content presentation="popover" width={260} placement="top">
-          <Menu.Group>
-            <Menu.Item id="edit" onPress={() => onEdit?.(group)}>
-              <StyledIonicons
-                name="create-outline"
-                size={18}
-                className="text-foreground"
-              />
-              <Menu.ItemTitle>Edit</Menu.ItemTitle>
-            </Menu.Item>
-            <Menu.Item
-              id="toggle"
-              onPress={() => onToggle?.(group, isPaused)}
-            >
-              <StyledIonicons
-                name={isPaused ? "play-outline" : "pause-outline"}
-                size={18}
-                className={isPaused ? "text-success" : "text-warning"}
-              />
-              <Menu.ItemTitle className={isPaused ? "text-success" : "text-warning"}>
-                {isPaused ? "Start" : "Pause"}
-              </Menu.ItemTitle>
-            </Menu.Item>
-          </Menu.Group>
-
           <SubMenu>
             <SubMenu.Trigger textValue="Filters">
               <StyledIonicons
@@ -428,14 +404,41 @@ function SearchCardActionsMenu({
 
           <Separator className="mx-2 my-1 opacity-75" />
 
-          <Menu.Item variant="danger" onPress={() => onDelete?.(group)}>
-            <StyledIonicons
-              name="trash-outline"
-              size={18}
-              className="text-danger"
-            />
-            <Menu.ItemTitle>Delete</Menu.ItemTitle>
-          </Menu.Item>
+          <Menu.Group>
+            <Menu.Item id="edit" onPress={() => onEdit?.(group)}>
+              <StyledIonicons
+                name="create-outline"
+                size={18}
+                className="text-foreground"
+              />
+              <Menu.ItemTitle>Edit</Menu.ItemTitle>
+            </Menu.Item>
+            <Menu.Item
+              id="toggle"
+              onPress={() => onToggle?.(group, isPaused)}
+            >
+              <StyledIonicons
+                name={isPaused ? "play-outline" : "pause-outline"}
+                size={18}
+                className={isPaused ? "text-success" : "text-warning"}
+              />
+              <Menu.ItemTitle className={isPaused ? "text-success" : "text-warning"}>
+                {isPaused ? "Start" : "Pause"}
+              </Menu.ItemTitle>
+            </Menu.Item>
+            <Menu.Item
+              id="delete"
+              variant="danger"
+              onPress={() => onDelete?.(group)}
+            >
+              <StyledIonicons
+                name="trash-outline"
+                size={18}
+                className="text-danger"
+              />
+              <Menu.ItemTitle>Delete</Menu.ItemTitle>
+            </Menu.Item>
+          </Menu.Group>
         </Menu.Content>
       </Menu.Portal>
     </Menu>

@@ -387,6 +387,83 @@ export function availableSpeedsForLocation(input: {
   });
 }
 
+/**
+ * Greedy auto-select: walk locations top→bottom (center first), assign the
+ * best (lowest) interval that still fits remaining slots. Non-Facebook
+ * platforms only get the center location.
+ */
+export function autoAssignLocationSpeeds(input: {
+  platforms: Iterable<string>;
+  locations: Array<{ locationId: string; locationName: string }>;
+  centerId: string | null;
+  intervalOptions: IntervalOption[];
+}): Record<string, Exclude<DraftRunSpeed, "none">> {
+  const platforms = [...input.platforms];
+  if (platforms.length === 0 || input.locations.length === 0) return {};
+
+  const hasFacebook = platforms.some((p) => isFacebook(p));
+  const ordered = (() => {
+    if (input.centerId == null) return input.locations;
+    const center = input.locations.find(
+      (row) => row.locationId === input.centerId,
+    );
+    const rest = input.locations.filter(
+      (row) => row.locationId !== input.centerId,
+    );
+    return center != null ? [center, ...rest] : input.locations;
+  })();
+
+  const targets = hasFacebook
+    ? ordered
+    : ordered.slice(0, 1);
+
+  const candidateSpeeds = filterSpeedsForTier(input.intervalOptions).filter(
+    (speed): speed is Exclude<DraftRunSpeed, "none"> => speed !== "none",
+  );
+
+  const working: DraftLocationSpeed[] = targets.map((row) => ({
+    locationId: row.locationId,
+    locationName: row.locationName,
+    speed: "none",
+  }));
+  const assigned: Record<string, Exclude<DraftRunSpeed, "none">> = {};
+
+  for (const location of targets) {
+    let nextSpeed: Exclude<DraftRunSpeed, "none"> | null = null;
+    for (const speed of candidateSpeeds) {
+      const check = canAssignLocationSpeed({
+        platforms,
+        locationSpeeds: working,
+        centerId: input.centerId,
+        locationId: location.locationId,
+        nextSpeed: speed,
+        intervalOptions: input.intervalOptions,
+      });
+      if (check.ok) {
+        nextSpeed = speed;
+        break;
+      }
+    }
+    if (nextSpeed == null) break;
+
+    const index = working.findIndex(
+      (row) => row.locationId === location.locationId,
+    );
+    if (index >= 0) {
+      working[index] = { ...working[index], speed: nextSpeed };
+    } else {
+      working.push({
+        locationId: location.locationId,
+        locationName: location.locationName,
+        speed: nextSpeed,
+      });
+    }
+    assigned[location.locationId] = nextSpeed;
+  }
+
+  return assigned;
+}
+
 export function validateLocationDraft(input: {
   platforms: Iterable<string>;
   locationSpeeds: DraftLocationSpeed[];

@@ -376,12 +376,11 @@ const Subscription = USE_MOCK
 
 const Platform = USE_MOCK
   ? {
-      getAvailable: async (_country: string) => [
-        "facebook",
-        "offerUp",
-        "craigslist",
-        "kijiji",
-      ],
+      getAvailable: async (country: string) => {
+        const code = country.trim().toUpperCase();
+        if (code === "CA") return ["facebook", "kijiji"];
+        return ["facebook", "offerup", "craigslist"];
+      },
     }
   : livePlatform;
 

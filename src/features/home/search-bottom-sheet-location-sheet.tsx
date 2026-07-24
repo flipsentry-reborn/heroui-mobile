@@ -1,7 +1,7 @@
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import {
   BottomSheet,
@@ -12,6 +12,7 @@ import {
 import { withUniwind } from "uniwind";
 
 import {
+  autoAssignLocationSpeeds,
   availableSpeedsForLocation,
   canAssignLocationSpeed,
   type DraftLocationSpeed,
@@ -37,6 +38,12 @@ import {
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
 import agent from "@/api/agent";
+import {
+  defaultEnabledPlatforms,
+  inferCountryCode,
+  normalizeAvailablePlatforms,
+  syncEnabledWithAvailable,
+} from "@/lib/location-platforms";
 import {
   enrichMainFromOriginal,
   suggestedLocationToResult,
@@ -310,9 +317,20 @@ export const SearchBottomSheetLocationSheet = observer(
     const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
     const [showValidation, setShowValidation] = useState(false);
     const [platformsSheetOpen, setPlatformsSheetOpen] = useState(false);
+    const [availablePlatforms, setAvailablePlatforms] = useState<
+      LocationPlatform[]
+    >([]);
+    const [autoAssignKey, setAutoAssignKey] = useState(0);
+    /** When true, skip greedy auto-assign (edit open / user edited speeds). */
+    const skipAutoAssignRef = useRef(false);
 
     const intervalOptions =
       intervalOptionsProp ?? subscriptionStore.intervalOptions;
+
+    const requestAutoAssign = () => {
+      skipAutoAssignRef.current = false;
+      setAutoAssignKey((value) => value + 1);
+    };
 
     useEffect(() => {
       if (!isOpen) {
@@ -333,6 +351,10 @@ export const SearchBottomSheetLocationSheet = observer(
       setPredictions([]);
       setRowErrors({});
       setShowValidation(false);
+      setAvailablePlatforms([]);
+      skipAutoAssignRef.current = Object.values(next.otherSpeeds ?? {}).some(
+        isLocationSpeedSelected,
+      );
     }, [isOpen]);
 
     useEffect(() => {
@@ -391,20 +413,22 @@ export const SearchBottomSheetLocationSheet = observer(
                 : enrichMainFromOriginal(prev, result.originalLocation),
             );
           }
-          setOtherSpeeds((prev) => {
-            const next: Record<string, LocationRunSpeed> = {};
-            if (prev[main.id] != null) next[main.id] = prev[main.id];
-            for (const place of results) {
-              if (prev[place.id] != null) next[place.id] = prev[place.id];
-            }
-            // Keep selected speeds for edit-prefilled places outside nearby.
-            for (const [id, speed] of Object.entries(prev)) {
-              if (isLocationSpeedSelected(speed) && next[id] == null) {
-                next[id] = speed;
+          if (skipAutoAssignRef.current) {
+            setOtherSpeeds((prev) => {
+              const next: Record<string, LocationRunSpeed> = {};
+              if (prev[main.id] != null) next[main.id] = prev[main.id];
+              for (const place of results) {
+                if (prev[place.id] != null) next[place.id] = prev[place.id];
               }
-            }
-            return next;
-          });
+              // Keep selected speeds for edit-prefilled places outside nearby.
+              for (const [id, speed] of Object.entries(prev)) {
+                if (isLocationSpeedSelected(speed) && next[id] == null) {
+                  next[id] = speed;
+                }
+              }
+              return next;
+            });
+          }
           setNearbyLoading(false);
         })
         .catch(() => {
@@ -422,6 +446,75 @@ export const SearchBottomSheetLocationSheet = observer(
       main?.longitude,
       committedRadiusMiles,
       isOpen,
+    ]);
+
+    // Fetch platform availability for the selected location's country.
+    useEffect(() => {
+      if (!isOpen || main == null) return;
+      if (main.latitude === 0 && main.longitude === 0) return;
+
+      const country = inferCountryCode({
+        countryCode: main.countryCode,
+        displayName: main.displayName,
+        name: main.name,
+      });
+
+      let cancelled = false;
+      void agent.Platform.getAvailable(country)
+        .then((list) => {
+          if (cancelled) return;
+          const available = normalizeAvailablePlatforms(list);
+          setAvailablePlatforms((prev) =>
+            prev.length === available.length &&
+            prev.every((platform, index) => platform === available[index])
+              ? prev
+              : available,
+          );
+          setPlatforms((prev) => {
+            const next = skipAutoAssignRef.current
+              ? syncEnabledWithAvailable(prev, available)
+              : defaultEnabledPlatforms(available);
+            return prev.length === next.length &&
+              prev.every((platform, index) => platform === next[index])
+              ? prev
+              : next;
+          });
+        })
+        .catch((error) => {
+          console.warn(
+            "[LocationSheet] Failed to fetch available platforms:",
+            error,
+          );
+          if (cancelled) return;
+          const fallback = normalizeAvailablePlatforms(["facebook"]);
+          setAvailablePlatforms((prev) =>
+            prev.length === fallback.length &&
+            prev.every((platform, index) => platform === fallback[index])
+              ? prev
+              : fallback,
+          );
+          setPlatforms((prev) => {
+            const next = skipAutoAssignRef.current
+              ? syncEnabledWithAvailable(prev, fallback)
+              : defaultEnabledPlatforms(fallback);
+            return prev.length === next.length &&
+              prev.every((platform, index) => platform === next[index])
+              ? prev
+              : next;
+          });
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    }, [
+      isOpen,
+      main?.id,
+      main?.countryCode,
+      main?.displayName,
+      main?.name,
+      main?.latitude,
+      main?.longitude,
     ]);
 
     const placesById = useMemo(() => {
@@ -452,6 +545,50 @@ export const SearchBottomSheetLocationSheet = observer(
       const rest = [...byId.values()].filter((place) => place.id !== main.id);
       return [main, ...rest];
     }, [main, nearby, otherSpeeds, placesById]);
+
+    // After suggest + platforms settle, greedily assign best intervals top→bottom.
+    useEffect(() => {
+      if (!isOpen || main == null || nearbyLoading) return;
+      if (skipAutoAssignRef.current) return;
+      if (platforms.length === 0) return;
+
+      const locations = [
+        { locationId: main.id, locationName: main.name },
+        ...nearby
+          .filter((place) => place.id !== main.id)
+          .map((place) => ({
+            locationId: place.id,
+            locationName: place.name,
+          })),
+      ];
+      const assigned = autoAssignLocationSpeeds({
+        platforms,
+        locations,
+        centerId: main.id,
+        intervalOptions,
+      });
+      setOtherSpeeds((prev) => {
+        const nextIds = Object.keys(assigned);
+        const prevIds = Object.keys(prev);
+        if (
+          nextIds.length === prevIds.length &&
+          nextIds.every((id) => prev[id] === assigned[id])
+        ) {
+          return prev;
+        }
+        return assigned;
+      });
+      setRowErrors({});
+    }, [
+      autoAssignKey,
+      isOpen,
+      main?.id,
+      main?.name,
+      nearbyLoading,
+      nearby,
+      platforms,
+      intervalOptions,
+    ]);
 
     const draftSpeeds = useMemo(
       () => toDraftSpeeds(multiPlaces, otherSpeeds),
@@ -514,6 +651,7 @@ export const SearchBottomSheetLocationSheet = observer(
         setMain(null);
         setOtherSpeeds({});
         setRowErrors({});
+        setAvailablePlatforms([]);
       }
     };
 
@@ -524,6 +662,7 @@ export const SearchBottomSheetLocationSheet = observer(
       setRowErrors({});
       setShowValidation(false);
       setQuery(place.displayName);
+      requestAutoAssign();
 
       // Live Google predictions need Place Details before we have coords.
       if (
@@ -549,28 +688,11 @@ export const SearchBottomSheetLocationSheet = observer(
       setPlatforms(next);
       setShowValidation(true);
       setRowErrors({});
-      // Non-FB only: keep at most one selected location (prefer center).
-      const hasFacebook = next.includes("facebook");
-      if (!hasFacebook && next.length > 0) {
-        setOtherSpeeds((prev) => {
-          const selectedIds = Object.entries(prev)
-            .filter(([, speed]) => isLocationSpeedSelected(speed))
-            .map(([id]) => id);
-          if (selectedIds.length <= 1) return prev;
-          const keepId =
-            main != null && selectedIds.includes(main.id)
-              ? main.id
-              : selectedIds[0];
-          const cleaned: Record<string, LocationRunSpeed> = {};
-          if (keepId != null && prev[keepId] != null) {
-            cleaned[keepId] = prev[keepId];
-          }
-          return cleaned;
-        });
-      }
+      requestAutoAssign();
     };
 
     const handleOtherSpeedChange = (id: string, speed: LocationRunSpeed) => {
+      skipAutoAssignRef.current = true;
       if (locationsDisabled) {
         setRowErrors({ [id]: "Select at least one platform." });
         return;
@@ -698,6 +820,7 @@ export const SearchBottomSheetLocationSheet = observer(
             onRadiusChangeEnd={(miles) => {
               setRadiusMiles(miles);
               setCommittedRadiusMiles(miles);
+              requestAutoAssign();
             }}
             onPlatformsPress={() => setPlatformsSheetOpen(true)}
             onOtherSpeedChange={handleOtherSpeedChange}
@@ -708,6 +831,7 @@ export const SearchBottomSheetLocationSheet = observer(
           isOpen={platformsSheetOpen}
           onOpenChange={setPlatformsSheetOpen}
           platforms={platforms}
+          availablePlatforms={availablePlatforms}
           onPlatformsChange={handlePlatformsChange}
         />
       </>

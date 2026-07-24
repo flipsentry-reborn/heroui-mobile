@@ -97,14 +97,113 @@ export async function mockSuggestLocations(
 }
 
 export async function mockMatchPlatforms(
-  _params: MatchPlatformsInput,
+  params: MatchPlatformsInput,
 ): Promise<MatchPlatformsResult> {
   await delay(80);
+
+  const enabledPlatforms = [
+    ...new Set(
+      params.platforms
+        .map((platform) => platform.trim().toLowerCase())
+        .filter((platform) => platform.length > 0),
+    ),
+  ];
+  const facebookSelected = enabledPlatforms.includes("facebook");
+  const intervalPool = [...params.settings]
+    .sort((left, right) => left.interval - right.interval)
+    .flatMap((setting) =>
+      Array.from({ length: Math.max(0, setting.value) }, () => setting.interval),
+    );
+
+  const original = params.originalLocation;
+  let selectedAdditional = (params.selectedLocations ?? []).filter(
+    (location) =>
+      location.geoNameId !== original.geoNameId &&
+      !(
+        Math.abs(location.latitude - original.latitude) < 0.002 &&
+        Math.abs(location.longitude - original.longitude) < 0.002
+      ),
+  );
+
+  const slotsForOriginal = params.isEditing ? 0 : enabledPlatforms.length;
+  if (facebookSelected && selectedAdditional.length === 0) {
+    const candidates = (params.candidateLocations ?? []).filter(
+      (location) =>
+        location.geoNameId !== original.geoNameId &&
+        !(
+          Math.abs(location.latitude - original.latitude) < 0.002 &&
+          Math.abs(location.longitude - original.longitude) < 0.002
+        ),
+    );
+    const maxAdditional =
+      intervalPool.length > 0
+        ? Math.max(0, intervalPool.length - slotsForOriginal)
+        : candidates.length;
+    selectedAdditional = candidates.slice(0, maxAdditional);
+  }
+
+  if (facebookSelected && intervalPool.length > 0) {
+    const remainingCapacity = Math.max(0, intervalPool.length - slotsForOriginal);
+    selectedAdditional = selectedAdditional.slice(0, remainingCapacity);
+  }
+
+  let poolIdx = 0;
+  const originalIntervals = new Map<string, number>();
+  for (const platform of enabledPlatforms) {
+    originalIntervals.set(
+      platform,
+      poolIdx < intervalPool.length ? intervalPool[poolIdx++]! : 0,
+    );
+  }
+
+  const additionalIntervals = selectedAdditional.map(() =>
+    poolIdx < intervalPool.length
+      ? intervalPool[poolIdx++]!
+      : intervalPool.length > 0
+        ? intervalPool[intervalPool.length - 1]!
+        : 0,
+  );
+
+  const totalSlotsNeeded =
+    slotsForOriginal + (facebookSelected ? selectedAdditional.length : 0);
+  const platforms: MatchPlatformsResult["platforms"] = {};
+
+  for (const platform of enabledPlatforms) {
+    const locations = [];
+    if (!params.isEditing) {
+      locations.push({
+        geoNameId: original.geoNameId,
+        name: original.name,
+        countryCode: original.countryCode ?? "",
+        latitude: original.latitude,
+        longitude: original.longitude,
+        distanceMiles: 0,
+        isCenter: true,
+        intervalSeconds: originalIntervals.get(platform) ?? 0,
+      });
+    }
+    if (platform === "facebook") {
+      selectedAdditional.forEach((location, index) => {
+        locations.push({
+          geoNameId: location.geoNameId,
+          name: location.name,
+          countryCode: location.countryCode ?? "",
+          latitude: location.latitude,
+          longitude: location.longitude,
+          distanceMiles: 0,
+          isCenter: false,
+          intervalSeconds: additionalIntervals[index] ?? 0,
+        });
+      });
+    }
+    platforms[platform] = { platform, locations };
+  }
+
   return {
-    totalSlotsUsed: 0,
-    totalSlotsAvailable: 0,
-    remainingSlots: 0,
-    platforms: {},
+    totalSlotsUsed: totalSlotsNeeded,
+    totalSlotsAvailable: intervalPool.length,
+    remainingSlots: Math.max(0, intervalPool.length - totalSlotsNeeded),
+    platforms,
   };
 }
 

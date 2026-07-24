@@ -118,7 +118,10 @@ export function SearchBottomSheetCriteria({
   const isCustom = searchType === "custom";
   const isIphone = searchType === "iphone";
   const isCar = searchType === "car";
-  const priceLabel = formatPriceRangeLabel(price.min, price.max);
+  const priceLabel = formatPriceRangeLabel(
+    formatGroupedDigits(price.min),
+    formatGroupedDigits(price.max),
+  );
   const hasPriceFilter = price.min !== "" || price.max !== "";
   const yearLabel = formatPriceRangeLabel(year.min, year.max);
   const hasYearFilter = year.min !== "" || year.max !== "";

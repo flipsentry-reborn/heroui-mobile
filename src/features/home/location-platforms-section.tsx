@@ -31,10 +31,11 @@ function togglePlatform(
   platforms: LocationPlatform[],
   platform: LocationPlatform,
   selected: boolean,
+  catalog: LocationPlatform[],
 ): LocationPlatform[] {
   if (selected) {
     if (platforms.includes(platform)) return platforms;
-    return SEARCH_PLATFORMS.map((item) => item.id).filter(
+    return catalog.filter(
       (id) => platforms.includes(id) || id === platform,
     );
   }
@@ -43,14 +44,22 @@ function togglePlatform(
 
 function PlatformsSheetContent({
   platforms,
+  availablePlatforms,
   onPlatformsChange,
 }: {
   platforms: LocationPlatform[];
+  availablePlatforms: LocationPlatform[];
   onPlatformsChange: (next: LocationPlatform[]) => void;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const [draft, setDraft] = useState(platforms);
   const dismiss = () => onOpenChange(false);
+  const catalog =
+    availablePlatforms.length > 0
+      ? SEARCH_PLATFORMS.filter((item) =>
+          availablePlatforms.includes(item.id),
+        )
+      : SEARCH_PLATFORMS;
 
   useEffect(() => {
     setDraft(platforms);
@@ -73,16 +82,23 @@ function PlatformsSheetContent({
         </View>
 
         <View className="mx-3 mb-2 overflow-hidden rounded-3xl bg-surface shadow-surface">
-          {SEARCH_PLATFORMS.map((platform, index) => {
+          {catalog.map((platform, index) => {
             const isSelected = draft.includes(platform.id);
-            const isLast = index === SEARCH_PLATFORMS.length - 1;
+            const isLast = index === catalog.length - 1;
 
             return (
               <View key={platform.id}>
                 <ControlField
                   isSelected={isSelected}
                   onSelectedChange={(next) =>
-                    setDraft(togglePlatform(draft, platform.id, next))
+                    setDraft(
+                      togglePlatform(
+                        draft,
+                        platform.id,
+                        next,
+                        catalog.map((item) => item.id),
+                      ),
+                    )
                   }
                   className="items-center gap-3 px-4 py-3.5"
                 >
@@ -175,6 +191,8 @@ interface LocationPlatformsSheetProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   platforms: LocationPlatform[];
+  /** When set, only these platforms are listed (from /api/platform/available). */
+  availablePlatforms?: LocationPlatform[];
   onPlatformsChange: (next: LocationPlatform[]) => void;
 }
 
@@ -183,12 +201,14 @@ export function LocationPlatformsSheet({
   isOpen,
   onOpenChange,
   platforms,
+  availablePlatforms = [],
   onPlatformsChange,
 }: LocationPlatformsSheetProps): JSX.Element | null {
   return (
     <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
       <PlatformsSheetContent
         platforms={platforms}
+        availablePlatforms={availablePlatforms}
         onPlatformsChange={onPlatformsChange}
       />
     </SheetShell>

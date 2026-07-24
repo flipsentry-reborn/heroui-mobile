@@ -452,7 +452,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
   const [locationOpen, setLocationOpen] = useState(false);
   const [iphoneModelsOpen, setIphoneModelsOpen] = useState(false);
   const [carMakesOpen, setCarMakesOpen] = useState(false);
-  const [minPrice, setMinPrice] = useState("");
+  const [minPrice, setMinPrice] = useState("300");
   const [maxPrice, setMaxPrice] = useState("");
   const [minYear, setMinYear] = useState("");
   const [maxYear, setMaxYear] = useState("");
@@ -534,6 +534,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     if (editingGroup == null) {
       // New Search always starts with an empty location (no fixture prefill).
       resetLocationDraft();
+      setMinPrice("300");
       setLocationTick((value) => value + 1);
       onLocationLabelChange?.(formatLocationLabel(getLocationDraft()));
       return;
@@ -836,6 +837,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
         max={maxPrice}
         onMinChange={setMinPrice}
         onMaxChange={setMaxPrice}
+        groupThousands
       />
 
       <SearchBottomSheetPriceSheet

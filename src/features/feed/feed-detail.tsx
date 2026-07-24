@@ -34,6 +34,7 @@ import {
 import { FeedDetailStickyHeader } from "@/features/feed/feed-detail-sticky-header";
 import { FeedDetailBasicCalculation } from "@/features/feed/feed-detail-basic-calculation";
 import { FeedDetailTrimEstimates } from "@/features/feed/feed-detail-trim-estimates";
+import { FeedDetailWarnings } from "@/features/feed/feed-detail-warnings";
 import {
   formatSoldPendingTitlePrefix,
   SOLD_STATUS_COLOR,
@@ -43,6 +44,7 @@ import agent from "@/api/agent";
 import { debugLog } from "@/lib/debug-log";
 import { openListing } from "@/lib/marketplace-links";
 import {
+  collectFeedValuationWarningItems,
   getOrderedStatusBadges,
   isCarListing,
   resolveDisplayValuation,
@@ -104,6 +106,7 @@ export function FeedDetail({
   const scrollY = useSharedValue(0);
   const statusBadges = getOrderedStatusBadges(item);
   const valuation = resolveDisplayValuation(item);
+  const valuationWarnings = collectFeedValuationWarningItems(item);
   const images = galleryUrls(item);
   const description = item.description || "No description provided.";
   const longDesc = description.length > DESC_COLLAPSE_LENGTH;
@@ -295,7 +298,7 @@ export function FeedDetail({
                   <AiEstimationIcon size={22} />
                   <Typography
                     type="body-xs"
-                    className="min-w-0 shrink text-[16px] text-muted"
+                    className="min-w-0 shrink text-[13px] text-muted"
                     numberOfLines={1}
                   >
                     Avg. {formatPrice(valuation.fairPrice, item.currencySymbol)}
@@ -319,25 +322,22 @@ export function FeedDetail({
                 compCount={valuation.compCount}
               />
             ) : null}
-          </View>
 
-          {item.externalValuation?.calculated ||
-          item.compValuation?.calculated ? (
-            <View className="gap-2">
-              {item.externalValuation?.calculated ? (
-                <FeedDetailTrimEstimates
-                  valuation={item.externalValuation}
-                  currencySymbol={item.currencySymbol}
-                />
-              ) : null}
-              {item.compValuation?.calculated ? (
-                <FeedDetailBasicCalculation
-                  valuation={item.compValuation}
-                  currencySymbol={item.currencySymbol}
-                />
-              ) : null}
-            </View>
-          ) : null}
+            <FeedDetailWarnings warnings={valuationWarnings} />
+
+            {item.externalValuation?.calculated ? (
+              <FeedDetailTrimEstimates
+                valuation={item.externalValuation}
+                currencySymbol={item.currencySymbol}
+              />
+            ) : null}
+            {item.compValuation?.calculated ? (
+              <FeedDetailBasicCalculation
+                valuation={item.compValuation}
+                currencySymbol={item.currencySymbol}
+              />
+            ) : null}
+          </View>
 
           <View>
             <FeedDetailMetaSection item={item} />

@@ -243,21 +243,57 @@ function sortByPriceThenName(
   });
 }
 
+/** Prefer selected, then higher matchScore, then keep first. */
+function preferOption(
+  a: ExternalVehicleOption,
+  b: ExternalVehicleOption,
+): ExternalVehicleOption {
+  if (a.isSelected && !b.isSelected) return a;
+  if (!a.isSelected && b.isSelected) return b;
+  return (a.matchScore ?? -1) >= (b.matchScore ?? -1) ? a : b;
+}
+
 /**
- * Guarantee one selected trim whenever options exist (API sometimes omits
- * isSelected until a later refresh).
+ * Drop duplicate trims (same vehicleId, or same trim label when id is missing).
+ * API catalogs sometimes emit the matched trim twice — both flagged selected.
+ */
+function dedupeOptions(
+  options: ExternalVehicleOption[],
+): ExternalVehicleOption[] {
+  const byKey = new Map<string, ExternalVehicleOption>();
+  for (const option of options) {
+    const id = option.vehicleId?.trim();
+    const trim = option.trim?.trim().toLowerCase() ?? "";
+    const key = id ? `id:${id}` : `trim:${trim}`;
+    if (!key || key === "trim:") continue;
+    const existing = byKey.get(key);
+    byKey.set(key, existing ? preferOption(existing, option) : option);
+  }
+  return [...byKey.values()];
+}
+
+/**
+ * Guarantee exactly one selected trim whenever options exist (API sometimes
+ * omits isSelected, or marks duplicates selected).
  */
 function ensureSelected(
   options: ExternalVehicleOption[],
   valuation: ListingValuation,
 ): ExternalVehicleOption[] {
   if (options.length === 0) return options;
-  if (options.some((o) => o.isSelected)) return options;
 
-  const trimKey = valuation.trim?.trim().toLowerCase();
-  let pickIndex = trimKey
-    ? options.findIndex((o) => o.trim?.trim().toLowerCase() === trimKey)
-    : -1;
+  const selectedIndexes = options
+    .map((o, index) => (o.isSelected ? index : -1))
+    .filter((index) => index >= 0);
+
+  let pickIndex = selectedIndexes[0] ?? -1;
+
+  if (pickIndex < 0) {
+    const trimKey = valuation.trim?.trim().toLowerCase();
+    pickIndex = trimKey
+      ? options.findIndex((o) => o.trim?.trim().toLowerCase() === trimKey)
+      : -1;
+  }
 
   if (pickIndex < 0) {
     const target = valuation.fairPrice;
@@ -273,9 +309,10 @@ function ensureSelected(
 
   if (pickIndex < 0) pickIndex = 0;
 
-  return options.map((option, index) =>
-    index === pickIndex ? { ...option, isSelected: true } : option,
-  );
+  return options.map((option, index) => ({
+    ...option,
+    isSelected: index === pickIndex,
+  }));
 }
 
 function synthesizeOptions(valuation: ListingValuation): ExternalVehicleOption[] {
@@ -341,5 +378,8 @@ export function resolveTrimEstimates(
     options = withPricingOnly(synthesizeOptions(valuation), countryCode);
   }
 
-  return sortByPriceThenName(ensureSelected(options, valuation), countryCode);
+  return sortByPriceThenName(
+    ensureSelected(dedupeOptions(options), valuation),
+    countryCode,
+  );
 }

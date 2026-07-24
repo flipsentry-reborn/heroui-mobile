@@ -73,8 +73,9 @@ export function resolveExternalFairPrice(
     return base == null ? null : Math.round(base * (1 - US_DISCOUNT_FALLBACK) * 100) / 100;
   }
   if (code === "CA") {
-    if (median != null && max != null) return (median + max) / 2;
-    return median ?? max ?? min ?? null;
+    const base = max ?? median ?? min;
+    // Legacy fallback only — new payloads use baked `fair` (max + 3–7% markup).
+    return base == null ? null : Math.round(base * 1.05 * 100) / 100;
   }
   return median ?? min ?? max ?? null;
 }
@@ -96,6 +97,26 @@ export type VehicleTrimEstimate = ExternalVehicleOption;
 
 /** @deprecated Prefer ExternalMarketplacePrice. */
 export type MarketplacePrice = ExternalMarketplacePrice;
+
+export interface ExternalValuationNote {
+  /** year_from_listing_text | listing_mileage_implausible | mileage_from_listing_text | … */
+  type: string;
+  /** info | warning */
+  severity: string;
+  message: string;
+}
+
+export interface ExternalValuationAnalysis {
+  yearSource?: string | null;
+  yearUsed?: number;
+  mileageSource?: string | null;
+  mileageUsed?: number;
+  parsedMileageValue?: number | null;
+  parsedMileageUnit?: string | null;
+  zipcodeUsed?: string | null;
+  zipcodeSource?: string | null;
+  notes?: ExternalValuationNote[] | null;
+}
 
 export interface ListingValuation {
   calculated: boolean;
@@ -124,6 +145,8 @@ export interface ListingValuation {
   countryCode?: string | null;
   /** Other trim/option prices from external (book) valuation */
   vehicleOptions?: ExternalVehicleOption[] | null;
+  /** Provenance + user-facing notes from vehicle estimation */
+  analysis?: ExternalValuationAnalysis | null;
   iphoneModel?: string;
   samsungModel?: string;
   storageGb?: number;
@@ -257,6 +280,122 @@ export function resolveDisplayValuation(
   if (source.externalValuation?.fairPrice != null) return source.externalValuation;
   if (source.compValuation?.fairPrice != null) return source.compValuation;
   return null;
+}
+
+/** Mileage from description/title/year estimate — not the structured listing field. */
+const UNCERTAIN_MILEAGE_SOURCES = new Set([
+  "title",
+  "description",
+  "estimated_from_year",
+]);
+
+export type FeedMileageDisplay = {
+  /** Miles used for display (backend stores miles). */
+  miles: number;
+  /** True when inferred (description/title/estimate) — UI should append "?". */
+  uncertain: boolean;
+  source?: string | null;
+};
+
+/**
+ * Prefer listing mileage when trusted; otherwise show valuation-used mileage
+ * with uncertain=true so the UI can append "?".
+ */
+export function resolveFeedMileageDisplay(
+  item?: FeedValuationsSource & {
+    vehicleSpecifications?: { vehicleMileage?: number } | null;
+  } | null,
+): FeedMileageDisplay | null {
+  if (!item) return null;
+
+  const listingMiles = item.vehicleSpecifications?.vehicleMileage;
+  const external = item.externalValuation;
+  const analysis = external?.analysis;
+  const source = analysis?.mileageSource ?? null;
+  const usedMiles =
+    analysis?.mileageUsed ??
+    (external?.mileage != null && external.mileage > 0 ? external.mileage : null) ??
+    (item.compValuation?.mileage != null && item.compValuation.mileage > 0
+      ? item.compValuation.mileage
+      : null);
+
+  const sourceUncertain =
+    source != null && UNCERTAIN_MILEAGE_SOURCES.has(source);
+
+  if (listingMiles != null && listingMiles > 0 && !sourceUncertain) {
+    return { miles: listingMiles, uncertain: false, source: source ?? "request" };
+  }
+
+  if (usedMiles != null && usedMiles > 0 && sourceUncertain) {
+    return { miles: usedMiles, uncertain: true, source };
+  }
+
+  if ((listingMiles == null || listingMiles <= 0) && usedMiles != null && usedMiles > 0) {
+    return {
+      miles: usedMiles,
+      uncertain: source != null ? source !== "request" : true,
+      source,
+    };
+  }
+
+  if (listingMiles != null && listingMiles > 0) {
+    return { miles: listingMiles, uncertain: sourceUncertain, source };
+  }
+
+  return null;
+}
+
+export interface FeedValuationWarning {
+  message: string;
+  /** info | warning — drives detail accordion icons. */
+  severity: "info" | "warning";
+  type?: string;
+}
+
+function normalizeWarningSeverity(severity?: string | null): "info" | "warning" {
+  return severity?.toLowerCase() === "info" ? "info" : "warning";
+}
+
+/**
+ * Deduped KBB / external valuation warnings for the detail accordion.
+ * Comp (basic calculation) warnings stay in that sheet only.
+ * Prefers analysis notes (typed severity), then leftover `warnings` strings.
+ */
+export function collectFeedValuationWarningItems(
+  source?: FeedValuationsSource | null,
+): FeedValuationWarning[] {
+  if (!source) return [];
+  const v = source.externalValuation;
+  if (!v) return [];
+
+  const seen = new Set<string>();
+  const out: FeedValuationWarning[] = [];
+
+  for (const note of v.analysis?.notes ?? []) {
+    const msg = note?.message?.trim();
+    if (!msg || seen.has(msg)) continue;
+    if (note.severity === "info" && !/mileage|year|trim|zip/i.test(msg)) continue;
+    seen.add(msg);
+    out.push({
+      message: msg,
+      severity: normalizeWarningSeverity(note.severity),
+      type: note.type,
+    });
+  }
+  for (const w of v.warnings ?? []) {
+    const msg = w?.trim();
+    if (!msg || seen.has(msg)) continue;
+    seen.add(msg);
+    out.push({ message: msg, severity: "warning" });
+  }
+  return out;
+}
+
+/** Deduped KBB / external valuation warning messages. */
+export function collectFeedValuationWarnings(
+  source?: FeedValuationsSource | null,
+): string[] {
+  return collectFeedValuationWarningItems(source).map((w) => w.message);
 }
 
 export type ValuationTier = "greatDeal" | "goodValue" | "fairPrice" | "overpriced";

@@ -2,7 +2,10 @@ import type { JSX, ReactNode } from "react";
 import { View } from "react-native";
 import { Typography } from "heroui-native";
 
+import { formatDistance, formatOdometer } from "@/lib/distance-utils";
+import { getDistanceUnitSync } from "@/mocks/services/settings";
 import type { FeedItem } from "@/models/feed";
+import { resolveFeedMileageDisplay } from "@/models/feed";
 
 function formatTimeAgo(dateString: string): string {
   const diffMs = Math.max(0, Date.now() - new Date(dateString).getTime());
@@ -67,19 +70,24 @@ interface FeedDetailMetaSectionProps {
 
 export function FeedDetailMetaSection({ item }: FeedDetailMetaSectionProps): JSX.Element | null {
   const rows: MetaRow[] = [];
-
-  if (item.vehicleSpecifications?.vehicleMileage != null) {
-    rows.push({
-      label: "Mileage",
-      value: `${item.vehicleSpecifications.vehicleMileage.toLocaleString()} mi`,
-    });
-  }
+  const distanceUnit = getDistanceUnitSync();
+  const mileageDisplay = resolveFeedMileageDisplay(item);
 
   if (item.foundInSeconds != null) {
     rows.push({
       label: "Found in",
       value: formatFoundInSeconds(item.foundInSeconds),
       valueClassName: "text-success",
+    });
+  }
+
+  if (mileageDisplay != null) {
+    rows.push({
+      label: "Odometer",
+      value: `${formatOdometer(mileageDisplay.miles, distanceUnit)}${
+        mileageDisplay.uncertain ? "?" : ""
+      }`,
+      valueClassName: mileageDisplay.uncertain ? "text-warning" : undefined,
     });
   }
 
@@ -98,7 +106,9 @@ export function FeedDetailMetaSection({ item }: FeedDetailMetaSectionProps): JSX
 
   const locationLine = [
     item.locationText,
-    item.distanceMiles != null ? `${item.distanceMiles.toFixed(1)} mi` : null,
+    item.distanceMiles != null
+      ? formatDistance(item.distanceMiles, distanceUnit, 1)
+      : null,
   ]
     .filter(Boolean)
     .join(" · ");

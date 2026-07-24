@@ -195,6 +195,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
   const { onFeedScroll, onFeedScrollEnd } = useBottomChrome();
   const forYouShelves = searchStore.forYouShelves;
   const yourSearchChildren = searchStore.yourSearchChildren;
+  const yourSearchesExpanded = feedStore.yourSearchesExpanded;
   const feedCategoryKeys = useMemo(
     () => new Set(searchStore.feedCategories.map((c) => c.key)),
     [searchStore.feedCategories],
@@ -338,6 +339,13 @@ export const FeedForYouPage = observer(function FeedForYouPage({
             hideSeparator
             isCollapsible
             className="bg-transparent"
+            value={yourSearchesExpanded ? shelf.key : undefined}
+            onValueChange={(next: string | string[] | undefined) => {
+              const nextValue = Array.isArray(next) ? next[0] : next;
+              feedStore.setYourSearchesExpanded(
+                typeof nextValue === "string" && nextValue === shelf.key,
+              );
+            }}
           >
             <Accordion.Item value={shelf.key}>
               {({ isExpanded }) => (
@@ -415,6 +423,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
       onPressItem,
       onToggleFavorite,
       openCategory,
+      yourSearchesExpanded,
     ],
   );
 

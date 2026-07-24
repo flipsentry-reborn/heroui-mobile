@@ -28,6 +28,7 @@ import { getDistanceUnitSync } from "@/mocks/services/settings";
 import {
   getOrderedStatusBadges,
   resolveDisplayValuation,
+  resolveFeedMileageDisplay,
   type FeedItem as FeedModel,
 } from "@/models/feed";
 import { useStore } from "@/store/store";
@@ -97,10 +98,12 @@ function FeedItemInner({
   const statusBadges = getOrderedStatusBadges(feed);
   const valuation = resolveDisplayValuation(feed);
   const distanceUnit = getDistanceUnitSync();
-  const rawMileage = feed.vehicleSpecifications?.vehicleMileage;
+  const mileageDisplay = resolveFeedMileageDisplay(feed);
   const mileageText =
-    rawMileage != null
-      ? formatOdometerCompact(rawMileage, distanceUnit)
+    mileageDisplay != null
+      ? `${formatOdometerCompact(mileageDisplay.miles, distanceUnit)}${
+          mileageDisplay.uncertain ? "?" : ""
+        }`
       : null;
   const primaryLocation = feed.locationText?.split(",")[0]?.trim() || null;
   const isRail = layout === "rail";
@@ -323,7 +326,9 @@ function FeedItemInner({
             {mileageText ? (
               <Typography
                 type="body-xs"
-                className={`shrink-0 ${dimClass} ${metaClass}`}
+                className={`shrink-0 ${
+                  mileageDisplay?.uncertain ? "text-warning" : dimClass
+                } ${metaClass}`}
                 numberOfLines={1}
               >
                 {mileageText}

@@ -15,6 +15,11 @@ import {
 import { withUniwind } from "uniwind";
 
 import { SheetShell } from "@/features/home/sheet-shell";
+import {
+  formatOdometer,
+  getOdometerDisplayValue,
+} from "@/lib/distance-utils";
+import { getDistanceUnitSync } from "@/mocks/services/settings";
 import { getValuationTier, type ListingValuation } from "@/models/feed";
 
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
@@ -92,6 +97,7 @@ export function FeedDetailBasicCalculation({
   const isPhone =
     valuation.valuationType === "iphone" ||
     valuation.valuationType === "samsung";
+  const distanceUnit = getDistanceUnitSync();
   const titleLine = isPhone
     ? [
         valuation.iphoneModel || valuation.samsungModel || valuation.model,
@@ -298,12 +304,12 @@ export function FeedDetailBasicCalculation({
                     value={valuation.trim || "none detected"}
                   />
                   <DetailRow
-                    label="Mileage band"
+                    label="Odometer band"
                     value={
                       valuation.mileageLow != null && valuation.mileageHigh != null
-                        ? `${valuation.mileageLow.toLocaleString()} – ${valuation.mileageHigh.toLocaleString()} mi`
+                        ? `${getOdometerDisplayValue(valuation.mileageLow, distanceUnit).toLocaleString()} – ${getOdometerDisplayValue(valuation.mileageHigh, distanceUnit).toLocaleString()} ${distanceUnit}`
                         : valuation.mileage
-                          ? `${valuation.mileage.toLocaleString()} mi`
+                          ? formatOdometer(valuation.mileage, distanceUnit)
                           : "—"
                     }
                   />

@@ -19,13 +19,13 @@ const BADGE_LABEL_CLASS: Record<BadgeScale, string> = {
 
 /**
  * Deal quality (valuation) only - each tier has its own color.
- * Bad → Fair (amber) → Good (cyan) → Great (violet).
+ * Bad → Fair (amber) → Good (sky / dark blue) → Great (violet).
  * Mid tones stay readable on listing photos without neon glare.
  * Backgrounds are slightly translucent; label text is always white.
  */
 const TIER_BG: Record<ValuationTier, string> = {
   greatDeal: "!bg-violet-600/85",
-  goodValue: "!bg-cyan-500/85",
+  goodValue: "!bg-sky-600/85",
   fairPrice: "!bg-amber-500/85",
   overpriced: "!bg-red-600/85",
 };

@@ -19,6 +19,11 @@ import {
   isFeedLayoutMode,
   type FeedLayoutMode,
 } from "@/features/feed/layout-mode";
+import {
+  DEFAULT_YOUR_SEARCHES_EXPANDED,
+  parseYourSearchesExpanded,
+  YOUR_SEARCHES_EXPANDED_STORAGE_KEY,
+} from "@/features/feed/your-searches-expanded";
 import { debugLog } from "@/lib/debug-log";
 import { toUserErrorMessage } from "@/lib/user-error-message";
 import type {
@@ -80,6 +85,8 @@ export default class FeedStore {
   /** Category feed layout: list (1-col) or grid (2-col). Persisted locally. */
   layoutMode: FeedLayoutMode = DEFAULT_FEED_LAYOUT_MODE;
   layoutModeHydrated = false;
+  /** For You → Your Searches accordion open/closed. Persisted locally. */
+  yourSearchesExpanded = DEFAULT_YOUR_SEARCHES_EXPANDED;
 
   private searchStore: SearchStore | null = null;
   private pendingFeeds: FeedItem[] = [];
@@ -127,6 +134,33 @@ export default class FeedStore {
       runInAction(() => {
         this.layoutModeHydrated = true;
       });
+    }
+  }
+
+  setYourSearchesExpanded(expanded: boolean): void {
+    if (this.yourSearchesExpanded === expanded) return;
+    this.yourSearchesExpanded = expanded;
+    void AsyncStorage.setItem(
+      YOUR_SEARCHES_EXPANDED_STORAGE_KEY,
+      expanded ? "true" : "false",
+    ).catch(() => {
+      // best-effort local prefs
+    });
+  }
+
+  async loadYourSearchesExpanded(): Promise<void> {
+    try {
+      const saved = await AsyncStorage.getItem(
+        YOUR_SEARCHES_EXPANDED_STORAGE_KEY,
+      );
+      const parsed = parseYourSearchesExpanded(saved);
+      if (parsed != null) {
+        runInAction(() => {
+          this.yourSearchesExpanded = parsed;
+        });
+      }
+    } catch {
+      // keep default
     }
   }
 

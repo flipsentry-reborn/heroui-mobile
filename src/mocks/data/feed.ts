@@ -280,7 +280,7 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  condition: "Used - Good",
  vehicleSpecifications: {
  vehicleYear: 2019,
- vehicleMileage: 48200,
+ // Mileage omitted on listing — valuation used description parse (see analysis)
  vehicleTransmission: "Automatic",
  },
  currency: "USD",
@@ -309,8 +309,33 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  targetCvs: 0,
  mileageLow: 0,
  mileageHigh: 0,
- warnings: [],
+ warnings: [
+  "Listing mileage looks wrong for a 2019 (767 mi). We didn't use it for the estimate.",
+  "Found mileage in the listing description (78,000 km) and used that for the estimate.",
+ ],
  calculatedAt: new Date().toISOString(),
+ analysis: {
+  yearSource: "request",
+  yearUsed: 2019,
+  mileageSource: "description",
+  mileageUsed: 48460,
+  parsedMileageValue: 78000,
+  parsedMileageUnit: "km",
+  notes: [
+   {
+    type: "listing_mileage_implausible",
+    severity: "warning",
+    message:
+     "Listing mileage looks wrong for a 2019 (767 mi). We didn't use it for the estimate.",
+   },
+   {
+    type: "mileage_from_listing_text",
+    severity: "info",
+    message:
+     "Found mileage in the listing description (78,000 km) and used that for the estimate.",
+   },
+  ],
+ },
  },
  compValuation: {
  calculated: true,

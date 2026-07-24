@@ -95,6 +95,7 @@ async function hydrate(): Promise<void> {
   await Promise.all([
     stores.userStore.bootstrap(),
     stores.feedStore.loadLayoutMode(),
+    stores.feedStore.loadYourSearchesExpanded(),
   ]);
   await ensureRealtimeSession();
 }

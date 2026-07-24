@@ -175,7 +175,20 @@ export function FeedDetailTrimEstimates({
             contentContainerClassName="gap-1 px-4 pt-1"
             contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
           >
-            {options.map((option) => {
+            {valuation.warnings != null && valuation.warnings.length > 0 ? (
+              <View className="mb-2 gap-1 rounded-xl bg-warning/10 px-3 py-2.5">
+                {valuation.warnings.map((warning, index) => (
+                  <Typography
+                    key={`warning-${index}-${warning}`}
+                    type="body-xs"
+                    className="text-warning"
+                  >
+                    {warning}
+                  </Typography>
+                ))}
+              </View>
+            ) : null}
+            {options.map((option, index) => {
               const fair =
                 resolveExternalFairPrice(
                   valuation.countryCode,
@@ -186,7 +199,7 @@ export function FeedDetailTrimEstimates({
 
               return (
                 <View
-                  key={option.vehicleId ?? option.trim ?? String(fair)}
+                  key={`${option.vehicleId ?? option.trim ?? "trim"}-${index}`}
                   className={cn(
                     "flex-row items-center gap-2 rounded-lg px-2 py-2.5",
                     isSelected && "bg-success/15",

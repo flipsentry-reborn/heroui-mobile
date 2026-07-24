@@ -10,19 +10,28 @@ import {
   useThemeColor,
   useToast,
 } from "heroui-native";
+import Animated, {
+  Easing,
+  FadeInDown,
+  FadeOutUp,
+  LinearTransition,
+} from "react-native-reanimated";
 
 import { USE_MOCK } from "@/api/config";
 import { AuthField, AuthHint } from "@/features/auth/auth-field";
 import { AuthInputOtp } from "@/features/auth/auth-input-otp";
 import { AuthPhoneField } from "@/features/auth/auth-phone-field";
-import {
-  AuthOrDivider,
-  AuthShell,
-} from "@/features/auth/auth-shell";
+import { AuthOrDivider, AuthShell } from "@/features/auth/auth-shell";
 import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
 import { BrandButton } from "@/components/ui/brand-button";
 import { MOCK_ACCOUNT_CREDENTIALS } from "@/mocks/services/account";
 import { useStore } from "@/store/store";
+
+const SOFT_ENTER = FadeInDown.duration(320).easing(Easing.out(Easing.cubic));
+const SOFT_EXIT = FadeOutUp.duration(180).easing(Easing.in(Easing.cubic));
+const SOFT_LAYOUT = LinearTransition.duration(280).easing(
+  Easing.out(Easing.cubic),
+);
 
 function errorMessage(error: unknown): string {
   if (Array.isArray(error)) return error.join(", ");
@@ -30,9 +39,13 @@ function errorMessage(error: unknown): string {
   return "Something went wrong";
 }
 
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
 /**
- * Login — mobile-app flow:
- * Email path OR Phone OTP path, switched via “or” secondary CTA (mockup layout).
+ * Login — email/phone identifier first, then secret (password or OTP)
+ * with a soft reveal. Switch methods via secondary CTA.
  */
 export const LoginScreen = observer(function LoginScreen(): JSX.Element {
   const { userStore } = useStore();
@@ -40,6 +53,10 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
   const [accentForeground] = useThemeColor(["accent-foreground"]);
 
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
+  /** Email: identifier → password. Phone: phone → OTP after send. */
+  const [emailStep, setEmailStep] = useState<"identifier" | "password">(
+    "identifier",
+  );
 
   const [email, setEmail] = useState(
     USE_MOCK ? MOCK_ACCOUNT_CREDENTIALS.email : "",
@@ -75,6 +92,16 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
     setError("");
     setIsCodeSent(false);
     setOtp("");
+    setEmailStep("identifier");
+  };
+
+  const onEmailContinue = () => {
+    setError("");
+    if (!isValidEmail(email)) {
+      setError("Enter a valid email");
+      return;
+    }
+    setEmailStep("password");
   };
 
   const onEmailLogin = async () => {
@@ -133,7 +160,9 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
 
   const subtitle =
     loginMethod === "email"
-      ? "Welcome back! Please enter your details."
+      ? emailStep === "password"
+        ? "Enter your password to continue."
+        : "Welcome back! Please enter your details."
       : isCodeSent
         ? `We sent a code to ${formattedPhone}`
         : "Welcome back! Please enter your details.";
@@ -145,40 +174,77 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
       onBack={() => router.back()}
     >
       {loginMethod === "email" ? (
-        <View className="gap-4">
+        <Animated.View layout={SOFT_LAYOUT} className="gap-4">
           <AuthField
             label="Email"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             textContentType="emailAddress"
-            placeholder="youremail@site.com"
+            placeholder="Email"
+            returnKeyType={emailStep === "identifier" ? "next" : "done"}
+            onSubmitEditing={() => {
+              if (emailStep === "identifier") onEmailContinue();
+            }}
           />
-          <AuthField
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            textContentType="password"
-            placeholder="••••••••"
-          />
-          <Pressable
-            onPress={() => router.push("/forgot-password" as Href)}
-            className="self-end"
-          >
-            <Typography type="body-sm" className="text-muted">
-              Forgot password?
-            </Typography>
-          </Pressable>
 
-          <BrandButton
-            className="min-h-12 w-full rounded-full"
-            isDisabled={submitting || !email || !password}
-            onPress={() => void onEmailLogin()}
-          >
-            {submitting ? <Spinner size="sm" color={accentForeground} /> : null}
-            <BrandButton.Label>Login</BrandButton.Label>
-          </BrandButton>
+          {emailStep === "password" ? (
+            <Animated.View
+              key="email-password-step"
+              entering={SOFT_ENTER}
+              exiting={SOFT_EXIT}
+              layout={SOFT_LAYOUT}
+              className="gap-4"
+            >
+              <AuthField
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                textContentType="password"
+                placeholder="Password"
+                autoFocus
+                returnKeyType="go"
+                onSubmitEditing={() => {
+                  if (password) void onEmailLogin();
+                }}
+              />
+              <Pressable
+                onPress={() => router.push("/forgot-password" as Href)}
+                className="self-end"
+              >
+                <Typography type="body-sm" className="text-muted">
+                  Forgot password?
+                </Typography>
+              </Pressable>
+
+              <BrandButton
+                className="min-h-12 w-full rounded-full"
+                isDisabled={submitting || !email || !password}
+                onPress={() => void onEmailLogin()}
+              >
+                {submitting ? (
+                  <Spinner size="sm" color={accentForeground} />
+                ) : null}
+                <BrandButton.Label>Login</BrandButton.Label>
+              </BrandButton>
+            </Animated.View>
+          ) : (
+            <Animated.View
+              key="email-continue-step"
+              entering={SOFT_ENTER}
+              exiting={SOFT_EXIT}
+              layout={SOFT_LAYOUT}
+            >
+              <BrandButton
+                className="min-h-12 w-full rounded-full"
+                isDisabled={!email.trim()}
+                onPress={onEmailContinue}
+              >
+                <BrandButton.Label>Continue</BrandButton.Label>
+              </BrandButton>
+            </Animated.View>
+          )}
 
           <AuthOrDivider />
 
@@ -192,9 +258,9 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
               Login with Phone Number
             </Button.Label>
           </Button>
-        </View>
+        </Animated.View>
       ) : !isCodeSent ? (
-        <View className="gap-4">
+        <Animated.View layout={SOFT_LAYOUT} className="gap-4">
           <AuthPhoneField
             nationalNumber={phoneNumber}
             onNationalNumberChange={setPhoneNumber}
@@ -213,23 +279,29 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
             onPress={() => void onSendPhoneCode()}
           >
             {submitting ? <Spinner size="sm" color={accentForeground} /> : null}
-            <BrandButton.Label>Login</BrandButton.Label>
+            <BrandButton.Label>Continue</BrandButton.Label>
           </BrandButton>
 
           <AuthOrDivider />
 
           <Button
             variant="secondary"
-            className="min-h-12 w-full rounded-full bg-surface-secondary"
+            className="min-h-12 w-full rounded-full border-0"
+            style={{ backgroundColor: AUTH_CONTROL_BACKGROUND }}
             onPress={() => switchMethod("email")}
           >
             <Button.Label className="text-foreground">
               Login with Email
             </Button.Label>
           </Button>
-        </View>
+        </Animated.View>
       ) : (
-        <View className="gap-4">
+        <Animated.View
+          key="phone-otp-step"
+          entering={SOFT_ENTER}
+          layout={SOFT_LAYOUT}
+          className="gap-4"
+        >
           <AuthInputOtp value={otp} onChange={setOtp} />
 
           <BrandButton
@@ -254,7 +326,7 @@ export const LoginScreen = observer(function LoginScreen(): JSX.Element {
           <Button variant="ghost" onPress={() => setIsCodeSent(false)}>
             <Button.Label>Change number</Button.Label>
           </Button>
-        </View>
+        </Animated.View>
       )}
 
       {error ? (

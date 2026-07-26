@@ -3,8 +3,9 @@ import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { Text, View } from "react-native";
 import { router, type Href } from "expo-router";
-import { Spinner, Typography, useThemeColor } from "heroui-native";
+import { Spinner, Typography } from "heroui-native";
 
+import PlatformIcon from "@/components/icons/PlatformIcon";
 import { BrandButton } from "@/components/ui/brand-button";
 import {
   OnboardingIconWell,
@@ -14,6 +15,10 @@ import { OnboardingShell } from "@/features/onboarding/onboarding-shell";
 import { DEFAULT_ONBOARDING_RADIUS } from "@/features/onboarding/map-answers-to-create";
 import { ONBOARDING_TOTAL_STEPS } from "@/features/onboarding/quiz-options";
 import { DEFAULT_ONBOARDING_CENTER } from "@/features/onboarding/resolve-device-location";
+import {
+  ONBOARDING_TEXT,
+  ONBOARDING_TEXT_DIM,
+} from "@/features/onboarding/onboarding-theme";
 import { Fonts } from "@/lib/fonts";
 import type { SearchType } from "@/mocks/data/home";
 import { useStore } from "@/store/store";
@@ -33,12 +38,6 @@ function categoryLabel(
 
 export const ConfirmStep = observer(function ConfirmStep(): JSX.Element {
   const { onboardingStore } = useStore();
-  const [foreground, muted, accentFg, danger] = useThemeColor([
-    "foreground",
-    "muted",
-    "accent-foreground",
-    "danger",
-  ]);
 
   const onStart = async () => {
     const ok = await onboardingStore.finish();
@@ -60,7 +59,7 @@ export const ConfirmStep = observer(function ConfirmStep(): JSX.Element {
             onPress={() => void onStart()}
           >
             {onboardingStore.submitting ? (
-              <Spinner size="sm" color={accentFg} />
+              <Spinner size="sm" color="#060606" />
             ) : null}
             <BrandButton.Label>
               {onboardingStore.submitting
@@ -74,7 +73,7 @@ export const ConfirmStep = observer(function ConfirmStep(): JSX.Element {
                 fontFamily: Fonts.headingRegular,
                 fontSize: 14,
                 lineHeight: 20,
-                color: danger,
+                color: "#F87171",
                 textAlign: "center",
               }}
             >
@@ -89,9 +88,13 @@ export const ConfirmStep = observer(function ConfirmStep(): JSX.Element {
         className="flex-row items-center gap-3 px-4 py-4"
       >
         <OnboardingIconWell>
-          <Ionicons name="flash" size={22} color={foreground} />
+          <Ionicons name="flash" size={22} color="#FAFAFA" />
         </OnboardingIconWell>
-        <Typography type="body" weight="semibold" className="text-foreground">
+        <Typography
+          type="body"
+          weight="semibold"
+          style={{ color: ONBOARDING_TEXT }}
+        >
           Instant + 3 min
         </Typography>
       </OnboardingOptionCard>
@@ -108,14 +111,18 @@ export const ConfirmStep = observer(function ConfirmStep(): JSX.Element {
                     : "search-outline"
               }
               size={20}
-              color={foreground}
+              color="#FAFAFA"
             />
           </OnboardingIconWell>
           <View className="flex-1 gap-0.5">
-            <Typography type="body-sm" className="text-muted">
+            <Typography type="body-sm" style={{ color: ONBOARDING_TEXT_DIM }}>
               Looking for
             </Typography>
-            <Typography type="body" weight="medium" className="text-foreground">
+            <Typography
+              type="body"
+              weight="medium"
+              style={{ color: ONBOARDING_TEXT }}
+            >
               {categoryLabel(
                 onboardingStore.draft.searchType,
                 onboardingStore.draft.customQuery,
@@ -126,13 +133,17 @@ export const ConfirmStep = observer(function ConfirmStep(): JSX.Element {
 
         <View className="flex-row items-center gap-3">
           <OnboardingIconWell>
-            <Ionicons name="location-outline" size={20} color={foreground} />
+            <Ionicons name="location-outline" size={20} color="#FAFAFA" />
           </OnboardingIconWell>
           <View className="flex-1 gap-0.5">
-            <Typography type="body-sm" className="text-muted">
+            <Typography type="body-sm" style={{ color: ONBOARDING_TEXT_DIM }}>
               Area
             </Typography>
-            <Typography type="body" weight="medium" className="text-foreground">
+            <Typography
+              type="body"
+              weight="medium"
+              style={{ color: ONBOARDING_TEXT }}
+            >
               {DEFAULT_ONBOARDING_CENTER.displayName} ·{" "}
               {DEFAULT_ONBOARDING_RADIUS} miles
             </Typography>
@@ -141,17 +152,18 @@ export const ConfirmStep = observer(function ConfirmStep(): JSX.Element {
 
         <View className="flex-row items-center gap-3">
           <OnboardingIconWell>
-            <Ionicons name="logo-facebook" size={20} color={foreground} />
+            <PlatformIcon platform="facebook" size={20} />
           </OnboardingIconWell>
           <View className="flex-1 gap-0.5">
-            <Typography type="body-sm" className="text-muted">
+            <Typography type="body-sm" style={{ color: ONBOARDING_TEXT_DIM }}>
               Where
             </Typography>
-            <Typography type="body" weight="medium" className="text-foreground">
+            <Typography
+              type="body"
+              weight="medium"
+              style={{ color: ONBOARDING_TEXT }}
+            >
               Facebook Marketplace
-            </Typography>
-            <Typography type="body-sm" style={{ color: muted }}>
-              5 live searches across nearby cities
             </Typography>
           </View>
         </View>

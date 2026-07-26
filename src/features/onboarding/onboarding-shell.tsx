@@ -15,14 +15,16 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useThemeColor } from "heroui-native";
 
 import { Fonts } from "@/lib/fonts";
 import { AUTH_CONTROL_BACKGROUND } from "@/features/auth/auth-theme";
 import {
   ONBOARDING_BORDER_IDLE,
   ONBOARDING_CANVAS,
+  ONBOARDING_PROGRESS,
   ONBOARDING_SURFACE,
+  ONBOARDING_TEXT,
+  ONBOARDING_TEXT_DIM,
 } from "@/features/onboarding/onboarding-theme";
 
 const KEYBOARD_TOOLBAR_OFFSET = 62;
@@ -53,13 +55,7 @@ interface OnboardingShellProps {
   onSkip?: () => void;
 }
 
-function SoftProgressDot({
-  active,
-  accent,
-}: {
-  active: boolean;
-  accent: string;
-}): JSX.Element {
+function SoftProgressDot({ active }: { active: boolean }): JSX.Element {
   const progress = useSharedValue(active ? 1 : 0);
 
   useEffect(() => {
@@ -86,7 +82,11 @@ function SoftProgressDot({
         className="h-full w-full rounded-full"
         style={[
           fillStyle,
-          { backgroundColor: active ? accent : AUTH_CONTROL_BACKGROUND },
+          {
+            backgroundColor: active
+              ? ONBOARDING_PROGRESS
+              : AUTH_CONTROL_BACKGROUND,
+          },
         ]}
       />
     </View>
@@ -104,11 +104,6 @@ export function OnboardingShell({
   onSkip,
 }: OnboardingShellProps): JSX.Element {
   const insets = useSafeAreaInsets();
-  const [foreground, muted, accent] = useThemeColor([
-    "foreground",
-    "muted",
-    "accent",
-  ]);
 
   return (
     <View className="flex-1" style={{ backgroundColor: ONBOARDING_CANVAS }}>
@@ -129,7 +124,7 @@ export function OnboardingShell({
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <Ionicons name="chevron-back" size={22} color={muted} />
+            <Ionicons name="chevron-back" size={22} color={ONBOARDING_TEXT_DIM} />
           </Pressable>
         ) : (
           <View className="h-10 w-10" />
@@ -147,7 +142,7 @@ export function OnboardingShell({
                 fontFamily: Fonts.headingRegular,
                 fontSize: 14,
                 lineHeight: 18,
-                color: muted,
+                color: ONBOARDING_TEXT_DIM,
               }}
             >
               Skip for now
@@ -180,11 +175,7 @@ export function OnboardingShell({
             className="mb-7 flex-row items-center justify-center gap-2"
           >
             {Array.from({ length: totalSteps }, (_, index) => (
-              <SoftProgressDot
-                key={index}
-                active={index + 1 <= step}
-                accent={accent}
-              />
+              <SoftProgressDot key={index} active={index + 1 <= step} />
             ))}
           </Animated.View>
         ) : (
@@ -204,7 +195,7 @@ export function OnboardingShell({
               fontSize: 26,
               lineHeight: 32,
               letterSpacing: -0.5,
-              color: foreground,
+              color: ONBOARDING_TEXT,
               textAlign: "center",
             }}
           >
@@ -216,7 +207,7 @@ export function OnboardingShell({
                 fontFamily: Fonts.headingRegular,
                 fontSize: 14,
                 lineHeight: 21,
-                color: muted,
+                color: ONBOARDING_TEXT_DIM,
                 textAlign: "center",
                 opacity: 0.92,
               }}

@@ -2,15 +2,17 @@ import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
 import { View } from "react-native";
 import { router, type Href } from "expo-router";
-import { Typography, useThemeColor } from "heroui-native";
+import { Typography } from "heroui-native";
 
 import { BrandButton } from "@/components/ui/brand-button";
 import { OnboardingOptionCard } from "@/features/onboarding/onboarding-option-card";
 import { OnboardingShell } from "@/features/onboarding/onboarding-shell";
+import { ONBOARDING_TEXT } from "@/features/onboarding/onboarding-theme";
 import {
   ONBOARDING_TOTAL_STEPS,
   type QuizOption,
 } from "@/features/onboarding/quiz-options";
+
 type QuizChoiceStepProps = {
   step: number;
   title: string;
@@ -30,8 +32,6 @@ export function QuizChoiceStep({
   onSelect,
   nextHref,
 }: QuizChoiceStepProps): JSX.Element {
-  const [muted, foreground] = useThemeColor(["muted", "foreground"]);
-
   return (
     <OnboardingShell
       step={step}
@@ -63,7 +63,7 @@ export function QuizChoiceStep({
                 <Typography
                   type="body"
                   weight="semibold"
-                  className="text-foreground"
+                  style={{ color: ONBOARDING_TEXT }}
                 >
                   {option.label}
                 </Typography>
@@ -71,7 +71,7 @@ export function QuizChoiceStep({
               <Ionicons
                 name={selected ? "checkmark-circle" : "ellipse-outline"}
                 size={22}
-                color={selected ? foreground : muted}
+                color={selected ? "#FAFAFA" : "#A1A1AA"}
               />
             </OnboardingOptionCard>
           );

@@ -3,13 +3,7 @@ import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { View } from "react-native";
 import { router, type Href } from "expo-router";
-import {
-  Input,
-  Label,
-  TextField,
-  Typography,
-  useThemeColor,
-} from "heroui-native";
+import { Input, Label, TextField, Typography } from "heroui-native";
 
 import { BrandButton } from "@/components/ui/brand-button";
 import {
@@ -21,6 +15,10 @@ import {
   OnboardingOptionCard,
 } from "@/features/onboarding/onboarding-option-card";
 import { OnboardingShell } from "@/features/onboarding/onboarding-shell";
+import {
+  ONBOARDING_TEXT,
+  ONBOARDING_TEXT_DIM,
+} from "@/features/onboarding/onboarding-theme";
 import { ONBOARDING_TOTAL_STEPS } from "@/features/onboarding/quiz-options";
 import type { SearchType } from "@/mocks/data/home";
 import { useStore } from "@/store/store";
@@ -53,7 +51,6 @@ const OPTIONS: Array<{
 
 export const WhatStep = observer(function WhatStep(): JSX.Element {
   const { onboardingStore } = useStore();
-  const [muted, foreground] = useThemeColor(["muted", "foreground"]);
 
   return (
     <OnboardingShell
@@ -82,24 +79,27 @@ export const WhatStep = observer(function WhatStep(): JSX.Element {
               className="flex-row items-center gap-3 px-4 py-4"
             >
               <OnboardingIconWell>
-                <Ionicons name={option.icon} size={22} color={foreground} />
+                <Ionicons name={option.icon} size={22} color="#FAFAFA" />
               </OnboardingIconWell>
               <View className="flex-1 gap-0.5">
                 <Typography
                   type="body"
                   weight="semibold"
-                  className="text-foreground"
+                  style={{ color: ONBOARDING_TEXT }}
                 >
                   {option.label}
                 </Typography>
-                <Typography type="body-sm" className="text-muted">
+                <Typography
+                  type="body-sm"
+                  style={{ color: ONBOARDING_TEXT_DIM }}
+                >
                   {option.hint}
                 </Typography>
               </View>
               <Ionicons
                 name={selected ? "checkmark-circle" : "ellipse-outline"}
                 size={22}
-                color={selected ? foreground : muted}
+                color={selected ? "#FAFAFA" : "#A1A1AA"}
               />
             </OnboardingOptionCard>
           );
@@ -108,7 +108,7 @@ export const WhatStep = observer(function WhatStep(): JSX.Element {
 
       {onboardingStore.draft.searchType === "custom" ? (
         <TextField className="mt-2">
-          <Label className="text-muted">Keyword</Label>
+          <Label style={{ color: ONBOARDING_TEXT_DIM }}>Keyword</Label>
           <Input
             value={onboardingStore.draft.customQuery}
             onChangeText={(text: string) =>
@@ -117,8 +117,11 @@ export const WhatStep = observer(function WhatStep(): JSX.Element {
             placeholder="e.g. MacBook Pro, sofa, scooter"
             placeholderTextColor={AUTH_PLACEHOLDER_COLOR}
             autoCorrect={false}
-            className="h-12 rounded-2xl border-transparent text-foreground shadow-none"
-            style={{ backgroundColor: AUTH_CONTROL_BACKGROUND }}
+            className="h-12 rounded-2xl border-transparent shadow-none"
+            style={{
+              backgroundColor: AUTH_CONTROL_BACKGROUND,
+              color: "#FAFAFA",
+            }}
           />
         </TextField>
       ) : null}

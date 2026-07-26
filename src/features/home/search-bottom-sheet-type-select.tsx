@@ -1,9 +1,10 @@
- import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { Fragment, type JSX } from "react";
 import { Pressable, View } from "react-native";
 import { Select, Separator, Typography, useThemeColor } from "heroui-native";
 
 import type { SearchType } from "@/mocks/data/home";
+import type { UserFilterType } from "@/models/user-filter";
 
 export const SEARCH_TYPE_OPTIONS: {
   value: SearchType;
@@ -14,31 +15,48 @@ export const SEARCH_TYPE_OPTIONS: {
   { value: "custom", label: "Custom" },
 ];
 
+/** Filter sheet: Vehicles / Custom (no iPhone). */
+export const FILTER_TYPE_OPTIONS: {
+  value: UserFilterType;
+  label: string;
+}[] = [
+  { value: "Vehicle", label: "Vehicles" },
+  { value: "Custom", label: "Custom" },
+];
+
 export function searchTypeLabel(type: SearchType | null): string {
   if (type == null) return "Empty";
   return SEARCH_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? "Empty";
 }
 
-function isSearchType(value: string): value is SearchType {
-  return value === "car" || value === "iphone" || value === "custom";
-}
-
 type LooseSelectOption = { value: string; label: string } | undefined;
 
-interface SearchBottomSheetTypeSelectProps {
-  value: SearchType | null;
-  onChange: (type: SearchType) => void;
+export interface TypeSelectOption<T extends string = string> {
+  value: T;
+  label: string;
 }
 
-/** HeroUI Select for Vehicles / iPhones / Custom. */
-export function SearchBottomSheetTypeSelect({
+interface SearchBottomSheetTypeSelectProps<T extends string = SearchType> {
+  value: T | null;
+  onChange: (type: T) => void;
+  options?: TypeSelectOption<T>[];
+  accessibilityLabelPrefix?: string;
+}
+
+/** HeroUI Select for search/filter type (Vehicles / iPhones / Custom, etc.). */
+export function SearchBottomSheetTypeSelect<T extends string = SearchType>({
   value,
   onChange,
-}: SearchBottomSheetTypeSelectProps): JSX.Element {
+  options,
+  accessibilityLabelPrefix = "Search type",
+}: SearchBottomSheetTypeSelectProps<T>): JSX.Element {
   const [accent, muted] = useThemeColor(["accent", "muted"]);
-  const selected = SEARCH_TYPE_OPTIONS.find((o) => o.value === value);
-  const label = searchTypeLabel(value);
+  const resolvedOptions = (options ??
+    SEARCH_TYPE_OPTIONS) as TypeSelectOption<T>[];
+  const selected = resolvedOptions.find((o) => o.value === value);
+  const label = selected?.label ?? "Empty";
   const hasValue = value != null;
+  const allowed = new Set(resolvedOptions.map((o) => o.value));
 
   return (
     <Select
@@ -46,14 +64,14 @@ export function SearchBottomSheetTypeSelect({
         selected ? { value: selected.value, label: selected.label } : undefined
       }
       onValueChange={(next: LooseSelectOption) => {
-        if (next === undefined || !isSearchType(next.value)) return;
-        onChange(next.value);
+        if (next === undefined || !allowed.has(next.value as T)) return;
+        onChange(next.value as T);
       }}
     >
       <Select.Trigger variant="unstyled" asChild>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Search type ${label}`}
+          accessibilityLabel={`${accessibilityLabelPrefix} ${label}`}
           className="flex-row items-center gap-1"
         >
           <Typography
@@ -74,7 +92,7 @@ export function SearchBottomSheetTypeSelect({
           width={220}
           className="rounded-2xl"
         >
-          {SEARCH_TYPE_OPTIONS.map((option, index) => (
+          {resolvedOptions.map((option, index) => (
             <Fragment key={option.value}>
               <Select.Item
                 value={option.value}
@@ -96,7 +114,7 @@ export function SearchBottomSheetTypeSelect({
                   </>
                 )}
               </Select.Item>
-              {index < SEARCH_TYPE_OPTIONS.length - 1 ? (
+              {index < resolvedOptions.length - 1 ? (
                 <Separator className="mx-4 bg-muted/40" />
               ) : null}
             </Fragment>

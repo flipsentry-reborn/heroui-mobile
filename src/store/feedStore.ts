@@ -302,6 +302,10 @@ export default class FeedStore {
     return this.searchStore?.groupIdsForCategory(bucket);
   }
 
+  private filterIdsFor(bucket: string): string[] | undefined {
+    return this.searchStore?.filterIdsForCategory(bucket);
+  }
+
   private touchSet(
     field:
       | "dirtyBuckets"
@@ -453,6 +457,7 @@ export default class FeedStore {
       const result = await agent.Feed.list({
         category: bucket,
         groupIds: this.groupIdsFor(bucket),
+        filterIds: this.filterIdsFor(bucket),
         query: opts.query,
         pageNumber: opts.pageNumber ?? 1,
         pageSize,
@@ -541,6 +546,7 @@ export default class FeedStore {
       const result = await agent.Feed.list({
         category: bucket,
         groupIds: this.groupIdsFor(bucket),
+        filterIds: this.filterIdsFor(bucket),
         query: opts.query,
         pageNumber: nextPage,
         pageSize,
@@ -619,6 +625,7 @@ export default class FeedStore {
     if (bucket === "for-you") return;
 
     const groupIds = this.groupIdsFor(bucket);
+    const filterIds = this.filterIdsFor(bucket);
     const existingBefore = this.lists[bucket] ?? [];
     const startedAt = Date.now();
 
@@ -626,6 +633,7 @@ export default class FeedStore {
       bucket,
       pageSize,
       groupIds,
+      filterIds,
       existingCount: existingBefore.length,
       shelfHydrated: this.hydratedShelves.has(bucket),
     });
@@ -634,6 +642,7 @@ export default class FeedStore {
       const result = await agent.Feed.list({
         category: bucket,
         groupIds,
+        filterIds,
         pageSize,
         ...(bucket === "sold" ? { maxDays: 1 } : {}),
       });
@@ -751,7 +760,8 @@ export default class FeedStore {
     runInAction(() => {
       this.upsertItem(feed);
       const resolved = this.items.get(feed.id) ?? feed;
-      const buckets = bucketsForLiveFeed(resolved, tabs);
+      const filterTabs = this.searchStore?.filterTabs ?? [];
+      const buckets = bucketsForLiveFeed(resolved, tabs, filterTabs);
       this.liveHeadIds.add(resolved.id);
 
       for (const bucket of buckets) {

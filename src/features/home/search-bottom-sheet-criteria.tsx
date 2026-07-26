@@ -59,14 +59,23 @@ export interface SearchCarMakesState {
   onOpenChange: (open: boolean) => void;
 }
 
+export interface SearchCustomQueryState {
+  value: string;
+  onOpenChange: (open: boolean) => void;
+}
+
 export function isCustomSearchQueryValid(query: string): boolean {
   return query.trim().length >= 2;
 }
 
+export function formatCustomQueryLabel(query: string): string {
+  const trimmed = query.trim();
+  return trimmed.length > 0 ? trimmed : "Required";
+}
+
 interface SearchBottomSheetCriteriaProps {
   searchType: SearchType | null;
-  customQuery: string;
-  onCustomQueryChange: (value: string) => void;
+  customQuery: SearchCustomQueryState;
   iphoneModels: SearchIphoneModelsState;
   carMakes: SearchCarMakesState;
   price: SearchPriceState;
@@ -75,28 +84,39 @@ interface SearchBottomSheetCriteriaProps {
   keywords: SearchKeywordsState;
 }
 
-function CustomSearchInput({
+/** Right-aligned required text field used by Custom Search and Filter Name. */
+export function CustomSearchInput({
   value,
   onChange,
+  placeholder = "Required",
+  autoFocus = false,
+  invalidTone = "danger",
 }: {
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
+  autoFocus?: boolean;
+  /** Filter uses warning (yellow) for empty Required. */
+  invalidTone?: "danger" | "warning";
 }): JSX.Element {
   const { onFocus, onBlur } = useBottomSheetAwareHandlers();
   const isInvalid = !isCustomSearchQueryValid(value);
+  const invalidClass =
+    invalidTone === "warning" ? "text-warning" : "text-danger";
 
   return (
     <Input
       value={value}
       onChangeText={onChange}
-      placeholder="Required"
+      placeholder={placeholder}
       variant="secondary"
       isInvalid={isInvalid}
       textAlign="right"
+      autoFocus={autoFocus}
       className={`h-auto min-h-0 flex-1 border-0 bg-transparent px-0 py-0 text-[15px] shadow-none ios:outline-0 ios:focus:outline-transparent android:border-0 android:focus:border-transparent ${
-        isInvalid ? "text-danger" : "text-foreground"
+        isInvalid ? invalidClass : "text-foreground"
       }`}
-      placeholderColorClassName={isInvalid ? "text-danger" : "text-muted"}
+      placeholderColorClassName={isInvalid ? invalidClass : "text-muted"}
       onFocus={onFocus}
       onBlur={onBlur}
     />
@@ -106,7 +126,6 @@ function CustomSearchInput({
 export function SearchBottomSheetCriteria({
   searchType,
   customQuery,
-  onCustomQueryChange,
   iphoneModels,
   carMakes,
   price,
@@ -118,6 +137,8 @@ export function SearchBottomSheetCriteria({
   const isCustom = searchType === "custom";
   const isIphone = searchType === "iphone";
   const isCar = searchType === "car";
+  const customQueryLabel = formatCustomQueryLabel(customQuery.value);
+  const hasCustomQuery = isCustomSearchQueryValid(customQuery.value);
   const priceLabel = formatPriceRangeLabel(
     formatGroupedDigits(price.min),
     formatGroupedDigits(price.max),
@@ -144,13 +165,14 @@ export function SearchBottomSheetCriteria({
         <SearchSheetRow
           title="Search"
           required
-          showSwap
-          expandRight
+          requiredTone="warning"
           isLast={false}
+          onPress={() => customQuery.onOpenChange(true)}
           right={
-            <CustomSearchInput
-              value={customQuery}
-              onChange={onCustomQueryChange}
+            <SearchSheetValue
+              label={customQueryLabel}
+              emphasized={hasCustomQuery}
+              requiredEmpty={!hasCustomQuery}
             />
           }
         />
@@ -159,6 +181,7 @@ export function SearchBottomSheetCriteria({
         <SearchSheetRow
           title="Models"
           required
+          requiredTone="warning"
           isLast={false}
           onPress={() => iphoneModels.onOpenChange(true)}
           right={

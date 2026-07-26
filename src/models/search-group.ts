@@ -85,6 +85,7 @@ export interface SearchGroup {
   excludeText?: string[];
   titleIncluders?: string[];
   descriptionIncluders?: string[];
+  notificationEnabled?: boolean;
   runIntervalSeconds: number;
   platforms: SearchPlatform[];
   searchSettings?: SearchGroupSetting[];
@@ -120,6 +121,7 @@ export interface CreateSearchGroup {
   excludeText?: string[];
   titleIncluders?: string[];
   descriptionIncluders?: string[];
+  notificationEnabled?: boolean;
   settings: GroupSearchSettingInput[];
 }
 
@@ -138,6 +140,7 @@ export interface UpdateSearchGroup {
   excludeText?: string[];
   titleIncluders?: string[];
   descriptionIncluders?: string[];
+  notificationEnabled?: boolean;
   settings?: GroupSearchSettingInput[];
 }
 

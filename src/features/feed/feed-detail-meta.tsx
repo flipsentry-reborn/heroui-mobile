@@ -1,11 +1,12 @@
+import { observer } from "mobx-react-lite";
 import type { JSX, ReactNode } from "react";
 import { View } from "react-native";
 import { Typography } from "heroui-native";
 
 import { formatDistance, formatOdometer } from "@/lib/distance-utils";
-import { getDistanceUnitSync } from "@/mocks/services/settings";
 import type { FeedItem } from "@/models/feed";
 import { resolveFeedMileageDisplay } from "@/models/feed";
+import { useStore } from "@/store/store";
 
 function formatTimeAgo(dateString: string): string {
   const diffMs = Math.max(0, Date.now() - new Date(dateString).getTime());
@@ -68,9 +69,12 @@ interface FeedDetailMetaSectionProps {
   item: FeedItem;
 }
 
-export function FeedDetailMetaSection({ item }: FeedDetailMetaSectionProps): JSX.Element | null {
+export const FeedDetailMetaSection = observer(function FeedDetailMetaSection({
+  item,
+}: FeedDetailMetaSectionProps): JSX.Element | null {
+  const { userStore } = useStore();
   const rows: MetaRow[] = [];
-  const distanceUnit = getDistanceUnitSync();
+  const distanceUnit = userStore.preferences?.distanceUnit ?? "mi";
   const mileageDisplay = resolveFeedMileageDisplay(item);
 
   if (item.foundInSeconds != null) {
@@ -138,4 +142,4 @@ export function FeedDetailMetaSection({ item }: FeedDetailMetaSectionProps): JSX
       </View>
     </View>
   );
-}
+});

@@ -3,6 +3,7 @@ import { createContext, useContext, type JSX, type ReactNode } from "react";
 import agent from "@/api/agent";
 import CommonStore from "@/store/commonStore";
 import FeedStore from "@/store/feedStore";
+import FilterStore from "@/store/filterStore";
 import SearchStore from "@/store/searchStore";
 import SubscriptionStore from "@/store/subscriptionStore";
 import UserStore from "@/store/userStore";
@@ -11,6 +12,7 @@ export interface RootStore {
   commonStore: CommonStore;
   userStore: UserStore;
   searchStore: SearchStore;
+  filterStore: FilterStore;
   subscriptionStore: SubscriptionStore;
   feedStore: FeedStore;
   resetStores: () => void;
@@ -27,13 +29,16 @@ function createStores(): Omit<RootStore, "resetStores" | "hydrate"> {
   const userStore = new UserStore(commonStore);
   const subscriptionStore = new SubscriptionStore();
   const searchStore = new SearchStore();
+  const filterStore = new FilterStore();
   const feedStore = new FeedStore();
   searchStore.setSubscriptionStore(subscriptionStore);
+  filterStore.setSearchStore(searchStore);
   wireFeedToSearch(feedStore, searchStore);
   return {
     commonStore,
     userStore,
     searchStore,
+    filterStore,
     subscriptionStore,
     feedStore,
   };
@@ -71,13 +76,16 @@ function resetStores(): void {
   const userStore = stores.userStore;
   const subscriptionStore = new SubscriptionStore();
   const searchStore = new SearchStore();
+  const filterStore = new FilterStore();
   const feedStore = new FeedStore();
   searchStore.setSubscriptionStore(subscriptionStore);
+  filterStore.setSearchStore(searchStore);
   wireFeedToSearch(feedStore, searchStore);
   stores = {
     commonStore,
     userStore,
     searchStore,
+    filterStore,
     subscriptionStore,
     feedStore,
   };
@@ -86,7 +94,13 @@ function resetStores(): void {
 async function ensureRealtimeSession(): Promise<void> {
   if (!stores.userStore.isLoggedIn || !stores.userStore.isPhoneVerified) return;
   await stores.subscriptionStore.load();
-  await stores.searchStore.loadSearchGroups();
+  await Promise.all([
+    stores.searchStore.loadSearchGroups(),
+    stores.filterStore.loadFilters(true),
+    stores.userStore.loadPreferences().catch(() => {
+      // Prefs are best-effort for distance unit / hide filters
+    }),
+  ]);
   stores.feedStore.flushPendingFeeds();
   await startFeedHubConnection();
 }
@@ -112,6 +126,9 @@ export const store: RootStore = {
   },
   get searchStore() {
     return stores.searchStore;
+  },
+  get filterStore() {
+    return stores.filterStore;
   },
   get subscriptionStore() {
     return stores.subscriptionStore;

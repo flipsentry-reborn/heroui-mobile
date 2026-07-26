@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { FlashList, type FlashListRef, type ListRenderItem } from "@shopify/flash-list";
 import { observer } from "mobx-react-lite";
-import type { JSX } from "react";
+import type { JSX, ReactElement } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type NativeScrollEvent,
@@ -39,6 +39,8 @@ interface FeedScrollableProps {
   onEndReached?: () => void;
   onPressItem?: (id: string) => void;
   onToggleFavorite?: (id: string) => void;
+  /** Scrolls with the list (not sticky). */
+  listHeader?: ReactElement | null;
   /** Extra space above the first row so cards aren’t flush under the header. */
   topInset?: number;
   bottomInset?: number;
@@ -109,6 +111,7 @@ export const FeedScrollable = observer(function FeedScrollable({
   onEndReached,
   onPressItem,
   onToggleFavorite,
+  listHeader = null,
   topInset = 4,
   bottomInset = 96,
 }: FeedScrollableProps): JSX.Element {
@@ -257,6 +260,7 @@ export const FeedScrollable = observer(function FeedScrollable({
   if (loading && items.length === 0) {
     return (
       <View className="flex-1" style={{ paddingTop: topInset }}>
+        {listHeader}
         <FeedSkeleton columns={numColumns} />
       </View>
     );
@@ -290,6 +294,7 @@ export const FeedScrollable = observer(function FeedScrollable({
         scrollEventThrottle={16}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.55}
+        ListHeaderComponent={listHeader}
         ListFooterComponent={
           loadingMore ? (
             <View className="items-center py-6">

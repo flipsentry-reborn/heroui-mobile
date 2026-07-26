@@ -110,6 +110,31 @@ export function formatIphoneModelsLabel(
   return String(selections.length);
 }
 
+/** Prefetch all catalog models (create-mode default) without opening the sheet. */
+export async function fetchDefaultIphoneSelections(
+  location?: IphoneCatalogLocation,
+): Promise<IphoneModelSelection[]> {
+  const catalog = await agent.IphoneModels.listGrouped({
+    latitude: location?.latitude,
+    longitude: location?.longitude,
+    country: location?.country,
+  });
+  const groups = (catalog.groups ?? [])
+    .map((group) => ({
+      ...group,
+      models: group.models.filter((model) => model.model !== "IphoneAll"),
+    }))
+    .filter((group) => group.models.length > 0);
+
+  return groups.flatMap((group) =>
+    group.models.map((model) => ({
+      id: model.model,
+      min: String(model.minPrice),
+      max: String(model.maxPrice),
+    })),
+  );
+}
+
 function CountBadge({ value }: { value: number }): JSX.Element {
   return (
     <Chip

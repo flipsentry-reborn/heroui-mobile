@@ -33,8 +33,3 @@ export const liveFeed = {
     );
   },
 };
-
-export const liveSoldListings = {
-  list: (params?: URLSearchParams) =>
-    requests.get<PaginatedResult<FeedItem[]>>("/api/feed/sold-nearby", params),
-};

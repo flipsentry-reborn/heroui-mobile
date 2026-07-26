@@ -16,6 +16,8 @@ export type GetFeedParams = {
   category?: string;
   /** From tab-availability for typed/custom tabs — forwarded to live Feed.list. */
   groupIds?: string[];
+  /** From filter tabs — forwarded to live Feed.list as filterIds. */
+  filterIds?: string[];
   query?: string;
   limit?: number;
   /** 1-based page for infinite scroll (default 1). */
@@ -57,11 +59,28 @@ function matchesMaxDays(item: FeedItem, maxDays: number | null | undefined): boo
   return stamps.some((t) => Number.isFinite(t) && t >= cutoff);
 }
 
+function matchesFilterIds(
+  item: FeedItem,
+  filterIds: string[] | undefined,
+): boolean {
+  if (filterIds == null || filterIds.length === 0) return true;
+  const itemIds = item.filterIds ?? [];
+  return filterIds.some((id) => itemIds.includes(id));
+}
+
 function matchesCategory(
   item: FeedItem,
   category: string,
   groupIds?: string[],
+  filterIds?: string[],
 ): boolean {
+  if (filterIds != null && filterIds.length > 0) {
+    return matchesFilterIds(item, filterIds);
+  }
+  if (category.startsWith("filter:")) {
+    const id = category.slice("filter:".length).trim();
+    return matchesFilterIds(item, id ? [id] : []);
+  }
   if (category === "for-you" || category === "all") return true;
   if (category === "sold") return !!item.isSold || !!item.isPending;
   if (category === "saved") return item.isFavorite;
@@ -122,7 +141,11 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
   const maxDays = params.maxDays;
 
   const items = MOCK_FEED_ITEMS.filter((item) => {
-    if (!matchesCategory(item, category, params.groupIds)) return false;
+    if (
+      !matchesCategory(item, category, params.groupIds, params.filterIds)
+    ) {
+      return false;
+    }
     if (category === "sold") {
       if (!matchesSoldStatus(item, soldStatus)) return false;
       if (!matchesMaxDays(item, maxDays)) return false;
@@ -168,7 +191,11 @@ export async function getFeedPage(
   await delay();
 
   const filtered = MOCK_FEED_ITEMS.filter((item) => {
-    if (!matchesCategory(item, category, params.groupIds)) return false;
+    if (
+      !matchesCategory(item, category, params.groupIds, params.filterIds)
+    ) {
+      return false;
+    }
     if (category === "sold") {
       if (!matchesSoldStatus(item, soldStatus)) return false;
       if (!matchesMaxDays(item, maxDays)) return false;

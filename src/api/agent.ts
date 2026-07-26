@@ -7,7 +7,6 @@ import { USE_MOCK } from "@/api/config";
 import {
   applyClientCategoryFilter,
   buildLiveFeedParams,
-  buildLiveSoldParams,
 } from "@/api/feed-query";
 import {
   startFeedHub,
@@ -28,10 +27,23 @@ import {
   resetHttpClient,
   setAuthToken as setHttpAuthToken,
 } from "@/api/http/client";
-import { liveFeed, liveSoldListings } from "@/api/http/feed";
+import { liveFeed } from "@/api/http/feed";
+import { liveFilters } from "@/api/http/filters";
 import { liveGroupSearch } from "@/api/http/group-search";
 import { livePlaces } from "@/api/http/places";
 import { liveSubscription } from "@/api/http/subscription";
+import {
+  createFilter as mockCreateFilter,
+  deleteFilter as mockDeleteFilter,
+  getFilter as mockGetFilter,
+  getFilterTabs as mockGetFilterTabs,
+  listFilters as mockListFilters,
+  updateFilter as mockUpdateFilter,
+} from "@/mocks/services/filters";
+import type {
+  CreateUserFilterInput,
+  UpdateUserFilterInput,
+} from "@/models/user-filter";
 import type { SearchGroup } from "@/mocks/data/home";
 import type { LocationResult } from "@/mocks/data/locations";
 import type {
@@ -39,6 +51,11 @@ import type {
   SubscriptionTier,
 } from "@/mocks/data/subscription";
 import * as mockAccount from "@/mocks/services/account";
+import {
+  blockSeller as mockBlockSeller,
+  listBlockedSellers as mockListBlockedSellers,
+  unblockSeller as mockUnblockSeller,
+} from "@/mocks/services/blocked-sellers";
 import {
   listCarMakes as mockListCarMakes,
   listIphoneModelGroups as mockListIphoneModelGroups,
@@ -142,6 +159,7 @@ const mockFeedApi = {
       { key: "custom:couch", label: "Couch", groupIds: ["group-couch"] },
       { key: "custom:xbox", label: "Xbox", groupIds: ["group-xbox"] },
     ],
+    filterTabs: await mockGetFilterTabs(),
   }),
   setClicked: async (_id: string) => undefined,
   setViewed: async (_id: string) => undefined,
@@ -237,15 +255,6 @@ function mapLocalCompToFeedItem(comp: LocalCompItem): FeedItem {
 const liveFeedApi = {
   list: async (params?: GetFeedParams): Promise<PaginatedResult<FeedItem[]>> => {
     const category = params?.category ?? "all";
-    if (category === "sold") {
-      const result = await liveSoldListings.list(
-        buildLiveSoldParams(params ?? {}),
-      );
-      return {
-        data: result.data ?? [],
-        pagination: result.pagination,
-      };
-    }
     const result = await liveFeed.list(buildLiveFeedParams(params ?? {}));
     const items = applyClientCategoryFilter(
       result.data ?? [],
@@ -307,13 +316,6 @@ const liveFeedHubApi = {
 
 const FeedHub = USE_MOCK ? mockFeedHubApi : liveFeedHubApi;
 
-const SoldListings = {
-  list: USE_MOCK
-    ? async (params?: GetFeedParams) =>
-        getFeedPage({ ...params, category: "sold" })
-    : (params?: URLSearchParams) => liveSoldListings.list(params),
-};
-
 // ─── GroupSearch ───────────────────────────────────────────────────────────
 
 const mockGroupSearch = {
@@ -338,6 +340,19 @@ const mockGroupSearch = {
 };
 
 const GroupSearch = USE_MOCK ? mockGroupSearch : liveGroupSearch;
+
+// ─── Filters ───────────────────────────────────────────────────────────────
+
+const mockFilters = {
+  list: () => mockListFilters(),
+  get: (id: string) => mockGetFilter(id),
+  create: (input: CreateUserFilterInput) => mockCreateFilter(input),
+  update: (id: string, input: UpdateUserFilterInput) =>
+    mockUpdateFilter(id, input),
+  delete: (id: string) => mockDeleteFilter(id),
+};
+
+const Filters = USE_MOCK ? mockFilters : liveFilters;
 
 // ─── Subscription ──────────────────────────────────────────────────────────
 
@@ -394,7 +409,33 @@ const IphoneModels = USE_MOCK
 const SamsungModels = USE_MOCK
   ? {
       list: async () => [],
-      listGrouped: async () => ({ groups: [] }),
+      listGrouped: async () => ({
+        resolvedCountryCode: "US",
+        resolvedCountryName: "United States",
+        pricingSource: "fallback",
+        currencyCode: "USD",
+        currencySymbol: "$",
+        groups: [
+          {
+            key: "galaxy-s",
+            label: "Galaxy S",
+            models: [
+              {
+                model: "galaxy-s24",
+                displayName: "Galaxy S24",
+                minPrice: 400,
+                maxPrice: 900,
+              },
+              {
+                model: "galaxy-s23",
+                displayName: "Galaxy S23",
+                minPrice: 300,
+                maxPrice: 700,
+              },
+            ],
+          },
+        ],
+      }),
     }
   : liveSamsungModels;
 
@@ -415,19 +456,22 @@ const Search = USE_MOCK
 
 const BlockedSellers = USE_MOCK
   ? {
-      list: async () => ({
-        data: [] as never[],
-        pagination: {
-          currentPage: 1,
-          itemsPerPage: 20,
-          totalItems: 0,
-          totalPages: 0,
-        },
-      }),
-      block: async () => {
-        throw new Error("Blocked sellers require live API");
+      list: async () => {
+        const data = await mockListBlockedSellers();
+        return {
+          data,
+          pagination: {
+            currentPage: 1,
+            itemsPerPage: 20,
+            totalItems: data.length,
+            totalPages: 1,
+          },
+        };
       },
-      unblock: async () => undefined,
+      block: mockBlockSeller,
+      unblock: async (id: string) => {
+        await mockUnblockSeller(id);
+      },
     }
   : liveBlockedSellers;
 
@@ -451,8 +495,8 @@ const agent = {
   Account,
   Feed,
   FeedHub,
-  SoldListings,
   GroupSearch,
+  Filters,
   Locations,
   Platform,
   IphoneModels,

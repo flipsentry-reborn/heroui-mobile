@@ -15,8 +15,10 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from "react-native";
+import Animated, { LinearTransition } from "react-native-reanimated";
 import {
   Accordion,
+  AccordionLayoutTransition,
   PressableFeedback,
   SkeletonGroup,
   Surface,
@@ -29,7 +31,6 @@ import { useUniwind, withUniwind } from "uniwind";
 import { useBottomChrome } from "@/contexts/bottom-chrome-context";
 import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import {
-  FEED_FOR_YOU_DRAW_DISTANCE,
   FEED_RAIL_DRAW_DISTANCE,
   FEED_RAIL_FEATURED_ROW_HEIGHT,
   FEED_RAIL_ROW_HEIGHT,
@@ -41,6 +42,16 @@ import type { FeedItem as FeedModel } from "@/models/feed";
 import { useStore } from "@/store/store";
 
 const StyledIonicons = withUniwind(Ionicons);
+const StyledAnimatedView = withUniwind(Animated.View);
+
+/**
+ * Snappier than HeroUI default (mass 4) — FlashList cells can't join layout
+ * transitions, so For You uses ScrollView + this spring for expand/collapse.
+ */
+const FOR_YOU_ACCORDION_LAYOUT = LinearTransition.springify()
+  .damping(70)
+  .stiffness(1000)
+  .mass(2);
 
 interface FeedForYouPageProps {
   query: string;
@@ -55,11 +66,13 @@ type ShelfDef = {
   label: string;
   badge?: string;
   isAccordion?: boolean;
+  isExpandedGroup?: boolean;
   featured?: boolean;
 };
 
 type ForYouRow =
   | { type: "accordion"; key: string; shelf: ShelfDef }
+  | { type: "expanded-group"; key: string; shelf: ShelfDef }
   | { type: "featured"; key: string; shelf: ShelfDef; items: FeedModel[] }
   | { type: "shelf"; key: string; shelf: ShelfDef; items: FeedModel[] };
 
@@ -95,13 +108,23 @@ function ShelfRail({
   onToggleFavorite,
   featured = false,
   contentPadding = 12,
+  /**
+   * Accordion expand mounts content mid-animation — FlashList init delays
+   * height, so use a plain ScrollView there for immediate layout.
+   */
+  lightweight = false,
 }: {
   items: FeedModel[];
   onPressItem?: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   featured?: boolean;
   contentPadding?: number;
+  lightweight?: boolean;
 }): JSX.Element {
+  const rowHeight = featured
+    ? FEED_RAIL_FEATURED_ROW_HEIGHT
+    : FEED_RAIL_ROW_HEIGHT;
+
   const renderItem = useCallback<ListRenderItem<FeedModel>>(
     ({ item }) => (
       <FeedItem
@@ -117,6 +140,32 @@ function ShelfRail({
 
   const keyExtractor = useCallback((item: FeedModel) => item.id, []);
 
+  if (lightweight) {
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        nestedScrollEnabled
+        directionalLockEnabled
+        disableIntervalMomentum
+        decelerationRate="fast"
+        style={{ height: rowHeight }}
+        contentContainerStyle={{ paddingHorizontal: contentPadding }}
+      >
+        {items.map((item) => (
+          <FeedItem
+            key={item.id}
+            feed={item}
+            layout="rail"
+            featured={featured}
+            onPress={onPressItem}
+            onToggleFavorite={onToggleFavorite}
+          />
+        ))}
+      </ScrollView>
+    );
+  }
+
   return (
     <FlashList
       data={items}
@@ -126,13 +175,10 @@ function ShelfRail({
       drawDistance={FEED_RAIL_DRAW_DISTANCE}
       showsHorizontalScrollIndicator={false}
       // Fixed height so nested horizontal lists don't collapse before measure.
-      style={{
-        height: featured ? FEED_RAIL_FEATURED_ROW_HEIGHT : FEED_RAIL_ROW_HEIGHT,
-      }}
+      style={{ height: rowHeight }}
       contentContainerStyle={{
         paddingHorizontal: contentPadding,
       }}
-      // Nested inside vertical FlashList / accordion — lock axis.
       nestedScrollEnabled
       directionalLockEnabled
       disableIntervalMomentum
@@ -195,6 +241,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
   const { onFeedScroll, onFeedScrollEnd } = useBottomChrome();
   const forYouShelves = searchStore.forYouShelves;
   const yourSearchChildren = searchStore.yourSearchChildren;
+  const yourFilterChildren = searchStore.yourFilterChildren;
   const yourSearchesExpanded = feedStore.yourSearchesExpanded;
   const feedCategoryKeys = useMemo(
     () => new Set(searchStore.feedCategories.map((c) => c.key)),
@@ -212,7 +259,13 @@ export const FeedForYouPage = observer(function FeedForYouPage({
 
   const openCategory = useCallback(
     (key: string) => {
-      if (key === "for-you" || key === "your-searches") return;
+      if (
+        key === "for-you" ||
+        key === "your-searches" ||
+        key === "your-filters"
+      ) {
+        return;
+      }
       if (onOpenCategory && feedCategoryKeys.has(key)) {
         onOpenCategory(key);
         return;
@@ -222,23 +275,27 @@ export const FeedForYouPage = observer(function FeedForYouPage({
     [feedCategoryKeys, onOpenCategory, router],
   );
 
+  const groupChildrenFor = useCallback(
+    (shelfKey: string) => {
+      if (shelfKey === "your-filters") return yourFilterChildren;
+      return yourSearchChildren;
+    },
+    [yourFilterChildren, yourSearchChildren],
+  );
+
   const shelfKeys = useMemo(() => {
     const keys: string[] = [];
     for (const shelf of forYouShelves) {
-      if (shelf.isAccordion) {
-        for (const child of yourSearchChildren) keys.push(child.key);
-      } else if (shelf.key !== "your-searches") {
+      if (shelf.isAccordion || shelf.isExpandedGroup) {
+        for (const child of groupChildrenFor(shelf.key)) {
+          keys.push(child.key);
+        }
+      } else if (shelf.key !== "your-searches" && shelf.key !== "your-filters") {
         keys.push(shelf.key);
       }
     }
     return keys;
-  }, [forYouShelves, yourSearchChildren]);
-
-  const allChildrenAlphabetical = useMemo(
-    () =>
-      [...yourSearchChildren].sort((a, b) => a.label.localeCompare(b.label)),
-    [yourSearchChildren],
-  );
+  }, [forYouShelves, groupChildrenFor]);
 
   const loading =
     shelfKeys.some((key) => feedStore.isBucketLoading(key)) && !hasLoaded.current;
@@ -309,6 +366,10 @@ export const FeedForYouPage = observer(function FeedForYouPage({
   // Build during render (not useMemo) so MobX observer tracks getShelf / items.
   const rows: ForYouRow[] = [];
   for (const shelf of forYouShelves) {
+    if (shelf.isExpandedGroup) {
+      rows.push({ type: "expanded-group", key: shelf.key, shelf });
+      continue;
+    }
     if (shelf.isAccordion) {
       rows.push({ type: "accordion", key: shelf.key, shelf });
       continue;
@@ -323,114 +384,186 @@ export const FeedForYouPage = observer(function FeedForYouPage({
     });
   }
 
-  const getItemType = useCallback((item: ForYouRow) => item.type, []);
+  const renderChildShelf = useCallback(
+    (
+      child: {
+        key: string;
+        label: string;
+        color?: string;
+      },
+      opts?: { lightweight?: boolean },
+    ) => {
+      const items = feedStore.getShelf(child.key);
+      if (items.length === 0 && !loading) return null;
 
-  const keyExtractor = useCallback((item: ForYouRow) => item.key, []);
+      return (
+        <View key={child.key} className="mb-2.5">
+          <PressableFeedback
+            onPress={() => openCategory(child.key)}
+            className="mb-1.5 flex-row items-center justify-between px-3 py-0.5"
+            animation={{ scale: { value: 0.99 } }}
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${child.label}`}
+          >
+            <View className="min-w-0 flex-1 flex-row items-center gap-2">
+              {child.color ? (
+                <View
+                  className="h-2.5 w-2.5 rounded-full border border-border"
+                  style={{ backgroundColor: child.color }}
+                />
+              ) : null}
+              <Typography
+                type="body"
+                weight="semibold"
+                className="text-[14px] text-foreground"
+              >
+                {child.label}
+              </Typography>
+            </View>
+            <StyledIonicons
+              name="chevron-forward"
+              size={16}
+              className="text-muted"
+            />
+          </PressableFeedback>
+          <ShelfRail
+            items={items}
+            onPressItem={onPressItem}
+            onToggleFavorite={onToggleFavorite}
+            lightweight={opts?.lightweight}
+          />
+        </View>
+      );
+    },
+    [feedStore, loading, onPressItem, onToggleFavorite, openCategory],
+  );
+
+  const renderExpandedGroup = useCallback(
+    (shelf: ShelfDef) => {
+      const children = [...groupChildrenFor(shelf.key)].sort((a, b) =>
+        a.label.localeCompare(b.label),
+      );
+
+      return (
+        <StyledAnimatedView
+          key={shelf.key}
+          layout={AccordionLayoutTransition}
+          className="mb-2.5"
+        >
+          <Surface
+            variant="default"
+            className="w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl px-0 py-2"
+          >
+            <View className="mb-1 px-3 py-0.5">
+              <Typography
+                type="body"
+                weight="semibold"
+                className="text-[16px] text-foreground"
+              >
+                {shelf.label}
+              </Typography>
+            </View>
+            {children.map((child) => renderChildShelf(child))}
+          </Surface>
+        </StyledAnimatedView>
+      );
+    },
+    [groupChildrenFor, renderChildShelf],
+  );
 
   const renderAccordion = useCallback(
-    (shelf: ShelfDef) => (
-      <View className="mb-2.5">
-        <Surface
-          variant="default"
-          className="w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl px-0 py-2"
+    (shelf: ShelfDef) => {
+      const children = [...groupChildrenFor(shelf.key)].sort((a, b) =>
+        a.label.localeCompare(b.label),
+      );
+
+      return (
+        <StyledAnimatedView
+          key={shelf.key}
+          layout={AccordionLayoutTransition}
+          className="mb-2.5"
         >
-          <Accordion
-            selectionMode="single"
-            hideSeparator
-            isCollapsible
-            className="bg-transparent"
-            value={yourSearchesExpanded ? shelf.key : undefined}
-            onValueChange={(next: string | string[] | undefined) => {
-              const nextValue = Array.isArray(next) ? next[0] : next;
-              feedStore.setYourSearchesExpanded(
-                typeof nextValue === "string" && nextValue === shelf.key,
-              );
-            }}
+          <Surface
+            variant="default"
+            className="w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl px-0 py-2"
           >
-            <Accordion.Item value={shelf.key}>
-              {({ isExpanded }) => (
-                <>
-                  <Accordion.Trigger className="px-3 py-0.5">
-                    <Typography
-                      type="body"
-                      weight="semibold"
-                      className="flex-1 text-[16px] text-foreground"
+            <Accordion
+              selectionMode="single"
+              hideSeparator
+              isCollapsible
+              className="bg-transparent"
+              value={yourSearchesExpanded ? shelf.key : undefined}
+              onValueChange={(next: string | string[] | undefined) => {
+                const nextValue = Array.isArray(next) ? next[0] : next;
+                feedStore.setYourSearchesExpanded(
+                  typeof nextValue === "string" && nextValue === shelf.key,
+                );
+              }}
+              animation={{
+                layout: { value: FOR_YOU_ACCORDION_LAYOUT },
+              }}
+            >
+              <Accordion.Item value={shelf.key}>
+                {({ isExpanded }) => (
+                  <>
+                    <Accordion.Trigger className="px-3 py-0.5">
+                      <Typography
+                        type="body"
+                        weight="semibold"
+                        className="flex-1 text-[16px] text-foreground"
+                      >
+                        {shelf.label}
+                      </Typography>
+                      <Accordion.Indicator />
+                    </Accordion.Trigger>
+
+                    {/* Keep preview in layout tree so collapse/expand doesn't jump */}
+                    <StyledAnimatedView
+                      layout={FOR_YOU_ACCORDION_LAYOUT}
+                      className={
+                        isExpanded
+                          ? "h-0 overflow-hidden opacity-0"
+                          : "mt-1 px-3 pb-0.5 opacity-100"
+                      }
                     >
-                      {shelf.label}
-                    </Typography>
-                    <Accordion.Indicator />
-                  </Accordion.Trigger>
+                      <Typography
+                        type="body-sm"
+                        className="text-[13px] text-muted"
+                        numberOfLines={1}
+                      >
+                        {children.map((child) => child.label).join(", ")}
+                      </Typography>
+                    </StyledAnimatedView>
 
-                  {!isExpanded ? (
-                    <Typography
-                      type="body-sm"
-                      className="mt-1 px-3 pb-0.5 text-[13px] text-muted"
-                      numberOfLines={1}
-                    >
-                      {allChildrenAlphabetical
-                        .map((child) => child.label)
-                        .join(", ")}
-                    </Typography>
-                  ) : null}
-
-                  <Accordion.Content className="pt-1">
-                    {allChildrenAlphabetical.map((child) => {
-                      const items = feedStore.getShelf(child.key);
-                      if (items.length === 0 && !loading) return null;
-
-                      return (
-                        <View key={child.key} className="mb-2.5">
-                          <PressableFeedback
-                            onPress={() => openCategory(child.key)}
-                            className="mb-1.5 flex-row items-center justify-between px-3 py-0.5"
-                            animation={{ scale: { value: 0.99 } }}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Open ${child.label}`}
-                          >
-                            <Typography
-                              type="body"
-                              weight="semibold"
-                              className="text-[14px] text-foreground"
-                            >
-                              {child.label}
-                            </Typography>
-                            <StyledIonicons
-                              name="chevron-forward"
-                              size={16}
-                              className="text-muted"
-                            />
-                          </PressableFeedback>
-                          <ShelfRail
-                            items={items}
-                            onPressItem={onPressItem}
-                            onToggleFavorite={onToggleFavorite}
-                          />
-                        </View>
-                      );
-                    })}
-                  </Accordion.Content>
-                </>
-              )}
-            </Accordion.Item>
-          </Accordion>
-        </Surface>
-      </View>
-    ),
+                    {/* Layout spring owns expand; content fade reads as a late spawn. */}
+                    <Accordion.Content className="pt-1" animation={false}>
+                      {children.map((child) =>
+                        renderChildShelf(child, { lightweight: true }),
+                      )}
+                    </Accordion.Content>
+                  </>
+                )}
+              </Accordion.Item>
+            </Accordion>
+          </Surface>
+        </StyledAnimatedView>
+      );
+    },
     [
-      allChildrenAlphabetical,
       feedStore,
-      loading,
-      onPressItem,
-      onToggleFavorite,
-      openCategory,
+      groupChildrenFor,
+      renderChildShelf,
       yourSearchesExpanded,
     ],
   );
 
-  const renderItem = useCallback<ListRenderItem<ForYouRow>>(
-    ({ item }) => {
+  const renderRow = useCallback(
+    (item: ForYouRow) => {
       if (item.type === "accordion") {
         return renderAccordion(item.shelf);
+      }
+      if (item.type === "expanded-group") {
+        return renderExpandedGroup(item.shelf);
       }
 
       const header = (
@@ -450,7 +583,11 @@ export const FeedForYouPage = observer(function FeedForYouPage({
 
       if (item.type === "featured") {
         return (
-          <View className="mb-2.5">
+          <StyledAnimatedView
+            key={item.key}
+            layout={AccordionLayoutTransition}
+            className="mb-2.5"
+          >
             <Surface
               variant="default"
               className="w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl px-0 py-2"
@@ -458,18 +595,28 @@ export const FeedForYouPage = observer(function FeedForYouPage({
               {header}
               {rail}
             </Surface>
-          </View>
+          </StyledAnimatedView>
         );
       }
 
       return (
-        <View className="mb-2.5">
+        <StyledAnimatedView
+          key={item.key}
+          layout={AccordionLayoutTransition}
+          className="mb-2.5"
+        >
           {header}
           {rail}
-        </View>
+        </StyledAnimatedView>
       );
     },
-    [onPressItem, onToggleFavorite, openCategory, renderAccordion],
+    [
+      onPressItem,
+      onToggleFavorite,
+      openCategory,
+      renderAccordion,
+      renderExpandedGroup,
+    ],
   );
 
   if (loading) {
@@ -490,16 +637,14 @@ export const FeedForYouPage = observer(function FeedForYouPage({
 
   return (
     <View className="flex-1">
-      <FlashList
-        data={rows}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        getItemType={getItemType}
-        drawDistance={FEED_FOR_YOU_DRAW_DISTANCE}
-        contentContainerStyle={{
-          paddingTop: 2,
-          paddingBottom: 112,
-        }}
+      {/*
+        Accordion layout springs need a Reanimated scroll host — FlashList
+        remasures cells after expand, which looks like a delayed spawn.
+      */}
+      <Animated.ScrollView
+        layout={AccordionLayoutTransition}
+        className="flex-1"
+        contentContainerClassName="pb-[112px] pt-0.5"
         onScroll={handleScroll}
         onScrollEndDrag={handleScrollEnd}
         onMomentumScrollEnd={handleScrollEnd}
@@ -516,7 +661,9 @@ export const FeedForYouPage = observer(function FeedForYouPage({
             tintColor={accent}
           />
         }
-      />
+      >
+        {rows.map((row) => renderRow(row))}
+      </Animated.ScrollView>
     </View>
   );
 });

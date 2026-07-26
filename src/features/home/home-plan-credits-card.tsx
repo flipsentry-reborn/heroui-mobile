@@ -1,15 +1,13 @@
-import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Chip } from "heroui-native";
 
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
-import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
+import { SubscriptionCardBackdrop } from "@/features/settings/subscription-card-backdrop";
 import {
   NOT_SUBSCRIBED_ICON_STROKE,
   NOT_SUBSCRIBED_PALETTE,
   PLAN_ACCENTS,
-  PLAN_GLOW_GRADIENT,
 } from "@/features/settings/subscription-theme";
 import { Fonts } from "@/lib/fonts";
 import type { HomePlan } from "@/mocks/data/home";
@@ -39,23 +37,14 @@ export function HomePlanCreditsCard({
       onPress={onPress}
       className={
         isSubscribed
-          ? "mx-3 mb-3 overflow-hidden rounded-3xl border border-white/10"
+          ? "mx-3 mb-3 overflow-hidden rounded-3xl border border-white/15"
           : "mx-3 mb-3 overflow-hidden rounded-3xl border border-black/10"
       }
     >
-      <LinearGradient
-        colors={palette.gradient}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+      <SubscriptionCardBackdrop
+        palette={palette}
+        showParticles={isSubscribed}
       />
-      <LinearGradient
-        colors={[palette.glow, "transparent"]}
-        start={PLAN_GLOW_GRADIENT.start}
-        end={PLAN_GLOW_GRADIENT.end}
-        style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-      />
-      {isSubscribed ? <SubscriptionParticleField /> : null}
 
       <View className="gap-2.5 p-[15px]">
         <View className="flex-row items-center gap-2">

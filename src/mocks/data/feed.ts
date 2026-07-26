@@ -1487,3 +1487,28 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  ] as ExtraListing[]
  ).map(extraListing),
 ];
+
+/** Tag fixtures for seeded mock user filters (see mocks/services/filters). */
+for (const item of MOCK_FEED_ITEMS) {
+  const ids: string[] = [];
+  const haystack = `${item.title} ${item.description}`.toLowerCase();
+  if (haystack.includes("toyota") || item.compValuation?.make === "Toyota") {
+    ids.push("filter-toyota");
+  }
+  if (
+    haystack.includes("iphone") ||
+    item.iphoneStorageGb != null ||
+    item.searchSettingIds.includes("group-iphones")
+  ) {
+    ids.push("filter-iphone-deals");
+  }
+  if (ids.length > 0) {
+    item.filterIds = ids;
+    item.filters = ids.map((id) => ({
+      id,
+      name: id === "filter-toyota" ? "Toyota deals" : "iPhone deals",
+      color: id === "filter-toyota" ? "#3B82F6" : "#8B5CF6",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    }));
+  }
+}

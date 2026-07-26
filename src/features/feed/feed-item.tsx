@@ -16,6 +16,7 @@ import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
 import { AiEstimationIcon } from "@/components/icons/ai-estimation-icon";
 import PlatformIcon from "@/components/icons/PlatformIcon";
 import {
+  FilterMatchBadge,
   StatusBadge,
   ValuationBadge,
 } from "@/features/feed/feed-badge";
@@ -26,7 +27,6 @@ import {
 } from "@/features/feed/sold-status";
 import { debugLog } from "@/lib/debug-log";
 import { formatOdometerCompact } from "@/lib/distance-utils";
-import { getDistanceUnitSync } from "@/mocks/services/settings";
 import {
   getOrderedStatusBadges,
   resolveDisplayValuation,
@@ -85,7 +85,7 @@ function FeedItemInner({
   imageCornerSide = "right",
   hideFavorite = false,
 }: FeedItemProps): JSX.Element {
-  const { feedStore } = useStore();
+  const { feedStore, userStore } = useStore();
   const [surfaceSecondary] = useThemeColor(["surface-secondary"]);
   // Reset when the recycled cell binds a different listing (or isNew flips).
   const [showNewShimmer, setShowNewShimmer] = useRecyclingState(
@@ -99,7 +99,7 @@ function FeedItemInner({
     undefined;
   const statusBadges = getOrderedStatusBadges(feed);
   const valuation = resolveDisplayValuation(feed);
-  const distanceUnit = getDistanceUnitSync();
+  const distanceUnit = userStore.preferences?.distanceUnit ?? "mi";
   const mileageDisplay = resolveFeedMileageDisplay(feed);
   const mileageText =
     mileageDisplay != null
@@ -214,6 +214,15 @@ function FeedItemInner({
             active={showNewShimmer}
             onDone={handleShimmerDone}
           />
+
+          {(feed.filters?.length ?? 0) > 0 ? (
+            <View className="absolute left-1.5 top-1.5">
+              <FilterMatchBadge
+                filters={feed.filters ?? []}
+                scale={badgeScale}
+              />
+            </View>
+          ) : null}
 
           {!hideFavorite ? (
             <PressableFeedback

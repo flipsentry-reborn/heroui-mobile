@@ -1,7 +1,9 @@
 import type { JSX } from "react";
+import { View } from "react-native";
 import { Chip } from "heroui-native";
 
 import { getValuationTier, type ValuationTier } from "@/models/feed";
+import type { FeedFilterSummary } from "@/models/user-filter";
 
 type BadgeScale = "default" | "detail";
 
@@ -15,6 +17,11 @@ const BADGE_SIZE_CLASS: Record<BadgeScale, string> = {
 const BADGE_LABEL_SIZE_CLASS: Record<BadgeScale, string> = {
   default: "text-xs font-extrabold leading-none",
   detail: "text-sm font-extrabold leading-none",
+};
+
+const FILTER_DOT_SIZE_CLASS: Record<BadgeScale, string> = {
+  default: "h-2 w-2",
+  detail: "h-2.5 w-2.5",
 };
 
 /**
@@ -102,4 +109,48 @@ export function StatusBadge({
   scale?: BadgeScale;
 }): JSX.Element {
   return <FeedBadge label={label} scale={scale} chipClass="!bg-black/75" />;
+}
+
+/** Filter match chip — Negotiable shell + color dots + count label. */
+export function FilterMatchBadge({
+  filters,
+  scale = "default",
+}: {
+  filters: FeedFilterSummary[];
+  scale?: BadgeScale;
+}): JSX.Element | null {
+  const count = filters.length;
+  if (count === 0) return null;
+
+  const ordered = [...filters].sort(
+    (a, b) =>
+      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
+  const colors = ordered.slice(0, 3).map((f) => f.color);
+  const label =
+    count === 1 ? "1 filter match" : `${count} filter matches`;
+
+  return (
+    <Chip
+      size="sm"
+      variant="primary"
+      color="default"
+      className={`${BADGE_SIZE_CLASS[scale]} gap-1 !bg-black/75`}
+    >
+      <View className="flex-row items-center gap-0.5">
+        {colors.map((color, index) => (
+          <View
+            key={`${color}-${index}`}
+            className={`${FILTER_DOT_SIZE_CLASS[scale]} rounded-full border border-white/80`}
+            style={{ backgroundColor: color }}
+          />
+        ))}
+      </View>
+      <Chip.Label
+        className={`${BADGE_LABEL_SIZE_CLASS[scale]} !text-white`}
+      >
+        {label}
+      </Chip.Label>
+    </Chip>
+  );
 }

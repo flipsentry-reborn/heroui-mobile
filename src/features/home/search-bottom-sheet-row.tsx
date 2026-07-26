@@ -18,6 +18,8 @@ interface SearchBottomSheetRowProps {
   isLast?: boolean;
   iconClassName?: string;
   required?: boolean;
+  /** Asterisk color — filter uses warning (yellow). */
+  requiredTone?: "danger" | "warning";
   showSwap?: boolean;
   /** Non-interactive + muted until prerequisites (e.g. search type) are met. */
   disabled?: boolean;
@@ -33,6 +35,7 @@ function RowBody({
   showChevron,
   iconClassName,
   required,
+  requiredTone,
   showSwap,
 }: {
   icon: IonName;
@@ -42,9 +45,15 @@ function RowBody({
   showChevron: boolean;
   iconClassName: string;
   required?: boolean;
+  requiredTone: "danger" | "warning";
   showSwap?: boolean;
 }): JSX.Element {
-  const [muted, danger] = useThemeColor(["muted", "danger"]);
+  const [muted, danger, warning] = useThemeColor([
+    "muted",
+    "danger",
+    "warning",
+  ]);
+  const requiredColor = requiredTone === "warning" ? warning : danger;
 
   return (
     <>
@@ -60,7 +69,7 @@ function RowBody({
             <Ionicons name="swap-vertical" size={14} color={muted} />
           ) : null}
           {required ? (
-            <Typography type="body-sm" style={{ color: danger }}>
+            <Typography type="body-sm" style={{ color: requiredColor }}>
               *
             </Typography>
           ) : null}
@@ -94,6 +103,7 @@ export function SearchBottomSheetRow({
   isLast = false,
   iconClassName = "text-muted",
   required,
+  requiredTone = "danger",
   showSwap,
   disabled = false,
   hideSeparator = false,
@@ -107,6 +117,7 @@ export function SearchBottomSheetRow({
       showChevron={showChevron}
       iconClassName={disabled ? "text-muted/50" : iconClassName}
       required={required}
+      requiredTone={requiredTone}
       showSwap={showSwap}
     />
   );

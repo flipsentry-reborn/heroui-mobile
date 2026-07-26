@@ -159,6 +159,7 @@ export interface CreateHomeSearchInput {
   customLabel?: string;
   containsText?: string[];
   excludeText?: string[];
+  notificationEnabled?: boolean;
   /** Geo fields used by live GroupSearch. */
   latitude?: number;
   longitude?: number;
@@ -236,6 +237,7 @@ export async function createGroup(
     iphoneQuery: input.iphoneQuery,
     customLabel: input.customLabel,
     settings,
+    notificationEnabled: input.notificationEnabled ?? true,
     createdAt,
     updatedAt: createdAt,
   };
@@ -297,6 +299,8 @@ export async function updateGroup(
     iphoneQuery: input.iphoneQuery,
     customLabel: input.customLabel,
     settings,
+    notificationEnabled:
+      input.notificationEnabled ?? existing.notificationEnabled ?? true,
     createdAt: existing.createdAt ?? nowIso(),
     updatedAt: nowIso(),
   };

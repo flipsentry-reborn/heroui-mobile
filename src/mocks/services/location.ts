@@ -3,9 +3,9 @@ import {
   isLocationSpeedSelected,
   locationsFixture,
   type LocationDraft,
-  type LocationPlatform,
   type LocationResult,
 } from "@/mocks/data/locations";
+import { DEFAULT_US_LOCATION_PLATFORMS } from "@/lib/location-platforms";
 import { buildMockSuggestLocationsResult } from "@/lib/location-suggest";
 import { cityFromLocation } from "@/mocks/services/home";
 import type {
@@ -28,7 +28,7 @@ function normalizeDraft(value: LocationDraft): LocationDraft {
     platforms:
       Array.isArray(value.platforms) && value.platforms.length > 0
         ? value.platforms
-        : (["facebook"] as LocationPlatform[]),
+        : [...DEFAULT_US_LOCATION_PLATFORMS],
     otherSpeeds: value.otherSpeeds ?? {},
     placesById: value.placesById ?? {},
   };

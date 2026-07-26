@@ -172,6 +172,10 @@ export interface FeedItem {
   searchSettingIds: string[];
   /** Search groups this feed matched (SignalR routing). */
   searchGroupIds?: string[];
+  /** User filters this feed matched. */
+  filterIds?: string[];
+  /** Filter summaries (id/name/color) ordered by updatedAt desc. */
+  filters?: import("@/models/user-filter").FeedFilterSummary[];
   keywordTags: KeywordTags;
   createdAt: string;
   /** Seconds from listing to found (minus platform lag); from backend. */
@@ -558,8 +562,16 @@ export interface FeedFilterTab {
   groupIds: string[];
 }
 
+export interface FeedUserFilterTab {
+  key: string;
+  label: string;
+  color?: string;
+  filterIds: string[];
+}
+
 export interface FeedTabAvailability {
   showFeatured: boolean;
   showSold: boolean;
   tabs: FeedFilterTab[];
+  filterTabs?: FeedUserFilterTab[];
 }

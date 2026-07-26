@@ -6,14 +6,20 @@ import { View } from "react-native";
 import {
   BottomSheet,
   Button,
+  Switch,
   Typography,
   useBottomSheet,
   useThemeColor,
   useToast,
 } from "heroui-native";
 
+import agent from "@/api/agent";
 import PlatformIcon from "@/components/icons/PlatformIcon";
-import { loadGroupForEdit } from "@/features/home/load-group-for-edit";
+import {
+  buildNewSearchLocationDraft,
+  countryFromSearchGroup,
+  loadGroupForEdit,
+} from "@/features/home/load-group-for-edit";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import {
   DEFAULT_CAR_MAKES,
@@ -24,8 +30,10 @@ import {
   isCustomSearchQueryValid,
   SearchBottomSheetCriteria,
 } from "@/features/home/search-bottom-sheet-criteria";
+import { SearchBottomSheetCustomQuerySheet } from "@/features/home/search-bottom-sheet-custom-query-sheet";
 import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import {
+  fetchDefaultIphoneSelections,
   SearchBottomSheetIphoneModelsSheet,
   type IphoneModelSelection,
 } from "@/features/home/search-bottom-sheet-iphone-models-sheet";
@@ -55,6 +63,11 @@ import {
   getSearchYearRangeError,
   validateLocationDraft,
 } from "@/domain/search-rules";
+import {
+  defaultEnabledPlatforms,
+  inferCountryCode,
+  normalizeAvailablePlatforms,
+} from "@/lib/location-platforms";
 import type { HomePlatform, SearchGroup, SearchType } from "@/mocks/data/home";
 import {
   isLocationSpeedSelected,
@@ -225,7 +238,7 @@ function SearchSheetContent({
   searchType,
   onSearchTypeChange,
   customQuery,
-  onCustomQueryChange,
+  onCustomQueryOpenChange,
   iphoneSelections,
   onIphoneModelsOpenChange,
   carMakes,
@@ -243,8 +256,11 @@ function SearchSheetContent({
   onMileageOpenChange,
   keywords,
   onKeywordsOpenChange,
+  notificationEnabled,
+  onNotificationEnabledChange,
   childSheetOpen,
   locationReady,
+  saveDisabled,
   submitting,
   errorMessage,
   onConfirm,
@@ -258,7 +274,7 @@ function SearchSheetContent({
   searchType: SearchType | null;
   onSearchTypeChange: (type: SearchType) => void;
   customQuery: string;
-  onCustomQueryChange: (value: string) => void;
+  onCustomQueryOpenChange: (open: boolean) => void;
   iphoneSelections: IphoneModelSelection[];
   onIphoneModelsOpenChange: (open: boolean) => void;
   carMakes: CarMakesSelection;
@@ -276,8 +292,11 @@ function SearchSheetContent({
   onMileageOpenChange: (open: boolean) => void;
   keywords: KeywordsState;
   onKeywordsOpenChange: (open: boolean) => void;
+  notificationEnabled: boolean;
+  onNotificationEnabledChange: (value: boolean) => void;
   childSheetOpen: boolean;
   locationReady: boolean;
+  saveDisabled: boolean;
   submitting: boolean;
   errorMessage: string | null;
   onConfirm: () => void;
@@ -288,7 +307,7 @@ function SearchSheetContent({
   const hasSearchType = searchType != null;
 
   const handleConfirm = () => {
-    if (!hasSearchType) return;
+    if (!hasSearchType || saveDisabled) return;
     if (searchType === "custom" && !isCustomSearchQueryValid(customQuery)) {
       return;
     }
@@ -323,6 +342,7 @@ function SearchSheetContent({
             iconClassName="text-emerald-500"
             title="Search Type"
             required
+            requiredTone="warning"
             showChevron={false}
             isLast={false}
             right={
@@ -337,6 +357,7 @@ function SearchSheetContent({
             iconClassName="text-sky-500"
             title="Location"
             required
+            requiredTone="warning"
             showChevron={false}
             isLast={false}
             hideSeparator
@@ -359,8 +380,9 @@ function SearchSheetContent({
             iconClassName="text-yellow-500"
             title="Platforms"
             required
+            requiredTone="warning"
             showChevron={false}
-            isLast
+            isLast={false}
             disabled={!hasSearchType}
             right={
               <PlatformsRowValue
@@ -369,6 +391,19 @@ function SearchSheetContent({
               />
             }
             onPress={onLocationPress}
+          />
+          <SearchBottomSheetRow
+            icon="notifications"
+            iconClassName="text-violet-500"
+            title="Notifications"
+            showChevron={false}
+            isLast
+            right={
+              <Switch
+                isSelected={notificationEnabled}
+                onSelectedChange={onNotificationEnabledChange}
+              />
+            }
           />
         </SearchBottomSheetSection>
 
@@ -380,8 +415,10 @@ function SearchSheetContent({
 
         <SearchBottomSheetCriteria
           searchType={searchType}
-          customQuery={customQuery}
-          onCustomQueryChange={onCustomQueryChange}
+          customQuery={{
+            value: customQuery,
+            onOpenChange: onCustomQueryOpenChange,
+          }}
           iphoneModels={{
             selections: iphoneSelections,
             onOpenChange: onIphoneModelsOpenChange,
@@ -426,7 +463,7 @@ function SearchSheetContent({
             variant="primary"
             className="min-h-12 flex-1 rounded-2xl"
             onPress={handleConfirm}
-            isDisabled={submitting || searchType == null || !locationReady}
+            isDisabled={saveDisabled}
           >
             <Button.Label>{submitting ? "Saving…" : "Save"}</Button.Label>
           </Button>
@@ -461,6 +498,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
   const [yearOpen, setYearOpen] = useState(false);
   const [mileageOpen, setMileageOpen] = useState(false);
   const [keywordsOpen, setKeywordsOpen] = useState(false);
+  const [customQueryOpen, setCustomQueryOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [iphoneModelsOpen, setIphoneModelsOpen] = useState(false);
   const [carMakesOpen, setCarMakesOpen] = useState(false);
@@ -472,15 +510,19 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
   const [maxMileage, setMaxMileage] = useState("");
   const [searchType, setSearchType] = useState<SearchType | null>(null);
   const [customQuery, setCustomQuery] = useState("");
+  const [notificationEnabled, setNotificationEnabled] = useState(true);
   const [iphoneSelections, setIphoneSelections] = useState<
     IphoneModelSelection[]
   >([]);
+  const [iphoneModelsLoading, setIphoneModelsLoading] = useState(false);
   const [carMakes, setCarMakes] =
     useState<CarMakesSelection>(DEFAULT_CAR_MAKES);
   const [keywords, setKeywords] = useState<KeywordsState>(EMPTY_KEYWORDS);
   const [locationTick, setLocationTick] = useState(0);
   const prefilledGroupIdRef = useRef<string | null>(null);
   const openedSectionKeyRef = useRef<string | null>(null);
+  const newSearchPrefillKeyRef = useRef<string | null>(null);
+  const iphonePrefetchGenRef = useRef(0);
 
   const isEditing = editingGroup != null;
   /** Actions → Filters → section: hide Edit Search until that filter sheet closes. */
@@ -545,17 +587,60 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     if (!visible) {
       prefilledGroupIdRef.current = null;
       openedSectionKeyRef.current = null;
+      newSearchPrefillKeyRef.current = null;
       setRevealParentAfterShortcut(false);
       return;
     }
     if (editingGroup == null) {
-      // New Search always starts with an empty location (no fixture prefill).
-      resetLocationDraft();
+      const prior = searchStore.searchGroups[0] ?? null;
+      const prefillKey = prior?.id ?? "__empty__";
+      if (newSearchPrefillKeyRef.current === prefillKey) return;
+      newSearchPrefillKeyRef.current = prefillKey;
+
       setMinPrice("300");
+
+      if (prior == null) {
+        resetLocationDraft();
+        setLocationTick((value) => value + 1);
+        onLocationLabelChange?.(formatLocationLabel(getLocationDraft()));
+        return;
+      }
+
+      // Reuse prior location/radius/speeds; expand platforms via backend country API.
+      const baseDraft = buildNewSearchLocationDraft(prior);
+      setLocationDraft(baseDraft);
       setLocationTick((value) => value + 1);
-      onLocationLabelChange?.(formatLocationLabel(getLocationDraft()));
-      return;
+      onLocationLabelChange?.(formatLocationLabel(baseDraft));
+
+      let cancelled = false;
+      const country = countryFromSearchGroup(prior);
+      void agent.Platform.getAvailable(country)
+        .then((raw) => {
+          if (cancelled) return;
+          const available = normalizeAvailablePlatforms(raw);
+          const next = buildNewSearchLocationDraft(prior, available);
+          setLocationDraft(next);
+          setLocationTick((value) => value + 1);
+          onLocationLabelChange?.(formatLocationLabel(next));
+        })
+        .catch(() => {
+          if (cancelled) return;
+          // Keep location prefill; fall back to enabling seed US platforms.
+          const fallback = buildNewSearchLocationDraft(
+            prior,
+            defaultEnabledPlatforms([]),
+          );
+          setLocationDraft(fallback);
+          setLocationTick((value) => value + 1);
+          onLocationLabelChange?.(formatLocationLabel(fallback));
+        });
+
+      return () => {
+        cancelled = true;
+      };
     }
+
+    newSearchPrefillKeyRef.current = null;
     if (prefilledGroupIdRef.current === editingGroup.id) return;
     prefilledGroupIdRef.current = editingGroup.id;
     const prefill = loadGroupForEdit(editingGroup);
@@ -571,9 +656,15 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     setMinMileage(prefill.minMileage);
     setMaxMileage(prefill.maxMileage);
     setKeywords(EMPTY_KEYWORDS);
+    setNotificationEnabled(prefill.notificationEnabled);
     setLocationTick((value) => value + 1);
     onLocationLabelChange?.(formatLocationLabel(prefill.locationDraft));
-  }, [visible, editingGroup, onLocationLabelChange]);
+  }, [
+    visible,
+    editingGroup,
+    onLocationLabelChange,
+    searchStore.searchGroups,
+  ]);
 
   useEffect(() => {
     if (!visible || initialSection == null) {
@@ -620,8 +711,36 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
       setCustomQuery("");
     }
     if (type !== "iphone") {
+      iphonePrefetchGenRef.current += 1;
       setIphoneSelections([]);
+      setIphoneModelsLoading(false);
       setIphoneModelsOpen(false);
+    } else if (!isEditing && iphoneSelections.length === 0) {
+      const gen = ++iphonePrefetchGenRef.current;
+      setIphoneModelsLoading(true);
+      const draft = getLocationDraft();
+      const country = inferCountryCode({
+        countryCode: draft.main?.countryCode,
+        displayName: draft.main?.displayName,
+        name: draft.main?.name,
+      });
+      void fetchDefaultIphoneSelections({
+        latitude: draft.main?.latitude,
+        longitude: draft.main?.longitude,
+        country,
+      })
+        .then((all) => {
+          if (gen !== iphonePrefetchGenRef.current) return;
+          setIphoneSelections(all);
+        })
+        .catch(() => {
+          if (gen !== iphonePrefetchGenRef.current) return;
+          setIphoneSelections([]);
+        })
+        .finally(() => {
+          if (gen !== iphonePrefetchGenRef.current) return;
+          setIphoneModelsLoading(false);
+        });
     }
     if (type !== "car") {
       setCarMakes(DEFAULT_CAR_MAKES);
@@ -645,7 +764,9 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     setCarMakesOpen(false);
     setSearchType(null);
     setCustomQuery("");
+    iphonePrefetchGenRef.current += 1;
     setIphoneSelections([]);
+    setIphoneModelsLoading(false);
     setCarMakes(DEFAULT_CAR_MAKES);
     setKeywords(EMPTY_KEYWORDS);
     setMinPrice("");
@@ -654,11 +775,19 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     setMaxYear("");
     setMinMileage("");
     setMaxMileage("");
+    newSearchPrefillKeyRef.current = null;
     // Shared draft is reused across create/edit — always restore empty defaults on close.
     resetLocationDraft();
     setLocationTick((value) => value + 1);
     searchStore.clearError();
   };
+
+  const saveDisabled =
+    searchStore.submitting ||
+    searchType == null ||
+    !locationReady ||
+    (searchType === "custom" && !isCustomSearchQueryValid(customQuery)) ||
+    (searchType === "iphone" && iphoneModelsLoading);
 
   const handleClose = () => {
     resetForm();
@@ -789,6 +918,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
               maxPrice: parseOptionalNumber(s.max),
             }))
           : undefined,
+      notificationEnabled,
     };
 
     const isUpdate = editingGroup != null;
@@ -838,7 +968,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
           searchType={searchType}
           onSearchTypeChange={handleSearchTypeChange}
           customQuery={customQuery}
-          onCustomQueryChange={setCustomQuery}
+          onCustomQueryOpenChange={setCustomQueryOpen}
           iphoneSelections={iphoneSelections}
           onIphoneModelsOpenChange={setIphoneModelsOpen}
           carMakes={carMakes}
@@ -856,16 +986,20 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
           onMileageOpenChange={setMileageOpen}
           keywords={keywords}
           onKeywordsOpenChange={setKeywordsOpen}
+          notificationEnabled={notificationEnabled}
+          onNotificationEnabledChange={setNotificationEnabled}
           childSheetOpen={
             locationOpen ||
             priceOpen ||
             yearOpen ||
             mileageOpen ||
             keywordsOpen ||
+            customQueryOpen ||
             iphoneModelsOpen ||
             carMakesOpen
           }
           locationReady={locationReady}
+          saveDisabled={saveDisabled}
           submitting={searchStore.submitting}
           errorMessage={searchStore.lastError}
           onConfirm={() => {
@@ -911,6 +1045,15 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
         onOpenChange={closeShortcutThenRevealParent(setKeywordsOpen)}
         keywords={keywords}
         onKeywordsChange={setKeywords}
+      />
+
+      <SearchBottomSheetCustomQuerySheet
+        isOpen={visible && customQueryOpen}
+        onOpenChange={closeShortcutThenRevealParent(setCustomQueryOpen)}
+        value={customQuery}
+        onChange={setCustomQuery}
+        title="Search"
+        fieldTitle="Search"
       />
 
       <SearchBottomSheetIphoneModelsSheet

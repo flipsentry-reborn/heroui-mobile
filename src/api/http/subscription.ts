@@ -55,29 +55,66 @@ function normalizeTier(
   return null;
 }
 
-export function mapLiveStatusToApp(
-  live: LiveSubscriptionStatus,
-): SubscriptionStatus {
+const EMPTY_LIVE_STATUS: LiveSubscriptionStatus = {
+  hasActiveSubscription: false,
+  tier: null,
+  productId: null,
+  store: null,
+  status: null,
+  expiresAt: null,
+  isInGracePeriod: false,
+  willRenew: false,
+  isCancelled: false,
+  isTrialActive: false,
+  trialTier: null,
+  trialExpiresAt: null,
+  totalSlots: 0,
+  usedSlots: 0,
+  remainingSlots: 0,
+  allowedSlotSettings: [],
+  remainingSlotSettings: [],
+};
+
+function coerceLiveStatus(
+  live: LiveSubscriptionStatus | null | undefined,
+): LiveSubscriptionStatus {
+  if (live == null || typeof live !== "object") {
+    return EMPTY_LIVE_STATUS;
+  }
   return {
-    hasActiveSubscription: live.hasActiveSubscription,
-    hasActiveTrial: live.isTrialActive,
-    tier: normalizeTier(live.tier),
-    totalSlots: live.totalSlots,
-    usedSlots: live.usedSlots,
-    remainingSlots: live.remainingSlots,
-    allowedSlotSettings: live.allowedSlotSettings,
-    remainingSlotSettings: live.remainingSlotSettings,
+    ...EMPTY_LIVE_STATUS,
+    ...live,
+    allowedSlotSettings: live.allowedSlotSettings ?? [],
+    remainingSlotSettings: live.remainingSlotSettings ?? [],
+  };
+}
+
+export function mapLiveStatusToApp(
+  live: LiveSubscriptionStatus | null | undefined,
+): SubscriptionStatus {
+  const status = coerceLiveStatus(live);
+  return {
+    hasActiveSubscription: Boolean(status.hasActiveSubscription),
+    hasActiveTrial: Boolean(status.isTrialActive),
+    tier: normalizeTier(status.tier),
+    totalSlots: status.totalSlots ?? 0,
+    usedSlots: status.usedSlots ?? 0,
+    remainingSlots: status.remainingSlots ?? 0,
+    allowedSlotSettings: status.allowedSlotSettings,
+    remainingSlotSettings: status.remainingSlotSettings,
   };
 }
 
 export function mapLiveStatusToState(
-  live: LiveSubscriptionStatus,
+  live: LiveSubscriptionStatus | null | undefined,
 ): SubscriptionState {
-  const tier = normalizeTier(live.tier) ?? normalizeTier(live.trialTier);
+  const status = coerceLiveStatus(live);
+  const tier =
+    normalizeTier(status.tier) ?? normalizeTier(status.trialTier);
   return {
     currentTier: tier,
-    hasActiveSubscription: live.hasActiveSubscription,
-    hasActiveTrial: live.isTrialActive,
+    hasActiveSubscription: Boolean(status.hasActiveSubscription),
+    hasActiveTrial: Boolean(status.isTrialActive),
     plans: subscriptionPlans,
   };
 }
@@ -92,12 +129,12 @@ export const liveSubscription = {
     ),
   /** Façade compatible with mock Subscription.get */
   get: async (): Promise<SubscriptionState> => {
-    const live = await liveSubscription.getStatus();
+    const live = await liveSubscription.getStatus().catch(() => null);
     return mapLiveStatusToState(live);
   },
   /** Prefer backend slot math; groups ignored when live. */
   status: async (_groups: SearchGroup[]): Promise<SubscriptionStatus> => {
-    const live = await liveSubscription.getStatus();
+    const live = await liveSubscription.getStatus().catch(() => null);
     return mapLiveStatusToApp(live);
   },
   /** No Adapty in this build — refresh status only. */

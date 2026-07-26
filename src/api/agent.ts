@@ -362,7 +362,7 @@ const Subscription = USE_MOCK
       subscribe: liveSubscription.subscribe,
       restore: liveSubscription.restore,
       getStatus: async () => {
-        const live = await liveSubscription.getStatus();
+        const live = await liveSubscription.getStatus().catch(() => null);
         const { mapLiveStatusToApp } = await import(
           "@/api/http/subscription"
         );

@@ -11,7 +11,7 @@ import { useStore } from "@/store/store";
 
 const TabsLayout = observer(function TabsLayout(): JSX.Element {
   const background = useThemeColor("background");
-  const { userStore, commonStore } = useStore();
+  const { userStore, commonStore, onboardingStore } = useStore();
 
   // Soft restore when JWT survived an API outage but user profile never loaded.
   useEffect(() => {
@@ -38,6 +38,24 @@ const TabsLayout = observer(function TabsLayout(): JSX.Element {
     };
   }, [userStore, userStore.bootstrapped, userStore.isLoggedIn, commonStore.token]);
 
+  useEffect(() => {
+    if (
+      !userStore.bootstrapped ||
+      !userStore.isLoggedIn ||
+      !userStore.isPhoneVerified
+    ) {
+      return;
+    }
+    if (onboardingStore.shouldShow == null) {
+      void onboardingStore.hydrateGate();
+    }
+  }, [
+    userStore.bootstrapped,
+    userStore.isLoggedIn,
+    userStore.isPhoneVerified,
+    onboardingStore,
+  ]);
+
   if (userStore.bootstrapped && !userStore.hasSession) {
     return <Redirect href={"/welcome" as Href} />;
   }
@@ -48,6 +66,15 @@ const TabsLayout = observer(function TabsLayout(): JSX.Element {
     !userStore.isPhoneVerified
   ) {
     return <Redirect href={"/verify" as Href} />;
+  }
+
+  if (
+    userStore.bootstrapped &&
+    userStore.isLoggedIn &&
+    userStore.isPhoneVerified &&
+    onboardingStore.shouldShow === true
+  ) {
+    return <Redirect href={"/(onboarding)/what" as Href} />;
   }
 
   return (

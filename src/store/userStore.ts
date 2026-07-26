@@ -4,6 +4,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 
 import agent, { resetAgent } from "@/api/agent";
 import type CommonStore from "@/store/commonStore";
+import { resolvePostAuthHref } from "@/lib/post-auth-href";
 import {
   getHttpStatus,
   isServerUnreachableError,
@@ -15,6 +16,7 @@ import type {
   UserPreferences,
   UserRegisterFormValues,
 } from "@/models/user";
+import type SearchStore from "@/store/searchStore";
 
 export default class UserStore {
   user: User | null = null;
@@ -22,8 +24,14 @@ export default class UserStore {
   notificationSettings: UserNotificationSettings | null = null;
   loading = false;
   bootstrapped = false;
+  /**
+   * Soft signal from login/register payload only (API may clear isFirstLogin later).
+   * Not used as the onboarding gate — storage + empty search groups are authoritative.
+   */
+  wasFirstLoginAtAuth: boolean | null = null;
 
   private commonStore: CommonStore;
+  private searchStore: SearchStore | null = null;
   private storeResetFunction: (() => void) | null = null;
   private sessionReadyHandler: (() => Promise<void>) | null = null;
 
@@ -40,6 +48,10 @@ export default class UserStore {
     this.sessionReadyHandler = handler;
   }
 
+  setSearchStore(searchStore: SearchStore): void {
+    this.searchStore = searchStore;
+  }
+
   private async notifySessionReady(): Promise<void> {
     if (!this.isLoggedIn || !this.isPhoneVerified) return;
     try {
@@ -47,6 +59,17 @@ export default class UserStore {
     } catch {
       // Feed hub / search hydrate is best-effort
     }
+  }
+
+  /** After verified login/phone — onboarding wizard or feed. */
+  private async navigateAfterAuth(): Promise<void> {
+    await this.notifySessionReady();
+    if (this.searchStore == null) {
+      router.replace("/feed" as Href);
+      return;
+    }
+    const href = await resolvePostAuthHref(this.searchStore);
+    router.replace(href);
   }
 
   get isLoggedIn(): boolean {
@@ -62,9 +85,12 @@ export default class UserStore {
     return this.user?.numberConfirmed ?? false;
   }
 
-  private applyUser(user: User): void {
+  private applyUser(user: User, options?: { captureFirstLogin?: boolean }): void {
     this.commonStore.setToken(user.token);
     this.user = user;
+    if (options?.captureFirstLogin && this.wasFirstLoginAtAuth == null) {
+      this.wasFirstLoginAtAuth = user.isFirstLogin === true;
+    }
   }
 
   /**
@@ -117,7 +143,7 @@ export default class UserStore {
     try {
       const user = await agent.Account.login(creds);
       runInAction(() => {
-        this.applyUser(user);
+        this.applyUser(user, { captureFirstLogin: true });
       });
       try {
         await agent.Subscription.sync();
@@ -127,8 +153,7 @@ export default class UserStore {
       if (!user.numberConfirmed) {
         router.replace("/verify" as Href);
       } else {
-        await this.notifySessionReady();
-        router.replace("/feed" as Href);
+        await this.navigateAfterAuth();
       }
     } finally {
       runInAction(() => {
@@ -146,15 +171,14 @@ export default class UserStore {
     try {
       const user = await agent.Account.verifyPhoneLogin({ phoneNumber, code });
       runInAction(() => {
-        this.applyUser(user);
+        this.applyUser(user, { captureFirstLogin: true });
       });
       try {
         await agent.Subscription.sync();
       } catch {
         // non-blocking
       }
-      await this.notifySessionReady();
-      router.replace("/feed" as Href);
+      await this.navigateAfterAuth();
     } finally {
       runInAction(() => {
         this.loading = false;
@@ -167,7 +191,7 @@ export default class UserStore {
     try {
       const user = await agent.Account.register(creds);
       runInAction(() => {
-        this.applyUser(user);
+        this.applyUser(user, { captureFirstLogin: true });
       });
       try {
         await agent.Subscription.sync();
@@ -197,7 +221,7 @@ export default class UserStore {
   ): Promise<void> {
     await agent.Account.verifyPhone({ phoneNumber, verificationCode });
     await this.getUser();
-    await this.notifySessionReady();
+    await this.navigateAfterAuth();
   }
 
   async forgotPassword(email: string): Promise<void> {
@@ -253,6 +277,7 @@ export default class UserStore {
       this.user = null;
       this.preferences = null;
       this.notificationSettings = null;
+      this.wasFirstLoginAtAuth = null;
     });
     resetAgent();
     try {

@@ -96,6 +96,12 @@ const RootLayoutContent = observer(function RootLayoutContent(): JSX.Element {
             }}
           />
           <Stack.Screen
+            name="(onboarding)"
+            options={{
+              contentStyle: { backgroundColor: SUBSCRIPTION_DARK_BACKGROUND },
+            }}
+          />
+          <Stack.Screen
             name="(tabs)"
             options={{
               contentStyle: { backgroundColor: background },

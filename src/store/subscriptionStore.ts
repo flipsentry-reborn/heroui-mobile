@@ -29,7 +29,8 @@ export default class SubscriptionStore {
   /** Last computed status (from groups). */
   status: SubscriptionStatus | null = null;
 
-  private loadPromise: Promise<void> | null = null;
+  /** In-flight load; excluded from observability. */
+  loadPromise: Promise<void> | null = null;
 
   constructor() {
     makeAutoObservable(
@@ -68,11 +69,19 @@ export default class SubscriptionStore {
     return canCreateSearch(this.remainingSlots);
   }
 
-  applyState(state: SubscriptionState): void {
-    this.currentTier = state.currentTier;
-    this.hasActiveSubscription = state.hasActiveSubscription;
-    this.hasActiveTrial = state.hasActiveTrial;
-    this.plans = state.plans;
+  applyState(state: SubscriptionState | null | undefined): void {
+    if (state == null) {
+      this.currentTier = null;
+      this.hasActiveSubscription = false;
+      this.hasActiveTrial = false;
+      this.plans = [];
+      this.hasLoaded = true;
+      return;
+    }
+    this.currentTier = state.currentTier ?? null;
+    this.hasActiveSubscription = Boolean(state.hasActiveSubscription);
+    this.hasActiveTrial = Boolean(state.hasActiveTrial);
+    this.plans = state.plans ?? [];
     this.hasLoaded = true;
   }
 
@@ -85,6 +94,10 @@ export default class SubscriptionStore {
         const state = await agent.Subscription.get();
         runInAction(() => {
           this.applyState(state);
+        });
+      } catch {
+        runInAction(() => {
+          this.applyState(null);
         });
       } finally {
         runInAction(() => {
@@ -99,10 +112,25 @@ export default class SubscriptionStore {
 
   /** Recompute slot remaining from current search groups. */
   async refreshStatus(groups: SearchGroup[]): Promise<void> {
-    const status = await agent.Subscription.status(groups);
-    runInAction(() => {
-      this.status = status;
-    });
+    try {
+      const status = await agent.Subscription.status(groups);
+      runInAction(() => {
+        this.status = status;
+      });
+    } catch {
+      runInAction(() => {
+        this.status = {
+          hasActiveSubscription: this.hasActiveSubscription,
+          hasActiveTrial: this.hasActiveTrial,
+          tier: this.currentTier,
+          totalSlots: 0,
+          usedSlots: 0,
+          remainingSlots: 0,
+          allowedSlotSettings: [],
+          remainingSlotSettings: [],
+        };
+      });
+    }
   }
 
   async subscribe(tier: SubscriptionTier): Promise<void> {

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useRouter, type Href } from "expo-router";
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useCallback, useState } from "react";
@@ -87,10 +87,12 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
   const router = useRouter();
   const { toast } = useToast();
   const background = useThemeColor("background");
-  const { userStore, subscriptionStore, feedStore } = useStore();
+  const { userStore, subscriptionStore, feedStore, onboardingStore } =
+    useStore();
   const [state, setState] = useState<SettingsState | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [hideOpen, setHideOpen] = useState(false);
+  const [resettingOnboarding, setResettingOnboarding] = useState(false);
 
   const load = useCallback(async () => {
     const [next] = await Promise.all([
@@ -137,9 +139,9 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
   const appearance: AppearanceMode = prefs?.appearance ?? "system";
   const profile = userStore.user
     ? {
-        firstName: userStore.user.firstName,
-        lastName: userStore.user.lastName,
-        email: userStore.user.email,
+        firstName: userStore.user.firstName ?? "",
+        lastName: userStore.user.lastName ?? "",
+        email: userStore.user.email ?? "",
         emailConfirmed: userStore.user.emailConfirmed,
         phoneNumber: userStore.user.phoneNumber,
         numberConfirmed: userStore.user.numberConfirmed,
@@ -198,6 +200,40 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
         },
       },
     ]);
+  };
+
+  const handleReplayOnboarding = () => {
+    Alert.alert(
+      "Replay onboarding",
+      "Deletes all your searches and opens the first-time wizard. Dev only.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset & start",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              setResettingOnboarding(true);
+              try {
+                await onboardingStore.resetAndStartWizard();
+                router.replace("/(onboarding)/what" as Href);
+              } catch (error) {
+                toast.show({
+                  variant: "danger",
+                  label:
+                    error instanceof Error
+                      ? error.message
+                      : "Could not reset onboarding",
+                  duration: 3200,
+                });
+              } finally {
+                setResettingOnboarding(false);
+              }
+            })();
+          },
+        },
+      ],
+    );
   };
 
   const handleRateApp = () => {
@@ -357,6 +393,24 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
               Danger zone
             </Typography>
             <View className="mx-3 gap-2">
+              <Button
+                variant="secondary"
+                feedbackVariant="none"
+                className="min-h-11 w-full rounded-2xl"
+                isDisabled={resettingOnboarding}
+                onPress={handleReplayOnboarding}
+              >
+                <StyledIonicons
+                  name="refresh-outline"
+                  size={15}
+                  className="text-foreground"
+                />
+                <Button.Label className="text-sm">
+                  {resettingOnboarding
+                    ? "Resetting…"
+                    : "Replay onboarding (dev)"}
+                </Button.Label>
+              </Button>
               <Button
                 variant="danger-soft"
                 feedbackVariant="none"

@@ -1,6 +1,7 @@
 import { createContext, useContext, type JSX, type ReactNode } from "react";
 
 import agent from "@/api/agent";
+import OnboardingStore from "@/features/onboarding/onboarding-store";
 import CommonStore from "@/store/commonStore";
 import FeedStore from "@/store/feedStore";
 import SearchStore from "@/store/searchStore";
@@ -13,6 +14,7 @@ export interface RootStore {
   searchStore: SearchStore;
   subscriptionStore: SubscriptionStore;
   feedStore: FeedStore;
+  onboardingStore: OnboardingStore;
   resetStores: () => void;
   hydrate: () => Promise<void>;
 }
@@ -28,7 +30,10 @@ function createStores(): Omit<RootStore, "resetStores" | "hydrate"> {
   const subscriptionStore = new SubscriptionStore();
   const searchStore = new SearchStore();
   const feedStore = new FeedStore();
+  const onboardingStore = new OnboardingStore();
   searchStore.setSubscriptionStore(subscriptionStore);
+  onboardingStore.setStores(searchStore, subscriptionStore);
+  userStore.setSearchStore(searchStore);
   wireFeedToSearch(feedStore, searchStore);
   return {
     commonStore,
@@ -36,6 +41,7 @@ function createStores(): Omit<RootStore, "resetStores" | "hydrate"> {
     searchStore,
     subscriptionStore,
     feedStore,
+    onboardingStore,
   };
 }
 
@@ -72,7 +78,10 @@ function resetStores(): void {
   const subscriptionStore = new SubscriptionStore();
   const searchStore = new SearchStore();
   const feedStore = new FeedStore();
+  const onboardingStore = new OnboardingStore();
   searchStore.setSubscriptionStore(subscriptionStore);
+  onboardingStore.setStores(searchStore, subscriptionStore);
+  userStore.setSearchStore(searchStore);
   wireFeedToSearch(feedStore, searchStore);
   stores = {
     commonStore,
@@ -80,6 +89,7 @@ function resetStores(): void {
     searchStore,
     subscriptionStore,
     feedStore,
+    onboardingStore,
   };
 }
 
@@ -87,6 +97,7 @@ async function ensureRealtimeSession(): Promise<void> {
   if (!stores.userStore.isLoggedIn || !stores.userStore.isPhoneVerified) return;
   await stores.subscriptionStore.load();
   await stores.searchStore.loadSearchGroups();
+  await stores.onboardingStore.hydrateGate();
   stores.feedStore.flushPendingFeeds();
   await startFeedHubConnection();
 }
@@ -118,6 +129,9 @@ export const store: RootStore = {
   },
   get feedStore() {
     return stores.feedStore;
+  },
+  get onboardingStore() {
+    return stores.onboardingStore;
   },
   resetStores,
   hydrate,

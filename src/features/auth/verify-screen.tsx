@@ -47,7 +47,8 @@ export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
     if (!userStore.isLoggedIn) {
       router.replace("/welcome" as Href);
     } else if (userStore.isPhoneVerified) {
-      router.replace("/feed" as Href);
+      // verifyPhone / login already navigate; keep feed as safe fallback.
+      router.replace("/" as Href);
     }
   }, [
     userStore.bootstrapped,
@@ -93,8 +94,8 @@ export const VerifyScreen = observer(function VerifyScreen(): JSX.Element {
     setError("");
     setSubmitting(true);
     try {
+      // Navigates to onboarding or feed via userStore.navigateAfterAuth.
       await userStore.verifyPhone(formattedPhone, otp);
-      router.replace("/feed" as Href);
     } catch (e) {
       setError(toUserErrorMessage(e));
     } finally {

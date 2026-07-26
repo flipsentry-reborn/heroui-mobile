@@ -28,9 +28,12 @@ export function SettingsProfileHeader({
   planAccent = null,
   onPress,
 }: SettingsProfileHeaderProps): JSX.Element {
+  const first = (profile.firstName ?? "").trim();
+  const last = (profile.lastName ?? "").trim();
   const initials =
-    `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase();
-  const fullName = `${profile.firstName} ${profile.lastName}`;
+    `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() ||
+    (profile.email?.charAt(0) ?? "?").toUpperCase();
+  const fullName = [first, last].filter(Boolean).join(" ") || profile.email;
   const isSubscribed = planAccent != null;
   const palette = isSubscribed
     ? PLAN_ACCENTS[planAccent]

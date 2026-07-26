@@ -933,6 +933,9 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
             draft.main.displayName ||
             "Search";
 
+    // TODO(post-create-preview): After create succeeds, show sample matching
+    // results with a good animation so the user can verify the search looks right
+    // before dismissing. Tracked in SEARCH_STORE.md → Still out of scope.
     showSearchActionProgress(toast, {
       kind: isUpdate ? "update" : "create",
       title: actionTitle,

@@ -206,8 +206,8 @@ function ShelfHeader({
         <View className="flex-row items-center gap-0.5">
           <Typography
             type="body"
-            weight="semibold"
-            className="text-[16px] text-foreground"
+            weight="bold"
+            className="font-extrabold text-foreground"
           >
             {shelf.label}
           </Typography>
@@ -414,8 +414,8 @@ export const FeedForYouPage = observer(function FeedForYouPage({
               ) : null}
               <Typography
                 type="body"
-                weight="semibold"
-                className="text-[14px] text-foreground"
+                weight="bold"
+                className="font-extrabold text-[14px] text-foreground"
               >
                 {child.label}
               </Typography>
@@ -457,8 +457,8 @@ export const FeedForYouPage = observer(function FeedForYouPage({
             <View className="mb-1 px-3 py-0.5">
               <Typography
                 type="body"
-                weight="semibold"
-                className="text-[16px] text-foreground"
+                weight="bold"
+                className="font-extrabold text-foreground"
               >
                 {shelf.label}
               </Typography>
@@ -509,8 +509,8 @@ export const FeedForYouPage = observer(function FeedForYouPage({
                     <Accordion.Trigger className="px-3 py-0.5">
                       <Typography
                         type="body"
-                        weight="semibold"
-                        className="flex-1 text-[16px] text-foreground"
+                        weight="bold"
+                        className="flex-1 font-extrabold text-foreground"
                       >
                         {shelf.label}
                       </Typography>

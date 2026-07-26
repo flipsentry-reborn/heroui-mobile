@@ -73,6 +73,7 @@ First launch seeds from fixtures; thereafter storage is source of truth.
 - Old-app multi-step Edit actions sheet
 - Persisting keywords / full iPhone model price objects beyond `customLabel`
 - Feed search history UI
+- **Post-create search preview** — after creating a search on the New Search sheet, show matching / sample results with a polished animation so the user can confirm the query looks right before leaving the flow (hook: `search-bottom-sheet.tsx` create success / `showSearchActionProgress` commit)
 
 ## Related (implemented elsewhere)
 

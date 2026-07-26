@@ -10,7 +10,7 @@ import {
   buildYourSearchChildren,
   type FeedCategoryDef,
 } from "@/features/feed/build-feed-categories";
-import { buildHomePlan, sortSearchGroups } from "@/mocks/services/home";
+import { buildHomePlan, isGroupPaused, sortSearchGroups } from "@/mocks/services/home";
 import type { HomePlan, SearchGroup } from "@/mocks/data/home";
 import { toUserErrorMessage } from "@/lib/user-error-message";
 import type { FeedFilterTab, FeedTabAvailability } from "@/models/feed";
@@ -62,6 +62,19 @@ export default class SearchStore {
 
   get canCreateSearch(): boolean {
     return this.subscriptionStore?.canCreate ?? false;
+  }
+
+  /** At least one search group with an active platform setting. */
+  get hasActiveSearches(): boolean {
+    return this.searchGroups.some((group) => !isGroupPaused(group));
+  }
+
+  /**
+   * Tab-bar danger indicator — loaded and no active searches
+   * (empty account, or every group paused).
+   */
+  get showNoActiveSearchesIndicator(): boolean {
+    return this.hasLoaded && !this.hasActiveSearches;
   }
 
   get feedTabAvailability(): FeedTabAvailability {

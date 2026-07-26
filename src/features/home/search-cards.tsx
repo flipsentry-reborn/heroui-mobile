@@ -3,14 +3,21 @@ import type { ComponentProps, JSX } from "react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import Animated, {
+  Easing,
   FadeIn,
+  FadeInDown,
+  FadeInUp,
   LinearTransition,
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
+  withSequence,
   withTiming,
+  ZoomIn,
 } from "react-native-reanimated";
 import {
   Accordion,
+  Button,
   Chip,
   cn,
   Menu,
@@ -21,7 +28,7 @@ import {
   useAccordionItem,
   useThemeColor,
 } from "heroui-native";
-import { Badge } from "heroui-native-pro";
+import { Badge, EmptyState } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
 import { BrandButton } from "@/components/ui/brand-button";
@@ -44,6 +51,10 @@ interface SearchCardsProps {
   groups: SearchGroup[];
   statusFilter?: SearchStatusFilter;
   emptyMessage?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  onCreate?: () => void;
+  createLabel?: string;
   onEdit?: (group: SearchGroup, section?: SearchEditSection) => void;
   onDelete?: (group: SearchGroup) => void;
   onToggle?: (group: SearchGroup, active: boolean) => void;
@@ -591,10 +602,126 @@ function SearchDepthItem({
   );
 }
 
+function FirstSearchEmptyIcon(): JSX.Element {
+  const pulse = useSharedValue(1);
+
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withSequence(
+        withTiming(1.12, {
+          duration: 900,
+          easing: Easing.inOut(Easing.sin),
+        }),
+        withTiming(1, {
+          duration: 900,
+          easing: Easing.inOut(Easing.sin),
+        }),
+      ),
+      -1,
+      false,
+    );
+  }, [pulse]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulse.value }],
+  }));
+
+  return (
+    <StyledAnimatedView entering={ZoomIn.springify().damping(14).stiffness(160)}>
+      <StyledAnimatedView style={pulseStyle}>
+        <EmptyState.Media variant="icon">
+          <StyledIonicons
+            name="alert-circle"
+            size={22}
+            className="text-danger"
+          />
+        </EmptyState.Media>
+      </StyledAnimatedView>
+    </StyledAnimatedView>
+  );
+}
+
+function SearchCardsEmpty({
+  title,
+  description,
+  message,
+  onCreate,
+  createLabel,
+}: {
+  title?: string;
+  description?: string;
+  message: string;
+  onCreate?: () => void;
+  createLabel?: string;
+}): JSX.Element {
+  if (title != null) {
+    return (
+      <StyledAnimatedView
+        entering={FadeInDown.springify().damping(18).stiffness(140)}
+        className="mx-3 rounded-3xl bg-surface px-4 py-10"
+      >
+        <EmptyState>
+          <EmptyState.Header>
+            <FirstSearchEmptyIcon />
+            <StyledAnimatedView entering={FadeInUp.delay(90).duration(320)}>
+              <EmptyState.Title>{title}</EmptyState.Title>
+            </StyledAnimatedView>
+            {description != null ? (
+              <StyledAnimatedView entering={FadeInUp.delay(160).duration(320)}>
+                <EmptyState.Description>{description}</EmptyState.Description>
+              </StyledAnimatedView>
+            ) : null}
+          </EmptyState.Header>
+          {onCreate != null ? (
+            <EmptyState.Content>
+              <StyledAnimatedView entering={FadeInUp.delay(240).duration(340)}>
+                <BrandButton className="min-h-11 px-5" onPress={onCreate}>
+                  <StyledIonicons
+                    name="add"
+                    size={18}
+                    className="text-accent-foreground"
+                  />
+                  <BrandButton.Label>
+                    {createLabel ?? "Create search"}
+                  </BrandButton.Label>
+                </BrandButton>
+              </StyledAnimatedView>
+            </EmptyState.Content>
+          ) : null}
+        </EmptyState>
+      </StyledAnimatedView>
+    );
+  }
+
+  return (
+    <StyledAnimatedView
+      entering={FadeIn.duration(240)}
+      className="mx-3 items-center rounded-3xl bg-surface px-4 py-8"
+    >
+      <Typography type="body-sm" className="text-muted">
+        {message}
+      </Typography>
+      {onCreate != null ? (
+        <Button
+          variant="tertiary"
+          className="mt-3 min-h-10 rounded-2xl"
+          onPress={onCreate}
+        >
+          <Button.Label>{createLabel ?? "Create search"}</Button.Label>
+        </Button>
+      ) : null}
+    </StyledAnimatedView>
+  );
+}
+
 export function SearchCards({
   groups,
   statusFilter = "all",
   emptyMessage = "No searches yet",
+  emptyTitle,
+  emptyDescription,
+  onCreate,
+  createLabel,
   onEdit,
   onDelete,
   onToggle,
@@ -617,22 +744,24 @@ export function SearchCards({
 
   if (groups.length === 0) {
     return (
-      <View className="mx-3 items-center rounded-3xl bg-surface px-4 py-8">
-        <Typography type="body-sm" className="text-muted">
-          {emptyMessage}
-        </Typography>
-      </View>
+      <SearchCardsEmpty
+        title={emptyTitle}
+        description={emptyDescription}
+        message={emptyMessage}
+        onCreate={onCreate}
+        createLabel={createLabel}
+      />
     );
   }
 
   return (
     <View>
       {visibleIds.length === 0 ? (
-        <View className="mx-3 items-center rounded-3xl bg-surface px-4 py-8">
-          <Typography type="body-sm" className="text-muted">
-            {emptyMessage}
-          </Typography>
-        </View>
+        <SearchCardsEmpty
+          message={emptyMessage}
+          onCreate={statusFilter === "active" ? onCreate : undefined}
+          createLabel={createLabel}
+        />
       ) : null}
       <Accordion
         value={expandedValue}

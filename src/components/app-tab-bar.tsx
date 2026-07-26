@@ -52,7 +52,7 @@ export const AppTabBar = observer(function AppTabBar({
 }: BottomTabBarProps): JSX.Element {
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 10);
-  const { feedStore } = useStore();
+  const { feedStore, searchStore } = useStore();
   const {
     registerTabBarHandlers,
     registerTabBarReset,
@@ -66,17 +66,23 @@ export const AppTabBar = observer(function AppTabBar({
     resetVisibility,
   } = useBottomChromeAutoHide(dockHideOffset);
 
-  const [foreground, muted, background] = useThemeColor([
+  const [foreground, muted, background, danger] = useThemeColor([
     "foreground",
     "muted",
     "background",
+    "danger",
   ]);
   const showNewItems = feedStore.showNewItemsIndicator;
+  const showNoActiveSearches = searchStore.showNoActiveSearchesIndicator;
   const feedRoute = state.routes.find((r) => r.name === "feed");
+  const homeRoute = state.routes.find((r) => r.name === "home");
   const feedFocused =
     feedRoute != null && state.index === state.routes.indexOf(feedRoute);
+  const homeFocused =
+    homeRoute != null && state.index === state.routes.indexOf(homeRoute);
   const activeRouteName = state.routes[state.index]?.name;
   const isFeedTab = activeRouteName === "feed";
+  const dangerColor = danger || "#ef4444";
 
   useEffect(() => {
     return registerTabBarHandlers(handleScroll, handleSnap);
@@ -126,6 +132,17 @@ export const AppTabBar = observer(function AppTabBar({
           <View className="h-1 w-full bg-[#34C759]" />
         </Pressable>
       ) : null}
+      {/* Danger strip — no active searches while Home is focused. */}
+      {showNoActiveSearches && homeFocused && !showNewItems ? (
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+          className="absolute inset-x-0 top-0 z-10 h-3 justify-start"
+          pointerEvents="none"
+        >
+          <View className="h-1 w-full" style={{ backgroundColor: dangerColor }} />
+        </View>
+      ) : null}
       <View
         className="min-h-[52px] flex-row items-center pt-2"
         style={{ paddingBottom: bottomPad }}
@@ -169,7 +186,9 @@ export const AppTabBar = observer(function AppTabBar({
               accessibilityLabel={
                 route.name === "feed" && showNewItems
                   ? `${label}, new listings available`
-                  : (options.tabBarAccessibilityLabel ?? label)
+                  : route.name === "home" && showNoActiveSearches
+                    ? `${label}, no active searches`
+                    : (options.tabBarAccessibilityLabel ?? label)
               }
               onPress={onPress}
               className="flex-1 items-center justify-center py-1.5"
@@ -186,6 +205,14 @@ export const AppTabBar = observer(function AppTabBar({
                     accessibilityElementsHidden
                     importantForAccessibility="no"
                     className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full border-[1.5px] border-background bg-[#34C759]"
+                  />
+                ) : null}
+                {route.name === "home" && showNoActiveSearches ? (
+                  <View
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                    className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full border-[1.5px] border-background"
+                    style={{ backgroundColor: dangerColor }}
                   />
                 ) : null}
               </View>

@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRecyclingState } from "@shopify/flash-list";
 import { Image } from "expo-image";
+
+import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
 import type { JSX } from "react";
 import { memo, useCallback } from "react";
 import { View } from "react-native";
@@ -193,7 +195,8 @@ function FeedItemInner({
       >
         <View className="relative overflow-hidden rounded-lg">
           <Image
-            source={{ uri: imageUrl }}
+            source={imageUrl ? { uri: imageUrl } : null}
+            placeholder={DEFAULT_IMAGE_PLACEHOLDER}
             style={{
               width: "100%",
               height: imageH,
@@ -327,7 +330,7 @@ function FeedItemInner({
               <Typography
                 type="body-xs"
                 className={`shrink-0 ${
-                  mileageDisplay?.uncertain ? "text-warning" : dimClass
+                  mileageDisplay?.uncertain ? "text-uncertain" : dimClass
                 } ${metaClass}`}
                 numberOfLines={1}
               >

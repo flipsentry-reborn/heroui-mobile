@@ -16,6 +16,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { PressableFeedback, useThemeColor } from "heroui-native";
 
+import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
+
 export const DETAIL_HERO_H = 360;
 const SCREEN_W = Dimensions.get("window").width;
 const THUMBS_H = 64;
@@ -98,13 +100,15 @@ export function FeedDetailGallery({
  })}
  renderItem={({ item }) => (
  <Image
- source={{ uri: item }}
+ source={item ? { uri: item } : null}
+ placeholder={DEFAULT_IMAGE_PLACEHOLDER}
  style={{
  width: SCREEN_W,
  height: DETAIL_HERO_H,
  backgroundColor: surfaceSecondary,
  }}
  contentFit="cover"
+ transition={180}
  />
  )}
  />
@@ -126,13 +130,15 @@ export function FeedDetailGallery({
  }}
  >
  <Image
- source={{ uri }}
+ source={uri ? { uri } : null}
+ placeholder={DEFAULT_IMAGE_PLACEHOLDER}
  style={{
  width: 64,
  height: 48,
  backgroundColor: surfaceSecondary,
  }}
  contentFit="cover"
+ transition={180}
  />
  </PressableFeedback>
  ))}

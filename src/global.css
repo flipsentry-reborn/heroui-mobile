@@ -9,6 +9,7 @@
 @import "tailwindcss";
 @import "uniwind";
 @import "heroui-native/styles";
+@import "heroui-native/styles/vibrant";
 @import "heroui-native-pro/styles";
 
 @source "../node_modules/heroui-native/lib";
@@ -23,6 +24,9 @@
   --field-border-width: 1px;
   /* Sold / Pending title accent — matches mobile-app `#ff7c74` (not theme danger/pink). */
   --color-sold-status: #ef4444;
+  /* Uncertain mileage "?" — theme-tuned amber (overridden in light/dark). */
+  --uncertain: oklch(0.666 0.157 56);
+  --color-uncertain: var(--uncertain);
 
   /*
    * App fonts = Britti Sans (HeroUI Pro heroSans).
@@ -77,6 +81,8 @@
     --success-foreground: oklch(98% 0 0);
     --warning: oklch(0.8446 0.1525 80.6);
     --warning-foreground: oklch(20% 0 0);
+    /* Readable amber text on light surfaces (≈ amber-600). */
+    --uncertain: oklch(0.666 0.157 56);
     --danger: oklch(0.573 0.2249 21.97);
     --danger-foreground: oklch(98% 0 0);
 
@@ -138,6 +144,8 @@
     --success-foreground: oklch(12% 0 0);
     --warning: oklch(0.8803 0.1348 86.06);
     --warning-foreground: oklch(20% 0 0);
+    /* Readable amber text on dark surfaces (≈ amber-400). */
+    --uncertain: oklch(0.828 0.152 84);
     --danger: oklch(0.7044 0.1872 23.19);
     --danger-foreground: oklch(12% 0 0);
 

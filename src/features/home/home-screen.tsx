@@ -5,7 +5,7 @@ import type { JSX } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useThemeColor, useToast } from "heroui-native";
+import { Alert, useThemeColor, useToast } from "heroui-native";
 
 import { BrandButton } from "@/components/ui/brand-button";
 import { HomePlanCreditsCard } from "@/features/home/home-plan-credits-card";
@@ -106,7 +106,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
     [searchStore, toast],
   );
 
-  const handleNewSearch = () => {
+  const handleNewSearch = useCallback(() => {
     if (!searchStore.canCreateSearch) {
       router.push("/settings/subscription");
       return;
@@ -115,7 +115,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
     setEditSection(null);
     setSheetMounted(true);
     setSheetOpen(true);
-  };
+  }, [router, searchStore.canCreateSearch]);
 
   const handleEditAndOpen = useCallback(
     (group: SearchGroup, section?: SearchEditSection) => {
@@ -140,13 +140,35 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-[110px] pt-2"
         stickyHeaderIndices={
-          !showSkeleton && allGroups.length > 0 ? [2] : undefined
+          !showSkeleton && allGroups.length > 0
+            ? [activeGroups.length === 0 ? 3 : 2]
+            : undefined
         }
       >
         {showSkeleton ? (
           <HomeScreenSkeleton />
         ) : (
           <>
+            {activeGroups.length === 0 ? (
+              <View className="mx-3 mb-3">
+                <Alert status="danger">
+                  <Alert.Indicator />
+                  <Alert.Content>
+                    <Alert.Title>
+                      {allGroups.length === 0
+                        ? "No searches yet"
+                        : "No active searches"}
+                    </Alert.Title>
+                    <Alert.Description>
+                      {allGroups.length === 0
+                        ? "Create your first search to start getting deal alerts."
+                        : "Start a search so FlipSentry can find deals for you."}
+                    </Alert.Description>
+                  </Alert.Content>
+                </Alert>
+              </View>
+            ) : null}
+
             <HomePlanCreditsCard
               homePlan={searchStore.homePlan}
               subscriptionPlan={subscriptionStore.activePlan}
@@ -180,14 +202,28 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
             <SearchCards
               groups={allGroups}
               statusFilter={statusFilter}
-              emptyMessage={
+              emptyTitle={
                 allGroups.length === 0
-                  ? "No searches yet"
-                  : statusFilter === "paused"
-                    ? "No paused searches"
-                    : statusFilter === "active"
-                      ? "No active searches"
-                      : "No searches yet"
+                  ? "Create your first search"
+                  : undefined
+              }
+              emptyDescription={
+                allGroups.length === 0
+                  ? "Set up a search to start getting deal alerts in your feed."
+                  : undefined
+              }
+              emptyMessage={
+                statusFilter === "paused"
+                  ? "No paused searches"
+                  : statusFilter === "active"
+                    ? "No active searches — start one to get alerts."
+                    : "No searches yet"
+              }
+              onCreate={handleNewSearch}
+              createLabel={
+                searchStore.canCreateSearch
+                  ? "Create search"
+                  : "Upgrade for slots"
               }
               onEdit={handleEditAndOpen}
               onDelete={handleDelete}

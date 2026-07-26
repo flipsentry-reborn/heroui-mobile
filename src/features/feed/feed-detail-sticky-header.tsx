@@ -12,6 +12,7 @@ import {
   SOLD_STATUS_COLOR,
   SOLD_STATUS_TEXT_CLASS,
 } from "@/features/feed/sold-status";
+import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
 
 const THUMB_SIZE = 88;
 
@@ -70,23 +71,18 @@ export function FeedDetailStickyHeader({
           <Ionicons name="chevron-back" size={22} color={foreground} />
         </PressableFeedback>
 
-        {imageUrl ? (
-          <Image
-            source={{ uri: imageUrl }}
-            style={{
-              width: THUMB_SIZE,
-              height: THUMB_SIZE,
-              borderRadius: 10,
-              backgroundColor: surfaceSecondary,
-            }}
-            contentFit="cover"
-          />
-        ) : (
-          <View
-            className="rounded-[10px] bg-surface-tertiary"
-            style={{ width: THUMB_SIZE, height: THUMB_SIZE }}
-          />
-        )}
+        <Image
+          source={imageUrl ? { uri: imageUrl } : null}
+          placeholder={DEFAULT_IMAGE_PLACEHOLDER}
+          style={{
+            width: THUMB_SIZE,
+            height: THUMB_SIZE,
+            borderRadius: 10,
+            backgroundColor: surfaceSecondary,
+          }}
+          contentFit="cover"
+          transition={180}
+        />
 
         <View className="min-w-0 flex-1 justify-center gap-1.5">
           <Typography

@@ -87,7 +87,7 @@ export function FeedDetailMetaSection({ item }: FeedDetailMetaSectionProps): JSX
       value: `${formatOdometer(mileageDisplay.miles, distanceUnit)}${
         mileageDisplay.uncertain ? "?" : ""
       }`,
-      valueClassName: mileageDisplay.uncertain ? "text-warning" : undefined,
+      valueClassName: mileageDisplay.uncertain ? "text-uncertain" : undefined,
     });
   }
 

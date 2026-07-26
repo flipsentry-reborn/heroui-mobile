@@ -24,6 +24,7 @@ import {
   CommunityOnlineDot,
   isHunterOnline,
 } from "@/features/community/community-presence-badge";
+import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
 import {
   formatDaysAgo,
   type CommunityHunterFeed,
@@ -200,9 +201,11 @@ function CommunityFeedDepthItem({
       >
         <Accordion.Trigger className="gap-3 px-3 py-2.5">
           <StyledImage
-            source={{ uri: imageUrl }}
+            source={imageUrl ? { uri: imageUrl } : null}
+            placeholder={DEFAULT_IMAGE_PLACEHOLDER}
             className="h-14 w-14 rounded-md bg-surface-secondary"
             contentFit="cover"
+            transition={180}
           />
           <View className="min-w-0 flex-1 gap-0.5">
             <Typography type="body-sm" weight="semibold" numberOfLines={1}>

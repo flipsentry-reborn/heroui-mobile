@@ -4,6 +4,7 @@ import { ScrollView, View } from "react-native";
 import { PressableFeedback, Typography } from "heroui-native";
 import { withUniwind } from "uniwind";
 
+import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
 import type { CommunityTrendingRow } from "@/mocks/services/community";
 
 const StyledImage = withUniwind(Image);
@@ -44,9 +45,11 @@ export function CommunityTrendingRail({
             animation={{ scale: { value: 0.97 } }}
           >
             <StyledImage
-              source={{ uri: imageUrl }}
+              source={imageUrl ? { uri: imageUrl } : null}
+              placeholder={DEFAULT_IMAGE_PLACEHOLDER}
               className="mb-2 h-[148px] w-[148px] rounded-md bg-surface-secondary"
               contentFit="cover"
+              transition={180}
             />
             <Typography type="body-sm" weight="semibold" numberOfLines={2}>
               {feedItem.title}

@@ -15,6 +15,7 @@ import { withUniwind } from "uniwind";
 import { CommunityHunterAvatar } from "@/features/community/community-hunter-avatar";
 import { isHunterOnline } from "@/features/community/community-presence-badge";
 import { FeedItem } from "@/features/feed/feed-item";
+import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
 import type { CommunityHunter } from "@/mocks/data/community";
 import {
   formatDaysAgo,
@@ -262,9 +263,11 @@ export function CommunityProfilePage({
                 animation={{ scale: { value: 0.98 } }}
               >
                 <StyledImage
-                  source={{ uri: imageUrl }}
+                  source={imageUrl ? { uri: imageUrl } : null}
+                  placeholder={DEFAULT_IMAGE_PLACEHOLDER}
                   className="h-12 w-12 rounded-md bg-surface-secondary"
                   contentFit="cover"
+                  transition={180}
                 />
                 <View className="min-w-0 flex-1 gap-0.5">
                   <Typography type="body-sm" weight="semibold" numberOfLines={1}>

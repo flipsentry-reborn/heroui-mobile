@@ -12,6 +12,7 @@ import { withUniwind } from "uniwind";
 
 import PlatformIcon from "@/components/icons/PlatformIcon";
 import { CommunityHunterAvatar } from "@/features/community/community-hunter-avatar";
+import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
 import {
   formatDaysAgo,
   type CommunityActivityRow as Row,
@@ -110,9 +111,11 @@ export function CommunityActivityRow({
         >
           <View className="flex-row gap-3">
             <StyledImage
-              source={{ uri: imageUrl }}
+              source={imageUrl ? { uri: imageUrl } : null}
+              placeholder={DEFAULT_IMAGE_PLACEHOLDER}
               className="h-20 w-20 rounded-xl bg-surface-secondary"
               contentFit="cover"
+              transition={180}
             />
             <View className="min-w-0 flex-1 justify-center gap-1">
               <Typography type="body-sm" numberOfLines={2}>

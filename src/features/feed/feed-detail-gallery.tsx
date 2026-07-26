@@ -35,6 +35,8 @@ export function FeedDetailGallery({
  const [index, setIndex] = useState(0);
  const listRef = useRef<FlatList<string>>(null);
  const [surfaceSecondary, accent] = useThemeColor(["surface-secondary", "accent"]);
+ /** Empty URI keeps one slide so blurhash still renders with no photos. */
+ const slides = images.length > 0 ? images : [""];
  const showThumbs = images.length > 1;
  const galleryH = DETAIL_HERO_H + (showThumbs ? THUMBS_H : 0);
 
@@ -87,7 +89,7 @@ export function FeedDetailGallery({
  <Animated.View style={[zoomStyle, { width: SCREEN_W }]}>
  <FlatList
  ref={listRef}
- data={images}
+ data={slides}
  keyExtractor={(uri, i) => `${uri}-${i}`}
  horizontal
  pagingEnabled
@@ -119,7 +121,7 @@ export function FeedDetailGallery({
  showsHorizontalScrollIndicator={false}
  contentContainerClassName="gap-1.5 px-3 py-2"
  >
- {images.map((uri, i) => (
+ {slides.map((uri, i) => (
  <PressableFeedback
  key={`${uri}-thumb-${i}`}
  onPress={() => select(i)}

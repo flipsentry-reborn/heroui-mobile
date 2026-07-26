@@ -1,8 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRecyclingState } from "@shopify/flash-list";
 import { Image } from "expo-image";
-
-import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
 import type { JSX } from "react";
 import { memo, useCallback } from "react";
 import { View } from "react-native";
@@ -12,6 +10,8 @@ import {
   Typography,
   useThemeColor,
 } from "heroui-native";
+
+import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
 
 import { AiEstimationIcon } from "@/components/icons/ai-estimation-icon";
 import PlatformIcon from "@/components/icons/PlatformIcon";

@@ -10,6 +10,7 @@ import {
 import { withUniwind } from "uniwind";
 
 import { CommunityHunterAvatar } from "@/features/community/community-hunter-avatar";
+import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
 import {
   formatDaysAgo,
   type CommunityHunterFeed,
@@ -98,9 +99,11 @@ export function CommunityHunterAccordion({
                   >
                     <View className="flex-row items-center gap-2.5 rounded-xl bg-surface-secondary/80 px-2 py-2">
                       <StyledImage
-                        source={{ uri: imageUrl }}
+                        source={imageUrl ? { uri: imageUrl } : null}
+                        placeholder={DEFAULT_IMAGE_PLACEHOLDER}
                         className="h-14 w-14 rounded-lg bg-surface"
                         contentFit="cover"
+                        transition={180}
                       />
                       <View className="min-w-0 flex-1 gap-0.5">
                         <Typography type="body-sm" numberOfLines={1}>

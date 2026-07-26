@@ -13,6 +13,7 @@ import {
 import { withUniwind } from "uniwind";
 
 import { CommunityHunterAvatar } from "@/features/community/community-hunter-avatar";
+import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
 import {
   formatDaysAgo,
   type CommunityHunterFeed,
@@ -91,9 +92,11 @@ function CardShell({
               className="w-[38%]"
             >
               <StyledImage
-                source={{ uri: imageUrl }}
+                source={imageUrl ? { uri: imageUrl } : null}
+                placeholder={DEFAULT_IMAGE_PLACEHOLDER}
                 className="h-[108px] w-full bg-surface-secondary"
                 contentFit="cover"
+                transition={180}
               />
             </PressableFeedback>
             <View className="w-[62%] justify-between gap-1 px-2.5 py-2">
@@ -303,8 +306,10 @@ function A5({
                     r.feedItem.images.imageUrlHostedByUs ||
                     r.feedItem.images.mainImageUrl.imageUrl,
                 }}
+                placeholder={DEFAULT_IMAGE_PLACEHOLDER}
                 className="h-12 w-12 rounded-lg bg-surface"
                 contentFit="cover"
+                transition={180}
               />
             </PressableFeedback>
           ))}

@@ -177,7 +177,9 @@ export default class SearchStore {
     this.submitting = true;
     this.lastError = null;
     try {
-      const group = await agent.GroupSearch.update(id, input);
+      await agent.GroupSearch.update(id, input);
+      // Refetch so the store matches server state (e.g. PlaceIds after remap).
+      const group = await agent.GroupSearch.get(id);
       runInAction(() => {
         this.searchGroups = sortSearchGroups(
           this.searchGroups.map((item) => (item.id === id ? group : item)),

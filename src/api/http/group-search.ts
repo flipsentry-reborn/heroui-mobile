@@ -32,6 +32,8 @@ interface ApiSearchSetting {
   latitude: number;
   longitude: number;
   locationName: string;
+  geoNameId?: number | null;
+  placeId?: string | null;
   country: string;
   timeZoneId: string;
   radiusMiles: number;
@@ -98,6 +100,8 @@ export function mapApiGroupToHome(group: ApiGroupSearch): HomeSearchGroup {
     runIntervalSeconds: s.runIntervalSeconds,
     latitude: s.latitude,
     longitude: s.longitude,
+    geoNameId: s.geoNameId ?? undefined,
+    placeId: s.placeId ?? undefined,
     country: s.country,
     timeZoneId: s.timeZoneId,
   }));
@@ -142,6 +146,8 @@ function buildCreatePayload(input: CreateHomeSearchInput): CreateSearchGroup {
     longitude: s.longitude ?? lng,
     radiusMiles: input.radiusMiles,
     locationName: s.locationName || input.locationName,
+    geoNameId: s.geoNameId != null && s.geoNameId > 0 ? s.geoNameId : null,
+    placeId: s.placeId != null && s.placeId.length > 0 ? s.placeId : null,
     country: s.country ?? country,
     timeZoneId: s.timeZoneId ?? timeZoneId,
     runIntervalSeconds: s.runIntervalSeconds,

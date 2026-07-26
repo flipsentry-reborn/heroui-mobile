@@ -20,6 +20,10 @@ export interface SearchSetting {
   /** Present from live GroupSearch settings. */
   latitude?: number;
   longitude?: number;
+  /** GeoNames id when known (metadata). */
+  geoNameId?: number;
+  /** Google place_id — primary stable place identity. */
+  placeId?: string;
   country?: string;
   timeZoneId?: string;
 }

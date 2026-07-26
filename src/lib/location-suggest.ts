@@ -1,4 +1,5 @@
 import type { LocationResult } from "@/mocks/data/locations";
+import type { LocationRunSpeed } from "@/mocks/data/locations";
 import type {
   SuggestedLocation,
   SuggestLocationsInput,
@@ -15,13 +16,30 @@ export function calculateAdditionalLocationCount(radiusMiles: number): number {
   );
 }
 
+/** Row id is Google place_id when present. */
+export function placeRowId(place: {
+  placeId?: string;
+  id?: string;
+}): string {
+  if (place.placeId != null && place.placeId.length > 0) return place.placeId;
+  if (place.id != null && place.id.startsWith("place-")) {
+    return place.id.slice("place-".length);
+  }
+  return place.id ?? "";
+}
+
 export function suggestedLocationToResult(
   location: SuggestedLocation,
 ): LocationResult {
   const shortName =
     location.name.split(",")[0]?.trim() || location.name || "Location";
+  const placeId =
+    location.placeId != null && location.placeId.length > 0
+      ? location.placeId
+      : undefined;
   return {
-    id: `gn-${location.geoNameId}`,
+    id: placeId ?? `gn-${location.geoNameId}`,
+    placeId,
     name: shortName,
     displayName: location.name,
     secondaryText: location.countryCode
@@ -38,35 +56,32 @@ export function suggestedLocationToResult(
   };
 }
 
-/** Merge GeoNames metadata onto the user's selected center without changing its UI id. */
+/**
+ * Enrich center metadata from SuggestLocations original.
+ * Keep an existing autocomplete placeId; if missing (legacy edits), fill from
+ * reverse-geocode placeId so create→update persists a stable Google id.
+ */
 export function enrichMainFromOriginal(
   main: LocationResult,
   original: SuggestedLocation | null | undefined,
 ): LocationResult {
   if (original == null) return main;
-  if (
-    main.geoNameId === original.geoNameId &&
-    main.countryCode === original.countryCode &&
-    main.timeZoneId === original.timeZoneId &&
-    main.isCenter === true
-  ) {
-    return main;
-  }
+  const placeId =
+    (main.placeId != null && main.placeId.length > 0
+      ? main.placeId
+      : undefined) ??
+    (original.placeId != null && original.placeId.length > 0
+      ? original.placeId
+      : undefined);
   return {
     ...main,
+    placeId,
+    id: placeId ?? main.id,
     geoNameId: original.geoNameId,
     countryCode: original.countryCode || main.countryCode,
     timeZoneId: original.timeZoneId || main.timeZoneId,
     isCenter: true,
   };
-}
-
-export function mockGeoNameId(seed: string): number {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  return hash || 1;
 }
 
 function haversineMiles(
@@ -83,6 +98,105 @@ function haversineMiles(
     Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return 2 * earthRadiusMiles * Math.asin(Math.sqrt(h));
+}
+
+function samePlace(a: LocationResult, b: LocationResult): boolean {
+  const aId = placeRowId(a);
+  const bId = placeRowId(b);
+  if (aId.length > 0 && aId === bId) return true;
+  return haversineMiles(a, b) <= 0.2;
+}
+
+/** One row per Google place_id (fallback: coords). Main first. */
+export function mergePlacesByPlaceId(
+  main: LocationResult | null,
+  nearby: LocationResult[],
+  saved: LocationResult[],
+): LocationResult[] {
+  const merged: LocationResult[] = [];
+  const upsert = (place: LocationResult) => {
+    const id = placeRowId(place) || place.id;
+    const normalized: LocationResult = {
+      ...place,
+      id,
+      placeId: place.placeId ?? (id.startsWith("gn-") ? undefined : id),
+    };
+    const idx = merged.findIndex((item) => samePlace(item, normalized));
+    if (idx < 0) {
+      merged.push(normalized);
+      return;
+    }
+    // Prefer row that already has placeId + suggest metadata.
+    const existing = merged[idx];
+    merged[idx] = {
+      ...existing,
+      ...normalized,
+      id: placeRowId(normalized) || placeRowId(existing) || existing.id,
+      placeId: normalized.placeId ?? existing.placeId,
+      displayName: existing.displayName || normalized.displayName,
+      name: existing.name || normalized.name,
+    };
+  };
+
+  if (main != null) upsert(main);
+  for (const place of nearby) upsert(place);
+  for (const place of saved) upsert(place);
+
+  if (main == null) return merged;
+  const center =
+    merged.find((p) => samePlace(p, main)) ?? merged[0];
+  if (center == null) return merged;
+  return [center, ...merged.filter((p) => p.id !== center.id)];
+}
+
+/** Remap speed keys onto placeId row ids after suggest (heals legacy keys). */
+export function remapSpeedsByPlaceId(
+  speeds: Record<string, LocationRunSpeed>,
+  placesById: Record<string, LocationResult>,
+  targets: LocationResult[],
+): {
+  speeds: Record<string, LocationRunSpeed>;
+  placesById: Record<string, LocationResult>;
+} {
+  const nextSpeeds: Record<string, LocationRunSpeed> = {};
+  const nextPlaces: Record<string, LocationResult> = {};
+
+  for (const target of targets) {
+    const key = placeRowId(target) || target.id;
+    nextPlaces[key] = { ...target, id: key, placeId: target.placeId ?? key };
+  }
+
+  for (const [oldId, speed] of Object.entries(speeds)) {
+    const saved =
+      placesById[oldId] ??
+      targets.find((t) => t.id === oldId || placeRowId(t) === oldId);
+    if (saved == null) continue;
+
+    const match =
+      targets.find((t) => samePlace(t, saved)) ??
+      targets.find((t) => t.id === oldId);
+
+    if (match != null) {
+      const key = placeRowId(match) || match.id;
+      if (nextSpeeds[key] == null) nextSpeeds[key] = speed;
+      nextPlaces[key] = { ...match, id: key, placeId: match.placeId ?? key };
+      continue;
+    }
+
+    const key = placeRowId(saved) || saved.id;
+    if (nextSpeeds[key] == null) nextSpeeds[key] = speed;
+    nextPlaces[key] = { ...saved, id: key };
+  }
+
+  return { speeds: nextSpeeds, placesById: nextPlaces };
+}
+
+export function mockGeoNameId(seed: string): number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return hash || 1;
 }
 
 function countryFromName(name: string): string {
@@ -110,6 +224,7 @@ export function buildMockSuggestLocationsResult(
     geoNameId: mockGeoNameId(
       `center:${input.latitude.toFixed(4)},${input.longitude.toFixed(4)}`,
     ),
+    placeId: `mock-center-${input.latitude.toFixed(4)}-${input.longitude.toFixed(4)}`,
     name: centerName,
     countryCode,
     latitude: input.latitude,
@@ -138,6 +253,7 @@ export function buildMockSuggestLocationsResult(
 
   const suggestedLocations: SuggestedLocation[] = ranked.map((entry, index) => ({
     geoNameId: mockGeoNameId(entry.place.id),
+    placeId: entry.place.placeId ?? `mock-${entry.place.id}`,
     name: entry.place.displayName || entry.place.name,
     countryCode: countryFromName(entry.place.displayName || entry.place.name),
     latitude: entry.place.latitude,

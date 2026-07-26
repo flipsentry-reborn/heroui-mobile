@@ -109,7 +109,7 @@ export async function searchPlacePredictions(
       prediction.description.split(",")[0]?.trim() ||
       prediction.description;
     return {
-      id: `place-${prediction.place_id}`,
+      id: prediction.place_id,
       placeId: prediction.place_id,
       name,
       displayName: prediction.description,

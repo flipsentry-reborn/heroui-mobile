@@ -46,6 +46,9 @@ import {
 } from "@/lib/location-platforms";
 import {
   enrichMainFromOriginal,
+  mergePlacesByPlaceId,
+  placeRowId,
+  remapSpeedsByPlaceId,
   suggestedLocationToResult,
 } from "@/lib/location-suggest";
 import type { SuggestLocationsResult } from "@/models/search-group";
@@ -406,29 +409,50 @@ export const SearchBottomSheetLocationSheet = observer(
             suggestedLocationToResult,
           );
           setNearby(results);
-          if (result.originalLocation != null) {
-            setMain((prev) =>
-              prev == null
-                ? prev
-                : enrichMainFromOriginal(prev, result.originalLocation),
-            );
+          const enrichedMain =
+            result.originalLocation != null
+              ? enrichMainFromOriginal(main, result.originalLocation)
+              : main;
+          if (
+            enrichedMain.id !== main.id ||
+            enrichedMain.placeId !== main.placeId ||
+            enrichedMain.geoNameId !== main.geoNameId ||
+            enrichedMain.countryCode !== main.countryCode ||
+            enrichedMain.timeZoneId !== main.timeZoneId
+          ) {
+            setMain(enrichedMain);
           }
-          if (skipAutoAssignRef.current) {
-            setOtherSpeeds((prev) => {
-              const next: Record<string, LocationRunSpeed> = {};
-              if (prev[main.id] != null) next[main.id] = prev[main.id];
-              for (const place of results) {
-                if (prev[place.id] != null) next[place.id] = prev[place.id];
-              }
-              // Keep selected speeds for edit-prefilled places outside nearby.
-              for (const [id, speed] of Object.entries(prev)) {
-                if (isLocationSpeedSelected(speed) && next[id] == null) {
-                  next[id] = speed;
-                }
-              }
-              return next;
+          // Remap speed keys onto placeIds after suggest (heals legacy center with no PlaceId).
+          setOtherSpeeds((prev) => {
+            const draftPlaces = getLocationDraft().placesById ?? {};
+            const placesCache: Record<string, LocationResult> = {
+              ...draftPlaces,
+              [main.id]: enrichedMain,
+              [placeRowId(enrichedMain) || enrichedMain.id]: enrichedMain,
+            };
+            for (const place of results) {
+              placesCache[place.id] = place;
+            }
+            const saved = Object.entries(prev)
+              .filter(([, speed]) => isLocationSpeedSelected(speed))
+              .map(([id]) => placesCache[id])
+              .filter((place): place is LocationResult => place != null);
+            const targets = mergePlacesByPlaceId(enrichedMain, results, saved);
+            const remapped = remapSpeedsByPlaceId(prev, placesCache, targets);
+            const mainKey = placeRowId(enrichedMain) || enrichedMain.id;
+            if (remapped.speeds[mainKey] == null && prev[main.id] != null) {
+              remapped.speeds[mainKey] = prev[main.id];
+            }
+            setLocationDraft({
+              ...getLocationDraft(),
+              placesById: {
+                ...getLocationDraft().placesById,
+                ...remapped.placesById,
+                [enrichedMain.id]: enrichedMain,
+              },
             });
-          }
+            return remapped.speeds;
+          });
           setNearbyLoading(false);
         })
         .catch(() => {
@@ -521,7 +545,11 @@ export const SearchBottomSheetLocationSheet = observer(
       const map: Record<string, LocationResult> = {
         ...(getLocationDraft().placesById ?? {}),
       };
-      if (main != null) map[main.id] = main;
+      if (main != null) {
+        map[main.id] = main;
+        const key = placeRowId(main);
+        if (key) map[key] = { ...main, id: key };
+      }
       for (const place of nearby) {
         map[place.id] = place;
       }
@@ -529,21 +557,11 @@ export const SearchBottomSheetLocationSheet = observer(
     }, [main, nearby]);
 
     const multiPlaces = useMemo(() => {
-      if (main == null) return nearby;
-      const byId = new Map<string, LocationResult>();
-      byId.set(main.id, main);
-      for (const place of nearby) {
-        if (place.id !== main.id) byId.set(place.id, place);
-      }
-      for (const [id, speed] of Object.entries(otherSpeeds)) {
-        if (!isLocationSpeedSelected(speed) || byId.has(id)) continue;
-        const fromCache = placesById[id];
-        if (fromCache != null) {
-          byId.set(id, fromCache);
-        }
-      }
-      const rest = [...byId.values()].filter((place) => place.id !== main.id);
-      return [main, ...rest];
+      const saved = Object.entries(otherSpeeds)
+        .filter(([, speed]) => isLocationSpeedSelected(speed))
+        .map(([id]) => placesById[id])
+        .filter((place): place is LocationResult => place != null);
+      return mergePlacesByPlaceId(main, nearby, saved);
     }, [main, nearby, otherSpeeds, placesById]);
 
     // After suggest + platforms settle, greedily assign best intervals top→bottom.

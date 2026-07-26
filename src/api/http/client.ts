@@ -1,7 +1,16 @@
 import ky, { HTTPError, type KyInstance } from "ky";
 
 import { API_URL } from "@/api/config";
+import {
+  clearDevHttpLogs,
+  devHttpAfterResponse,
+  devHttpBeforeRequest,
+  devHttpOnError,
+} from "@/lib/dev-http-log";
 import { userMessageForHttpStatus } from "@/lib/user-error-message";
+
+/** Dev-only: wipe server JSONL once per app reload before the first API call. */
+let clearedDevHttpLogs = false;
 
 let authToken: string | null = null;
 
@@ -101,14 +110,21 @@ const http: KyInstance = ky.create({
   retry: 0,
   hooks: {
     beforeRequest: [
-      ({ request }) => {
+      async ({ request }) => {
         if (authToken) {
           request.headers.set("Authorization", `Bearer ${authToken}`);
         }
+        if (__DEV__ && !clearedDevHttpLogs) {
+          clearedDevHttpLogs = true;
+          await clearDevHttpLogs();
+        }
+        await devHttpBeforeRequest(request);
       },
     ],
     afterResponse: [
-      async ({ response }) => {
+      async ({ request, response }) => {
+        await devHttpAfterResponse(request, response);
+
         const pagination = response.headers.get("pagination");
         if (!pagination) return response;
 
@@ -124,6 +140,12 @@ const http: KyInstance = ky.create({
             headers: { "Content-Type": "application/json" },
           },
         );
+      },
+    ],
+    beforeError: [
+      async ({ request, error }) => {
+        await devHttpOnError(request, error);
+        return error;
       },
     ],
   },

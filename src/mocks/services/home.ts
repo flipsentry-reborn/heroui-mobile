@@ -144,6 +144,8 @@ export interface CreateHomeSearchSettingInput {
   /** Present when creating against live API. */
   latitude?: number;
   longitude?: number;
+  geoNameId?: number;
+  placeId?: string;
   country?: string;
   timeZoneId?: string;
 }
@@ -217,6 +219,12 @@ export async function createGroup(
     locationName: setting.locationName,
     isActive: true,
     runIntervalSeconds: setting.runIntervalSeconds,
+    latitude: setting.latitude,
+    longitude: setting.longitude,
+    geoNameId: setting.geoNameId,
+    placeId: setting.placeId,
+    country: setting.country,
+    timeZoneId: setting.timeZoneId,
   }));
 
   const group: SearchGroup = {
@@ -272,6 +280,12 @@ export async function updateGroup(
     locationName: setting.locationName,
     isActive: !wasPaused,
     runIntervalSeconds: setting.runIntervalSeconds,
+    latitude: setting.latitude,
+    longitude: setting.longitude,
+    geoNameId: setting.geoNameId,
+    placeId: setting.placeId,
+    country: setting.country,
+    timeZoneId: setting.timeZoneId,
   }));
 
   const updated: SearchGroup = {

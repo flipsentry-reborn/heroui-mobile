@@ -53,6 +53,8 @@ export interface SearchGroupSetting {
   latitude: number;
   longitude: number;
   locationName: string;
+  geoNameId?: number | null;
+  placeId?: string | null;
   country: string;
   timeZoneId: string;
   radiusMiles: number;
@@ -96,6 +98,8 @@ export interface GroupSearchSettingInput {
   longitude: number;
   radiusMiles: number;
   locationName: string;
+  geoNameId?: number | null;
+  placeId?: string | null;
   country: string;
   timeZoneId: string;
   runIntervalSeconds: number;
@@ -145,6 +149,8 @@ export interface IntervalSetting {
 /** Matches backend SuggestedLocationDto (Google SuggestLocations). */
 export interface SuggestedLocation {
   geoNameId: number;
+  /** Google place_id from reverse geocode when available. */
+  placeId?: string;
   name: string;
   countryCode: string;
   latitude: number;

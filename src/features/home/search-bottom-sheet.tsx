@@ -124,6 +124,8 @@ function resolveLocationCoords(
   longitude: number;
   country?: string;
   timeZoneId?: string;
+  geoNameId?: number;
+  placeId?: string;
 } {
   if (draft.main != null && locationId === draft.main.id) {
     return {
@@ -131,6 +133,8 @@ function resolveLocationCoords(
       longitude: draft.main.longitude,
       country: draft.main.countryCode,
       timeZoneId: draft.main.timeZoneId,
+      geoNameId: draft.main.geoNameId,
+      placeId: draft.main.placeId,
     };
   }
   const cached = draft.placesById?.[locationId];
@@ -140,6 +144,8 @@ function resolveLocationCoords(
       longitude: cached.longitude,
       country: cached.countryCode,
       timeZoneId: cached.timeZoneId,
+      geoNameId: cached.geoNameId,
+      placeId: cached.placeId,
     };
   }
   const fromFixture = locationsFixture.find((l) => l.id === locationId);
@@ -149,6 +155,8 @@ function resolveLocationCoords(
       longitude: fromFixture.longitude,
       country: fromFixture.countryCode,
       timeZoneId: fromFixture.timeZoneId,
+      geoNameId: fromFixture.geoNameId,
+      placeId: fromFixture.placeId,
     };
   }
   return fallback;
@@ -735,6 +743,14 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
           runIntervalSeconds: row.runIntervalSeconds,
           latitude: coords.latitude,
           longitude: coords.longitude,
+          geoNameId:
+            coords.geoNameId != null && coords.geoNameId > 0
+              ? coords.geoNameId
+              : undefined,
+          placeId:
+            coords.placeId != null && coords.placeId.length > 0
+              ? coords.placeId
+              : undefined,
           country: coords.country ?? country,
           timeZoneId: coords.timeZoneId ?? draft.main?.timeZoneId,
         };

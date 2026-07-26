@@ -10,6 +10,7 @@ import {
 } from "@/mocks/data/locations";
 import type { CarMakesSelection } from "@/features/home/search-bottom-sheet-car-makes-sheet";
 import type { IphoneModelSelection } from "@/features/home/search-bottom-sheet-iphone-models-sheet";
+import { placeRowId } from "@/lib/location-suggest";
 
 function normalizeLocationKey(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -39,42 +40,53 @@ export function findLocationByName(locationName: string): LocationResult | null 
   return null;
 }
 
-function syntheticLocation(
-  locationName: string,
-  coords?: { latitude?: number; longitude?: number; country?: string; timeZoneId?: string },
-): LocationResult {
-  const name = locationName.split(",")[0]?.trim() || locationName || "Location";
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "location";
-  return {
-    id: `edit-${slug}-${coords?.latitude ?? 0}-${coords?.longitude ?? 0}`,
-    name,
-    displayName: locationName || name,
-    secondaryText: coords?.country ?? "",
-    latitude: coords?.latitude ?? 0,
-    longitude: coords?.longitude ?? 0,
-    countryCode: coords?.country,
-    timeZoneId: coords?.timeZoneId,
-  };
-}
+type PlaceCoords = {
+  latitude?: number;
+  longitude?: number;
+  country?: string;
+  timeZoneId?: string;
+  geoNameId?: number;
+  placeId?: string;
+};
 
 function resolvePlace(
   locationName: string,
-  coords?: { latitude?: number; longitude?: number; country?: string; timeZoneId?: string },
+  coords?: PlaceCoords,
 ): LocationResult {
-  const fromFixture = findLocationByName(locationName);
-  if (fromFixture != null) {
-    if (coords?.latitude != null && coords?.longitude != null) {
-      return {
-        ...fromFixture,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        countryCode: coords.country ?? fromFixture.countryCode,
-        timeZoneId: coords.timeZoneId ?? fromFixture.timeZoneId,
-      };
-    }
-    return fromFixture;
-  }
-  return syntheticLocation(locationName, coords);
+  const latitude = coords?.latitude ?? 0;
+  const longitude = coords?.longitude ?? 0;
+  const placeId =
+    coords?.placeId != null && coords.placeId.length > 0
+      ? coords.placeId
+      : undefined;
+  const geoNameId =
+    coords?.geoNameId != null && coords.geoNameId > 0
+      ? coords.geoNameId
+      : undefined;
+
+  const name = locationName.split(",")[0]?.trim() || locationName || "Location";
+  const fromFixture =
+    placeId == null && geoNameId == null
+      ? findLocationByName(locationName)
+      : null;
+
+  const base: LocationResult = {
+    id: placeId ?? fromFixture?.placeId ?? fromFixture?.id ?? `legacy-${latitude}-${longitude}`,
+    placeId: placeId ?? fromFixture?.placeId,
+    name: fromFixture?.name ?? name,
+    displayName: locationName || fromFixture?.displayName || name,
+    secondaryText: coords?.country ?? fromFixture?.secondaryText ?? "",
+    latitude: latitude || fromFixture?.latitude || 0,
+    longitude: longitude || fromFixture?.longitude || 0,
+    geoNameId: geoNameId ?? fromFixture?.geoNameId,
+    countryCode: coords?.country ?? fromFixture?.countryCode,
+    timeZoneId: coords?.timeZoneId ?? fromFixture?.timeZoneId,
+  };
+
+  return {
+    ...base,
+    id: placeRowId(base) || base.id,
+  };
 }
 
 export function buildLocationDraftFromGroup(group: SearchGroup): LocationDraft {
@@ -84,6 +96,8 @@ export function buildLocationDraftFromGroup(group: SearchGroup): LocationDraft {
     longitude: centerSetting?.longitude,
     country: centerSetting?.country,
     timeZoneId: centerSetting?.timeZoneId,
+    geoNameId: centerSetting?.geoNameId,
+    placeId: centerSetting?.placeId,
   });
   const platforms = [
     ...new Set(group.settings.map((setting) => setting.platform)),
@@ -99,6 +113,8 @@ export function buildLocationDraftFromGroup(group: SearchGroup): LocationDraft {
       longitude: setting.longitude,
       country: setting.country,
       timeZoneId: setting.timeZoneId,
+      geoNameId: setting.geoNameId,
+      placeId: setting.placeId,
     });
     placesById[place.id] = place;
     const speed = intervalSecondsToRunSpeed(setting.runIntervalSeconds);
@@ -117,6 +133,8 @@ export function buildLocationDraftFromGroup(group: SearchGroup): LocationDraft {
       const place = resolvePlace(setting.locationName, {
         latitude: setting.latitude,
         longitude: setting.longitude,
+        geoNameId: setting.geoNameId,
+        placeId: setting.placeId,
       });
       return place.id === main.id || setting.locationName === group.locationName;
     });

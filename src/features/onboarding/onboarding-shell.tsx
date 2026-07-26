@@ -173,19 +173,23 @@ export function OnboardingShell({
           paddingBottom: Math.max(insets.bottom, 24) + 20,
         }}
       >
-        <Animated.View
-          key={`progress-${step}`}
-          entering={FadeInDown.duration(380).easing(Easing.out(Easing.cubic))}
-          className="mb-7 flex-row items-center justify-center gap-2"
-        >
-          {Array.from({ length: totalSteps }, (_, index) => (
-            <SoftProgressDot
-              key={index}
-              active={index + 1 <= step}
-              accent={accent}
-            />
-          ))}
-        </Animated.View>
+        {totalSteps > 1 ? (
+          <Animated.View
+            key={`progress-${step}`}
+            entering={FadeInDown.duration(380).easing(Easing.out(Easing.cubic))}
+            className="mb-7 flex-row items-center justify-center gap-2"
+          >
+            {Array.from({ length: totalSteps }, (_, index) => (
+              <SoftProgressDot
+                key={index}
+                active={index + 1 <= step}
+                accent={accent}
+              />
+            ))}
+          </Animated.View>
+        ) : (
+          <View className="mb-4" />
+        )}
 
         <Animated.View
           key={`title-${step}-${title}`}

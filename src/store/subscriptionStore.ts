@@ -116,20 +116,14 @@ export default class SubscriptionStore {
       const status = await agent.Subscription.status(groups);
       runInAction(() => {
         this.status = status;
+        // Keep trial/sub flags in sync with live status payload.
+        this.hasActiveSubscription = status.hasActiveSubscription;
+        this.hasActiveTrial = status.hasActiveTrial;
+        if (status.tier != null) this.currentTier = status.tier;
       });
-    } catch {
-      runInAction(() => {
-        this.status = {
-          hasActiveSubscription: this.hasActiveSubscription,
-          hasActiveTrial: this.hasActiveTrial,
-          tier: this.currentTier,
-          totalSlots: 0,
-          usedSlots: 0,
-          remainingSlots: 0,
-          allowedSlotSettings: [],
-          remainingSlotSettings: [],
-        };
-      });
+    } catch (error) {
+      // Don't wipe known slots to 0 — that falsely triggers start-trial.
+      console.warn("[Subscription] refreshStatus failed", error);
     }
   }
 

@@ -32,6 +32,8 @@ const OnboardingLayout = observer(function OnboardingLayout(): JSX.Element {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="what" />
+      <Stack.Screen name="confirm" />
+      {/* Legacy routes → what */}
       <Stack.Screen name="where" />
       <Stack.Screen name="coverage" />
       <Stack.Screen name="criteria" />

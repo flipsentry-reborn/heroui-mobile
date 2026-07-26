@@ -8,6 +8,8 @@ export const TIER_SLOT_TABLES: Record<FlipSentryTier, SubscriptionSlotSetting[]>
   {
     starter: [{ interval: 300, value: 7 }],
     hunter: [
+      // Instant×1 mirrors live Hunter trial (fs_hunter_v1); keep 180/300 for Home seed demos.
+      { interval: 60, value: 1 },
       { interval: 180, value: 10 },
       { interval: 300, value: 5 },
     ],

@@ -96,7 +96,9 @@ export function mapLiveStatusToApp(
   return {
     hasActiveSubscription: Boolean(status.hasActiveSubscription),
     hasActiveTrial: Boolean(status.isTrialActive),
-    tier: normalizeTier(status.tier),
+    // Trial users often have tier=null with trialTier set.
+    tier:
+      normalizeTier(status.tier) ?? normalizeTier(status.trialTier),
     totalSlots: status.totalSlots ?? 0,
     usedSlots: status.usedSlots ?? 0,
     remainingSlots: status.remainingSlots ?? 0,

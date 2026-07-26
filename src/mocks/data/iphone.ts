@@ -21,8 +21,8 @@ export const MOCK_IPHONE_SERIES: IphoneSeries[] = [
     models: [
       { id: "IphoneX", label: "X", defaultMinPrice: 80, defaultMaxPrice: 220 },
       {
-        id: "IphoneXMax",
-        label: "X Max",
+        id: "IphoneXsMax",
+        label: "XS Max",
         defaultMinPrice: 100,
         defaultMaxPrice: 260,
       },

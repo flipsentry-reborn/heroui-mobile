@@ -3,9 +3,19 @@ import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { View } from "react-native";
 import { router, type Href } from "expo-router";
-import { Typography, useThemeColor } from "heroui-native";
+import {
+  Input,
+  Label,
+  TextField,
+  Typography,
+  useThemeColor,
+} from "heroui-native";
 
 import { BrandButton } from "@/components/ui/brand-button";
+import {
+  AUTH_CONTROL_BACKGROUND,
+  AUTH_PLACEHOLDER_COLOR,
+} from "@/features/auth/auth-theme";
 import {
   OnboardingIconWell,
   OnboardingOptionCard,
@@ -23,19 +33,19 @@ const OPTIONS: Array<{
   {
     type: "car",
     label: "Cars",
-    hint: "Marketplace vehicles near you",
+    hint: "Any make",
     icon: "car-outline",
   },
   {
     type: "iphone",
     label: "iPhones",
-    hint: "Track specific models",
+    hint: "All models",
     icon: "phone-portrait-outline",
   },
   {
     type: "custom",
     label: "Custom",
-    hint: "Any keyword search",
+    hint: "Your keyword",
     icon: "search-outline",
   },
 ];
@@ -52,14 +62,15 @@ export const WhatStep = observer(function WhatStep(): JSX.Element {
   return (
     <OnboardingShell
       step={1}
-      title="What are you hunting?"
-      subtitle="We'll set up your first FlipSentry search from this."
+      totalSteps={2}
+      title="What should we watch?"
+      subtitle="Pick a category. Next we'll show your Instant and 3-minute alerts."
       onSkip={() => void onSkip()}
       footer={
         <BrandButton
           className="min-h-12 w-full rounded-full"
           isDisabled={!onboardingStore.canContinueWhat}
-          onPress={() => router.push("/(onboarding)/where" as Href)}
+          onPress={() => router.push("/(onboarding)/confirm" as Href)}
         >
           <BrandButton.Label>Continue</BrandButton.Label>
         </BrandButton>
@@ -99,6 +110,23 @@ export const WhatStep = observer(function WhatStep(): JSX.Element {
           );
         })}
       </View>
+
+      {onboardingStore.draft.searchType === "custom" ? (
+        <TextField className="mt-2">
+          <Label className="text-muted">Keyword</Label>
+          <Input
+            value={onboardingStore.draft.customQuery}
+            onChangeText={(text: string) =>
+              onboardingStore.setCustomQuery(text)
+            }
+            placeholder="e.g. MacBook Pro, sofa, scooter"
+            placeholderTextColor={AUTH_PLACEHOLDER_COLOR}
+            autoCorrect={false}
+            className="h-12 rounded-2xl border-transparent text-foreground shadow-none"
+            style={{ backgroundColor: AUTH_CONTROL_BACKGROUND }}
+          />
+        </TextField>
+      ) : null}
     </OnboardingShell>
   );
 });

@@ -1,13 +1,17 @@
 import type { CreateHomeSearchInput } from "@/mocks/services/home";
 import type { HomePlatform, SearchType } from "@/mocks/data/home";
 import type { LocationResult } from "@/mocks/data/locations";
-import { DEFAULT_SEARCH_PLATFORMS } from "@/features/home/search-bottom-sheet-platforms-sheet";
+import type { IphoneQuery } from "@/models/create-search-setting";
+import { MOCK_IPHONE_SERIES } from "@/mocks/data/iphone";
 
-export const ONBOARDING_RADIUS_PRESETS = [20, 40, 80] as const;
-export const DEFAULT_ONBOARDING_RADIUS = 40;
+/** Fixed radius — no location / miles UI. */
+export const DEFAULT_ONBOARDING_RADIUS = 100;
 
-/** Instant + two 3-min slots for the top nearby cities. */
-export const ONBOARDING_SLOT_INTERVALS = [60, 180, 180] as const;
+/**
+ * Hunter trial: 1 Instant + 4 × 3-min Facebook cities (5 settings).
+ * Leaves one 3-min slot spare on Hunter.
+ */
+export const ONBOARDING_SLOT_INTERVALS = [60, 180, 180, 180, 180] as const;
 export const ONBOARDING_MAX_LOCATIONS = ONBOARDING_SLOT_INTERVALS.length;
 
 export type OnboardingAssignedLocation = {
@@ -19,41 +23,31 @@ export type OnboardingAssignedLocation = {
 export type OnboardingDraft = {
   searchType: SearchType | null;
   location: LocationResult | null;
-  /** Car: any-make OR one-or-more specific makes (checkbox multi-select). */
-  carMakes: string[];
-  carAnyMake: boolean;
-  /** iPhone: one-or-more models (checkbox multi-select). */
-  iphoneModelIds: string[];
   customQuery: string;
   radiusMiles: number;
-  platforms: HomePlatform[];
-  /** Top cities inside radius (max 3) with fixed Instant / 3-min / 3-min. */
   assignedLocations: OnboardingAssignedLocation[];
+  /** Populated at finish for broad iPhone hunt (all catalog models). */
+  iphoneQuery: IphoneQuery[];
 };
 
 export function createEmptyOnboardingDraft(): OnboardingDraft {
   return {
     searchType: null,
     location: null,
-    carMakes: [],
-    carAnyMake: true,
-    iphoneModelIds: [],
     customQuery: "",
     radiusMiles: DEFAULT_ONBOARDING_RADIUS,
-    platforms: [...DEFAULT_SEARCH_PLATFORMS],
     assignedLocations: [],
+    iphoneQuery: [],
   };
 }
 
-export function isCriteriaComplete(draft: OnboardingDraft): boolean {
+/** Car / iPhone: type alone is enough. Custom needs a short keyword. */
+export function isReadyToCreate(draft: OnboardingDraft): boolean {
   if (draft.searchType == null) return false;
-  if (draft.searchType === "car") {
-    return draft.carAnyMake || draft.carMakes.length > 0;
+  if (draft.searchType === "custom") {
+    return draft.customQuery.trim().length >= 2;
   }
-  if (draft.searchType === "iphone") {
-    return draft.iphoneModelIds.length > 0;
-  }
-  return draft.customQuery.trim().length >= 2;
+  return true;
 }
 
 export function intervalSpeedLabel(seconds: number): string {
@@ -71,13 +65,47 @@ function placeKey(loc: LocationResult): string {
 }
 
 /**
- * Center first, then nearby by distance — keep only top 3 and assign
- * Instant / 3 min / 3 min so the user still has remaining Hunter slots.
+ * Prefer Instant×1 + 3min×4; if Instant is spent, fall back to slower slots
+ * from remaining capacities (180 → 300 → 540).
  */
+export function pickOnboardingIntervals(
+  remainingSlotSettings: Array<{ interval: number; value: number }>,
+): number[] {
+  const left = new Map<number, number>();
+  for (const row of remainingSlotSettings) {
+    if (row.interval > 0 && row.value > 0) {
+      left.set(row.interval, (left.get(row.interval) ?? 0) + row.value);
+    }
+  }
+
+  const preferred = [...ONBOARDING_SLOT_INTERVALS];
+  const fallbacks = [180, 300, 540, 60] as const;
+  const picked: number[] = [];
+
+  for (const want of preferred) {
+    const candidates = [want, ...fallbacks.filter((f) => f !== want)];
+    let chosen: number | null = null;
+    for (const interval of candidates) {
+      if ((left.get(interval) ?? 0) > 0) {
+        chosen = interval;
+        break;
+      }
+    }
+    if (chosen == null) break;
+    left.set(chosen, (left.get(chosen) ?? 0) - 1);
+    picked.push(chosen);
+  }
+
+  return picked;
+}
+
+/** Center first, then nearby by distance — N rows from intervals (pad with center). */
 export function assignTopOnboardingLocations(
   center: LocationResult,
   nearby: LocationResult[],
+  intervals: readonly number[] = ONBOARDING_SLOT_INTERVALS,
 ): OnboardingAssignedLocation[] {
+  const max = Math.max(1, intervals.length);
   const seen = new Set<string>();
   const ordered: LocationResult[] = [];
 
@@ -96,8 +124,12 @@ export function assignTopOnboardingLocations(
   );
   for (const loc of sortedNearby) push(loc);
 
-  return ordered.slice(0, ONBOARDING_MAX_LOCATIONS).map((location, index) => {
-    const runIntervalSeconds = ONBOARDING_SLOT_INTERVALS[index] ?? 180;
+  while (ordered.length < max) {
+    ordered.push(center);
+  }
+
+  return ordered.slice(0, max).map((location, index) => {
+    const runIntervalSeconds = intervals[index] ?? 180;
     return {
       location,
       runIntervalSeconds,
@@ -128,35 +160,27 @@ function settingFromLocation(
 
 export function mapAnswersToCreate(draft: OnboardingDraft): CreateHomeSearchInput {
   if (draft.searchType == null) {
-    throw new Error("Pick what you are hunting.");
+    throw new Error("Pick what you want alerts for.");
   }
-  if (draft.location == null) {
-    throw new Error("Pick a location.");
-  }
-  if (!isCriteriaComplete(draft)) {
-    throw new Error("Complete your search criteria.");
-  }
-  if (draft.platforms.length === 0) {
-    throw new Error("Pick at least one platform.");
+  if (!isReadyToCreate(draft)) {
+    throw new Error("Enter a keyword for your custom search.");
   }
   if (draft.assignedLocations.length === 0) {
-    throw new Error("No cities found in that radius. Try a larger radius.");
+    throw new Error("Could not resolve your area. Try again.");
   }
 
-  const main = draft.location;
-  const locationName = main.displayName || main.name || "Location";
+  const main = draft.assignedLocations[0]!.location;
+  const locationName = main.displayName || main.name || "Near you";
 
-  // Onboarding burns exactly Instant×1 + 3min×2 on Facebook top cities.
-  // Extra platforms can be added later from Home so trial slots stay spare.
-  const settings: CreateHomeSearchInput["settings"] = draft.assignedLocations.map(
-    (row) =>
+  const settings: CreateHomeSearchInput["settings"] =
+    draft.assignedLocations.map((row) =>
       settingFromLocation("facebook", row.location, row.runIntervalSeconds),
-  );
+    );
 
   const input: CreateHomeSearchInput = {
     searchType: draft.searchType,
     locationName,
-    radiusMiles: draft.radiusMiles,
+    radiusMiles: DEFAULT_ONBOARDING_RADIUS,
     latitude: main.latitude,
     longitude: main.longitude,
     country: main.countryCode ?? "US",
@@ -165,17 +189,26 @@ export function mapAnswersToCreate(draft: OnboardingDraft): CreateHomeSearchInpu
   };
 
   if (draft.searchType === "car") {
-    input.carQuery = {
-      anyMake: draft.carAnyMake,
-      vehicleSelection: draft.carAnyMake
-        ? []
-        : draft.carMakes.map((make) => ({ make })),
-    };
+    input.carQuery = { anyMake: true, vehicleSelection: [] };
   } else if (draft.searchType === "iphone") {
-    input.iphoneQuery = draft.iphoneModelIds.map((model) => ({ model }));
+    input.iphoneQuery =
+      draft.iphoneQuery.length > 0
+        ? draft.iphoneQuery
+        : defaultOnboardingIphoneQuery();
   } else {
     input.customLabel = draft.customQuery.trim();
   }
 
   return input;
+}
+
+/** Fallback catalog when API models are unavailable. */
+export function defaultOnboardingIphoneQuery(): IphoneQuery[] {
+  return MOCK_IPHONE_SERIES.flatMap((series) =>
+    series.models.map((model) => ({
+      model: model.id,
+      minPrice: model.defaultMinPrice,
+      maxPrice: model.defaultMaxPrice,
+    })),
+  );
 }

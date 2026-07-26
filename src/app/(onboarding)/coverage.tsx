@@ -1,3 +1,5 @@
-import { CoverageStep } from "@/features/onboarding/steps/coverage-step";
+import { Redirect, type Href } from "expo-router";
 
-export default CoverageStep;
+export default function CoverageRedirect() {
+  return <Redirect href={"/(onboarding)/what" as Href} />;
+}

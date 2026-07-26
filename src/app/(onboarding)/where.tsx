@@ -1,3 +1,5 @@
-import { WhereStep } from "@/features/onboarding/steps/where-step";
+import { Redirect, type Href } from "expo-router";
 
-export default WhereStep;
+export default function WhereRedirect() {
+  return <Redirect href={"/(onboarding)/what" as Href} />;
+}

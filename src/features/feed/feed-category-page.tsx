@@ -130,6 +130,20 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
         onToggleFavorite={(id) => {
           void handleToggleFavorite(id);
         }}
+        emptyTitle={
+          isSold
+            ? "No sold listings yet"
+            : filterTab
+              ? "No items matched yet"
+              : "No listings yet"
+        }
+        emptyDescription={
+          isSold
+            ? "Mark listings as sold to track them here."
+            : filterTab
+              ? "Deals will show up here as soon as this search finds a match."
+              : "Pull to refresh, or try another category."
+        }
         listHeader={
           filterTab ? (
             <View className="px-3 pb-2 pt-1">

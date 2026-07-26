@@ -394,7 +394,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
       opts?: { lightweight?: boolean },
     ) => {
       const items = feedStore.getShelf(child.key);
-      if (items.length === 0 && !loading) return null;
+      const isEmpty = items.length === 0 && !loading;
 
       return (
         <View key={child.key} className="mb-2.5">
@@ -426,12 +426,25 @@ export const FeedForYouPage = observer(function FeedForYouPage({
               className="text-muted"
             />
           </PressableFeedback>
-          <ShelfRail
-            items={items}
-            onPressItem={onPressItem}
-            onToggleFavorite={onToggleFavorite}
-            lightweight={opts?.lightweight}
-          />
+          {isEmpty ? (
+            <View className="mx-3 flex-row items-center gap-2 rounded-xl bg-surface-secondary px-3 py-2.5">
+              <StyledIonicons
+                name="search-outline"
+                size={14}
+                className="text-muted"
+              />
+              <Typography type="body-sm" className="text-[13px] text-muted">
+                No items matched yet
+              </Typography>
+            </View>
+          ) : (
+            <ShelfRail
+              items={items}
+              onPressItem={onPressItem}
+              onToggleFavorite={onToggleFavorite}
+              lightweight={opts?.lightweight}
+            />
+          )}
         </View>
       );
     },

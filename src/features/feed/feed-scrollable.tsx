@@ -39,6 +39,8 @@ interface FeedScrollableProps {
   onEndReached?: () => void;
   onPressItem?: (id: string) => void;
   onToggleFavorite?: (id: string) => void;
+  emptyTitle?: string;
+  emptyDescription?: string;
   /** Scrolls with the list (not sticky). */
   listHeader?: ReactElement | null;
   /** Extra space above the first row so cards aren’t flush under the header. */
@@ -111,6 +113,8 @@ export const FeedScrollable = observer(function FeedScrollable({
   onEndReached,
   onPressItem,
   onToggleFavorite,
+  emptyTitle = "No listings yet",
+  emptyDescription = "Try another filter or clear your search to see mock deals.",
   listHeader = null,
   topInset = 4,
   bottomInset = 96,
@@ -312,9 +316,9 @@ export const FeedScrollable = observer(function FeedScrollable({
                   className="text-muted"
                 />
               </EmptyState.Media>
-              <EmptyState.Title>No listings yet</EmptyState.Title>
+              <EmptyState.Title>{emptyTitle}</EmptyState.Title>
               <EmptyState.Description>
-                Try another filter or clear your search to see mock deals.
+                {emptyDescription}
               </EmptyState.Description>
             </EmptyState.Header>
           </EmptyState>

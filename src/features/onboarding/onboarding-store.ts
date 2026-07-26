@@ -18,9 +18,12 @@ import {
   resolveDeviceLocation,
 } from "@/features/onboarding/resolve-device-location";
 import {
+  clearOnboardingAnswers,
   clearOnboardingStatus,
   needsOnboarding,
+  saveOnboardingAnswers,
   setOnboardingStatus,
+  type OnboardingAnswersJson,
 } from "@/features/onboarding/onboarding-storage";
 import type { SearchType } from "@/mocks/data/home";
 import type SearchStore from "@/store/searchStore";
@@ -77,21 +80,39 @@ export default class OnboardingStore {
     if (searchType !== "custom") {
       this.draft.customQuery = "";
     }
+    // Reset dummy quiz when category changes.
+    this.draft.volumeId = null;
+    this.draft.marginId = null;
+    this.draft.triedOtherApps = null;
   }
 
   setCustomQuery(query: string): void {
     this.draft.customQuery = query;
   }
 
+  setVolumeId(volumeId: string): void {
+    this.draft.volumeId = volumeId;
+  }
+
+  setMarginId(marginId: string): void {
+    this.draft.marginId = marginId;
+  }
+
+  setTriedOtherApps(triedOtherApps: boolean): void {
+    this.draft.triedOtherApps = triedOtherApps;
+  }
+
   get canContinueWhat(): boolean {
     return isReadyToCreate(this.draft);
   }
 
-  async skip(): Promise<void> {
-    await setOnboardingStatus("skipped");
-    runInAction(() => {
-      this.shouldShow = false;
-    });
+  get canContinueQuiz(): boolean {
+    return (
+      this.canContinueWhat &&
+      this.draft.volumeId != null &&
+      this.draft.marginId != null &&
+      this.draft.triedOtherApps != null
+    );
   }
 
   /** Dev helper: delete all search groups, clear onboarding flag, open wizard. */
@@ -111,10 +132,33 @@ export default class OnboardingStore {
       }
     }
     await clearOnboardingStatus();
+    await clearOnboardingAnswers();
     this.resetDraft();
     runInAction(() => {
       this.shouldShow = true;
     });
+  }
+
+  private buildAnswersJson(): OnboardingAnswersJson | null {
+    if (
+      this.draft.searchType == null ||
+      this.draft.volumeId == null ||
+      this.draft.marginId == null ||
+      this.draft.triedOtherApps == null
+    ) {
+      return null;
+    }
+    return {
+      category: this.draft.searchType,
+      customQuery:
+        this.draft.searchType === "custom"
+          ? this.draft.customQuery.trim() || null
+          : null,
+      monthlyVolume: this.draft.volumeId,
+      averageMargin: this.draft.marginId,
+      triedOtherApps: this.draft.triedOtherApps,
+      completedAt: new Date().toISOString(),
+    };
   }
 
   /** Broad iPhone hunt — all catalog models (no picker). */
@@ -290,17 +334,22 @@ export default class OnboardingStore {
         return false;
       }
 
+      const answers = this.buildAnswersJson();
+      if (answers != null) {
+        await saveOnboardingAnswers(answers);
+        void agent.Onboarding.submit({
+          deviceId: await getOrCreateDeviceId(),
+          category: answers.category,
+          monthlyVolume: answers.monthlyVolume,
+          averageMargin: answers.averageMargin,
+          referralSource: null,
+          triedOtherApps: answers.triedOtherApps,
+        }).catch((error) => {
+          console.warn("[Onboarding] answers submit failed", error);
+        });
+      }
+
       await setOnboardingStatus("done");
-      void agent.Onboarding.submit({
-        deviceId: await getOrCreateDeviceId(),
-        category: this.draft.searchType ?? "car",
-        monthlyVolume: "unknown",
-        averageMargin: "unknown",
-        referralSource: "onboarding_wizard",
-        triedOtherApps: false,
-      }).catch((error) => {
-        console.warn("[Onboarding] analytics submit failed", error);
-      });
 
       runInAction(() => {
         this.shouldShow = false;

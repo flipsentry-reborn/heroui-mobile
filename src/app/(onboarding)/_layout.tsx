@@ -32,6 +32,9 @@ const OnboardingLayout = observer(function OnboardingLayout(): JSX.Element {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="what" />
+      <Stack.Screen name="volume" />
+      <Stack.Screen name="margin" />
+      <Stack.Screen name="tried" />
       <Stack.Screen name="confirm" />
       {/* Legacy routes → what */}
       <Stack.Screen name="where" />

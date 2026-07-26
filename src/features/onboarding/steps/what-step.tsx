@@ -21,6 +21,7 @@ import {
   OnboardingOptionCard,
 } from "@/features/onboarding/onboarding-option-card";
 import { OnboardingShell } from "@/features/onboarding/onboarding-shell";
+import { ONBOARDING_TOTAL_STEPS } from "@/features/onboarding/quiz-options";
 import type { SearchType } from "@/mocks/data/home";
 import { useStore } from "@/store/store";
 
@@ -54,23 +55,17 @@ export const WhatStep = observer(function WhatStep(): JSX.Element {
   const { onboardingStore } = useStore();
   const [muted, foreground] = useThemeColor(["muted", "foreground"]);
 
-  const onSkip = async () => {
-    await onboardingStore.skip();
-    router.replace("/feed" as Href);
-  };
-
   return (
     <OnboardingShell
       step={1}
-      totalSteps={2}
+      totalSteps={ONBOARDING_TOTAL_STEPS}
       title="What should we watch?"
-      subtitle="Pick a category. Next we'll show your Instant and 3-minute alerts."
-      onSkip={() => void onSkip()}
+      subtitle="Pick a category. A few quick questions, then your first search."
       footer={
         <BrandButton
           className="min-h-12 w-full rounded-full"
           isDisabled={!onboardingStore.canContinueWhat}
-          onPress={() => router.push("/(onboarding)/confirm" as Href)}
+          onPress={() => router.push("/(onboarding)/volume" as Href)}
         >
           <BrandButton.Label>Continue</BrandButton.Label>
         </BrandButton>

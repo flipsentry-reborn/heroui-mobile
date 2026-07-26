@@ -12,6 +12,7 @@ import {
 } from "@/features/onboarding/onboarding-option-card";
 import { OnboardingShell } from "@/features/onboarding/onboarding-shell";
 import { DEFAULT_ONBOARDING_RADIUS } from "@/features/onboarding/map-answers-to-create";
+import { ONBOARDING_TOTAL_STEPS } from "@/features/onboarding/quiz-options";
 import { DEFAULT_ONBOARDING_CENTER } from "@/features/onboarding/resolve-device-location";
 import { Fonts } from "@/lib/fonts";
 import type { SearchType } from "@/mocks/data/home";
@@ -39,11 +40,6 @@ export const ConfirmStep = observer(function ConfirmStep(): JSX.Element {
     "danger",
   ]);
 
-  const onSkip = async () => {
-    await onboardingStore.skip();
-    router.replace("/feed" as Href);
-  };
-
   const onStart = async () => {
     const ok = await onboardingStore.finish();
     if (ok) router.replace("/feed" as Href);
@@ -51,19 +47,16 @@ export const ConfirmStep = observer(function ConfirmStep(): JSX.Element {
 
   return (
     <OnboardingShell
-      step={2}
-      totalSteps={2}
+      step={5}
+      totalSteps={ONBOARDING_TOTAL_STEPS}
       title="Built for speed"
       subtitle="New posts hit your feed as soon as Marketplace lists them."
       onBack={() => router.back()}
-      onSkip={() => void onSkip()}
       footer={
         <>
           <BrandButton
             className="min-h-12 w-full rounded-full"
-            isDisabled={
-              !onboardingStore.canContinueWhat || onboardingStore.submitting
-            }
+            isDisabled={onboardingStore.submitting}
             onPress={() => void onStart()}
           >
             {onboardingStore.submitting ? (

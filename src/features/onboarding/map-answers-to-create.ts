@@ -28,6 +28,10 @@ export type OnboardingDraft = {
   assignedLocations: OnboardingAssignedLocation[];
   /** Populated at finish for broad iPhone hunt (all catalog models). */
   iphoneQuery: IphoneQuery[];
+  /** Dummy quiz answers — UI only, never persisted. */
+  volumeId: string | null;
+  marginId: string | null;
+  triedOtherApps: boolean | null;
 };
 
 export function createEmptyOnboardingDraft(): OnboardingDraft {
@@ -38,6 +42,9 @@ export function createEmptyOnboardingDraft(): OnboardingDraft {
     radiusMiles: DEFAULT_ONBOARDING_RADIUS,
     assignedLocations: [],
     iphoneQuery: [],
+    volumeId: null,
+    marginId: null,
+    triedOtherApps: null,
   };
 }
 

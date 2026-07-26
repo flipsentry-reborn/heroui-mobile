@@ -10,6 +10,15 @@ const ConfirmRoute = observer(function ConfirmRoute() {
   if (!onboardingStore.canContinueWhat) {
     return <Redirect href={"/(onboarding)/what" as Href} />;
   }
+  if (onboardingStore.draft.volumeId == null) {
+    return <Redirect href={"/(onboarding)/volume" as Href} />;
+  }
+  if (onboardingStore.draft.marginId == null) {
+    return <Redirect href={"/(onboarding)/margin" as Href} />;
+  }
+  if (onboardingStore.draft.triedOtherApps == null) {
+    return <Redirect href={"/(onboarding)/tried" as Href} />;
+  }
 
   return <ConfirmStep />;
 });

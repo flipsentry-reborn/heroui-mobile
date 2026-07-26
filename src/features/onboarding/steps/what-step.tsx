@@ -59,7 +59,7 @@ export const WhatStep = observer(function WhatStep(): JSX.Element {
     <OnboardingShell
       step={1}
       totalSteps={ONBOARDING_TOTAL_STEPS}
-      title="What should we watch?"
+      title="What are you looking for?"
       subtitle="Pick a category. A few quick questions, then your first search."
       footer={
         <BrandButton

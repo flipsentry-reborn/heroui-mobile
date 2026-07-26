@@ -113,7 +113,7 @@ export const ConfirmStep = observer(function ConfirmStep(): JSX.Element {
           </OnboardingIconWell>
           <View className="flex-1 gap-0.5">
             <Typography type="body-sm" className="text-muted">
-              Watching
+              Looking for
             </Typography>
             <Typography type="body" weight="medium" className="text-foreground">
               {categoryLabel(

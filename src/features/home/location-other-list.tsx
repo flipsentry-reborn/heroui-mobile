@@ -1,10 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Fragment, type JSX } from "react";
 import { Pressable, View } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import {
   ListGroup,
   Select,
   Separator,
+  Spinner,
   Typography,
   useThemeColor,
 } from "heroui-native";
@@ -16,8 +18,10 @@ import {
   type LocationResult,
   type LocationRunSpeed,
 } from "@/mocks/data/locations";
+import { cityFromLocation } from "@/mocks/services/home";
 
 const StyledIonicons = withUniwind(Ionicons);
+const StyledAnimatedView = withUniwind(Animated.View);
 const INSTANT_YELLOW = "#eab308";
 
 export interface LocationSpeedOptionState {
@@ -168,6 +172,45 @@ function LocationSpeedSelect({
   );
 }
 
+function NearbyLocationsLoading(): JSX.Element {
+  const accent = useThemeColor("accent");
+
+  return (
+    <StyledAnimatedView
+      entering={FadeIn.duration(280)}
+      exiting={FadeOut.duration(160)}
+      className="items-center gap-5 rounded-3xl bg-surface px-6 py-10"
+    >
+      <View className="items-center justify-center">
+        <View className="absolute h-[72px] w-[72px] rounded-full bg-accent/10" />
+        <View className="absolute h-14 w-14 rounded-full bg-accent/5" />
+        <Spinner size="lg" color={accent}>
+          <Spinner.Indicator animation={{ rotation: { speed: 1.35 } }} />
+        </Spinner>
+      </View>
+
+      <View className="items-center gap-2 px-2">
+        <View className="flex-row items-center gap-2">
+          <StyledIonicons
+            name="navigate-circle-outline"
+            size={22}
+            className="text-accent"
+          />
+          <Typography className="text-center text-lg font-semibold text-foreground">
+            Finding best locations…
+          </Typography>
+        </View>
+        <Typography
+          type="body-sm"
+          className="max-w-[260px] text-center text-muted"
+        >
+          Scanning nearby cities within your search radius
+        </Typography>
+      </View>
+    </StyledAnimatedView>
+  );
+}
+
 export function LocationOtherList({
   places,
   speeds,
@@ -181,12 +224,12 @@ export function LocationOtherList({
   );
 
   return (
-    <View className={`gap-2.5 ${disabled ? "opacity-50" : ""}`}>
+    <View className={`gap-2.5 ${disabled && !loading ? "opacity-50" : ""}`}>
       <View className="mx-1 gap-1">
         <Typography type="body-xs" className="text-muted">
           Multiple Locations
         </Typography>
-        {disabled ? (
+        {disabled && !loading ? (
           <Typography type="body-xs" className="text-muted/80">
             Select at least one platform to choose locations.
           </Typography>
@@ -194,13 +237,18 @@ export function LocationOtherList({
       </View>
 
       {loading ? (
-        <Typography type="body-sm" className="mx-1 text-muted">
-          Loading nearby places...
-        </Typography>
+        <NearbyLocationsLoading />
       ) : places.length === 0 ? (
-        <Typography type="body-sm" className="mx-1 text-muted">
-          No nearby suggestions for this area
-        </Typography>
+        <View className="items-center gap-3 rounded-3xl bg-surface px-6 py-8">
+          <StyledIonicons
+            name="location-outline"
+            size={28}
+            className="text-muted"
+          />
+          <Typography type="body-sm" className="text-center text-muted">
+            No nearby suggestions for this area
+          </Typography>
+        </View>
       ) : (
         <ListGroup>
           {places.map((place, index) => {
@@ -217,7 +265,7 @@ export function LocationOtherList({
                       className="text-[15px] font-normal text-foreground"
                       numberOfLines={1}
                     >
-                      {place.name}
+                      {cityFromLocation(place.displayName || place.name)}
                     </ListGroup.ItemTitle>
                   </ListGroup.ItemContent>
                   <ListGroup.ItemSuffix>

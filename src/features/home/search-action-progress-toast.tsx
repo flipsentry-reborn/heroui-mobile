@@ -1,11 +1,18 @@
-import type { JSX } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps, JSX } from "react";
 import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
-import { Toast, Typography, useToast } from "heroui-native";
+import { Toast, useToast } from "heroui-native";
 import { ProgressBar } from "heroui-native-pro";
+import { withUniwind } from "uniwind";
 
-export type SearchActionKind = "delete" | "pause" | "start";
+export type SearchActionKind =
+  | "delete"
+  | "pause"
+  | "start"
+  | "create"
+  | "update";
 
 type ActionPhase = "running" | "failed" | "done";
 
@@ -23,6 +30,9 @@ type ToastRenderProps = {
 };
 
 type ProgressColor = "accent" | "success" | "warning" | "danger";
+type IoniconName = ComponentProps<typeof Ionicons>["name"];
+
+const StyledIonicons = withUniwind(Ionicons);
 
 const ACTION_COPY: Record<
   SearchActionKind,
@@ -32,6 +42,7 @@ const ACTION_COPY: Record<
     failed: string;
     color: ProgressColor;
     toastVariant: "danger" | "warning" | "success";
+    icon: IoniconName;
   }
 > = {
   delete: {
@@ -40,6 +51,7 @@ const ACTION_COPY: Record<
     failed: "Delete failed",
     color: "danger",
     toastVariant: "danger",
+    icon: "trash-outline",
   },
   pause: {
     running: "Pausing search…",
@@ -47,6 +59,7 @@ const ACTION_COPY: Record<
     failed: "Pause failed",
     color: "warning",
     toastVariant: "warning",
+    icon: "pause-outline",
   },
   start: {
     running: "Starting search…",
@@ -54,6 +67,23 @@ const ACTION_COPY: Record<
     failed: "Start failed",
     color: "success",
     toastVariant: "success",
+    icon: "play-outline",
+  },
+  create: {
+    running: "Creating search…",
+    done: "Search created",
+    failed: "Create failed",
+    color: "success",
+    toastVariant: "success",
+    icon: "add-outline",
+  },
+  update: {
+    running: "Updating search…",
+    done: "Search updated",
+    failed: "Update failed",
+    color: "accent",
+    toastVariant: "success",
+    icon: "create-outline",
   },
 };
 
@@ -61,6 +91,12 @@ const ACTION_COPY: Record<
 function shouldFakeFail(kind: SearchActionKind): boolean {
   if (kind !== "delete") return false;
   return Math.random() < 0.25;
+}
+
+function phaseIcon(kind: SearchActionKind, phase: ActionPhase): IoniconName {
+  if (phase === "done") return "checkmark-circle";
+  if (phase === "failed") return "alert-circle";
+  return ACTION_COPY[kind].icon;
 }
 
 function SearchActionProgressToast({
@@ -134,7 +170,11 @@ function SearchActionProgressToast({
   const color: ProgressColor =
     phase === "failed" ? "danger" : phase === "done" ? "success" : copy.color;
   const toastVariant =
-    phase === "failed" ? "danger" : phase === "done" ? "success" : copy.toastVariant;
+    phase === "failed"
+      ? "danger"
+      : phase === "done"
+        ? "success"
+        : copy.toastVariant;
   const label =
     phase === "failed"
       ? copy.failed
@@ -142,40 +182,62 @@ function SearchActionProgressToast({
         ? copy.done
         : copy.running;
 
+  const iconClassName =
+    phase === "failed"
+      ? "text-danger"
+      : phase === "done"
+        ? "text-success"
+        : color === "warning"
+          ? "text-warning"
+          : color === "danger"
+            ? "text-danger"
+            : color === "accent"
+              ? "text-accent"
+              : "text-success";
+
   return (
     <Toast
       variant={toastVariant}
       placement="top"
       hide={hide}
+      className="rounded-2xl px-3.5 py-3"
       {...toastProps}
     >
-      <View className="w-full gap-2 pr-6">
-        <Toast.Title>{label}</Toast.Title>
-        <Typography type="body-xs" className="text-muted" numberOfLines={1}>
-          {title}
-        </Typography>
+      <View className="w-full gap-2.5 pr-6">
+        <View className="flex-row items-center gap-2.5">
+          <View className="h-8 w-8 items-center justify-center rounded-full bg-default">
+            <StyledIonicons
+              name={phaseIcon(kind, phase)}
+              size={16}
+              className={iconClassName}
+            />
+          </View>
+          <View className="min-w-0 flex-1 gap-0.5">
+            <Toast.Title className="text-sm leading-5 font-medium">
+              {label}
+            </Toast.Title>
+            <Toast.Description className="text-xs leading-4" numberOfLines={1}>
+              {title}
+            </Toast.Description>
+          </View>
+        </View>
+
         <ProgressBar
           value={progress}
           color={color}
           size="sm"
+          className="gap-0"
           accessibilityLabel={label}
         >
-          <View className="mb-1 flex-row items-center justify-between">
-            <ProgressBar.Label className="text-xs">
-              {phase === "failed"
-                ? "Failed"
-                : phase === "done"
-                  ? "Done"
-                  : "Progress"}
-            </ProgressBar.Label>
-            <ProgressBar.ValueLabel className="text-xs" />
-          </View>
-          <ProgressBar.Track>
+          <ProgressBar.Track className="h-1 rounded-full">
             <ProgressBar.Fill />
           </ProgressBar.Track>
         </ProgressBar>
+
         {phase === "failed" ? (
           <Toast.Action
+            size="sm"
+            className="self-start"
             onPress={() => {
               settled.current = false;
               setAttempt((n) => n + 1);
@@ -185,7 +247,7 @@ function SearchActionProgressToast({
           </Toast.Action>
         ) : null}
       </View>
-      <Toast.Close className="absolute top-0 right-0" />
+      <Toast.Close className="absolute top-2 right-2" iconProps={{ size: 14 }} />
     </Toast>
   );
 }

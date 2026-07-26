@@ -31,8 +31,12 @@ export function placeRowId(place: {
 export function suggestedLocationToResult(
   location: SuggestedLocation,
 ): LocationResult {
-  const shortName =
-    location.name.split(",")[0]?.trim() || location.name || "Location";
+  const parts = location.name
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  // "City, State" — same shape as search cards / main location labels.
+  const label = parts.slice(0, 2).join(", ") || location.name || "Location";
   const placeId =
     location.placeId != null && location.placeId.length > 0
       ? location.placeId
@@ -40,7 +44,7 @@ export function suggestedLocationToResult(
   return {
     id: placeId ?? `gn-${location.geoNameId}`,
     placeId,
-    name: shortName,
+    name: label,
     displayName: location.name,
     secondaryText: location.countryCode
       ? `${Math.round(location.distanceMiles)} mi · ${location.countryCode}`
@@ -61,6 +65,13 @@ export function suggestedLocationToResult(
  * Keep an existing autocomplete placeId; if missing (legacy edits), fill from
  * reverse-geocode placeId so create→update persists a stable Google id.
  */
+function hasPostalCode(name: string): boolean {
+  return (
+    /\b\d{5}(?:-\d{4})?\b/.test(name) ||
+    /\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/i.test(name)
+  );
+}
+
 export function enrichMainFromOriginal(
   main: LocationResult,
   original: SuggestedLocation | null | undefined,
@@ -73,6 +84,19 @@ export function enrichMainFromOriginal(
     (original.placeId != null && original.placeId.length > 0
       ? original.placeId
       : undefined);
+  // Prefer reverse-geocode "City, State, Country" over Google formatted_address (zip).
+  const formatted =
+    original.name.trim().length > 0 && !hasPostalCode(original.name)
+      ? original.name.trim()
+      : null;
+  const label = formatted
+    ? formatted
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .slice(0, 2)
+        .join(", ")
+    : null;
   return {
     ...main,
     placeId,
@@ -81,6 +105,8 @@ export function enrichMainFromOriginal(
     countryCode: original.countryCode || main.countryCode,
     timeZoneId: original.timeZoneId || main.timeZoneId,
     isCenter: true,
+    displayName: formatted ?? main.displayName,
+    name: label || main.name,
   };
 }
 

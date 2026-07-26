@@ -9,10 +9,12 @@ import {
   Typography,
   useBottomSheet,
   useThemeColor,
+  useToast,
 } from "heroui-native";
 
 import PlatformIcon from "@/components/icons/PlatformIcon";
 import { loadGroupForEdit } from "@/features/home/load-group-for-edit";
+import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import {
   DEFAULT_CAR_MAKES,
   SearchBottomSheetCarMakesSheet,
@@ -59,6 +61,7 @@ import {
   locationsFixture,
   type LocationRunSpeed,
 } from "@/mocks/data/locations";
+import { cityFromLocation } from "@/mocks/services/home";
 import {
   formatLocationLabel,
   getLocationDraft,
@@ -453,6 +456,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
   initialSection = null,
 }: SearchBottomSheetProps): JSX.Element {
   const { searchStore, subscriptionStore } = useStore();
+  const { toast } = useToast();
   const [priceOpen, setPriceOpen] = useState(false);
   const [yearOpen, setYearOpen] = useState(false);
   const [mileageOpen, setMileageOpen] = useState(false);
@@ -528,7 +532,12 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     );
   }, [draftSnapshot, editIntervalOptions]);
 
-  const locationPlaceName = draftSnapshot.main?.name ?? null;
+  const locationPlaceName =
+    draftSnapshot.main != null
+      ? cityFromLocation(
+          draftSnapshot.main.displayName || draftSnapshot.main.name,
+        )
+      : null;
   const locationRadiusMiles =
     draftSnapshot.main != null ? draftSnapshot.radiusMiles : null;
 
@@ -782,14 +791,33 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
           : undefined,
     };
 
-    const saved =
-      editingGroup != null
-        ? await searchStore.updateGroup(editingGroup.id, payload)
-        : await searchStore.createGroup(payload);
+    const isUpdate = editingGroup != null;
+    const editId = editingGroup?.id;
+    const actionTitle =
+      searchType === "car"
+        ? "Cars"
+        : searchType === "iphone"
+          ? "Iphones"
+          : customQuery.trim() ||
+            draft.main.name ||
+            draft.main.displayName ||
+            "Search";
 
-    if (saved != null) {
-      handleClose();
-    }
+    showSearchActionProgress(toast, {
+      kind: isUpdate ? "update" : "create",
+      title: actionTitle,
+      onCommit: async () => {
+        const saved =
+          isUpdate && editId != null
+            ? await searchStore.updateGroup(editId, payload)
+            : await searchStore.createGroup(payload);
+        if (saved != null) {
+          handleClose();
+          return true;
+        }
+        return false;
+      },
+    });
   };
 
   return (

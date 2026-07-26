@@ -7,6 +7,7 @@ import {
   type LocationResult,
 } from "@/mocks/data/locations";
 import { buildMockSuggestLocationsResult } from "@/lib/location-suggest";
+import { cityFromLocation } from "@/mocks/services/home";
 import type {
   MatchPlatformsInput,
   MatchPlatformsResult,
@@ -227,8 +228,11 @@ export function formatLocationLabel(draftValue?: LocationDraft | null): string {
     isLocationSpeedSelected,
   ).length;
   const platformCount = value.platforms.length;
+  const placeLabel = cityFromLocation(
+    value.main.displayName || value.main.name,
+  );
   const parts = [
-    `${value.main.name} (${value.radiusMiles} mi)`,
+    `${placeLabel} (${value.radiusMiles} mi)`,
     platformCount > 0
       ? `${platformCount} platform${platformCount === 1 ? "" : "s"}`
       : null,

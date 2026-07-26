@@ -58,6 +58,30 @@ function getAddressComponent(
   return components.find((c) => c.types.includes(type));
 }
 
+/** Match backend SuggestLocations.FormatLocationName — "City, State, Country" (no zip). */
+function formatPlaceDisplayName(
+  components: GoogleAddressComponent[],
+  fallback: string,
+): { name: string; displayName: string } {
+  const city =
+    getAddressComponent(components, "locality")?.long_name ||
+    getAddressComponent(components, "sublocality")?.long_name ||
+    getAddressComponent(components, "neighborhood")?.long_name ||
+    getAddressComponent(components, "administrative_area_level_2")?.long_name ||
+    "";
+  const state =
+    getAddressComponent(components, "administrative_area_level_1")?.long_name ||
+    "";
+  const country =
+    getAddressComponent(components, "country")?.short_name || "";
+  const parts = [city, state, country].filter((part) => part.length > 0);
+  const displayName = parts.length > 0 ? parts.join(", ") : fallback;
+  return {
+    name: city || displayName.split(",")[0]?.trim() || displayName,
+    displayName,
+  };
+}
+
 async function resolveTimeZone(
   latitude: number,
   longitude: number,
@@ -161,13 +185,14 @@ export async function resolvePlaceDetails(
   const components = detailsData.result.address_components ?? [];
   const country = getAddressComponent(components, "country")?.short_name ?? "";
   const timeZoneId = await resolveTimeZone(lat, lng, key);
-  const displayName =
-    detailsData.result.formatted_address || place.displayName;
+  const fallback =
+    detailsData.result.formatted_address || place.displayName || place.name;
+  const labeled = formatPlaceDisplayName(components, fallback);
 
   return {
     ...place,
-    displayName,
-    name: place.name || displayName.split(",")[0]?.trim() || displayName,
+    displayName: labeled.displayName,
+    name: labeled.name || place.name,
     latitude: lat,
     longitude: lng,
     countryCode: country || place.countryCode,

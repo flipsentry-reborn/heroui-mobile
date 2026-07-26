@@ -367,8 +367,22 @@ export function formatPriceShort(n: number): string {
   return String(n);
 }
 
+/** "City, State" label — strips postal codes from Google-style addresses. */
 export function cityFromLocation(locationName: string): string {
-  return locationName.split(",").slice(0, 2).join(",").trim() || "Unknown";
+  const parts = locationName
+    .split(",")
+    .map((part) =>
+      part
+        .trim()
+        // US ZIP / ZIP+4 glued onto state ("NJ 08043")
+        .replace(/\b\d{5}(?:-\d{4})?\b/g, "")
+        // Canadian postal ("M5V 2T6")
+        .replace(/\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/gi, "")
+        .replace(/\s+/g, " ")
+        .trim(),
+    )
+    .filter((part) => part.length > 0);
+  return parts.slice(0, 2).join(", ") || "Unknown";
 }
 
 export function isGroupPaused(group: SearchGroup): boolean {

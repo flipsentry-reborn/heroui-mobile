@@ -418,9 +418,12 @@ export const SearchBottomSheetLocationSheet = observer(
             enrichedMain.placeId !== main.placeId ||
             enrichedMain.geoNameId !== main.geoNameId ||
             enrichedMain.countryCode !== main.countryCode ||
-            enrichedMain.timeZoneId !== main.timeZoneId
+            enrichedMain.timeZoneId !== main.timeZoneId ||
+            enrichedMain.displayName !== main.displayName ||
+            enrichedMain.name !== main.name
           ) {
             setMain(enrichedMain);
+            setQuery(enrichedMain.displayName || enrichedMain.name);
           }
           // Remap speed keys onto placeIds after suggest (heals legacy center with no PlaceId).
           setOtherSpeeds((prev) => {
@@ -654,7 +657,10 @@ export const SearchBottomSheetLocationSheet = observer(
         : null;
 
     const canSave =
-      main != null && validationError == null && Object.keys(rowErrors).length === 0;
+      main != null &&
+      !nearbyLoading &&
+      validationError == null &&
+      Object.keys(rowErrors).length === 0;
 
     const selectedForMap = multiPlaces.filter(
       (place) =>

@@ -6,7 +6,6 @@ import type PagerView from "react-native-pager-view";
 
 import { FeedHeader } from "@/features/feed/feed-header";
 import { FeedPager } from "@/features/feed/feed-pager";
-import { FeedQuickFilterPage } from "@/features/feed/feed-quick-filter-page";
 import { useBottomChrome } from "@/contexts/bottom-chrome-context";
 import { debugLog } from "@/lib/debug-log";
 import { useStore } from "@/store/store";
@@ -20,7 +19,6 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
   const pagerRef = useRef<PagerView>(null);
   const [searchText, setSearchText] = useState("");
   const [activeCategory, setActiveCategory] = useState("for-you");
-  const [quickFilterOpen, setQuickFilterOpen] = useState(false);
 
   const categories = searchStore.feedCategories;
 
@@ -42,7 +40,6 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
 
   const handleCategorySelect = useCallback(
     (key: string) => {
-      setQuickFilterOpen(false);
       setActiveCategory(key);
       resetTabBar();
       const index = categories.findIndex((c) => c.key === key);
@@ -60,6 +57,11 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
     },
     [resetTabBar],
   );
+
+  const handleFiltersPress = useCallback(() => {
+    resetTabBar();
+    router.push("/feed/filters");
+  }, [resetTabBar, router]);
 
   const handlePressItem = useCallback(
     (id: string) => {
@@ -99,25 +101,17 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
         categories={categories}
         activeCategory={activeCategory}
         onCategorySelect={handleCategorySelect}
-        quickFilterActive={quickFilterOpen}
-        onQuickFilterPress={() => {
-          resetTabBar();
-          setQuickFilterOpen((open) => !open);
-        }}
+        onFiltersPress={handleFiltersPress}
       />
-      {quickFilterOpen ? (
-        <FeedQuickFilterPage />
-      ) : (
-        <FeedPager
-          pagerRef={pagerRef}
-          categories={categories}
-          activeCategory={activeCategory}
-          searchText={searchText}
-          onCategoryChange={handleCategoryChange}
-          onOpenCategory={handleCategorySelect}
-          onPressItem={handlePressItem}
-        />
-      )}
+      <FeedPager
+        pagerRef={pagerRef}
+        categories={categories}
+        activeCategory={activeCategory}
+        searchText={searchText}
+        onCategoryChange={handleCategoryChange}
+        onOpenCategory={handleCategorySelect}
+        onPressItem={handlePressItem}
+      />
     </View>
   );
 });

@@ -20,7 +20,13 @@ export default function FeedLayout(): JSX.Element {
           gestureEnabled: true,
         }}
       />
-
+      <Stack.Screen
+        name="filters"
+        options={{
+          animation: "slide_from_right",
+          gestureEnabled: true,
+        }}
+      />
     </Stack>
   );
 }

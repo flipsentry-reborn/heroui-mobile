@@ -3,6 +3,10 @@ import type { Pagination } from "@/models/pagination";
 import { isCarListing, resolveDisplayValuation } from "@/models/feed";
 import { MOCK_FEED_ITEMS } from "@/mocks/data/feed";
 import { getLocalCompsForFeed } from "@/mocks/data/local-comps";
+import {
+  getActiveFilterIds,
+  peekActiveFilterIds,
+} from "@/mocks/services/filters";
 
 export type GetLocalCompsParams = {
   sameYear?: boolean;
@@ -66,6 +70,22 @@ function matchesFilterIds(
   if (filterIds == null || filterIds.length === 0) return true;
   const itemIds = item.filterIds ?? [];
   return filterIds.some((id) => itemIds.includes(id));
+}
+
+/** Mirror backend: inactive UserFilters must not appear on feed badges. */
+function stripInactiveFilters(
+  item: FeedItem,
+  activeIds: Set<string>,
+): FeedItem {
+  const filterIds = (item.filterIds ?? []).filter((id) => activeIds.has(id));
+  const filters = (item.filters ?? []).filter((f) => activeIds.has(f.id));
+  if (
+    filterIds.length === (item.filterIds?.length ?? 0) &&
+    filters.length === (item.filters?.length ?? 0)
+  ) {
+    return item;
+  }
+  return { ...item, filterIds, filters };
 }
 
 function matchesCategory(
@@ -139,6 +159,7 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
   const query = (params.query ?? "").trim().toLowerCase();
   const soldStatus = params.soldStatus ?? "all";
   const maxDays = params.maxDays;
+  const activeFilterIds = await getActiveFilterIds();
 
   const items = MOCK_FEED_ITEMS.filter((item) => {
     if (
@@ -156,7 +177,7 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
       item.description.toLowerCase().includes(query) ||
       item.locationText.toLowerCase().includes(query)
     );
-  }).map((item) => ({ ...item }));
+  }).map((item) => stripInactiveFilters({ ...item }, activeFilterIds));
 
   const take =
     params.limit != null && params.limit > 0
@@ -189,6 +210,7 @@ export async function getFeedPage(
   const pageNumber = Math.max(1, params.pageNumber ?? 1);
 
   await delay();
+  const activeFilterIds = await getActiveFilterIds();
 
   const filtered = MOCK_FEED_ITEMS.filter((item) => {
     if (
@@ -211,7 +233,9 @@ export async function getFeedPage(
   const totalItems = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const start = (pageNumber - 1) * pageSize;
-  const data = filtered.slice(start, start + pageSize).map((item) => ({ ...item }));
+  const data = filtered
+    .slice(start, start + pageSize)
+    .map((item) => stripInactiveFilters({ ...item }, activeFilterIds));
 
   return {
     data,
@@ -228,13 +252,15 @@ export async function getFeedPage(
 export function peekFeedById(id: string): FeedItem | null {
   const item = MOCK_FEED_ITEMS.find((f) => f.id === id);
   if (!item) return null;
-  return {
+  const cloned: FeedItem = {
     ...item,
     images: {
       ...item.images,
       marketplaceImages: [...item.images.marketplaceImages],
     },
   };
+  const activeIds = peekActiveFilterIds();
+  return activeIds != null ? stripInactiveFilters(cloned, activeIds) : cloned;
 }
 
 export async function getFeedById(id: string): Promise<FeedItem | null> {

@@ -1,9 +1,12 @@
+import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
+import { useMemo } from "react";
 import { View } from "react-native";
 import { Chip } from "heroui-native";
 
 import { getValuationTier, type ValuationTier } from "@/models/feed";
 import type { FeedFilterSummary } from "@/models/user-filter";
+import { useStore } from "@/store/store";
 
 type BadgeScale = "default" | "detail";
 
@@ -112,17 +115,25 @@ export function StatusBadge({
 }
 
 /** Filter match chip — Negotiable shell + color dots + count label. */
-export function FilterMatchBadge({
+export const FilterMatchBadge = observer(function FilterMatchBadge({
   filters,
   scale = "default",
 }: {
   filters: FeedFilterSummary[];
   scale?: BadgeScale;
 }): JSX.Element | null {
-  const count = filters.length;
+  const { filterStore } = useStore();
+
+  const visible = useMemo(() => {
+    if (!filterStore.hasLoaded) return filters;
+    const activeIds = new Set(filterStore.activeFilters.map((f) => f.id));
+    return filters.filter((f) => activeIds.has(f.id));
+  }, [filterStore.activeFilters, filterStore.hasLoaded, filters]);
+
+  const count = visible.length;
   if (count === 0) return null;
 
-  const ordered = [...filters].sort(
+  const ordered = [...visible].sort(
     (a, b) =>
       new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
   );
@@ -153,4 +164,4 @@ export function FilterMatchBadge({
       </Chip.Label>
     </Chip>
   );
-}
+});

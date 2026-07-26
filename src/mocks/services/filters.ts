@@ -95,6 +95,18 @@ export async function listFilters(): Promise<UserFilter[]> {
   );
 }
 
+/** Active filter ids — used when hydrating mock feed badges. */
+export async function getActiveFilterIds(): Promise<Set<string>> {
+  const filters = await ensureHydrated();
+  return new Set(filters.filter((f) => f.isActive).map((f) => f.id));
+}
+
+/** Sync read of active ids when the filters cache is already warm. */
+export function peekActiveFilterIds(): Set<string> | null {
+  if (cache == null) return null;
+  return new Set(cache.filter((f) => f.isActive).map((f) => f.id));
+}
+
 /** Backend-replica filter tabs for mock Feed.getTabAvailability. */
 export async function getFilterTabs(): Promise<FeedUserFilterTab[]> {
   const filters = await ensureHydrated();

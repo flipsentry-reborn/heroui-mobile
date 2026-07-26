@@ -19,8 +19,7 @@ interface FeedHeaderProps {
   categories: FeedCategoryDef[];
   activeCategory: string;
   onCategorySelect: (key: string) => void;
-  quickFilterActive?: boolean;
-  onQuickFilterPress: () => void;
+  onFiltersPress: () => void;
 }
 
 export function FeedHeader({
@@ -29,15 +28,10 @@ export function FeedHeader({
   categories,
   activeCategory,
   onCategorySelect,
-  quickFilterActive = false,
-  onQuickFilterPress,
+  onFiltersPress,
 }: FeedHeaderProps): JSX.Element {
   const insets = useSafeAreaInsets();
-  const [foreground, muted, accentForeground] = useThemeColor([
-    "foreground",
-    "muted",
-    "accent-foreground",
-  ]);
+  const [foreground, muted] = useThemeColor(["foreground", "muted"]);
   const inputRef = useRef<TextInput>(null);
   const openingRef = useRef(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -130,29 +124,16 @@ export function FeedHeader({
               </View>
               <View className="flex-1" />
               <Pressable
-                onPress={onQuickFilterPress}
+                onPress={onFiltersPress}
                 accessibilityRole="button"
-                accessibilityLabel="Quick Filter"
-                accessibilityState={{ selected: quickFilterActive }}
-                className={
-                  quickFilterActive
-                    ? "mr-1.5 h-8 flex-row items-center gap-1 rounded-field border border-accent bg-accent px-2.5"
-                    : "mr-1.5 h-8 flex-row items-center gap-1 rounded-field border border-border bg-surface-secondary px-2.5"
-                }
+                accessibilityLabel="Filters"
+                className="mr-1.5 h-8 flex-row items-center gap-1 rounded-field border border-border bg-surface-secondary px-2.5"
               >
-                <Ionicons
-                  name="options-outline"
-                  size={14}
-                  color={quickFilterActive ? accentForeground : muted}
-                />
+                <Ionicons name="options-outline" size={14} color={muted} />
                 <Typography
                   type="body-sm"
                   weight="medium"
-                  className={
-                    quickFilterActive
-                      ? "text-[12px] text-accent-foreground"
-                      : "text-[12px] text-muted"
-                  }
+                  className="text-[12px] text-muted"
                 >
                   Filters
                 </Typography>
@@ -170,13 +151,11 @@ export function FeedHeader({
         </View>
       </View>
 
-      {quickFilterActive ? null : (
-        <FeedCategoryTabs
-          categories={categories}
-          activeCategory={activeCategory}
-          onSelect={onCategorySelect}
-        />
-      )}
+      <FeedCategoryTabs
+        categories={categories}
+        activeCategory={activeCategory}
+        onSelect={onCategorySelect}
+      />
     </View>
   );
 }

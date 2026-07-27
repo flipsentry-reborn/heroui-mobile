@@ -6,14 +6,13 @@ import { Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Chip,
-  Menu,
   Separator,
   Switch,
   Typography,
   useThemeColor,
   useToast,
 } from "heroui-native";
-import { Badge, EmptyState } from "heroui-native-pro";
+import { EmptyState } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
 import { BrandButton } from "@/components/ui/brand-button";
@@ -145,57 +144,45 @@ function FiltersHeader({ onBack }: { onBack: () => void }): JSX.Element {
   );
 }
 
-function FilterCardMenu({
+function FilterCardEditButton({
   filter,
   onEdit,
-  onDelete,
 }: {
   filter: UserFilter;
   onEdit: (filter: UserFilter) => void;
-  onDelete: (filter: UserFilter) => void;
 }): JSX.Element {
-  const muted = useThemeColor("muted");
+  const [accentForeground] = useThemeColor(["accent-foreground"]);
 
   return (
-    <Menu>
-      <Menu.Trigger asChild>
-        <Pressable
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={`Actions for ${filter.name}`}
-          className="h-8 w-8 items-center justify-center"
-        >
-          <Ionicons name="ellipsis-horizontal" size={18} color={muted} />
-        </Pressable>
-      </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Overlay className="bg-backdrop" />
-        <Menu.Content presentation="popover" width={220} placement="bottom">
-          <Menu.Group>
-            <Menu.Item id="edit" onPress={() => onEdit(filter)}>
-              <StyledIonicons
-                name="create-outline"
-                size={18}
-                className="text-foreground"
-              />
-              <Menu.ItemTitle>Edit</Menu.ItemTitle>
-            </Menu.Item>
-            <Menu.Item
-              id="delete"
-              variant="danger"
-              onPress={() => onDelete(filter)}
-            >
-              <StyledIonicons
-                name="trash-outline"
-                size={18}
-                className="text-danger"
-              />
-              <Menu.ItemTitle>Delete</Menu.ItemTitle>
-            </Menu.Item>
-          </Menu.Group>
-        </Menu.Content>
-      </Menu.Portal>
-    </Menu>
+    <BrandButton
+      className="h-7 min-h-7 gap-1 !rounded-full px-2.5"
+      onPress={() => onEdit(filter)}
+      accessibilityLabel={`Edit ${filter.name}`}
+    >
+      <Ionicons name="create-outline" size={14} color={accentForeground} />
+      <BrandButton.Label className="text-[13px] leading-[17px]">
+        Edit
+      </BrandButton.Label>
+    </BrandButton>
+  );
+}
+
+/** Solid status pill — same height/radius as Edit / New Filter buttons. */
+function FilterStatusPill({ active }: { active: boolean }): JSX.Element {
+  return (
+    <View
+      className={`h-7 min-h-7 shrink-0 items-center justify-center rounded-full px-2.5 ${
+        active ? "bg-success" : "bg-danger"
+      }`}
+    >
+      <Typography
+        type="body"
+        weight="medium"
+        className="text-[13px] leading-[17px] text-white"
+      >
+        {active ? "Active" : "Paused"}
+      </Typography>
+    </View>
   );
 }
 
@@ -203,13 +190,11 @@ function FilterCardMenu({
 function FilterControlDockCard({
   filter,
   onEdit,
-  onDelete,
   onToggleActive,
   onToggleNotifications,
 }: {
   filter: UserFilter;
   onEdit: (filter: UserFilter) => void;
-  onDelete: (filter: UserFilter) => void;
   onToggleActive: (filter: UserFilter, active: boolean) => void;
   onToggleNotifications: (filter: UserFilter, enabled: boolean) => void;
 }): JSX.Element {
@@ -224,35 +209,19 @@ function FilterControlDockCard({
     >
       <View className="h-1" style={{ backgroundColor: accent }} />
 
-      <Pressable
-        onPress={() => onEdit(filter)}
-        accessibilityRole="button"
-        accessibilityLabel={`Edit ${filter.name}`}
-        className="px-3 py-3"
-      >
-        <View className="mb-1 flex-row items-center gap-2">
+      <View className="px-3 py-3">
+        <View className="mb-1 flex-row items-center gap-1.5">
           <Typography
             type="body"
             weight="medium"
-            className="min-w-0 flex-1 text-foreground"
+            className="min-w-0 shrink text-foreground"
             numberOfLines={1}
           >
             {filter.name}
           </Typography>
-          {filter.isActive ? (
-            <Badge color="success" variant="soft" size="sm">
-              Active
-            </Badge>
-          ) : (
-            <Badge color="danger" variant="soft" size="sm">
-              Paused
-            </Badge>
-          )}
-          <FilterCardMenu
-            filter={filter}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
+          <FilterStatusPill active={filter.isActive} />
+          <View className="min-w-2 flex-1" />
+          <FilterCardEditButton filter={filter} onEdit={onEdit} />
         </View>
         <Typography type="body-xs" className="mb-3 text-muted" numberOfLines={1}>
           {headerMeta(filter)}
@@ -266,7 +235,7 @@ function FilterControlDockCard({
             ))}
           </View>
         ) : null}
-      </Pressable>
+      </View>
 
       <View className="border-t border-border bg-surface-secondary px-3 py-2">
         <View className="flex-row items-center justify-between">
@@ -332,18 +301,6 @@ export const FiltersScreen = observer(function FiltersScreen({
     setSheetOpen(true);
   };
 
-  const handleDelete = useCallback(
-    (filter: UserFilter) => {
-      showSearchActionProgress(toast, {
-        kind: "delete",
-        subject: "filter",
-        title: filter.name,
-        onCommit: () => filterStore.deleteFilter(filter.id),
-      });
-    },
-    [filterStore, toast],
-  );
-
   const handleToggleActive = useCallback(
     (filter: UserFilter, active: boolean) => {
       showSearchActionProgress(toast, {
@@ -405,9 +362,14 @@ export const FiltersScreen = observer(function FiltersScreen({
               </EmptyState.Description>
             </EmptyState.Header>
             <EmptyState.Content>
-              <BrandButton className="min-h-12 w-full" onPress={openCreate}>
-                <Ionicons name="add" size={18} color={accentForeground} />
-                <BrandButton.Label>New Filter</BrandButton.Label>
+              <BrandButton
+                className="h-7 min-h-7 gap-1 self-center !rounded-full px-3"
+                onPress={openCreate}
+              >
+                <Ionicons name="add" size={14} color={accentForeground} />
+                <BrandButton.Label className="text-[13px] leading-[17px]">
+                  New Filter
+                </BrandButton.Label>
               </BrandButton>
             </EmptyState.Content>
           </EmptyState>
@@ -422,9 +384,14 @@ export const FiltersScreen = observer(function FiltersScreen({
             >
               Your Filters
             </Typography>
-            <BrandButton className="min-h-10 px-3" onPress={openCreate}>
-              <Ionicons name="add" size={18} color={accentForeground} />
-              <BrandButton.Label>New Filter</BrandButton.Label>
+            <BrandButton
+              className="h-7 min-h-7 gap-1 !rounded-full px-2.5"
+              onPress={openCreate}
+            >
+              <Ionicons name="add" size={14} color={accentForeground} />
+              <BrandButton.Label className="text-[13px] leading-[17px]">
+                New Filter
+              </BrandButton.Label>
             </BrandButton>
           </View>
 
@@ -434,7 +401,6 @@ export const FiltersScreen = observer(function FiltersScreen({
                 key={filter.id}
                 filter={filter}
                 onEdit={openEdit}
-                onDelete={handleDelete}
                 onToggleActive={handleToggleActive}
                 onToggleNotifications={handleToggleNotifications}
               />

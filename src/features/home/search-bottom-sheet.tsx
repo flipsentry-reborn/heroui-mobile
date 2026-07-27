@@ -6,6 +6,7 @@ import { View } from "react-native";
 import {
   BottomSheet,
   Button,
+  Spinner,
   Switch,
   Typography,
   useBottomSheet,
@@ -302,7 +303,7 @@ function SearchSheetContent({
   onConfirm: () => void;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
-  const [muted] = useThemeColor(["muted"]);
+  const [muted, accentForeground] = useThemeColor(["muted", "accent-foreground"]);
   const dismiss = () => onOpenChange(false);
   const hasSearchType = searchType != null;
 
@@ -465,6 +466,9 @@ function SearchSheetContent({
             onPress={handleConfirm}
             isDisabled={saveDisabled}
           >
+            {submitting ? (
+              <Spinner size="sm" color={accentForeground} />
+            ) : null}
             <Button.Label>{submitting ? "Saving…" : "Save"}</Button.Label>
           </Button>
         </View>

@@ -6,6 +6,7 @@ import { View } from "react-native";
 import {
   BottomSheet,
   Button,
+  Spinner,
   Switch,
   Typography,
   useBottomSheet,
@@ -410,7 +411,7 @@ function FilterSheetBody({
   onSave: () => void;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
-  const [muted] = useThemeColor(["muted"]);
+  const [muted, accentForeground] = useThemeColor(["muted", "accent-foreground"]);
   const dismiss = () => onOpenChange(false);
   const isVehicle = filterType === "Vehicle";
 
@@ -575,6 +576,9 @@ function FilterSheetBody({
             onPress={onSave}
             isDisabled={!canSave || submitting}
           >
+            {submitting ? (
+              <Spinner size="sm" color={accentForeground} />
+            ) : null}
             <Button.Label>{submitting ? "Saving…" : "Save"}</Button.Label>
           </Button>
         </View>

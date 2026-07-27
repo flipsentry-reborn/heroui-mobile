@@ -17,6 +17,7 @@ import { useUniwind, withUniwind } from "uniwind";
 import { useBottomChrome } from "@/contexts/bottom-chrome-context";
 import { FEED_GRID_DRAW_DISTANCE } from "@/features/feed/feed-flash-list";
 import { FeedItem } from "@/features/feed/feed-item";
+import { formatFoundAgoBadge } from "@/features/feed/sold-status";
 import type { FeedItem as FeedModel } from "@/models/feed";
 import { useStore } from "@/store/store";
 
@@ -133,6 +134,8 @@ export const FeedScrollable = observer(function FeedScrollable({
   const isActiveRef = useRef(isActive);
   isActiveRef.current = isActive;
 
+  const showFoundAgo = category === "sold";
+
   const renderItem = useCallback<ListRenderItem<FeedModel>>(
     ({ item }) => (
       <FeedItem
@@ -140,9 +143,12 @@ export const FeedScrollable = observer(function FeedScrollable({
         layout={numColumns === 1 ? "list" : "grid"}
         onPress={onPressItem}
         onToggleFavorite={onToggleFavorite}
+        imageTopLabel={
+          showFoundAgo ? (formatFoundAgoBadge(item) ?? undefined) : undefined
+        }
       />
     ),
-    [numColumns, onPressItem, onToggleFavorite],
+    [numColumns, onPressItem, onToggleFavorite, showFoundAgo],
   );
 
   const keyExtractor = useCallback((item: FeedModel) => item.id, []);

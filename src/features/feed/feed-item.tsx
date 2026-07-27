@@ -62,7 +62,12 @@ interface FeedItemProps {
   layout?: "grid" | "list" | "rail";
   /** Slightly larger rail cards for featured shelves. */
   featured?: boolean;
-  /** Small label on the image (e.g. Community “2 days ago”). */
+  /**
+   * Top-left stack badge after filter match (e.g. Sold “Found 3 hours ago”).
+   * Same Chip shell/type as FilterMatchBadge / StatusBadge.
+   */
+  imageTopLabel?: string;
+  /** Small bottom-corner label (e.g. Community “2 days ago”). */
   imageCornerLabel?: string;
   imageCornerSide?: "left" | "right";
   /** Hide the favorite star (e.g. Community profile grid). */
@@ -82,6 +87,7 @@ function FeedItemInner({
   onToggleFavorite,
   layout = "grid",
   featured = false,
+  imageTopLabel,
   imageCornerLabel,
   imageCornerSide = "right",
   hideFavorite = false,
@@ -100,6 +106,7 @@ function FeedItemInner({
     undefined;
   const statusBadges = getOrderedStatusBadges(feed);
   const valuation = resolveDisplayValuation(feed);
+  const hasFilterMatches = (feed.filters?.length ?? 0) > 0;
   const distanceUnit = userStore.preferences?.distanceUnit ?? "mi";
   const mileageDisplay = resolveFeedMileageDisplay(feed);
   const mileageText =
@@ -217,12 +224,17 @@ function FeedItemInner({
             onDone={handleShimmerDone}
           />
 
-          {(feed.filters?.length ?? 0) > 0 ? (
-            <View className="absolute left-1.5 top-1.5">
-              <FilterMatchBadge
-                filters={feed.filters ?? []}
-                scale={badgeScale}
-              />
+          {hasFilterMatches || imageTopLabel ? (
+            <View className="absolute left-1.5 top-1.5 gap-1">
+              {hasFilterMatches ? (
+                <FilterMatchBadge
+                  filters={feed.filters ?? []}
+                  scale={badgeScale}
+                />
+              ) : null}
+              {imageTopLabel ? (
+                <StatusBadge label={imageTopLabel} scale={badgeScale} />
+              ) : null}
             </View>
           ) : null}
 
@@ -377,6 +389,7 @@ function feedItemPropsEqual(
     prev.layout === next.layout &&
     prev.featured === next.featured &&
     prev.hideFavorite === next.hideFavorite &&
+    prev.imageTopLabel === next.imageTopLabel &&
     prev.imageCornerLabel === next.imageCornerLabel &&
     prev.imageCornerSide === next.imageCornerSide &&
     prev.onPress === next.onPress &&

@@ -16,6 +16,23 @@ type ListingStatusFields = Pick<
   | "platform"
 >;
 
+/**
+ * Mirrors backend `FeedHelpers.GetPlatformListingDelay`:
+ * Facebook ~7m, OfferUp ~30m, else 0.
+ * Use for wall-clock ages from `creationTime`.
+ * For "Found in" duration, prefer API `foundInSeconds` (already delay-adjusted).
+ */
+export function getPlatformListingDelayMs(platform: FeedPlatform): number {
+  switch (platform) {
+    case "facebookMarketplace":
+      return 7 * 60 * 1000;
+    case "offerUp":
+      return 30 * 60 * 1000;
+    default:
+      return 0;
+  }
+}
+
 /** Card/detail label: removed → "Sold?", then Sold / Pending. */
 export function getListingStatusLabel(
   item: Pick<FeedItem, "isSold" | "isPending" | "isRemoved">,
@@ -27,8 +44,8 @@ export function getListingStatusLabel(
 }
 
 /**
- * Time from listing creation → sold/pending/removed, matching legacy detail.
- * Facebook Marketplace subtracts a 7-minute platform delay.
+ * Time from listing creation → sold/pending/removed.
+ * Subtracts platform listing lag (same as backend GetPlatformListingDelay).
  */
 export function formatSoldPendingDuration(
   item: ListingStatusFields,
@@ -43,7 +60,7 @@ export function formatSoldPendingDuration(
         : undefined;
   if (!statusAt) return null;
 
-  const delayMs = facebookDelayMs(item.platform);
+  const delayMs = getPlatformListingDelayMs(item.platform);
   const mins = Math.floor(
     (new Date(statusAt).getTime() -
       new Date(item.creationTime).getTime() -
@@ -67,6 +84,27 @@ export function formatSoldPendingTitlePrefix(
   return duration ? `${label} in ${duration}` : label;
 }
 
-function facebookDelayMs(platform: FeedPlatform): number {
-  return platform === "facebookMarketplace" ? 7 * 60000 : 0;
+/**
+ * Sold-page image badge: effective listing age from `creationTime`,
+ * minus platform lag (FB 7m / OfferUp 30m) — same as legacy ItemGrid.
+ * e.g. "Found 3 hours ago", "Found 1 day ago".
+ */
+export function formatFoundAgoBadge(
+  item: Pick<FeedItem, "creationTime" | "createdAt" | "platform">,
+): string | null {
+  const stamp = item.creationTime || item.createdAt;
+  if (!stamp) return null;
+  const delayMs = getPlatformListingDelayMs(item.platform);
+  const mins = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(stamp).getTime() - delayMs) / 60000),
+  );
+  if (mins < 1) return "Found just now";
+  if (mins < 60) return `Found ${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) {
+    return hours === 1 ? "Found 1 hour ago" : `Found ${hours} hours ago`;
+  }
+  const days = Math.floor(hours / 24);
+  return days === 1 ? "Found 1 day ago" : `Found ${days} days ago`;
 }

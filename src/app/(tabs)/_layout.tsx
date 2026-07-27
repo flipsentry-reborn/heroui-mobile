@@ -91,7 +91,9 @@ const TabsLayout = observer(function TabsLayout(): JSX.Element {
         <Tabs.Screen name="home" options={{ title: "Home" }} />
         <Tabs.Screen name="feed" options={{ title: "Feed" }} />
         <Tabs.Screen name="settings" options={{ title: "Settings" }} />
-        <Tabs.Screen name="community" options={{ title: "Community" }} />
+        <Tabs.Screen name="help" options={{ title: "Help" }} />
+        {/* Kept for deep links / future use — not shown in the tab bar. */}
+        <Tabs.Screen name="community" options={{ href: null, title: "Community" }} />
       </Tabs>
       {userStore.isLoggedIn && userStore.isPhoneVerified ? (
         <NotificationPromptHost />

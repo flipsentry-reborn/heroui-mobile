@@ -130,6 +130,14 @@ const RootLayoutContent = observer(function RootLayoutContent(): JSX.Element {
             }}
           />
           <Stack.Screen
+            name="help"
+            options={{
+              headerShown: false,
+              animation: "slide_from_right",
+              gestureEnabled: true,
+            }}
+          />
+          <Stack.Screen
             name="community"
             options={{
               headerShown: false,

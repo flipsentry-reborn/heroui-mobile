@@ -377,6 +377,12 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
 
           <SettingsSection title="Help & Support">
             <SettingsRow
+              icon="help-circle-outline"
+              title="Help Center"
+              description="Guides for searches, alerts, and account"
+              onPress={() => router.push("/(tabs)/help" as Href)}
+            />
+            <SettingsRow
               icon="star-outline"
               title="Rate App"
               description="Share feedback on the App Store"

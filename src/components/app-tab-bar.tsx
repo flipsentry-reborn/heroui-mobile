@@ -24,7 +24,7 @@ const TAB_ICONS: Record<string, { outline: IoniconName; filled: IoniconName }> =
   home: { outline: "home-outline", filled: "home" },
   feed: { outline: "sparkles-outline", filled: "sparkles" },
   settings: { outline: "settings-outline", filled: "settings" },
-  community: { outline: "people-outline", filled: "people" },
+  help: { outline: "help-circle-outline", filled: "help-circle" },
 };
 
 function withAlpha(color: string, alpha: number): string {

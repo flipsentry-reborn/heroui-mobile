@@ -10,6 +10,11 @@ import {
 } from "@/mocks/data/locations";
 import type { CarMakesSelection } from "@/features/home/search-bottom-sheet-car-makes-sheet";
 import type { IphoneModelSelection } from "@/features/home/search-bottom-sheet-iphone-models-sheet";
+import {
+  DEFAULT_US_LOCATION_PLATFORMS,
+  defaultEnabledPlatforms,
+  inferCountryCode,
+} from "@/lib/location-platforms";
 import { placeRowId } from "@/lib/location-suggest";
 
 function normalizeLocationKey(value: string): string {
@@ -147,9 +152,35 @@ export function buildLocationDraftFromGroup(group: SearchGroup): LocationDraft {
   return {
     main,
     radiusMiles: group.radiusMiles || DEFAULT_RADIUS_MILES,
-    platforms: platforms.length > 0 ? platforms : ["facebook"],
+    platforms:
+      platforms.length > 0 ? platforms : [...DEFAULT_US_LOCATION_PLATFORMS],
     otherSpeeds,
     placesById,
+  };
+}
+
+/** Country for `GET /api/platform/available` from a prior search group. */
+export function countryFromSearchGroup(group: SearchGroup): string {
+  return inferCountryCode({
+    countryCode: group.settings[0]?.country,
+    displayName: group.locationName,
+    name: group.locationName,
+  });
+}
+
+/**
+ * New Search prefill: reuse prior group location/radius/speeds.
+ * Pass `availablePlatforms` from `agent.Platform.getAvailable(country)` to enable all.
+ */
+export function buildNewSearchLocationDraft(
+  group: SearchGroup,
+  availablePlatforms?: LocationPlatform[],
+): LocationDraft {
+  const draft = buildLocationDraftFromGroup(group);
+  if (availablePlatforms == null) return draft;
+  return {
+    ...draft,
+    platforms: defaultEnabledPlatforms(availablePlatforms),
   };
 }
 
@@ -165,6 +196,7 @@ export interface EditFormPrefill {
   minMileage: string;
   maxMileage: string;
   locationDraft: LocationDraft;
+  notificationEnabled: boolean;
 }
 
 function optionalNumberString(value: number | undefined): string {
@@ -223,5 +255,6 @@ export function loadGroupForEdit(group: SearchGroup): EditFormPrefill {
     minMileage: optionalNumberString(carQuery?.minMileage),
     maxMileage: optionalNumberString(carQuery?.maxMileage),
     locationDraft: buildLocationDraftFromGroup(group),
+    notificationEnabled: group.notificationEnabled ?? true,
   };
 }

@@ -115,6 +115,13 @@ const RootLayoutContent = observer(function RootLayoutContent(): JSX.Element {
             }}
           />
           <Stack.Screen
+            name="filters"
+            options={{
+              animation: "slide_from_right",
+              gestureEnabled: true,
+            }}
+          />
+          <Stack.Screen
             name="settings"
             options={{
               headerShown: false,

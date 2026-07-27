@@ -7,13 +7,18 @@ import agent, {
 import {
   buildFeedCategories,
   buildForYouShelves,
+  buildYourFilterChildren,
   buildYourSearchChildren,
   type FeedCategoryDef,
 } from "@/features/feed/build-feed-categories";
 import { buildHomePlan, isGroupPaused, sortSearchGroups } from "@/mocks/services/home";
 import type { HomePlan, SearchGroup } from "@/mocks/data/home";
 import { toUserErrorMessage } from "@/lib/user-error-message";
-import type { FeedFilterTab, FeedTabAvailability } from "@/models/feed";
+import type {
+  FeedFilterTab,
+  FeedTabAvailability,
+  FeedUserFilterTab,
+} from "@/models/feed";
 import type FeedStore from "@/store/feedStore";
 import type SubscriptionStore from "@/store/subscriptionStore";
 
@@ -33,6 +38,7 @@ export default class SearchStore {
   showFeaturedTab = false;
   showSoldTab = false;
   feedTabs: FeedFilterTab[] = [];
+  filterTabs: FeedUserFilterTab[] = [];
 
   private subscriptionStore: SubscriptionStore | null = null;
   private feedStore: FeedStore | null = null;
@@ -82,6 +88,7 @@ export default class SearchStore {
       showFeatured: this.showFeaturedTab,
       showSold: this.showSoldTab,
       tabs: this.feedTabs,
+      filterTabs: this.filterTabs,
     };
   }
 
@@ -101,9 +108,18 @@ export default class SearchStore {
     return buildYourSearchChildren(this.feedTabs);
   }
 
+  get yourFilterChildren(): FeedCategoryDef[] {
+    return buildYourFilterChildren(this.filterTabs);
+  }
+
   groupIdsForCategory(key: string): string[] | undefined {
     const tab = this.feedTabs.find((entry) => entry.key === key);
     return tab?.groupIds;
+  }
+
+  filterIdsForCategory(key: string): string[] | undefined {
+    const tab = this.filterTabs.find((entry) => entry.key === key);
+    return tab?.filterIds;
   }
 
   async loadSearchGroups(): Promise<void> {
@@ -143,6 +159,7 @@ export default class SearchStore {
         this.showFeaturedTab = availability.showFeatured;
         this.showSoldTab = availability.showSold;
         this.feedTabs = availability.tabs ?? [];
+        this.filterTabs = availability.filterTabs ?? [];
         this.hasLoadedFeedTabAvailability = true;
       });
       this.feedStore?.flushPendingFeeds();

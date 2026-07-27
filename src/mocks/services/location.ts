@@ -3,10 +3,11 @@ import {
   isLocationSpeedSelected,
   locationsFixture,
   type LocationDraft,
-  type LocationPlatform,
   type LocationResult,
 } from "@/mocks/data/locations";
+import { DEFAULT_US_LOCATION_PLATFORMS } from "@/lib/location-platforms";
 import { buildMockSuggestLocationsResult } from "@/lib/location-suggest";
+import { mockDelay } from "@/mocks/delay";
 import { cityFromLocation } from "@/mocks/services/home";
 import type {
   MatchPlatformsInput,
@@ -28,14 +29,10 @@ function normalizeDraft(value: LocationDraft): LocationDraft {
     platforms:
       Array.isArray(value.platforms) && value.platforms.length > 0
         ? value.platforms
-        : (["facebook"] as LocationPlatform[]),
+        : [...DEFAULT_US_LOCATION_PLATFORMS],
     otherSpeeds: value.otherSpeeds ?? {},
     placesById: value.placesById ?? {},
   };
-}
-
-function delay(ms = 120): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
 }
 
 function haversineMiles(
@@ -57,7 +54,7 @@ function haversineMiles(
 export async function searchLocations(
   query: string,
 ): Promise<LocationResult[]> {
-  await delay();
+  await mockDelay();
   const term = query.trim().toLowerCase();
   if (term.length < 2) return [];
   return structuredClone(
@@ -75,7 +72,7 @@ export async function getNearbyLocations(
   main: LocationResult,
   maxResults = 8,
 ): Promise<LocationResult[]> {
-  await delay(80);
+  await mockDelay();
   const ranked = locationsFixture
     .filter((place) => place.id !== main.id)
     .map((place) => ({
@@ -93,14 +90,14 @@ export async function getNearbyLocations(
 export async function mockSuggestLocations(
   params: SuggestLocationsInput,
 ): Promise<SuggestLocationsResult> {
-  await delay(80);
+  await mockDelay();
   return buildMockSuggestLocationsResult(params, locationsFixture);
 }
 
 export async function mockMatchPlatforms(
   params: MatchPlatformsInput,
 ): Promise<MatchPlatformsResult> {
-  await delay(80);
+  await mockDelay();
 
   const enabledPlatforms = [
     ...new Set(

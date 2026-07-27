@@ -27,6 +27,9 @@
   /* Uncertain mileage "?" — theme-tuned amber (overridden in light/dark). */
   --uncertain: oklch(0.666 0.157 56);
   --color-uncertain: var(--uncertain);
+  /* Recessed For You shelves (Best Picks / Your Filters) — overridden per variant. */
+  --surface-inset: oklch(93.73% 0.0012 253.83);
+  --color-surface-inset: var(--surface-inset);
 
   /*
    * App fonts = Britti Sans (HeroUI Pro heroSans).
@@ -53,6 +56,8 @@
     --surface-secondary-foreground: oklch(12% 0 0);
     --surface-tertiary: oklch(93.73% 0.0012 253.83);
     --surface-tertiary-foreground: oklch(12% 0 0);
+    /* Darker than page wash / white cards — Best Picks, Your Filters. */
+    --surface-inset: oklch(93.73% 0.0012 253.83);
 
     --overlay: oklch(100.00% 0.0004 253.83);
     --overlay-foreground: oklch(12% 0 0);
@@ -119,6 +124,8 @@
     --surface-secondary-foreground: oklch(100% 0 0);
     --surface-tertiary: oklch(46.38% 0.0119 267.25);
     --surface-tertiary-foreground: oklch(100% 0 0);
+    /* Darker than wash (#2F3136) — toward mobile-app #252729. */
+    --surface-inset: oklch(26.2% 0.0075 268);
 
     --overlay: oklch(35.65% 0.0107 271.11);
     --overlay-foreground: oklch(100% 0 0);

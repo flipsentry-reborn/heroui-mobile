@@ -18,10 +18,12 @@ export const PLAN_GLOW_GRADIENT = {
 } as const;
 
 export type PlanPalette = {
-  gradient: [string, string, string];
+  gradient: [string, string, string, string];
   iconFrom: string;
   iconTo: string;
   glow: string;
+  /** Softer counter-glow that gives the dark surface more depth. */
+  ambientGlow: string;
   /** Bolt fill on the hexagon badge. Defaults to white on colored plans. */
   boltFill?: string;
   /** Primary text on the plan card surface. */
@@ -33,34 +35,38 @@ export type PlanPalette = {
 /** Shared card accents for subscription screen + settings plan card. */
 export const PLAN_ACCENTS: Record<PlanAccent, PlanPalette> = {
   teal: {
-    gradient: ["#0b1220", "#071018", "#050505"],
+    gradient: ["#0B1B26", "#09161F", "#071016", "#040506"],
     iconFrom: "#22d3ee",
     iconTo: "#0ea5a4",
-    glow: "rgba(34, 211, 238, 0.22)",
+    glow: "rgba(34, 211, 238, 0.32)",
+    ambientGlow: "rgba(14, 165, 164, 0.14)",
     text: "#FFFFFF",
     textMuted: "rgba(255,255,255,0.55)",
   },
   purple: {
-    gradient: ["#12081f", "#0a0614", "#050505"],
+    gradient: ["#1B0B2E", "#130A25", "#0B0817", "#040506"],
     iconFrom: "#7538F8",
     iconTo: "#F690EC",
-    glow: "rgba(117, 56, 248, 0.25)",
+    glow: "rgba(117, 56, 248, 0.34)",
+    ambientGlow: "rgba(246, 144, 236, 0.13)",
     text: "#FFFFFF",
     textMuted: "rgba(255,255,255,0.55)",
   },
   rose: {
-    gradient: ["#1f0814", "#12060c", "#050505"],
+    gradient: ["#260C19", "#1A0912", "#10080D", "#040506"],
     iconFrom: "#FB7185",
     iconTo: "#E11D48",
-    glow: "rgba(251, 113, 133, 0.25)",
+    glow: "rgba(251, 113, 133, 0.33)",
+    ambientGlow: "rgba(225, 29, 72, 0.14)",
     text: "#FFFFFF",
     textMuted: "rgba(255,255,255,0.55)",
   },
   gold: {
-    gradient: ["#1a1208", "#0e0b06", "#050505"],
+    gradient: ["#281B08", "#1C1408", "#100D08", "#050505"],
     iconFrom: "#FBBF24",
     iconTo: "#F59E0B",
-    glow: "rgba(251, 191, 36, 0.22)",
+    glow: "rgba(251, 191, 36, 0.31)",
+    ambientGlow: "rgba(245, 158, 11, 0.13)",
     text: "#FFFFFF",
     textMuted: "rgba(255,255,255,0.55)",
   },
@@ -68,10 +74,11 @@ export const PLAN_ACCENTS: Record<PlanAccent, PlanPalette> = {
 
 /** Unsubscribed / free — white surface + white badge (dark bolt for contrast). */
 export const NOT_SUBSCRIBED_PALETTE: PlanPalette = {
-  gradient: ["#FFFFFF", "#F7F7F7", "#F0F0F0"],
+  gradient: ["#FFFFFF", "#FAFAFA", "#F5F5F5", "#F0F0F0"],
   iconFrom: "#FFFFFF",
   iconTo: "#F2F2F2",
   glow: "rgba(0, 0, 0, 0.04)",
+  ambientGlow: "rgba(0, 0, 0, 0.025)",
   boltFill: "#111111",
   text: "#111111",
   textMuted: "rgba(0,0,0,0.45)",

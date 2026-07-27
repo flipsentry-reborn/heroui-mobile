@@ -60,6 +60,7 @@ interface ApiGroupSearch {
   excludeText?: string[];
   titleIncluders?: string[];
   descriptionIncluders?: string[];
+  notificationEnabled?: boolean;
   runIntervalSeconds?: number;
   platforms?: string[];
   searchSettings?: ApiSearchSetting[];
@@ -121,6 +122,7 @@ export function mapApiGroupToHome(group: ApiGroupSearch): HomeSearchGroup {
     iphoneQuery: group.iphoneQuery,
     customLabel,
     settings,
+    notificationEnabled: group.notificationEnabled ?? true,
     createdAt: group.createdAt,
     updatedAt: group.updatedAt,
   };
@@ -163,6 +165,7 @@ function buildCreatePayload(input: CreateHomeSearchInput): CreateSearchGroup {
     settings,
     containsText: input.containsText,
     excludeText: input.excludeText,
+    notificationEnabled: input.notificationEnabled ?? true,
   };
 
   if (input.searchType === "car" && input.carQuery) {
@@ -194,6 +197,7 @@ function buildUpdatePayload(input: UpdateHomeSearchInput): UpdateSearchGroup {
     excludeText: created.excludeText,
     titleIncluders: created.titleIncluders,
     descriptionIncluders: created.descriptionIncluders,
+    notificationEnabled: created.notificationEnabled,
     settings: created.settings,
   };
 }

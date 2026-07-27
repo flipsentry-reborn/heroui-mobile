@@ -1,6 +1,7 @@
 /**
  * Google Places Autocomplete + Place Details + Time Zone (live only).
  * Matches mobile-app locationStore behavior: types=(regions).
+ * Kept in sync with heroui-frontend `src/api/http/places.ts` (same REST paths + mapping).
  */
 
 import { GOOGLE_MAPS_API_KEY } from "@/api/config";
@@ -42,6 +43,9 @@ interface TimeZoneResponse {
   timeZoneId?: string;
 }
 
+/** React Native can call Google Maps HTTP APIs directly (no browser CORS). */
+const GOOGLE_MAPS_HTTP_ORIGIN = "https://maps.googleapis.com";
+
 function requireApiKey(): string {
   if (!GOOGLE_MAPS_API_KEY) {
     throw new Error(
@@ -49,6 +53,13 @@ function requireApiKey(): string {
     );
   }
   return GOOGLE_MAPS_API_KEY;
+}
+
+function mapsUrl(pathAndQuery: string): string {
+  const path = pathAndQuery.startsWith("/")
+    ? pathAndQuery
+    : `/${pathAndQuery}`;
+  return `${GOOGLE_MAPS_HTTP_ORIGIN}${path}`;
 }
 
 function getAddressComponent(
@@ -89,7 +100,9 @@ async function resolveTimeZone(
 ): Promise<string> {
   try {
     const timestamp = Math.floor(Date.now() / 1000);
-    const url = `https://maps.googleapis.com/maps/api/timezone/json?location=${latitude},${longitude}&timestamp=${timestamp}&key=${key}`;
+    const url = mapsUrl(
+      `/maps/api/timezone/json?location=${latitude},${longitude}&timestamp=${timestamp}&key=${key}`,
+    );
     const response = await fetch(url);
     const data = (await response.json()) as TimeZoneResponse;
     if (data.status === "OK" && data.timeZoneId) {
@@ -109,9 +122,11 @@ export async function searchPlacePredictions(
   if (term.length < 2) return [];
 
   const key = requireApiKey();
-  const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-    term,
-  )}&types=(regions)&key=${key}`;
+  const url = mapsUrl(
+    `/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+      term,
+    )}&types=(regions)&key=${key}`,
+  );
 
   const response = await fetch(url);
   const data = (await response.json()) as AutocompleteResponse;
@@ -162,9 +177,11 @@ export async function resolvePlaceDetails(
   }
 
   const key = requireApiKey();
-  const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
-    place.placeId,
-  )}&fields=geometry,address_components,formatted_address&key=${key}`;
+  const detailsUrl = mapsUrl(
+    `/maps/api/place/details/json?place_id=${encodeURIComponent(
+      place.placeId,
+    )}&fields=geometry,address_components,formatted_address&key=${key}`,
+  );
 
   const detailsResponse = await fetch(detailsUrl);
   const detailsData = (await detailsResponse.json()) as PlaceDetailsResponse;

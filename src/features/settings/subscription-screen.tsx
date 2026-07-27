@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
@@ -20,10 +21,9 @@ const SCROLL_EDGE_FADE = 40;
 
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
 import { SubscriptionPlansSkeleton } from "@/features/settings/settings-skeletons";
-import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
+import { SubscriptionCardBackdrop } from "@/features/settings/subscription-card-backdrop";
 import {
   PLAN_ACCENTS,
-  PLAN_GLOW_GRADIENT,
   SUBSCRIPTION_DARK_BACKGROUND,
 } from "@/features/settings/subscription-theme";
 import { Fonts } from "@/lib/fonts";
@@ -32,12 +32,7 @@ import type {
   SubscriptionTier,
 } from "@/mocks/data/subscription";
 import { formatPlanPrice } from "@/mocks/data/subscription";
-import {
-  getSubscription,
-  mockRestorePurchases,
-  mockSubscribe,
-} from "@/mocks/services/subscription";
-import { store } from "@/store/store";
+import { useStore } from "@/store/store";
 
 function FeatureRow({ feature }: { feature: string }): JSX.Element {
   return (
@@ -77,20 +72,8 @@ function PlanCard({
   const palette = PLAN_ACCENTS[plan.accent];
 
   return (
-    <View className="overflow-hidden rounded-3xl border border-white/10">
-      <LinearGradient
-        colors={palette.gradient}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-      />
-      <LinearGradient
-        colors={[palette.glow, "transparent"]}
-        start={PLAN_GLOW_GRADIENT.start}
-        end={PLAN_GLOW_GRADIENT.end}
-        style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-      />
-      <SubscriptionParticleField />
+    <View className="overflow-hidden rounded-3xl border border-white/15">
+      <SubscriptionCardBackdrop palette={palette} particleDensity="rich" />
 
       <View className="gap-5 p-5">
         <View className="gap-2">
@@ -214,12 +197,13 @@ function PlanCard({
   );
 }
 
-export function SubscriptionScreen(): JSX.Element {
+export const SubscriptionScreen = observer(function SubscriptionScreen(): JSX.Element {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { toast } = useToast();
   const { theme } = useUniwind();
   const isDark = theme === "dark";
+  const { subscriptionStore, searchStore } = useStore();
   const [foreground, muted, background] = useThemeColor([
     "foreground",
     "muted",
@@ -227,12 +211,10 @@ export function SubscriptionScreen(): JSX.Element {
   ]);
   /** Near-black wash in dark; theme background in light. */
   const pageBackground = isDark ? SUBSCRIPTION_DARK_BACKGROUND : background;
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!subscriptionStore.hasLoaded);
   const [busy, setBusy] = useState(false);
-  const [currentTier, setCurrentTier] = useState<SubscriptionTier | null>(null);
-  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>(
-    [],
-  );
+  const currentTier = subscriptionStore.currentTier;
+  const subscriptionPlans = subscriptionStore.plans;
 
   const scrollY = useSharedValue(0);
   const contentHeight = useSharedValue(0);
@@ -268,13 +250,11 @@ export function SubscriptionScreen(): JSX.Element {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const next = await getSubscription();
-      setCurrentTier(next.currentTier);
-      setSubscriptionPlans(next.plans);
+      await subscriptionStore.load();
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [subscriptionStore]);
 
   useEffect(() => {
     void load();
@@ -283,14 +263,12 @@ export function SubscriptionScreen(): JSX.Element {
   const handleSubscribe = async (tier: SubscriptionTier) => {
     setBusy(true);
     try {
-      const next = await mockSubscribe(tier);
-      setCurrentTier(next.currentTier);
-      await store.subscriptionStore.load();
-      await store.searchStore.loadSearchGroups();
+      await subscriptionStore.subscribe(tier);
+      await searchStore.loadSearchGroups();
       toast.show({
         variant: "success",
         label: "Subscribed",
-        description: `You're on ${next.plans.find((p) => p.id === tier)?.displayName ?? "the plan"}`,
+        description: `You're on ${subscriptionStore.plans.find((p) => p.id === tier)?.displayName ?? "the plan"}`,
         duration: 2500,
       });
     } catch {
@@ -303,13 +281,12 @@ export function SubscriptionScreen(): JSX.Element {
   const handleRestore = async () => {
     setBusy(true);
     try {
-      await mockRestorePurchases();
+      await subscriptionStore.restore();
       toast.show({
         variant: "default",
         label: "Purchases restored",
         duration: 2000,
       });
-      await load();
     } catch {
       Alert.alert("Error", "Could not restore purchases");
     } finally {
@@ -445,4 +422,4 @@ export function SubscriptionScreen(): JSX.Element {
       </View>
     </View>
   );
-}
+});

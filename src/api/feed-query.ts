@@ -1,5 +1,5 @@
 /**
- * Map heroui feed category tabs → live Feed.list / SoldListings query params.
+ * Map heroui feed category tabs → live Feed.list query params.
  */
 
 import type { GetFeedParams } from "@/mocks/services/feed";
@@ -26,11 +26,17 @@ export function buildLiveFeedParams(
     qs.append("isBestPicks", "true");
     qs.append("bestPicksMaxHours", "72");
   } else if (category === "sold") {
-    // Sold uses SoldListings endpoint separately
+    appendSoldParams(qs, params);
+  } else if (params.filterIds != null && params.filterIds.length > 0) {
+    for (const id of params.filterIds) {
+      qs.append("filterIds", id);
+    }
   } else if (params.groupIds != null && params.groupIds.length > 0) {
     for (const id of params.groupIds) {
       qs.append("groupIds", id);
     }
+  } else if (category.startsWith("filter:")) {
+    qs.append("filterIds", category.slice("filter:".length));
   } else if (
     category !== "all" &&
     category !== "for-you" &&
@@ -50,25 +56,19 @@ export function buildLiveFeedParams(
   return qs;
 }
 
-export function buildLiveSoldParams(
-  params: GetFeedParams,
-  pageNumber = 1,
-  pageSize = 40,
-): URLSearchParams {
-  const qs = new URLSearchParams();
-  const size = params.pageSize ?? pageSize;
-  const page = params.pageNumber ?? pageNumber;
-  qs.append("pageNumber", String(page));
-  qs.append("pageSize", String(size));
-  const query = (params.query ?? "").trim();
-  if (query) qs.append("search", query);
+function appendSoldParams(qs: URLSearchParams, params: GetFeedParams) {
+  const status = params.soldStatus ?? "all";
+  if (status === "sold") {
+    qs.append("isSold", "true");
+  } else if (status === "pending") {
+    qs.append("isPending", "true");
+  } else {
+    qs.append("isSold", "true");
+    qs.append("isPending", "true");
+  }
   if (params.maxDays != null) {
     qs.append("maxDays", String(params.maxDays));
   }
-  if (params.soldStatus && params.soldStatus !== "all") {
-    qs.append("soldStatus", params.soldStatus);
-  }
-  return qs;
 }
 
 type FeedValuationSlice = {

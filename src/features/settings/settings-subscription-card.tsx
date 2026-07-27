@@ -1,16 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import type { JSX } from "react";
 import { Text, View } from "react-native";
 import { Button } from "heroui-native";
 
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
-import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
+import { SubscriptionCardBackdrop } from "@/features/settings/subscription-card-backdrop";
 import {
   NOT_SUBSCRIBED_ICON_STROKE,
   NOT_SUBSCRIBED_PALETTE,
   PLAN_ACCENTS,
-  PLAN_GLOW_GRADIENT,
 } from "@/features/settings/subscription-theme";
 import { Fonts } from "@/lib/fonts";
 import type { SubscriptionPlan } from "@/mocks/data/subscription";
@@ -29,18 +27,7 @@ export function SettingsSubscriptionCard({
     const palette = NOT_SUBSCRIBED_PALETTE;
     return (
       <View className="mx-3 mb-4 overflow-hidden rounded-3xl border border-black/10">
-        <LinearGradient
-          colors={palette.gradient}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-        />
-        <LinearGradient
-          colors={[palette.glow, "transparent"]}
-          start={PLAN_GLOW_GRADIENT.start}
-          end={PLAN_GLOW_GRADIENT.end}
-          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-        />
+        <SubscriptionCardBackdrop palette={palette} showParticles={false} />
         <View className="gap-3 p-4">
           <View className="flex-row items-center gap-2">
             <HeroBoltIcon
@@ -102,21 +89,9 @@ export function SettingsSubscriptionCard({
           opacity: { value: [0, 0.08] },
         },
       }}
-      className="mx-3 mb-4 h-auto items-stretch overflow-hidden rounded-3xl border border-white/10 p-0"
+      className="mx-3 mb-4 h-auto items-stretch overflow-hidden rounded-3xl border border-white/15 p-0"
     >
-      <LinearGradient
-        colors={palette.gradient}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-      />
-      <LinearGradient
-        colors={[palette.glow, "transparent"]}
-        start={PLAN_GLOW_GRADIENT.start}
-        end={PLAN_GLOW_GRADIENT.end}
-        style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-      />
-      <SubscriptionParticleField />
+      <SubscriptionCardBackdrop palette={palette} />
       <View className="gap-3 p-5" pointerEvents="none">
         <View className="flex-row items-center gap-2.5">
           <HeroBoltIcon

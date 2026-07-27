@@ -1,5 +1,5 @@
 import type { JSX, RefObject } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import PagerView, {
   type PagerViewOnPageSelectedEvent,
@@ -30,6 +30,8 @@ export function FeedPager({
   const [visited, setVisited] = useState<Set<string>>(
     () => new Set<string>([activeCategory]),
   );
+  const categoriesKey = categories.map((c) => c.key).join("|");
+  const prevCategoriesKey = useRef(categoriesKey);
 
   useEffect(() => {
     setVisited((prev) => {
@@ -46,6 +48,17 @@ export function FeedPager({
     pagerRef.current?.setScrollEnabled(swipeEnabled);
   }, [pagerRef, swipeEnabled]);
 
+  // Keep the active tab index in sync when availability inserts tabs —
+  // without remounting PagerView (that remount blanked For You mid-load).
+  useEffect(() => {
+    if (prevCategoriesKey.current === categoriesKey) return;
+    prevCategoriesKey.current = categoriesKey;
+    const index = categories.findIndex((c) => c.key === activeCategory);
+    if (index >= 0) {
+      pagerRef.current?.setPageWithoutAnimation(index);
+    }
+  }, [activeCategory, categories, categoriesKey, pagerRef]);
+
   const handlePageSelected = useCallback(
     (e: PagerViewOnPageSelectedEvent) => {
       const key = categories[e.nativeEvent.position]?.key;
@@ -59,11 +72,9 @@ export function FeedPager({
     0,
     categories.findIndex((c) => c.key === activeCategory),
   );
-  const categoriesKey = categories.map((c) => c.key).join("|");
 
   return (
     <PagerView
-      key={categoriesKey}
       ref={pagerRef}
       style={{ flex: 1 }}
       initialPage={initialPage}

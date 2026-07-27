@@ -3,6 +3,8 @@
  * Credentials: test@flipsentry.com / +12345678901 / password — OTP 000000
  */
 
+import { applySilenceDerivedFields } from "@/domain/notification-silence";
+import { mockDelay } from "@/mocks/delay";
 import { readJson, removeKey, writeJson } from "@/lib/storage";
 import type {
   PhoneLoginSendCodeRequest,
@@ -17,14 +19,11 @@ import type {
 } from "@/models/user";
 
 const SESSION_KEY = "@flipsentry/mock-session";
+const NOTIFICATION_SETTINGS_KEY = "@flipsentry/mock-notification-settings";
 const MOCK_OTP = "000000";
 const MOCK_EMAIL = "test@flipsentry.com";
 const MOCK_PHONE = "+12345678901";
 const MOCK_PASSWORD = "password";
-
-function delay(ms = 220): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
 
 function makeToken(userId: string): string {
   return `mock-jwt-${userId}`;
@@ -68,7 +67,7 @@ const defaultNotificationSettings: UserNotificationSettings = {
   pushNotificationsEnabled: true,
   scheduledSilenceEnabled: false,
   scheduledSilenceStartHour: 22,
-  scheduledSilenceEndHour: 8,
+  scheduledSilenceEndHour: 7,
   scheduledSilenceTimeZoneId: null,
   isCurrentlySilenced: false,
   silenceReason: null,
@@ -78,6 +77,7 @@ let preferences: UserPreferences = structuredClone(defaultPreferences);
 let notificationSettings: UserNotificationSettings = structuredClone(
   defaultNotificationSettings,
 );
+let notificationHydrated = false;
 
 async function ensureHydrated(): Promise<void> {
   if (hydrated) return;
@@ -86,6 +86,31 @@ async function ensureHydrated(): Promise<void> {
     sessionUser = stored;
   }
   hydrated = true;
+}
+
+async function ensureNotificationHydrated(): Promise<void> {
+  if (notificationHydrated) return;
+  const stored = await readJson<UserNotificationSettings>(
+    NOTIFICATION_SETTINGS_KEY,
+  );
+  if (stored) {
+    notificationSettings = applySilenceDerivedFields({
+      ...defaultNotificationSettings,
+      ...stored,
+    });
+  } else {
+    notificationSettings = applySilenceDerivedFields(
+      structuredClone(defaultNotificationSettings),
+    );
+  }
+  notificationHydrated = true;
+}
+
+async function persistNotificationSettings(
+  settings: UserNotificationSettings,
+): Promise<void> {
+  notificationSettings = applySilenceDerivedFields(settings);
+  await writeJson(NOTIFICATION_SETTINGS_KEY, notificationSettings);
 }
 
 async function persistSession(user: User | null): Promise<void> {
@@ -98,7 +123,7 @@ async function persistSession(user: User | null): Promise<void> {
 }
 
 export async function login(creds: UserLoginFormValues): Promise<User> {
-  await delay();
+  await mockDelay();
   await ensureHydrated();
   const email = creds.email.trim().toLowerCase();
   if (email !== MOCK_EMAIL || creds.password !== MOCK_PASSWORD) {
@@ -117,7 +142,7 @@ export async function login(creds: UserLoginFormValues): Promise<User> {
 export async function register(
   creds: UserRegisterFormValues,
 ): Promise<User> {
-  await delay(280);
+  await mockDelay();
   await ensureHydrated();
   const email = creds.email.trim().toLowerCase();
   if (!email || !creds.password || creds.password.length < 8) {
@@ -138,7 +163,7 @@ export async function register(
 }
 
 export async function current(): Promise<User> {
-  await delay(80);
+  await mockDelay();
   await ensureHydrated();
   if (!sessionUser) {
     throw new Error("Unauthorized");
@@ -155,7 +180,7 @@ export async function current(): Promise<User> {
 export async function sendPhoneLoginCode(
   request: PhoneLoginSendCodeRequest,
 ): Promise<void> {
-  await delay();
+  await mockDelay();
   if (request.phoneNumber.trim() !== MOCK_PHONE) {
     throw new Error("Phone number not found. Use +12345678901 in mock mode.");
   }
@@ -164,7 +189,7 @@ export async function sendPhoneLoginCode(
 export async function verifyPhoneLogin(
   request: PhoneLoginVerifyRequest,
 ): Promise<User> {
-  await delay();
+  await mockDelay();
   if (request.phoneNumber.trim() !== MOCK_PHONE) {
     throw new Error("Phone number not found");
   }
@@ -184,7 +209,7 @@ export async function verifyPhoneLogin(
 export async function sendPhoneVerification(
   request: PhoneVerificationRequest,
 ): Promise<void> {
-  await delay();
+  await mockDelay();
   await ensureHydrated();
   if (!sessionUser) throw new Error("Unauthorized");
   const phone = request.phoneNumber.trim();
@@ -198,7 +223,7 @@ export async function sendPhoneVerification(
 export async function verifyPhone(
   request: PhoneVerificationCodeRequest,
 ): Promise<void> {
-  await delay();
+  await mockDelay();
   await ensureHydrated();
   if (!sessionUser) throw new Error("Unauthorized");
   if (request.verificationCode.trim() !== MOCK_OTP) {
@@ -213,7 +238,7 @@ export async function verifyPhone(
 }
 
 export async function forgotPassword(email: string): Promise<void> {
-  await delay();
+  await mockDelay();
   if (email.trim().toLowerCase() !== MOCK_EMAIL) {
     // Match backend: don't leak whether email exists
     return;
@@ -225,11 +250,11 @@ export async function resetPassword(
   _token: string,
   _newPassword: string,
 ): Promise<void> {
-  await delay();
+  await mockDelay();
 }
 
 export async function deleteAccount(password: string): Promise<void> {
-  await delay(280);
+  await mockDelay();
   await ensureHydrated();
   if (!sessionUser) throw new Error("Unauthorized");
   if (password !== MOCK_PASSWORD) {
@@ -239,33 +264,36 @@ export async function deleteAccount(password: string): Promise<void> {
 }
 
 export async function getPreferences(): Promise<UserPreferences> {
-  await delay(80);
+  await mockDelay();
   return structuredClone(preferences);
 }
 
 export async function updatePreferences(
   prefs: UserPreferences,
 ): Promise<UserPreferences> {
-  await delay(80);
+  await mockDelay();
   preferences = structuredClone(prefs);
   return structuredClone(preferences);
 }
 
 export async function getNotificationSettings(): Promise<UserNotificationSettings> {
-  await delay(80);
+  await mockDelay();
+  await ensureNotificationHydrated();
+  notificationSettings = applySilenceDerivedFields(notificationSettings);
   return structuredClone(notificationSettings);
 }
 
 export async function updateNotificationSettings(
   patch: Partial<UserNotificationSettings>,
 ): Promise<UserNotificationSettings> {
-  await delay(80);
-  notificationSettings = { ...notificationSettings, ...patch };
+  await mockDelay();
+  await ensureNotificationHydrated();
+  await persistNotificationSettings({ ...notificationSettings, ...patch });
   return structuredClone(notificationSettings);
 }
 
 export async function startTrial(_deviceId: string): Promise<number> {
-  await delay();
+  await mockDelay();
   return 7;
 }
 

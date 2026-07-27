@@ -1,5 +1,7 @@
 import Constants from "expo-constants";
 
+import { debugLog } from "@/lib/debug-log";
+
 type Extra = {
   useMock?: boolean;
   apiUrl?: string;
@@ -24,3 +26,9 @@ export const GOOGLE_MAPS_API_KEY: string =
   (Constants.expoConfig?.android?.config?.googleMaps as { apiKey?: string } | undefined)
     ?.apiKey ||
   "";
+
+debugLog.info("api/config", "Dual-mode API", {
+  USE_MOCK,
+  API_URL,
+  extraUseMock: extra.useMock,
+});

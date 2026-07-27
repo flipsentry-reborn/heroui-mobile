@@ -35,6 +35,8 @@ export function SearchSheetGroup({
 interface SearchSheetRowProps {
   title: string;
   required?: boolean;
+  /** Asterisk color — create search / filter use warning (yellow). */
+  requiredTone?: "danger" | "warning";
   showSwap?: boolean;
   isLast: boolean;
   isDisabled?: boolean;
@@ -47,6 +49,7 @@ interface SearchSheetRowProps {
 export function SearchSheetRow({
   title,
   required,
+  requiredTone = "danger",
   showSwap,
   isLast,
   isDisabled,
@@ -54,7 +57,12 @@ export function SearchSheetRow({
   onPress,
   right,
 }: SearchSheetRowProps): JSX.Element {
-  const [muted, danger] = useThemeColor(["muted", "danger"]);
+  const [muted, danger, warning] = useThemeColor([
+    "muted",
+    "danger",
+    "warning",
+  ]);
+  const requiredColor = requiredTone === "warning" ? warning : danger;
   const interactive = onPress != null && !isDisabled;
 
   const body = (
@@ -79,7 +87,7 @@ export function SearchSheetRow({
           {required ? (
             <Typography
               type="body-sm"
-              style={{ color: danger, opacity: isDisabled ? 0.5 : 1 }}
+              style={{ color: requiredColor, opacity: isDisabled ? 0.5 : 1 }}
             >
               *
             </Typography>
@@ -120,6 +128,10 @@ interface SearchSheetValueProps {
   showChevron?: boolean;
   isDisabled?: boolean;
   emphasized?: boolean;
+  /** Highlighted empty required value prompting a tap. */
+  danger?: boolean;
+  /** Prefer warning (yellow) for create-search / filter required empty state. */
+  requiredEmpty?: boolean;
 }
 
 export function SearchSheetValue({
@@ -127,8 +139,20 @@ export function SearchSheetValue({
   showChevron = true,
   isDisabled,
   emphasized,
+  danger,
+  requiredEmpty,
 }: SearchSheetValueProps): JSX.Element {
-  const [muted] = useThemeColor(["muted"]);
+  const [muted, dangerColor, warningColor] = useThemeColor([
+    "muted",
+    "danger",
+    "warning",
+  ]);
+  const highlight = requiredEmpty || danger;
+  const highlightColor = requiredEmpty
+    ? warningColor
+    : danger
+      ? dangerColor
+      : muted;
 
   return (
     <View
@@ -139,12 +163,24 @@ export function SearchSheetValue({
       <Typography
         type="body-sm"
         numberOfLines={1}
-        className={`shrink-0 ${emphasized ? "text-foreground" : "text-muted"}`}
+        className={`shrink-0 ${
+          requiredEmpty
+            ? "text-warning"
+            : danger
+              ? "text-danger"
+              : emphasized
+                ? "text-foreground"
+                : "text-muted"
+        }`}
       >
         {label}
       </Typography>
       {showChevron ? (
-        <Ionicons name="chevron-forward" size={16} color={muted} />
+        <Ionicons
+          name="chevron-forward"
+          size={16}
+          color={highlight ? highlightColor : muted}
+        />
       ) : null}
     </View>
   );

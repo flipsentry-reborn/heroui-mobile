@@ -3,6 +3,8 @@ import { router, type Href } from "expo-router";
 import { makeAutoObservable, runInAction } from "mobx";
 
 import agent, { resetAgent } from "@/api/agent";
+import { USE_MOCK } from "@/api/config";
+import { isMockJwt } from "@/lib/auth-token";
 import type CommonStore from "@/store/commonStore";
 import { resolvePostAuthHref } from "@/lib/post-auth-href";
 import {
@@ -119,11 +121,17 @@ export default class UserStore {
 
   async bootstrap(): Promise<void> {
     await this.commonStore.loadToken();
-    if (this.commonStore.token) {
-      try {
-        await this.getUser();
-      } catch {
-        // Keep JWT; auth gates use hasSession so a down API does not look like logout.
+    const token = this.commonStore.token;
+    if (token) {
+      // Drop tokens that don't match the current dual-mode (mock jwt ↔ live jwt).
+      if (USE_MOCK !== isMockJwt(token)) {
+        this.commonStore.setToken(null);
+      } else {
+        try {
+          await this.getUser();
+        } catch {
+          // Keep JWT; auth gates use hasSession so a down API does not look like logout.
+        }
       }
     }
     runInAction(() => {

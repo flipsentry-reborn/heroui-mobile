@@ -172,6 +172,10 @@ export interface FeedItem {
   searchSettingIds: string[];
   /** Search groups this feed matched (SignalR routing). */
   searchGroupIds?: string[];
+  /** User filters this feed matched. */
+  filterIds?: string[];
+  /** Filter summaries (id/name/color) ordered by updatedAt desc. */
+  filters?: import("@/models/user-filter").FeedFilterSummary[];
   keywordTags: KeywordTags;
   createdAt: string;
   /** Seconds from listing to found (minus platform lag); from backend. */
@@ -501,29 +505,6 @@ export const PLATFORM_LABEL: Record<FeedPlatform, string> = {
   kijiji: "Kijiji",
 };
 
-export interface LocalCompItem {
-  feedId?: string;
-  platform: string;
-  listingId: string;
-  title: string;
-  price: number;
-  currency: string;
-  currencySymbol: string;
-  imageUrl: string | null;
-  locationText: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  distanceMiles: number;
-  vehicleYear: number | null;
-  mileageInMiles: number | null;
-  postedDate: string | null;
-  buySignal: number | null;
-  fairPrice: number | null;
-  listingUrl: string | null;
-  imageUrls: string[];
-  description: string | null;
-}
-
 export function isCarListing(
   item: Pick<
     FeedItem,
@@ -558,8 +539,16 @@ export interface FeedFilterTab {
   groupIds: string[];
 }
 
+export interface FeedUserFilterTab {
+  key: string;
+  label: string;
+  color?: string;
+  filterIds: string[];
+}
+
 export interface FeedTabAvailability {
   showFeatured: boolean;
   showSold: boolean;
   tabs: FeedFilterTab[];
+  filterTabs?: FeedUserFilterTab[];
 }

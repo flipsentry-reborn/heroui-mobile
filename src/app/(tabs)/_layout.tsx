@@ -7,6 +7,7 @@ import { useThemeColor } from "heroui-native";
 
 import { AppTabBar } from "@/components/app-tab-bar";
 import { BottomChromeProvider } from "@/contexts/bottom-chrome-context";
+import { NotificationPromptHost } from "@/features/settings/notification-prompt-host";
 import { useStore } from "@/store/store";
 
 const TabsLayout = observer(function TabsLayout(): JSX.Element {
@@ -92,6 +93,9 @@ const TabsLayout = observer(function TabsLayout(): JSX.Element {
         <Tabs.Screen name="settings" options={{ title: "Settings" }} />
         <Tabs.Screen name="community" options={{ title: "Community" }} />
       </Tabs>
+      {userStore.isLoggedIn && userStore.isPhoneVerified ? (
+        <NotificationPromptHost />
+      ) : null}
     </BottomChromeProvider>
   );
 });

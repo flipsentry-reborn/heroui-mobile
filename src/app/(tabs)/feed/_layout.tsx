@@ -20,7 +20,6 @@ export default function FeedLayout(): JSX.Element {
           gestureEnabled: true,
         }}
       />
-
     </Stack>
   );
 }

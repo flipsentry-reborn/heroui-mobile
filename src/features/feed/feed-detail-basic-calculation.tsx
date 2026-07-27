@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
@@ -19,8 +20,8 @@ import {
   formatOdometer,
   getOdometerDisplayValue,
 } from "@/lib/distance-utils";
-import { getDistanceUnitSync } from "@/mocks/services/settings";
 import { getValuationTier, type ListingValuation } from "@/models/feed";
+import { useStore } from "@/store/store";
 
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
 
@@ -74,11 +75,12 @@ interface FeedDetailBasicCalculationProps {
  * Comps valuation row + sheet (Basic Calculation).
  * Same shell pattern as Advanced — SheetShell, no Trigger on mount.
  */
-export function FeedDetailBasicCalculation({
+export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalculation({
   valuation,
   currencySymbol,
 }: FeedDetailBasicCalculationProps): JSX.Element | null {
   const insets = useSafeAreaInsets();
+  const { userStore } = useStore();
   const [muted] = useThemeColor(["muted"]);
   const [visible, setVisible] = useState(false);
   const snapPoints = useMemo(() => ["55%", "88%"], []);
@@ -97,7 +99,7 @@ export function FeedDetailBasicCalculation({
   const isPhone =
     valuation.valuationType === "iphone" ||
     valuation.valuationType === "samsung";
-  const distanceUnit = getDistanceUnitSync();
+  const distanceUnit = userStore.preferences?.distanceUnit ?? "mi";
   const titleLine = isPhone
     ? [
         valuation.iphoneModel || valuation.samsungModel || valuation.model,
@@ -340,4 +342,4 @@ export function FeedDetailBasicCalculation({
       </SheetShell>
     </View>
   );
-}
+});

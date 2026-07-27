@@ -2,39 +2,47 @@ import {
   resolveDisplayValuation,
   type FeedFilterTab,
   type FeedItem,
+  type FeedUserFilterTab,
 } from "@/models/feed";
 
 export const FEED_SHELF_LIMIT = 10;
 export const BEST_PICKS_MIN_BUY_SIGNAL = 10;
 
-function hasGroupOverlap(
-  feedGroupIds: string[] | undefined,
-  tabGroupIds: string[] | undefined,
+function hasIdOverlap(
+  feedIds: string[] | undefined,
+  tabIds: string[] | undefined,
 ): boolean {
-  if (!feedGroupIds?.length || !tabGroupIds?.length) return false;
-  const tabSet = new Set(tabGroupIds.map(String));
-  return feedGroupIds.some((id) => tabSet.has(String(id)));
+  if (!feedIds?.length || !tabIds?.length) return false;
+  const tabSet = new Set(tabIds.map(String));
+  return feedIds.some((id) => tabSet.has(String(id)));
 }
 
 /**
  * Typed/custom tabs whose groupIds intersect the feed's searchGroupIds.
  * Falls back to searchSettingIds when searchGroupIds is missing.
+ * Also includes filter tabs whose filterIds intersect feed.filterIds.
  */
 export function tabsForFeed(
   feed: FeedItem,
   feedTabs: FeedFilterTab[],
+  filterTabs: FeedUserFilterTab[] = [],
 ): string[] {
   const keys: string[] = [];
   for (const tab of feedTabs) {
-    if (hasGroupOverlap(feed.searchGroupIds, tab.groupIds)) {
+    if (hasIdOverlap(feed.searchGroupIds, tab.groupIds)) {
       keys.push(tab.key);
       continue;
     }
     // Fallback: setting id sometimes matches group id patterns in mocks.
     if (
       !feed.searchGroupIds?.length &&
-      hasGroupOverlap(feed.searchSettingIds, tab.groupIds)
+      hasIdOverlap(feed.searchSettingIds, tab.groupIds)
     ) {
+      keys.push(tab.key);
+    }
+  }
+  for (const tab of filterTabs) {
+    if (hasIdOverlap(feed.filterIds, tab.filterIds)) {
       keys.push(tab.key);
     }
   }
@@ -66,10 +74,11 @@ export function isPriceDropCandidate(feed: FeedItem): boolean {
 export function bucketsForLiveFeed(
   feed: FeedItem,
   feedTabs: FeedFilterTab[],
+  filterTabs: FeedUserFilterTab[] = [],
 ): string[] {
   const buckets = new Set<string>(["all"]);
 
-  for (const key of tabsForFeed(feed, feedTabs)) {
+  for (const key of tabsForFeed(feed, feedTabs, filterTabs)) {
     buckets.add(key);
   }
   if (isPriceDropCandidate(feed)) {

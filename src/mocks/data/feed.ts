@@ -83,6 +83,8 @@ type ExtraListing = {
   isSoldMinsAgo?: number;
   isPending?: boolean;
   isPendingMinsAgo?: number;
+  isRemoved?: boolean;
+  isRemovedMinsAgo?: number;
   vehicleSpecifications?: FeedItem["vehicleSpecifications"];
   compValuation?: FeedItem["compValuation"];
   externalValuation?: FeedItem["externalValuation"];
@@ -152,6 +154,13 @@ function extraListing(item: ExtraListing): FeedItem {
       item.isPending && item.isPendingMinsAgo != null
         ? minsAgo(item.isPendingMinsAgo)
         : item.isPending
+          ? created
+          : undefined,
+    isRemoved: item.isRemoved ?? false,
+    isRemovedAt:
+      item.isRemoved && item.isRemovedMinsAgo != null
+        ? minsAgo(item.isRemovedMinsAgo)
+        : item.isRemoved
           ? created
           : undefined,
     isSpamReported: false,
@@ -1487,3 +1496,28 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  ] as ExtraListing[]
  ).map(extraListing),
 ];
+
+/** Tag fixtures for seeded mock user filters (see mocks/services/filters). */
+for (const item of MOCK_FEED_ITEMS) {
+  const ids: string[] = [];
+  const haystack = `${item.title} ${item.description}`.toLowerCase();
+  if (haystack.includes("toyota") || item.compValuation?.make === "Toyota") {
+    ids.push("filter-toyota");
+  }
+  if (
+    haystack.includes("iphone") ||
+    item.iphoneStorageGb != null ||
+    item.searchSettingIds.includes("group-iphones")
+  ) {
+    ids.push("filter-iphone-deals");
+  }
+  if (ids.length > 0) {
+    item.filterIds = ids;
+    item.filters = ids.map((id) => ({
+      id,
+      name: id === "filter-toyota" ? "Toyota deals" : "iPhone deals",
+      color: id === "filter-toyota" ? "#3B82F6" : "#8B5CF6",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    }));
+  }
+}

@@ -2,6 +2,7 @@ import { useFocusEffect } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState, type JSX } from "react";
 import { View } from "react-native";
+import { Typography } from "heroui-native";
 
 import { FeedForYouPage } from "@/features/feed/feed-for-you-page";
 import { FeedScrollable } from "@/features/feed/feed-scrollable";
@@ -30,8 +31,9 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
   onPressItem,
   onOpenCategory,
 }: FeedCategoryPageProps): JSX.Element {
-  const { feedStore } = useStore();
+  const { feedStore, searchStore } = useStore();
   const isSold = category === "sold";
+  const filterTab = searchStore.filterTabs.find((tab) => tab.key === category);
   const [soldStatus, setSoldStatus] = useState<SoldStatusFilter>("all");
   const [maxDays, setMaxDays] = useState<number | null>(1);
   const [refreshing, setRefreshing] = useState(false);
@@ -128,6 +130,34 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
         onToggleFavorite={(id) => {
           void handleToggleFavorite(id);
         }}
+        emptyTitle={
+          isSold
+            ? "No sold listings yet"
+            : filterTab
+              ? "No items matched yet"
+              : "No listings yet"
+        }
+        emptyDescription={
+          isSold
+            ? "Mark listings as sold to track them here."
+            : filterTab
+              ? "Deals will show up here as soon as this search finds a match."
+              : "Pull to refresh, or try another category."
+        }
+        listHeader={
+          filterTab ? (
+            <View className="px-3 pb-2 pt-1">
+              <Typography
+                type="body"
+                weight="bold"
+                className="font-extrabold text-foreground"
+                numberOfLines={1}
+              >
+                Showing {filterTab.label} Items
+              </Typography>
+            </View>
+          ) : null
+        }
         topInset={4}
       />
     </View>

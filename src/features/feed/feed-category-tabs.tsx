@@ -62,9 +62,17 @@ export function FeedCategoryTabs({
                         />
                       </View>
                     ) : (
-                      <Tabs.Label className={labelClass}>
-                        {category.label}
-                      </Tabs.Label>
+                      <View className="flex-row items-center gap-1.5">
+                        {category.color ? (
+                          <View
+                            className="h-2 w-2 rounded-full border border-border"
+                            style={{ backgroundColor: category.color }}
+                          />
+                        ) : null}
+                        <Tabs.Label className={labelClass}>
+                          {category.label}
+                        </Tabs.Label>
+                      </View>
                     )}
                     {category.badge ? (
                       <FeedCategoryBadge label={category.badge} />

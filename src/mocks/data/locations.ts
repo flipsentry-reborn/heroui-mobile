@@ -222,7 +222,7 @@ export interface LocationDraft {
 export const defaultLocationDraft: LocationDraft = {
   main: null,
   radiusMiles: DEFAULT_RADIUS_MILES,
-  platforms: ["facebook"],
+  platforms: ["facebook", "offerUp", "craigslist"],
   otherSpeeds: {},
   placesById: {},
 };

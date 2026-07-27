@@ -24,6 +24,7 @@ import {
   SHEET_CONTENT_CONTAINER_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
+import { toUserErrorMessage } from "@/lib/user-error-message";
 import { useStore } from "@/store/store";
 import { USE_MOCK } from "@/api/config";
 import { MOCK_ACCOUNT_CREDENTIALS } from "@/mocks/services/account";
@@ -76,11 +77,11 @@ function DeleteAccountContent({
           duration: 2200,
         });
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         setDeleting(false);
         toast.show({
           variant: "danger",
-          label: "Delete failed",
+          label: toUserErrorMessage(error),
           duration: 2200,
         });
       });

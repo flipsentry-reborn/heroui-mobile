@@ -3,6 +3,11 @@ import type { Pagination } from "@/models/pagination";
 import { isCarListing, resolveDisplayValuation } from "@/models/feed";
 import { MOCK_FEED_ITEMS } from "@/mocks/data/feed";
 import { getLocalCompsForFeed } from "@/mocks/data/local-comps";
+import { mockDelay } from "@/mocks/delay";
+import {
+  getActiveFilterIds,
+  peekActiveFilterIds,
+} from "@/mocks/services/filters";
 
 export type GetLocalCompsParams = {
   sameYear?: boolean;
@@ -16,6 +21,8 @@ export type GetFeedParams = {
   category?: string;
   /** From tab-availability for typed/custom tabs — forwarded to live Feed.list. */
   groupIds?: string[];
+  /** From filter tabs — forwarded to live Feed.list as filterIds. */
+  filterIds?: string[];
   query?: string;
   limit?: number;
   /** 1-based page for infinite scroll (default 1). */
@@ -28,17 +35,13 @@ export type GetFeedParams = {
   maxDays?: number | null;
 };
 
-function delay(ms = 450): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function matchesSoldStatus(
   item: FeedItem,
   status: SoldStatusFilter = "all",
 ): boolean {
-  if (status === "sold") return !!item.isSold;
+  if (status === "sold") return !!item.isSold || !!item.isRemoved;
   if (status === "pending") return !!item.isPending;
-  return !!item.isSold || !!item.isPending;
+  return !!item.isSold || !!item.isPending || !!item.isRemoved;
 }
 
 function matchesMaxDays(item: FeedItem, maxDays: number | null | undefined): boolean {
@@ -51,19 +54,57 @@ function matchesMaxDays(item: FeedItem, maxDays: number | null | undefined): boo
   if (item.isPending && item.isPendingAt) {
     stamps.push(new Date(item.isPendingAt).getTime());
   }
+  if (item.isRemoved && item.isRemovedAt) {
+    stamps.push(new Date(item.isRemovedAt).getTime());
+  }
   if (stamps.length === 0 && item.creationTime) {
     stamps.push(new Date(item.creationTime).getTime());
   }
   return stamps.some((t) => Number.isFinite(t) && t >= cutoff);
 }
 
+function matchesFilterIds(
+  item: FeedItem,
+  filterIds: string[] | undefined,
+): boolean {
+  if (filterIds == null || filterIds.length === 0) return true;
+  const itemIds = item.filterIds ?? [];
+  return filterIds.some((id) => itemIds.includes(id));
+}
+
+/** Mirror backend: inactive UserFilters must not appear on feed badges. */
+function stripInactiveFilters(
+  item: FeedItem,
+  activeIds: Set<string>,
+): FeedItem {
+  const filterIds = (item.filterIds ?? []).filter((id) => activeIds.has(id));
+  const filters = (item.filters ?? []).filter((f) => activeIds.has(f.id));
+  if (
+    filterIds.length === (item.filterIds?.length ?? 0) &&
+    filters.length === (item.filters?.length ?? 0)
+  ) {
+    return item;
+  }
+  return { ...item, filterIds, filters };
+}
+
 function matchesCategory(
   item: FeedItem,
   category: string,
   groupIds?: string[],
+  filterIds?: string[],
 ): boolean {
+  if (filterIds != null && filterIds.length > 0) {
+    return matchesFilterIds(item, filterIds);
+  }
+  if (category.startsWith("filter:")) {
+    const id = category.slice("filter:".length).trim();
+    return matchesFilterIds(item, id ? [id] : []);
+  }
   if (category === "for-you" || category === "all") return true;
-  if (category === "sold") return !!item.isSold || !!item.isPending;
+  if (category === "sold") {
+    return !!item.isSold || !!item.isPending || !!item.isRemoved;
+  }
   if (category === "saved") return item.isFavorite;
   if (category === "best-picks") {
     return (resolveDisplayValuation(item)?.buySignal ?? 0) >= 60;
@@ -115,14 +156,19 @@ function matchesCategory(
 }
 
 export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
-  await delay();
+  await mockDelay();
   const category = params.category ?? "all";
   const query = (params.query ?? "").trim().toLowerCase();
   const soldStatus = params.soldStatus ?? "all";
   const maxDays = params.maxDays;
+  const activeFilterIds = await getActiveFilterIds();
 
   const items = MOCK_FEED_ITEMS.filter((item) => {
-    if (!matchesCategory(item, category, params.groupIds)) return false;
+    if (
+      !matchesCategory(item, category, params.groupIds, params.filterIds)
+    ) {
+      return false;
+    }
     if (category === "sold") {
       if (!matchesSoldStatus(item, soldStatus)) return false;
       if (!matchesMaxDays(item, maxDays)) return false;
@@ -133,7 +179,7 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
       item.description.toLowerCase().includes(query) ||
       item.locationText.toLowerCase().includes(query)
     );
-  }).map((item) => ({ ...item }));
+  }).map((item) => stripInactiveFilters({ ...item }, activeFilterIds));
 
   const take =
     params.limit != null && params.limit > 0
@@ -165,10 +211,15 @@ export async function getFeedPage(
         : 40;
   const pageNumber = Math.max(1, params.pageNumber ?? 1);
 
-  await delay();
+  await mockDelay();
+  const activeFilterIds = await getActiveFilterIds();
 
   const filtered = MOCK_FEED_ITEMS.filter((item) => {
-    if (!matchesCategory(item, category, params.groupIds)) return false;
+    if (
+      !matchesCategory(item, category, params.groupIds, params.filterIds)
+    ) {
+      return false;
+    }
     if (category === "sold") {
       if (!matchesSoldStatus(item, soldStatus)) return false;
       if (!matchesMaxDays(item, maxDays)) return false;
@@ -184,7 +235,9 @@ export async function getFeedPage(
   const totalItems = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const start = (pageNumber - 1) * pageSize;
-  const data = filtered.slice(start, start + pageSize).map((item) => ({ ...item }));
+  const data = filtered
+    .slice(start, start + pageSize)
+    .map((item) => stripInactiveFilters({ ...item }, activeFilterIds));
 
   return {
     data,
@@ -201,13 +254,15 @@ export async function getFeedPage(
 export function peekFeedById(id: string): FeedItem | null {
   const item = MOCK_FEED_ITEMS.find((f) => f.id === id);
   if (!item) return null;
-  return {
+  const cloned: FeedItem = {
     ...item,
     images: {
       ...item.images,
       marketplaceImages: [...item.images.marketplaceImages],
     },
   };
+  const activeIds = peekActiveFilterIds();
+  return activeIds != null ? stripInactiveFilters(cloned, activeIds) : cloned;
 }
 
 export async function getFeedById(id: string): Promise<FeedItem | null> {
@@ -215,7 +270,7 @@ export async function getFeedById(id: string): Promise<FeedItem | null> {
 }
 
 export async function toggleFavorite(id: string): Promise<FeedItem | null> {
-  await delay(120);
+  await mockDelay();
   const item = MOCK_FEED_ITEMS.find((f) => f.id === id);
   if (!item) return null;
   item.isFavorite = !item.isFavorite;
@@ -227,7 +282,7 @@ export async function getLocalComps(
   feedId: string,
   params: GetLocalCompsParams = {},
 ): Promise<FeedItem[]> {
-  await delay(400);
+  await mockDelay();
 
   const source = MOCK_FEED_ITEMS.find((f) => f.id === feedId);
   if (!source || !isCarListing(source)) return [];
@@ -245,8 +300,12 @@ export async function getLocalComps(
       comp.vehicleSpecifications?.vehicleYear ??
       resolveDisplayValuation(comp)?.year ??
       null;
-    if (sameYear && sourceYear != null && year !== sourceYear) {
-      return false;
+    if (sourceYear != null && year != null) {
+      if (sameYear) {
+        if (year !== sourceYear) return false;
+      } else if (year < sourceYear - 3 || year > sourceYear + 3) {
+        return false;
+      }
     }
     if (comp.creationTime) {
       const postedMs = new Date(comp.creationTime).getTime();

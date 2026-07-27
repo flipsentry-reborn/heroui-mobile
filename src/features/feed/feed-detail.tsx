@@ -114,7 +114,8 @@ export function FeedDetail({
     descExpanded || !longDesc
       ? description
       : `${description.slice(0, DESC_COLLAPSE_LENGTH).trimEnd()}…`;
-  const showSimilarNearby = isCarListing(item) && !item.isSold && !item.isPending;
+  const showSimilarNearby =
+    isCarListing(item) && !item.isSold && !item.isPending && !item.isRemoved;
   const soldPendingPrefix = formatSoldPendingTitlePrefix(item);
 
   const syncStickyVisibility = useCallback(() => {
@@ -154,10 +155,19 @@ export function FeedDetail({
     let alive = true;
     setLocalCompsLoading(true);
     void (async () => {
-      const comps = await agent.Feed.getLocalComps(item.id, { sameYear, days });
-      if (!alive) return;
-      setLocalComps(comps);
-      setLocalCompsLoading(false);
+      try {
+        const comps = await agent.Feed.getLocalComps(item.id, {
+          sameYear,
+          days,
+        });
+        if (!alive) return;
+        setLocalComps(comps);
+      } catch {
+        if (!alive) return;
+        setLocalComps([]);
+      } finally {
+        if (alive) setLocalCompsLoading(false);
+      }
     })();
 
     return () => {

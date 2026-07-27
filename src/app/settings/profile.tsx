@@ -1,5 +1,4 @@
 import * as Clipboard from "expo-clipboard";
-import { LinearGradient } from "expo-linear-gradient";
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useEffect, useState } from "react";
@@ -19,16 +18,14 @@ import {
   SettingsSection,
 } from "@/features/settings/settings-section";
 import { ProfileScreenSkeleton } from "@/features/settings/settings-skeletons";
-import { SubscriptionParticleField } from "@/features/settings/subscription-particles";
+import { SubscriptionCardBackdrop } from "@/features/settings/subscription-card-backdrop";
 import {
   NOT_SUBSCRIBED_ICON_STROKE,
   NOT_SUBSCRIBED_PALETTE,
   PLAN_ACCENTS,
-  PLAN_GLOW_GRADIENT,
 } from "@/features/settings/subscription-theme";
 import { Fonts } from "@/lib/fonts";
 import type { MockUserProfile } from "@/mocks/data/settings";
-import { getSettings } from "@/mocks/services/settings";
 import { useStore } from "@/store/store";
 
 function StatusChip({
@@ -55,12 +52,9 @@ const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
 
   useEffect(() => {
     void (async () => {
-      const [settings] = await Promise.all([
-        getSettings(),
-        subscriptionStore.load().catch(() => {
-          // keep last known subscription
-        }),
-      ]);
+      await subscriptionStore.load().catch(() => {
+        // keep last known subscription
+      });
       if (userStore.user) {
         setProfile({
           firstName: userStore.user.firstName,
@@ -71,7 +65,14 @@ const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
           numberConfirmed: userStore.user.numberConfirmed,
         });
       } else {
-        setProfile(settings.profile);
+        setProfile({
+          firstName: "Hunter",
+          lastName: "",
+          email: "",
+          emailConfirmed: false,
+          phoneNumber: null,
+          numberConfirmed: false,
+        });
       }
     })();
   }, [userStore.user, subscriptionStore]);
@@ -126,23 +127,14 @@ const ProfileScreen = observer(function ProfileScreen(): JSX.Element {
       <View
         className={
           isSubscribed
-            ? "mx-3 mb-4 overflow-hidden rounded-3xl border border-white/10"
+            ? "mx-3 mb-4 overflow-hidden rounded-3xl border border-white/15"
             : "mx-3 mb-4 overflow-hidden rounded-3xl border border-black/10"
         }
       >
-        <LinearGradient
-          colors={palette.gradient}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+        <SubscriptionCardBackdrop
+          palette={palette}
+          showParticles={isSubscribed}
         />
-        <LinearGradient
-          colors={[palette.glow, "transparent"]}
-          start={PLAN_GLOW_GRADIENT.start}
-          end={PLAN_GLOW_GRADIENT.end}
-          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-        />
-        {isSubscribed ? <SubscriptionParticleField /> : null}
         <View className="items-center gap-1.5 px-5 py-6">
           <Avatar
             size="lg"

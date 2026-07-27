@@ -40,6 +40,8 @@ export interface SearchGroup {
   iphoneQuery?: IphoneQuery[];
   customLabel?: string;
   settings: SearchSetting[];
+  /** When false, matching this search alone does not notify. Default true. */
+  notificationEnabled?: boolean;
   /** ISO timestamp — set on create. */
   createdAt: string;
   /** ISO timestamp — bumped on edit / pause / start. */

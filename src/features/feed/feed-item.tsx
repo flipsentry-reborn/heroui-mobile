@@ -16,17 +16,19 @@ import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
 import { AiEstimationIcon } from "@/components/icons/ai-estimation-icon";
 import PlatformIcon from "@/components/icons/PlatformIcon";
 import {
+  FilterMatchBadge,
+  ProfitBadge,
   StatusBadge,
   ValuationBadge,
 } from "@/features/feed/feed-badge";
 import { FeedDiagonalShimmer } from "@/features/feed/feed-diagonal-shimmer";
 import {
+  getListingStatusLabel,
   SOLD_STATUS_COLOR,
   SOLD_STATUS_TEXT_CLASS,
 } from "@/features/feed/sold-status";
 import { debugLog } from "@/lib/debug-log";
 import { formatOdometerCompact } from "@/lib/distance-utils";
-import { getDistanceUnitSync } from "@/mocks/services/settings";
 import {
   getOrderedStatusBadges,
   resolveDisplayValuation,
@@ -47,9 +49,9 @@ const FEED_OPEN_LOG = "FeedOpen";
  */
 const IMAGE_H_GRID = 168;
 const IMAGE_H_LIST = 212;
-/** Wider rail cards for For You shelves (not square). */
-const IMAGE_H_RAIL = 142;
-const RAIL_WIDTH = 200;
+/** Wider rail cards for For You shelves (not square). ~7% under prior size. */
+const IMAGE_H_RAIL = 132;
+const RAIL_WIDTH = 186;
 /** Featured shelves (e.g. Top Rated) render ~7% larger. */
 const FEATURED_SCALE = 1.07;
 
@@ -61,7 +63,14 @@ interface FeedItemProps {
   layout?: "grid" | "list" | "rail";
   /** Slightly larger rail cards for featured shelves. */
   featured?: boolean;
-  /** Small label on the image (e.g. Community “2 days ago”). */
+  /**
+   * Top-left stack badge after filter match (e.g. Sold “Found 3 hours ago”).
+   * Same Chip shell/type as FilterMatchBadge / StatusBadge.
+   */
+  imageTopLabel?: string;
+  /** Sold page: show Avg. Profit chip after Good / Negotiable badges. */
+  showAvgProfit?: boolean;
+  /** Small bottom-corner label (e.g. Community “2 days ago”). */
   imageCornerLabel?: string;
   imageCornerSide?: "left" | "right";
   /** Hide the favorite star (e.g. Community profile grid). */
@@ -75,17 +84,24 @@ function formatPrice(price: number, symbol: string): string {
   return `${symbol}${formatted}`;
 }
 
+function formatAvgProfitLabel(profit: number, symbol: string): string {
+  const sign = profit > 0 ? "+" : profit < 0 ? "-" : "";
+  return `${sign}${formatPrice(Math.abs(profit), symbol)}`;
+}
+
 function FeedItemInner({
   feed,
   onPress,
   onToggleFavorite,
   layout = "grid",
   featured = false,
+  imageTopLabel,
+  showAvgProfit = false,
   imageCornerLabel,
   imageCornerSide = "right",
   hideFavorite = false,
 }: FeedItemProps): JSX.Element {
-  const { feedStore } = useStore();
+  const { feedStore, userStore } = useStore();
   const [surfaceSecondary] = useThemeColor(["surface-secondary"]);
   // Reset when the recycled cell binds a different listing (or isNew flips).
   const [showNewShimmer, setShowNewShimmer] = useRecyclingState(
@@ -99,7 +115,19 @@ function FeedItemInner({
     undefined;
   const statusBadges = getOrderedStatusBadges(feed);
   const valuation = resolveDisplayValuation(feed);
-  const distanceUnit = getDistanceUnitSync();
+  const hasFilterMatches = (feed.filters?.length ?? 0) > 0;
+  const avgProfit =
+    showAvgProfit && valuation?.fairPrice != null
+      ? (valuation.profit ?? valuation.fairPrice - feed.price)
+      : null;
+  // Sold page: only show profit badge when at least 5% profitable.
+  const avgProfitLabel =
+    avgProfit != null &&
+    feed.price > 0 &&
+    avgProfit / feed.price >= 0.05
+      ? formatAvgProfitLabel(avgProfit, feed.currencySymbol)
+      : null;
+  const distanceUnit = userStore.preferences?.distanceUnit ?? "mi";
   const mileageDisplay = resolveFeedMileageDisplay(feed);
   const mileageText =
     mileageDisplay != null
@@ -172,9 +200,10 @@ function FeedItemInner({
       : "text-[12px] text-muted";
   const dimClass = "text-muted";
   const platformSize = isRail ? 13 : isList ? 16 : 14;
-  const badgeScale = isList ? "detail" : "default";
-  const favoriteSize = isList ? 15 : 13;
+  const badgeScale = isList ? "detail" : isRail ? "rail" : "default";
+  const favoriteSize = isList ? 15 : isRail ? 12 : 13;
   const aiIconSize = isRail ? 16 : isList ? 19 : 17;
+  const statusLabel = getListingStatusLabel(feed);
 
   return (
     <PressableFeedback
@@ -193,7 +222,9 @@ function FeedItemInner({
         variant="transparent"
         className={`${isRail ? "" : "flex-1 "}gap-0 overflow-visible rounded-none border-0 bg-transparent p-0`}
       >
-        <View className="relative overflow-hidden rounded-lg">
+        <View
+          className={`relative overflow-hidden ${isRail ? "rounded-2xl" : "rounded-lg"}`}
+        >
           <Image
             source={imageUrl ? { uri: imageUrl } : null}
             placeholder={DEFAULT_IMAGE_PLACEHOLDER}
@@ -214,6 +245,20 @@ function FeedItemInner({
             active={showNewShimmer}
             onDone={handleShimmerDone}
           />
+
+          {hasFilterMatches || imageTopLabel ? (
+            <View className="absolute left-1.5 top-1.5 gap-1">
+              {hasFilterMatches ? (
+                <FilterMatchBadge
+                  filters={feed.filters ?? []}
+                  scale={badgeScale}
+                />
+              ) : null}
+              {imageTopLabel ? (
+                <StatusBadge label={imageTopLabel} scale={badgeScale} />
+              ) : null}
+            </View>
+          ) : null}
 
           {!hideFavorite ? (
             <PressableFeedback
@@ -238,7 +283,9 @@ function FeedItemInner({
             </PressableFeedback>
           ) : null}
 
-          {(valuation?.calculated || statusBadges.length > 0) && (
+          {(valuation?.calculated ||
+            statusBadges.length > 0 ||
+            avgProfitLabel) && (
             <View
               className={`absolute bottom-[5px] left-[5px] flex-row flex-wrap ${
                 isList ? "gap-1" : "gap-[3px]"
@@ -253,6 +300,9 @@ function FeedItemInner({
               {statusBadges.slice(0, 2).map((badge) => (
                 <StatusBadge key={badge} label={badge} scale={badgeScale} />
               ))}
+              {avgProfitLabel ? (
+                <ProfitBadge label={avgProfitLabel} scale={badgeScale} />
+              ) : null}
             </View>
           )}
 
@@ -303,23 +353,14 @@ function FeedItemInner({
             numberOfLines={1}
             ellipsizeMode="tail"
           >
-            {feed.isSold ? (
+            {statusLabel ? (
               <Typography
                 type="body-sm"
                 weight="semibold"
                 className={`${titleClass} ${SOLD_STATUS_TEXT_CLASS}`}
                 style={{ color: SOLD_STATUS_COLOR }}
               >
-                Sold{" "}
-              </Typography>
-            ) : feed.isPending ? (
-              <Typography
-                type="body-sm"
-                weight="semibold"
-                className={`${titleClass} ${SOLD_STATUS_TEXT_CLASS}`}
-                style={{ color: SOLD_STATUS_COLOR }}
-              >
-                Pending{" "}
+                {statusLabel}{" "}
               </Typography>
             ) : null}
             {feed.title}
@@ -375,6 +416,8 @@ function feedItemPropsEqual(
     prev.layout === next.layout &&
     prev.featured === next.featured &&
     prev.hideFavorite === next.hideFavorite &&
+    prev.imageTopLabel === next.imageTopLabel &&
+    prev.showAvgProfit === next.showAvgProfit &&
     prev.imageCornerLabel === next.imageCornerLabel &&
     prev.imageCornerSide === next.imageCornerSide &&
     prev.onPress === next.onPress &&

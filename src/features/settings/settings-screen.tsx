@@ -29,16 +29,15 @@ import {
 import { ThemeSelect } from "@/features/settings/theme-select";
 import {
   applyAppearance,
+  loadCachedAppearance,
+  saveCachedAppearance,
   type AppearanceMode,
 } from "@/lib/appearance";
+import { toUserErrorMessage } from "@/lib/user-error-message";
 import type {
   SettingsState,
   UserPreferences,
 } from "@/mocks/data/settings";
-import {
-  getSettings,
-  updatePreferences,
-} from "@/mocks/services/settings";
 import { useStore } from "@/store/store";
 
 const StyledIonicons = withUniwind(Ionicons);
@@ -95,31 +94,45 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
   const [resettingOnboarding, setResettingOnboarding] = useState(false);
 
   const load = useCallback(async () => {
-    const [next] = await Promise.all([
-      getSettings(),
+    const appearance = (await loadCachedAppearance()) ?? "dark";
+    applyAppearance(appearance);
+
+    await Promise.all([
       subscriptionStore.load().catch(() => {
         // keep last known subscription
       }),
+      userStore.loadPreferences().catch(() => {
+        // keep last known prefs
+      }),
     ]);
-    applyAppearance(next.preferences.appearance);
-    try {
-      await userStore.loadPreferences();
-      const apiPrefs = userStore.preferences;
-      if (apiPrefs) {
-        next.preferences = {
-          ...next.preferences,
-          showScams: apiPrefs.showScams,
-          showDealers: apiPrefs.showDealers,
-          showDealerships: apiPrefs.showDealerships,
-          showMajorDamaged: apiPrefs.showMajorIssue,
-          showRebuiltTitle: apiPrefs.showRebuiltTitle,
-          showSalvageTitle: apiPrefs.showSalvageTitle,
-          distanceUnit: apiPrefs.distanceUnit,
-        };
-      }
-    } catch {
-      // keep local prefs
-    }
+
+    const apiPrefs = userStore.preferences;
+    const next: SettingsState = {
+      preferences: {
+        showScams: apiPrefs?.showScams ?? false,
+        showDealers: apiPrefs?.showDealers ?? false,
+        showDealerships: apiPrefs?.showDealerships ?? false,
+        showMajorDamaged: apiPrefs?.showMajorIssue ?? false,
+        showRebuiltTitle: apiPrefs?.showRebuiltTitle ?? false,
+        showSalvageTitle: apiPrefs?.showSalvageTitle ?? false,
+        distanceUnit: apiPrefs?.distanceUnit ?? "mi",
+        appearance,
+      },
+      refundSaver: {
+        preference: "no_preference",
+        collectingRefundDataConsent: true,
+      },
+      hasActiveSubscription: subscriptionStore.hasActiveSubscription,
+      hasActiveTrial: subscriptionStore.hasActiveTrial,
+      profile: {
+        firstName: userStore.user?.firstName ?? "Hunter",
+        lastName: userStore.user?.lastName ?? "",
+        email: userStore.user?.email ?? "",
+        emailConfirmed: userStore.user?.emailConfirmed ?? false,
+        phoneNumber: userStore.user?.phoneNumber ?? null,
+        numberConfirmed: userStore.user?.numberConfirmed ?? false,
+      },
+    };
     setState(next);
   }, [subscriptionStore, userStore]);
 
@@ -151,35 +164,53 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
 
   const patchPrefs = async (patch: Partial<UserPreferences>) => {
     try {
-      const next = await updatePreferences(patch);
       if (patch.appearance !== undefined) {
         applyAppearance(patch.appearance);
+        await saveCachedAppearance(patch.appearance);
       }
-      setState((s) => (s ? { ...s, preferences: next } : s));
 
-      // Sync hide/distance prefs to backend (or mock Account)
+      setState((s) =>
+        s ? { ...s, preferences: { ...s.preferences, ...patch } } : s,
+      );
+
+      const current = state?.preferences;
+      const merged: UserPreferences = {
+        showScams: patch.showScams ?? current?.showScams ?? false,
+        showDealers: patch.showDealers ?? current?.showDealers ?? false,
+        showDealerships:
+          patch.showDealerships ?? current?.showDealerships ?? false,
+        showMajorDamaged:
+          patch.showMajorDamaged ?? current?.showMajorDamaged ?? false,
+        showRebuiltTitle:
+          patch.showRebuiltTitle ?? current?.showRebuiltTitle ?? false,
+        showSalvageTitle:
+          patch.showSalvageTitle ?? current?.showSalvageTitle ?? false,
+        distanceUnit: patch.distanceUnit ?? current?.distanceUnit ?? "mi",
+        appearance: patch.appearance ?? current?.appearance ?? "dark",
+      };
+
       const apiBase = userStore.preferences ?? {
-        showScams: next.showScams,
-        showDealers: next.showDealers,
+        showScams: merged.showScams,
+        showDealers: merged.showDealers,
         showAdvertised: true,
-        showDealerships: next.showDealerships,
-        showMajorIssue: next.showMajorDamaged,
-        showRebuiltTitle: next.showRebuiltTitle,
-        showSalvageTitle: next.showSalvageTitle,
-        distanceUnit: next.distanceUnit,
+        showDealerships: merged.showDealerships,
+        showMajorIssue: merged.showMajorDamaged,
+        showRebuiltTitle: merged.showRebuiltTitle,
+        showSalvageTitle: merged.showSalvageTitle,
+        distanceUnit: merged.distanceUnit,
       };
       await userStore.updatePreferences({
         ...apiBase,
-        showScams: next.showScams,
-        showDealers: next.showDealers,
-        showDealerships: next.showDealerships,
-        showMajorIssue: next.showMajorDamaged,
-        showRebuiltTitle: next.showRebuiltTitle,
-        showSalvageTitle: next.showSalvageTitle,
-        distanceUnit: next.distanceUnit,
+        showScams: merged.showScams,
+        showDealers: merged.showDealers,
+        showDealerships: merged.showDealerships,
+        showMajorIssue: merged.showMajorDamaged,
+        showRebuiltTitle: merged.showRebuiltTitle,
+        showSalvageTitle: merged.showSalvageTitle,
+        distanceUnit: merged.distanceUnit,
       });
-    } catch {
-      Alert.alert("Error", "Failed to update preference");
+    } catch (error) {
+      Alert.alert("Error", toUserErrorMessage(error));
     }
   };
 
@@ -300,7 +331,7 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
             <SettingsRow
               icon="notifications-outline"
               title="Notifications"
-              description="Alerts for new matching listings"
+              description="Push alerts and quiet hours"
               onPress={() => router.push("/settings/notification")}
             />
             <SettingsRow

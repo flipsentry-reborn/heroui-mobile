@@ -33,11 +33,7 @@ export default class SubscriptionStore {
   loadPromise: Promise<void> | null = null;
 
   constructor() {
-    makeAutoObservable(
-      this,
-      { loadPromise: false },
-      { autoBind: true },
-    );
+    makeAutoObservable(this, {}, { autoBind: true });
   }
 
   get activePlan(): SubscriptionPlan | null {

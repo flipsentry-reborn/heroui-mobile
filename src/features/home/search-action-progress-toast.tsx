@@ -14,6 +14,8 @@ export type SearchActionKind =
   | "create"
   | "update";
 
+export type ActionSubject = "search" | "filter";
+
 type ActionPhase = "running" | "failed" | "done";
 
 type ToastApi = ReturnType<typeof useToast>["toast"];
@@ -34,58 +36,72 @@ type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
 const StyledIonicons = withUniwind(Ionicons);
 
-const ACTION_COPY: Record<
-  SearchActionKind,
-  {
-    running: string;
-    done: string;
-    failed: string;
-    color: ProgressColor;
-    toastVariant: "danger" | "warning" | "success";
-    icon: IoniconName;
-  }
-> = {
-  delete: {
-    running: "Deleting search…",
-    done: "Search deleted",
-    failed: "Delete failed",
-    color: "danger",
-    toastVariant: "danger",
-    icon: "trash-outline",
-  },
-  pause: {
-    running: "Pausing search…",
-    done: "Search paused",
-    failed: "Pause failed",
-    color: "warning",
-    toastVariant: "warning",
-    icon: "pause-outline",
-  },
-  start: {
-    running: "Starting search…",
-    done: "Search started",
-    failed: "Start failed",
-    color: "success",
-    toastVariant: "success",
-    icon: "play-outline",
-  },
-  create: {
-    running: "Creating search…",
-    done: "Search created",
-    failed: "Create failed",
-    color: "success",
-    toastVariant: "success",
-    icon: "add-outline",
-  },
-  update: {
-    running: "Updating search…",
-    done: "Search updated",
-    failed: "Update failed",
-    color: "accent",
-    toastVariant: "success",
-    icon: "create-outline",
-  },
+type ActionCopy = {
+  running: string;
+  done: string;
+  failed: string;
+  color: ProgressColor;
+  toastVariant: "danger" | "warning" | "success";
+  icon: IoniconName;
 };
+
+function capitalize(value: string): string {
+  if (value.length === 0) return value;
+  return value[0].toUpperCase() + value.slice(1);
+}
+
+function actionCopy(kind: SearchActionKind, subject: ActionSubject): ActionCopy {
+  const noun = subject;
+  const Noun = capitalize(noun);
+
+  switch (kind) {
+    case "delete":
+      return {
+        running: `Deleting ${noun}…`,
+        done: `${Noun} deleted`,
+        failed: "Delete failed",
+        color: "danger",
+        toastVariant: "danger",
+        icon: "trash-outline",
+      };
+    case "pause":
+      return {
+        running: `Pausing ${noun}…`,
+        done: `${Noun} paused`,
+        failed: "Pause failed",
+        color: "warning",
+        toastVariant: "warning",
+        icon: "pause-outline",
+      };
+    case "start":
+      return {
+        running: `Starting ${noun}…`,
+        done: `${Noun} started`,
+        failed: "Start failed",
+        color: "success",
+        toastVariant: "success",
+        icon: "play-outline",
+      };
+    case "create":
+      return {
+        running: `Creating ${noun}…`,
+        done: `${Noun} created`,
+        failed: "Create failed",
+        color: "success",
+        toastVariant: "success",
+        icon: "add-outline",
+      };
+    case "update":
+      return {
+        running: `Updating ${noun}…`,
+        done: `${Noun} updated`,
+        failed: "Update failed",
+        color: "accent",
+        toastVariant: "success",
+        icon: "create-outline",
+      };
+  }
+}
 
 /** ~1 in 4 delete runs fail so the failed ProgressBar state is easy to try. */
 function shouldFakeFail(kind: SearchActionKind): boolean {
@@ -93,35 +109,43 @@ function shouldFakeFail(kind: SearchActionKind): boolean {
   return Math.random() < 0.25;
 }
 
-function phaseIcon(kind: SearchActionKind, phase: ActionPhase): IoniconName {
+function phaseIcon(kind: SearchActionKind, phase: ActionPhase, subject: ActionSubject): IoniconName {
   if (phase === "done") return "checkmark-circle";
   if (phase === "failed") return "alert-circle";
-  return ACTION_COPY[kind].icon;
+  return actionCopy(kind, subject).icon;
 }
 
 function SearchActionProgressToast({
   hide,
   kind,
+  subject,
   title,
   onCommit,
+  getErrorMessage,
   ...toastProps
 }: ToastRenderProps & {
   kind: SearchActionKind;
+  subject: ActionSubject;
   title: string;
   onCommit: () => Promise<boolean>;
+  getErrorMessage?: () => string | null | undefined;
 }): JSX.Element {
-  const copy = ACTION_COPY[kind];
+  const copy = actionCopy(kind, subject);
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<ActionPhase>("running");
   const [attempt, setAttempt] = useState(0);
+  const [failureLabel, setFailureLabel] = useState(copy.failed);
   const settled = useRef(false);
   const onCommitRef = useRef(onCommit);
   onCommitRef.current = onCommit;
+  const getErrorMessageRef = useRef(getErrorMessage);
+  getErrorMessageRef.current = getErrorMessage;
 
   useEffect(() => {
     settled.current = false;
     setProgress(0);
     setPhase("running");
+    setFailureLabel(copy.failed);
 
     let value = 0;
     const failAt: number | null = shouldFakeFail(kind)
@@ -149,13 +173,21 @@ function SearchActionProgressToast({
           .current()
           .then((ok) => {
             if (!ok) {
+              const message = getErrorMessageRef.current?.()?.trim();
+              if (message) setFailureLabel(message);
               setPhase("failed");
               return;
             }
             setPhase("done");
             setTimeout(() => hide(), 700);
           })
-          .catch(() => {
+          .catch((error: unknown) => {
+            const fromGetter = getErrorMessageRef.current?.()?.trim();
+            if (fromGetter) {
+              setFailureLabel(fromGetter);
+            } else if (error instanceof Error && error.message.trim()) {
+              setFailureLabel(error.message.trim());
+            }
             setPhase("failed");
           });
       }
@@ -165,7 +197,7 @@ function SearchActionProgressToast({
       settled.current = true;
       clearInterval(tick);
     };
-  }, [attempt, hide, kind]);
+  }, [attempt, copy.failed, hide, kind]);
 
   const color: ProgressColor =
     phase === "failed" ? "danger" : phase === "done" ? "success" : copy.color;
@@ -177,7 +209,7 @@ function SearchActionProgressToast({
         : copy.toastVariant;
   const label =
     phase === "failed"
-      ? copy.failed
+      ? failureLabel
       : phase === "done"
         ? copy.done
         : copy.running;
@@ -207,7 +239,7 @@ function SearchActionProgressToast({
         <View className="flex-row items-center gap-2.5">
           <View className="h-8 w-8 items-center justify-center rounded-full bg-default">
             <StyledIonicons
-              name={phaseIcon(kind, phase)}
+              name={phaseIcon(kind, phase, subject)}
               size={16}
               className={iconClassName}
             />
@@ -257,17 +289,24 @@ export function showSearchActionProgress(
   options: {
     kind: SearchActionKind;
     title: string;
+    /** Defaults to search; pass `filter` for filter create/update/delete/pause. */
+    subject?: ActionSubject;
     onCommit: () => Promise<boolean>;
+    /** Prefer store `lastError` after a failed commit so API messages reach the toast. */
+    getErrorMessage?: () => string | null | undefined;
   },
 ): string {
+  const subject = options.subject ?? "search";
   return toast.show({
     duration: "persistent",
     component: (props) => (
       <SearchActionProgressToast
         {...props}
         kind={options.kind}
+        subject={subject}
         title={options.title}
         onCommit={options.onCommit}
+        getErrorMessage={options.getErrorMessage}
       />
     ),
   });

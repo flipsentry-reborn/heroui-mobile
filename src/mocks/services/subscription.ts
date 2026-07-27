@@ -16,6 +16,7 @@ import {
 } from "@/mocks/data/tier-slots";
 import { readJson, writeJson } from "@/lib/storage";
 import type { SubscriptionStatus } from "@/models/subscription";
+import { mockDelay } from "@/mocks/delay";
 import { setSubscriptionFlags } from "@/mocks/services/settings";
 import type { SearchGroup } from "@/mocks/data/home";
 
@@ -25,10 +26,6 @@ let persisted: SubscriptionPersistedState = structuredClone(
   initialSubscriptionPersisted,
 );
 let hydrated = false;
-
-function delay(ms = 120): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
 
 function normalizeTier(tier: unknown): SubscriptionTier | null {
   if (tier === "starter" || tier === "hunter" || tier === "master") {
@@ -71,7 +68,7 @@ export async function getPersistedSubscription(): Promise<SubscriptionPersistedS
 
 export async function getSubscription(): Promise<SubscriptionState> {
   await ensureHydrated();
-  await delay();
+  await mockDelay();
   return {
     ...structuredClone(persisted),
     plans: subscriptionPlans,
@@ -111,7 +108,7 @@ export async function getSubscriptionStatus(
   groups: SearchGroup[],
 ): Promise<SubscriptionStatus> {
   await ensureHydrated();
-  await delay();
+  await mockDelay();
   return buildSubscriptionStatus(persisted, groups);
 }
 
@@ -119,7 +116,7 @@ export async function mockSubscribe(
   tier: SubscriptionTier,
 ): Promise<SubscriptionState> {
   await ensureHydrated();
-  await delay(400);
+  await mockDelay();
   persisted = {
     currentTier: tier,
     hasActiveSubscription: true,
@@ -138,7 +135,7 @@ export async function mockSubscribe(
 
 export async function mockRestorePurchases(): Promise<SubscriptionState> {
   await ensureHydrated();
-  await delay(350);
+  await mockDelay();
   return {
     ...structuredClone(persisted),
     plans: subscriptionPlans,

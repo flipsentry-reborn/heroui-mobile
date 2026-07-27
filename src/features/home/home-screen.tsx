@@ -5,7 +5,7 @@ import type { JSX } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Alert, useThemeColor, useToast } from "heroui-native";
+import { useThemeColor, useToast } from "heroui-native";
 
 import { BrandButton } from "@/components/ui/brand-button";
 import { HomePlanCreditsCard } from "@/features/home/home-plan-credits-card";
@@ -87,6 +87,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
         kind: "delete",
         title: actionTitle(group),
         onCommit: () => searchStore.deleteSearchGroup(group.id),
+        getErrorMessage: () => searchStore.lastError,
       });
     },
     [searchStore, toast],
@@ -101,6 +102,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
           const updated = await searchStore.setGroupActive(group.id, active);
           return updated != null;
         },
+        getErrorMessage: () => searchStore.lastError,
       });
     },
     [searchStore, toast],
@@ -140,35 +142,13 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-[110px] pt-2"
         stickyHeaderIndices={
-          !showSkeleton && allGroups.length > 0
-            ? [activeGroups.length === 0 ? 3 : 2]
-            : undefined
+          !showSkeleton && allGroups.length > 0 ? [2] : undefined
         }
       >
         {showSkeleton ? (
           <HomeScreenSkeleton />
         ) : (
           <>
-            {activeGroups.length === 0 ? (
-              <View className="mx-3 mb-3">
-                <Alert status="danger">
-                  <Alert.Indicator />
-                  <Alert.Content>
-                    <Alert.Title>
-                      {allGroups.length === 0
-                        ? "No searches yet"
-                        : "No active searches"}
-                    </Alert.Title>
-                    <Alert.Description>
-                      {allGroups.length === 0
-                        ? "Create your first search to start getting deal alerts."
-                        : "Start a search so FlipSentry can find deals for you."}
-                    </Alert.Description>
-                  </Alert.Content>
-                </Alert>
-              </View>
-            ) : null}
-
             <HomePlanCreditsCard
               homePlan={searchStore.homePlan}
               subscriptionPlan={subscriptionStore.activePlan}

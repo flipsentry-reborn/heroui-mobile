@@ -114,6 +114,24 @@ export function StatusBadge({
   return <FeedBadge label={label} scale={scale} chipClass="!bg-black/75" />;
 }
 
+/** Sold-page profit amount — soft green shell, same size/type as status. */
+export function ProfitBadge({
+  label,
+  scale = "default",
+}: {
+  label: string;
+  scale?: BadgeScale;
+}): JSX.Element {
+  return (
+    <FeedBadge
+      label={label}
+      scale={scale}
+      chipClass="!bg-emerald-600/80"
+      labelClass="!text-emerald-100"
+    />
+  );
+}
+
 /** Filter match chip — Negotiable shell + color dots + count label. */
 export const FilterMatchBadge = observer(function FilterMatchBadge({
   filters,

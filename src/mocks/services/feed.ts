@@ -303,8 +303,12 @@ export async function getLocalComps(
       comp.vehicleSpecifications?.vehicleYear ??
       resolveDisplayValuation(comp)?.year ??
       null;
-    if (sameYear && sourceYear != null && year !== sourceYear) {
-      return false;
+    if (sourceYear != null && year != null) {
+      if (sameYear) {
+        if (year !== sourceYear) return false;
+      } else if (year < sourceYear - 3 || year > sourceYear + 3) {
+        return false;
+      }
     }
     if (comp.creationTime) {
       const postedMs = new Date(comp.creationTime).getTime();

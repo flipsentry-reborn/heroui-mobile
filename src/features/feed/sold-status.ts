@@ -85,19 +85,18 @@ export function formatSoldPendingTitlePrefix(
 }
 
 /**
- * Sold-page image badge: effective listing age from `creationTime`,
- * minus platform lag (FB 7m / OfferUp 30m) — same as legacy ItemGrid.
+ * Sold-page image badge: when the listing entered the user’s feed (`createdAt`).
+ * Matches sold ordering (UnifiedFeed.CreatedAt). No platform lag — that only
+ * applies to listing-post → found duration (`foundInSeconds` from API).
  * e.g. "Found 3 hours ago", "Found 1 day ago".
  */
 export function formatFoundAgoBadge(
-  item: Pick<FeedItem, "creationTime" | "createdAt" | "platform">,
+  item: Pick<FeedItem, "createdAt">,
 ): string | null {
-  const stamp = item.creationTime || item.createdAt;
-  if (!stamp) return null;
-  const delayMs = getPlatformListingDelayMs(item.platform);
+  if (!item.createdAt) return null;
   const mins = Math.max(
     0,
-    Math.floor((Date.now() - new Date(stamp).getTime() - delayMs) / 60000),
+    Math.floor((Date.now() - new Date(item.createdAt).getTime()) / 60000),
   );
   if (mins < 1) return "Found just now";
   if (mins < 60) return `Found ${mins} min ago`;

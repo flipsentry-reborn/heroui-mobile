@@ -1,10 +1,6 @@
 import { requests } from "@/api/http/client";
 import type { PaginatedResult } from "@/models/pagination";
-import type {
-  FeedItem,
-  FeedTabAvailability,
-  LocalCompItem,
-} from "@/models/feed";
+import type { FeedItem, FeedTabAvailability } from "@/models/feed";
 
 export type { FeedTabAvailability };
 
@@ -28,7 +24,7 @@ export const liveFeed = {
     if (sameYear) params.append("sameYear", "true");
     if (days != null && days !== 3) params.append("days", days.toString());
     const qs = params.toString();
-    return requests.get<LocalCompItem[]>(
+    return requests.get<FeedItem[]>(
       `/api/feed/${id}/local-comps${qs ? `?${qs}` : ""}`,
     );
   },

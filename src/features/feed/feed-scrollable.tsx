@@ -146,6 +146,7 @@ export const FeedScrollable = observer(function FeedScrollable({
         imageTopLabel={
           showFoundAgo ? (formatFoundAgoBadge(item) ?? undefined) : undefined
         }
+        showAvgProfit={showFoundAgo}
       />
     ),
     [numColumns, onPressItem, onToggleFavorite, showFoundAgo],

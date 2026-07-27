@@ -155,10 +155,19 @@ export function FeedDetail({
     let alive = true;
     setLocalCompsLoading(true);
     void (async () => {
-      const comps = await agent.Feed.getLocalComps(item.id, { sameYear, days });
-      if (!alive) return;
-      setLocalComps(comps);
-      setLocalCompsLoading(false);
+      try {
+        const comps = await agent.Feed.getLocalComps(item.id, {
+          sameYear,
+          days,
+        });
+        if (!alive) return;
+        setLocalComps(comps);
+      } catch {
+        if (!alive) return;
+        setLocalComps([]);
+      } finally {
+        if (alive) setLocalCompsLoading(false);
+      }
     })();
 
     return () => {

@@ -93,7 +93,7 @@ import {
   mockRestorePurchases,
   mockSubscribe,
 } from "@/mocks/services/subscription";
-import type { FeedItem, LocalCompItem } from "@/models/feed";
+import type { FeedItem } from "@/models/feed";
 import type { SubscriptionStatus } from "@/models/subscription";
 import type {
   PhoneLoginSendCodeRequest,
@@ -173,85 +173,6 @@ const mockFeedApi = {
   ): Promise<FeedItem[]> => getLocalComps(id, opts),
 };
 
-function mapLocalCompToFeedItem(comp: LocalCompItem): FeedItem {
-  return {
-    id: comp.feedId ?? comp.listingId,
-    platform: (comp.platform as FeedItem["platform"]) || "facebookMarketplace",
-    listingId: comp.listingId,
-    creationTime: comp.postedDate ?? new Date().toISOString(),
-    appUserId: "",
-    title: comp.title,
-    description: comp.description ?? "",
-    price: comp.price,
-    location: {
-      latitude: comp.latitude ?? 0,
-      longitude: comp.longitude ?? 0,
-    },
-    locationText: comp.locationText ?? "",
-    distanceMiles: comp.distanceMiles,
-    images: {
-      mainImageUrl: {
-        imageUrl: comp.imageUrl ?? "",
-        expiresAt: null,
-      },
-      marketplaceImages: (comp.imageUrls ?? []).map((url) => ({
-        imageUrl: url,
-        expiresAt: null,
-      })),
-      imageUrlHostedByUs: comp.imageUrl ?? "",
-    },
-    searchSettingIds: [],
-    keywordTags: { title: [], description: [] },
-    createdAt: comp.postedDate ?? new Date().toISOString(),
-    seenAt: [],
-    isFavorite: false,
-    favoritedAt: null,
-    isSpamReported: false,
-    spamReportedAt: null,
-    isDeleted: false,
-    deletedAt: null,
-    isSniped: false,
-    condition: "",
-    currency: comp.currency,
-    currencySymbol: comp.currencySymbol,
-    listingUrl: comp.listingUrl ?? undefined,
-    vehicleSpecifications:
-      comp.vehicleYear != null
-        ? {
-            vehicleYear: comp.vehicleYear,
-            vehicleMileage: comp.mileageInMiles ?? undefined,
-          }
-        : undefined,
-    compValuation:
-      comp.buySignal != null
-        ? {
-            calculated: true,
-            valuationType: "car",
-            valuationSource: "comps",
-            platform: comp.platform,
-            listingId: comp.listingId,
-            make: "",
-            model: "",
-            trim: null,
-            year: comp.vehicleYear ?? 0,
-            mileage: comp.mileageInMiles ?? 0,
-            price: comp.price,
-            fairPrice: comp.fairPrice ?? 0,
-            profit: 0,
-            buySignal: comp.buySignal,
-            compCount: 0,
-            percentileRank: 0,
-            medianCvs: 0,
-            targetCvs: 0,
-            mileageLow: 0,
-            mileageHigh: 0,
-            warnings: [],
-            calculatedAt: new Date().toISOString(),
-          }
-        : undefined,
-  };
-}
-
 const liveFeedApi = {
   list: async (params?: GetFeedParams): Promise<PaginatedResult<FeedItem[]>> => {
     const category = params?.category ?? "all";
@@ -289,14 +210,8 @@ const liveFeedApi = {
   getLocalComps: async (
     id: string,
     opts?: GetLocalCompsParams,
-  ): Promise<FeedItem[]> => {
-    const comps = await liveFeed.getLocalComps(
-      id,
-      opts?.sameYear,
-      opts?.days,
-    );
-    return comps.map(mapLocalCompToFeedItem);
-  },
+  ): Promise<FeedItem[]> =>
+    liveFeed.getLocalComps(id, opts?.sameYear, opts?.days),
 };
 
 const Feed = USE_MOCK ? mockFeedApi : liveFeedApi;

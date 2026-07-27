@@ -17,6 +17,7 @@ import { AiEstimationIcon } from "@/components/icons/ai-estimation-icon";
 import PlatformIcon from "@/components/icons/PlatformIcon";
 import {
   FilterMatchBadge,
+  ProfitBadge,
   StatusBadge,
   ValuationBadge,
 } from "@/features/feed/feed-badge";
@@ -67,6 +68,8 @@ interface FeedItemProps {
    * Same Chip shell/type as FilterMatchBadge / StatusBadge.
    */
   imageTopLabel?: string;
+  /** Sold page: show Avg. Profit chip after Good / Negotiable badges. */
+  showAvgProfit?: boolean;
   /** Small bottom-corner label (e.g. Community “2 days ago”). */
   imageCornerLabel?: string;
   imageCornerSide?: "left" | "right";
@@ -81,6 +84,11 @@ function formatPrice(price: number, symbol: string): string {
   return `${symbol}${formatted}`;
 }
 
+function formatAvgProfitLabel(profit: number, symbol: string): string {
+  const sign = profit > 0 ? "+" : profit < 0 ? "-" : "";
+  return `${sign}${formatPrice(Math.abs(profit), symbol)}`;
+}
+
 function FeedItemInner({
   feed,
   onPress,
@@ -88,6 +96,7 @@ function FeedItemInner({
   layout = "grid",
   featured = false,
   imageTopLabel,
+  showAvgProfit = false,
   imageCornerLabel,
   imageCornerSide = "right",
   hideFavorite = false,
@@ -107,6 +116,13 @@ function FeedItemInner({
   const statusBadges = getOrderedStatusBadges(feed);
   const valuation = resolveDisplayValuation(feed);
   const hasFilterMatches = (feed.filters?.length ?? 0) > 0;
+  const avgProfitLabel =
+    showAvgProfit && valuation?.fairPrice != null
+      ? formatAvgProfitLabel(
+          valuation.profit ?? valuation.fairPrice - feed.price,
+          feed.currencySymbol,
+        )
+      : null;
   const distanceUnit = userStore.preferences?.distanceUnit ?? "mi";
   const mileageDisplay = resolveFeedMileageDisplay(feed);
   const mileageText =
@@ -261,7 +277,9 @@ function FeedItemInner({
             </PressableFeedback>
           ) : null}
 
-          {(valuation?.calculated || statusBadges.length > 0) && (
+          {(valuation?.calculated ||
+            statusBadges.length > 0 ||
+            avgProfitLabel) && (
             <View
               className={`absolute bottom-[5px] left-[5px] flex-row flex-wrap ${
                 isList ? "gap-1" : "gap-[3px]"
@@ -276,6 +294,9 @@ function FeedItemInner({
               {statusBadges.slice(0, 2).map((badge) => (
                 <StatusBadge key={badge} label={badge} scale={badgeScale} />
               ))}
+              {avgProfitLabel ? (
+                <ProfitBadge label={avgProfitLabel} scale={badgeScale} />
+              ) : null}
             </View>
           )}
 
@@ -390,6 +411,7 @@ function feedItemPropsEqual(
     prev.featured === next.featured &&
     prev.hideFavorite === next.hideFavorite &&
     prev.imageTopLabel === next.imageTopLabel &&
+    prev.showAvgProfit === next.showAvgProfit &&
     prev.imageCornerLabel === next.imageCornerLabel &&
     prev.imageCornerSide === next.imageCornerSide &&
     prev.onPress === next.onPress &&

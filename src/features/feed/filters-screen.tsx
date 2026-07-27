@@ -262,7 +262,7 @@ function FilterControlDockCard({
               }
             />
             <Typography type="body-xs" weight="medium">
-              Alerts
+              Notification
             </Typography>
             <Switch
               isSelected={filter.notificationEnabled}

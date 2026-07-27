@@ -60,7 +60,7 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
 
   const handleFiltersPress = useCallback(() => {
     resetTabBar();
-    router.push("/feed/filters");
+    router.push("/filters");
   }, [resetTabBar, router]);
 
   const handlePressItem = useCallback(

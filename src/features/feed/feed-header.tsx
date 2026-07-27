@@ -1,13 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, Pressable, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SearchField, Typography, useThemeColor } from "heroui-native";
+import { Badge } from "heroui-native-pro";
 
 import type { FeedCategoryDef } from "@/features/feed/build-feed-categories";
 import { FeedCategoryTabs } from "@/features/feed/feed-category-tabs";
+import { useStore } from "@/store/store";
 
 const LOGO = require("../../../assets/images/flipsentry-logo-text-transparent.png");
 const LOGO_WIDTH = 132;
@@ -22,7 +25,7 @@ interface FeedHeaderProps {
   onFiltersPress: () => void;
 }
 
-export function FeedHeader({
+export const FeedHeader = observer(function FeedHeader({
   searchText,
   onSearchChange,
   categories,
@@ -31,10 +34,18 @@ export function FeedHeader({
   onFiltersPress,
 }: FeedHeaderProps): JSX.Element {
   const insets = useSafeAreaInsets();
-  const [foreground, muted] = useThemeColor(["foreground", "muted"]);
+  const { filterStore } = useStore();
+  const [foreground, muted, accentForeground] = useThemeColor([
+    "foreground",
+    "muted",
+    "accent-foreground",
+  ]);
   const inputRef = useRef<TextInput>(null);
   const openingRef = useRef(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const activeFilterCount = filterStore.activeFilters.length;
+  const filtersActive = activeFilterCount > 0;
 
   useEffect(() => {
     if (!searchOpen) return;
@@ -71,7 +82,7 @@ export function FeedHeader({
   return (
     <View
       style={{ paddingTop: insets.top }}
-      className="z-20 overflow-hidden bg-background"
+      className="z-20 bg-background"
     >
       <View className="px-3 pb-0 pt-0.5">
         <View className="h-8 flex-row items-center">
@@ -123,21 +134,49 @@ export function FeedHeader({
                 />
               </View>
               <View className="flex-1" />
-              <Pressable
-                onPress={onFiltersPress}
-                accessibilityRole="button"
-                accessibilityLabel="Filters"
-                className="mr-1.5 h-8 flex-row items-center gap-1 rounded-field border border-border bg-surface-secondary px-2.5"
-              >
-                <Ionicons name="options-outline" size={14} color={muted} />
-                <Typography
-                  type="body-sm"
-                  weight="medium"
-                  className="text-[12px] text-muted"
+              <Badge.Anchor className="mr-1.5">
+                <Pressable
+                  onPress={onFiltersPress}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    filtersActive
+                      ? `Filters, ${activeFilterCount} active`
+                      : "Filters"
+                  }
+                  className={
+                    filtersActive
+                      ? "h-8 flex-row items-center gap-1 rounded-field bg-accent px-2.5"
+                      : "h-8 flex-row items-center gap-1 rounded-field border border-border bg-surface-secondary px-2.5"
+                  }
                 >
-                  Filters
-                </Typography>
-              </Pressable>
+                  <Ionicons
+                    name="options-outline"
+                    size={14}
+                    color={filtersActive ? accentForeground : muted}
+                  />
+                  <Typography
+                    type="body-sm"
+                    weight="medium"
+                    className={
+                      filtersActive
+                        ? "text-[12px] text-accent-foreground"
+                        : "text-[12px] text-muted"
+                    }
+                  >
+                    Filters
+                  </Typography>
+                </Pressable>
+                {filtersActive ? (
+                  <Badge
+                    color="danger"
+                    variant="primary"
+                    size="sm"
+                    placement="top-right"
+                  >
+                    {activeFilterCount > 99 ? "99+" : activeFilterCount}
+                  </Badge>
+                ) : null}
+              </Badge.Anchor>
               <Pressable
                 onPress={openSearch}
                 accessibilityRole="button"
@@ -158,4 +197,4 @@ export function FeedHeader({
       />
     </View>
   );
-}
+});

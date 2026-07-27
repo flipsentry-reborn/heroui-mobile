@@ -4,7 +4,7 @@ import { View } from "react-native";
 
 import { FiltersScreen } from "@/features/feed/filters-screen";
 
-export default function FeedFiltersRoute(): JSX.Element {
+export default function FiltersRoute(): JSX.Element {
   const router = useRouter();
 
   return (

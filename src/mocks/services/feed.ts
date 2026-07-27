@@ -42,9 +42,9 @@ function matchesSoldStatus(
   item: FeedItem,
   status: SoldStatusFilter = "all",
 ): boolean {
-  if (status === "sold") return !!item.isSold;
+  if (status === "sold") return !!item.isSold || !!item.isRemoved;
   if (status === "pending") return !!item.isPending;
-  return !!item.isSold || !!item.isPending;
+  return !!item.isSold || !!item.isPending || !!item.isRemoved;
 }
 
 function matchesMaxDays(item: FeedItem, maxDays: number | null | undefined): boolean {
@@ -56,6 +56,9 @@ function matchesMaxDays(item: FeedItem, maxDays: number | null | undefined): boo
   }
   if (item.isPending && item.isPendingAt) {
     stamps.push(new Date(item.isPendingAt).getTime());
+  }
+  if (item.isRemoved && item.isRemovedAt) {
+    stamps.push(new Date(item.isRemovedAt).getTime());
   }
   if (stamps.length === 0 && item.creationTime) {
     stamps.push(new Date(item.creationTime).getTime());
@@ -102,7 +105,9 @@ function matchesCategory(
     return matchesFilterIds(item, id ? [id] : []);
   }
   if (category === "for-you" || category === "all") return true;
-  if (category === "sold") return !!item.isSold || !!item.isPending;
+  if (category === "sold") {
+    return !!item.isSold || !!item.isPending || !!item.isRemoved;
+  }
   if (category === "saved") return item.isFavorite;
   if (category === "best-picks") {
     return (resolveDisplayValuation(item)?.buySignal ?? 0) >= 60;

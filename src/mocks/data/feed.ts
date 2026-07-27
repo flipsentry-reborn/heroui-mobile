@@ -83,6 +83,8 @@ type ExtraListing = {
   isSoldMinsAgo?: number;
   isPending?: boolean;
   isPendingMinsAgo?: number;
+  isRemoved?: boolean;
+  isRemovedMinsAgo?: number;
   vehicleSpecifications?: FeedItem["vehicleSpecifications"];
   compValuation?: FeedItem["compValuation"];
   externalValuation?: FeedItem["externalValuation"];
@@ -152,6 +154,13 @@ function extraListing(item: ExtraListing): FeedItem {
       item.isPending && item.isPendingMinsAgo != null
         ? minsAgo(item.isPendingMinsAgo)
         : item.isPending
+          ? created
+          : undefined,
+    isRemoved: item.isRemoved ?? false,
+    isRemovedAt:
+      item.isRemoved && item.isRemovedMinsAgo != null
+        ? minsAgo(item.isRemovedMinsAgo)
+        : item.isRemoved
           ? created
           : undefined,
     isSpamReported: false,

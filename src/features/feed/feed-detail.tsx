@@ -114,7 +114,8 @@ export function FeedDetail({
     descExpanded || !longDesc
       ? description
       : `${description.slice(0, DESC_COLLAPSE_LENGTH).trimEnd()}…`;
-  const showSimilarNearby = isCarListing(item) && !item.isSold && !item.isPending;
+  const showSimilarNearby =
+    isCarListing(item) && !item.isSold && !item.isPending && !item.isRemoved;
   const soldPendingPrefix = formatSoldPendingTitlePrefix(item);
 
   const syncStickyVisibility = useCallback(() => {

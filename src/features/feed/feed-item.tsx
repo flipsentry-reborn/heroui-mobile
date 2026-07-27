@@ -22,6 +22,7 @@ import {
 } from "@/features/feed/feed-badge";
 import { FeedDiagonalShimmer } from "@/features/feed/feed-diagonal-shimmer";
 import {
+  getListingStatusLabel,
   SOLD_STATUS_COLOR,
   SOLD_STATUS_TEXT_CLASS,
 } from "@/features/feed/sold-status";
@@ -175,6 +176,7 @@ function FeedItemInner({
   const badgeScale = isList ? "detail" : "default";
   const favoriteSize = isList ? 15 : 13;
   const aiIconSize = isRail ? 16 : isList ? 19 : 17;
+  const statusLabel = getListingStatusLabel(feed);
 
   return (
     <PressableFeedback
@@ -312,23 +314,14 @@ function FeedItemInner({
             numberOfLines={1}
             ellipsizeMode="tail"
           >
-            {feed.isSold ? (
+            {statusLabel ? (
               <Typography
                 type="body-sm"
                 weight="semibold"
                 className={`${titleClass} ${SOLD_STATUS_TEXT_CLASS}`}
                 style={{ color: SOLD_STATUS_COLOR }}
               >
-                Sold{" "}
-              </Typography>
-            ) : feed.isPending ? (
-              <Typography
-                type="body-sm"
-                weight="semibold"
-                className={`${titleClass} ${SOLD_STATUS_TEXT_CLASS}`}
-                style={{ color: SOLD_STATUS_COLOR }}
-              >
-                Pending{" "}
+                {statusLabel}{" "}
               </Typography>
             ) : null}
             {feed.title}

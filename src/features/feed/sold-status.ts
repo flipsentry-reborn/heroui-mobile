@@ -4,22 +4,43 @@ import type { FeedItem, FeedPlatform } from "@/models/feed";
 export const SOLD_STATUS_COLOR = "#ef4444";
 export const SOLD_STATUS_TEXT_CLASS = "text-sold-status";
 
+type ListingStatusFields = Pick<
+  FeedItem,
+  | "isSold"
+  | "isSoldAt"
+  | "isPending"
+  | "isPendingAt"
+  | "isRemoved"
+  | "isRemovedAt"
+  | "creationTime"
+  | "platform"
+>;
+
+/** Card/detail label: removed → "Sold?", then Sold / Pending. */
+export function getListingStatusLabel(
+  item: Pick<FeedItem, "isSold" | "isPending" | "isRemoved">,
+): "Sold?" | "Sold" | "Pending" | null {
+  if (item.isRemoved) return "Sold?";
+  if (item.isSold) return "Sold";
+  if (item.isPending) return "Pending";
+  return null;
+}
+
 /**
- * Time from listing creation → sold/pending, matching mobile-app detail.
+ * Time from listing creation → sold/pending/removed, matching legacy detail.
  * Facebook Marketplace subtracts a 7-minute platform delay.
  */
 export function formatSoldPendingDuration(
-  item: Pick<
-    FeedItem,
-    "isSold" | "isSoldAt" | "isPending" | "isPendingAt" | "creationTime" | "platform"
-  >,
+  item: ListingStatusFields,
 ): string | null {
   if (!item.creationTime) return null;
-  const statusAt = item.isSold
-    ? item.isSoldAt
-    : item.isPending
-      ? item.isPendingAt
-      : undefined;
+  const statusAt = item.isRemoved
+    ? item.isRemovedAt
+    : item.isSold
+      ? item.isSoldAt
+      : item.isPending
+        ? item.isPendingAt
+        : undefined;
   if (!statusAt) return null;
 
   const delayMs = facebookDelayMs(item.platform);
@@ -36,15 +57,12 @@ export function formatSoldPendingDuration(
   return `${h > 0 ? `${h}h ` : ""}${m}m`;
 }
 
-/** Prefix for detail titles: "Sold in 7h 0m" / "Pending in 25m". */
+/** Prefix for detail titles: "Sold? in 7h 0m" / "Sold in 7h 0m" / "Pending in 25m". */
 export function formatSoldPendingTitlePrefix(
-  item: Pick<
-    FeedItem,
-    "isSold" | "isSoldAt" | "isPending" | "isPendingAt" | "creationTime" | "platform"
-  >,
+  item: ListingStatusFields,
 ): string | null {
-  if (!item.isSold && !item.isPending) return null;
-  const label = item.isSold ? "Sold" : "Pending";
+  const label = getListingStatusLabel(item);
+  if (!label) return null;
   const duration = formatSoldPendingDuration(item);
   return duration ? `${label} in ${duration}` : label;
 }

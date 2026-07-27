@@ -10,13 +10,10 @@ import {
   type SettingsState,
   type UserPreferences,
 } from "@/mocks/data/settings";
+import { mockDelay } from "@/mocks/delay";
 
 let state: SettingsState = structuredClone(initialSettingsState);
 let appearanceHydrated = false;
-
-function delay(ms = 120): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function hydrateAppearanceFromCache(): Promise<void> {
   if (appearanceHydrated) return;
@@ -32,7 +29,7 @@ async function hydrateAppearanceFromCache(): Promise<void> {
 
 export async function getSettings(): Promise<SettingsState> {
   await hydrateAppearanceFromCache();
-  await delay();
+  await mockDelay();
   return structuredClone(state);
 }
 
@@ -45,7 +42,7 @@ export async function updatePreferences(
   patch: Partial<UserPreferences>,
 ): Promise<UserPreferences> {
   await hydrateAppearanceFromCache();
-  await delay();
+  await mockDelay();
   state = {
     ...state,
     preferences: { ...state.preferences, ...patch },
@@ -59,7 +56,7 @@ export async function updatePreferences(
 export async function updateRefundPreference(
  preference: RefundPreference,
 ): Promise<RefundPreference> {
- await delay();
+ await mockDelay();
  state = {
  ...state,
  refundSaver: { ...state.refundSaver, preference },
@@ -68,7 +65,7 @@ export async function updateRefundPreference(
 }
 
 export async function updateRefundConsent(consent: boolean): Promise<boolean> {
- await delay();
+ await mockDelay();
  state = {
  ...state,
  refundSaver: {
@@ -83,7 +80,7 @@ export async function setSubscriptionFlags(flags: {
   hasActiveSubscription: boolean;
   hasActiveTrial?: boolean;
 }): Promise<void> {
-  await delay(40);
+  await mockDelay();
   state = {
     ...state,
     hasActiveSubscription: flags.hasActiveSubscription,
@@ -92,12 +89,12 @@ export async function setSubscriptionFlags(flags: {
 }
 
 export async function mockLogout(): Promise<void> {
- await delay(200);
+ await mockDelay();
 }
 
 /** Mock account delete via session token - no password challenge. */
 export async function mockDeleteAccount(): Promise<void> {
- await delay(280);
+ await mockDelay();
 }
 
 export function refundPreferenceLabel(preference: RefundPreference): string {

@@ -8,6 +8,7 @@ import {
   type CommunityTrendingItem,
 } from "@/mocks/data/community";
 import { MOCK_FEED_ITEMS } from "@/mocks/data/feed";
+import { mockDelay } from "@/mocks/delay";
 import type { FeedItem } from "@/models/feed";
 
 const LOCAL_RADIUS_MI = 40;
@@ -35,10 +36,6 @@ export type CommunityClicker = {
   visible: boolean;
 };
 
-function delay(ms = 200): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
 function hunterById(id: string): CommunityHunter | undefined {
   return COMMUNITY_HUNTERS.find((h) => h.id === id);
 }
@@ -56,7 +53,7 @@ function resolveActivity(event: CommunityClickEvent): CommunityActivityRow | nul
 }
 
 export async function getCommunityActivity(): Promise<CommunityActivityRow[]> {
-  await delay();
+  await mockDelay();
   return COMMUNITY_CLICKS.map(resolveActivity).filter(
     (row): row is CommunityActivityRow => row != null,
   );
@@ -94,13 +91,13 @@ function buildHunterFeeds(): CommunityHunterFeed[] {
 
 /** Hunters who have visible activity, sorted by clicks yesterday. */
 export async function getCommunityHunterFeeds(): Promise<CommunityHunterFeed[]> {
-  await delay();
+  await mockDelay();
   return buildHunterFeeds();
 }
 
 /** Nearby hunters with activity — for the Active nearby rail. */
 export async function getActiveNearbyHunters(): Promise<CommunityHunter[]> {
-  await delay(120);
+  await mockDelay();
   return COMMUNITY_HUNTERS.filter(
     (h) =>
       h.id !== CURRENT_HUNTER_ID &&
@@ -113,7 +110,7 @@ export async function getActiveNearbyHunters(): Promise<CommunityHunter[]> {
 }
 
 export async function getCommunityTrending(): Promise<CommunityTrendingRow[]> {
-  await delay();
+  await mockDelay();
   return COMMUNITY_TRENDING.map((trending) => {
     const feedItem = feedById(trending.feedItemId);
     if (!feedItem) return null;
@@ -127,7 +124,7 @@ export async function getCommunityTrending(): Promise<CommunityTrendingRow[]> {
 export async function getCommunityHunters(scope: "nearby" | "all"): Promise<
   CommunityHunter[]
 > {
-  await delay();
+  await mockDelay();
   const others = COMMUNITY_HUNTERS.filter((h) => h.id !== CURRENT_HUNTER_ID);
   if (scope === "nearby") {
     return others
@@ -138,14 +135,14 @@ export async function getCommunityHunters(scope: "nearby" | "all"): Promise<
 }
 
 export async function getHunter(id: string): Promise<CommunityHunter | null> {
-  await delay(120);
+  await mockDelay();
   return hunterById(id) ?? null;
 }
 
 export async function getHunterActivity(
   hunterId: string,
 ): Promise<CommunityActivityRow[]> {
-  await delay();
+  await mockDelay();
   const hunter = hunterById(hunterId);
   if (!hunter) return [];
   if (!hunter.showActivity && hunterId !== CURRENT_HUNTER_ID) return [];
@@ -157,7 +154,7 @@ export async function getHunterActivity(
 export async function getItemClickers(
   feedItemId: string,
 ): Promise<{ total: number; clickers: CommunityClicker[] }> {
-  await delay(120);
+  await mockDelay();
   const events = COMMUNITY_CLICKS.filter((e) => e.feedItemId === feedItemId);
   const byHunter = new Map<string, CommunityClicker>();
   for (const event of events) {

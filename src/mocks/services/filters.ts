@@ -1,3 +1,4 @@
+import { mockDelay } from "@/mocks/delay";
 import { readJson, writeJson } from "@/lib/storage";
 import type { FeedUserFilterTab } from "@/models/feed";
 import type {
@@ -79,16 +80,12 @@ async function persist(filters: UserFilter[]): Promise<void> {
   await writeJson(STORAGE_KEY, filters);
 }
 
-function delay(ms = 200): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function numOrUndef(value: number | null | undefined): number | undefined {
   return value == null ? undefined : value;
 }
 
 export async function listFilters(): Promise<UserFilter[]> {
-  await delay();
+  await mockDelay();
   const filters = await ensureHydrated();
   return [...filters].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
@@ -125,7 +122,7 @@ export async function getFilterTabs(): Promise<FeedUserFilterTab[]> {
 }
 
 export async function getFilter(id: string): Promise<UserFilter> {
-  await delay();
+  await mockDelay();
   const filters = await ensureHydrated();
   const found = filters.find((f) => f.id === id);
   if (!found) throw new Error("Filter not found");
@@ -135,7 +132,7 @@ export async function getFilter(id: string): Promise<UserFilter> {
 export async function createFilter(
   input: CreateUserFilterInput,
 ): Promise<UserFilter> {
-  await delay();
+  await mockDelay();
   const filters = await ensureHydrated();
   const color = input.color.trim().toUpperCase();
   if (filters.some((f) => f.color.trim().toUpperCase() === color)) {
@@ -183,7 +180,7 @@ export async function updateFilter(
   id: string,
   input: UpdateUserFilterInput,
 ): Promise<UserFilter> {
-  await delay();
+  await mockDelay();
   const filters = await ensureHydrated();
   const index = filters.findIndex((f) => f.id === id);
   if (index < 0) throw new Error("Filter not found");
@@ -237,7 +234,7 @@ export async function updateFilter(
 }
 
 export async function deleteFilter(id: string): Promise<boolean> {
-  await delay();
+  await mockDelay();
   const filters = await ensureHydrated();
   await persist(filters.filter((f) => f.id !== id));
   return true;

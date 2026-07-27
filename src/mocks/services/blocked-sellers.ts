@@ -2,16 +2,13 @@ import {
   blockedSellersFixture,
   type MockBlockedSeller,
 } from "@/mocks/data/blocked-sellers";
+import { mockDelay } from "@/mocks/delay";
 import { readJson, writeJson } from "@/lib/storage";
 
 const KEY = "@flipsentry/blocked-sellers";
 
 let sellers: MockBlockedSeller[] = structuredClone(blockedSellersFixture);
 let hydrated = false;
-
-function delay(ms = 100): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
 
 async function hydrate(): Promise<void> {
   if (hydrated) return;
@@ -26,7 +23,7 @@ async function persist(): Promise<void> {
 
 export async function listBlockedSellers(): Promise<MockBlockedSeller[]> {
   await hydrate();
-  await delay();
+  await mockDelay();
   return structuredClone(sellers);
 }
 
@@ -37,7 +34,7 @@ export async function blockSeller(data: {
   sellerAvatarUrl: string;
 }): Promise<MockBlockedSeller> {
   await hydrate();
-  await delay();
+  await mockDelay();
   const existing = sellers.find(
     (s) => s.source === data.source && s.sellerId === data.sellerId,
   );
@@ -56,7 +53,7 @@ export async function blockSeller(data: {
 
 export async function unblockSeller(id: string): Promise<boolean> {
   await hydrate();
-  await delay();
+  await mockDelay();
   const before = sellers.length;
   sellers = sellers.filter((s) => s.id !== id);
   await persist();

@@ -97,13 +97,21 @@ export default class FeedStore {
     FeedValuationUpdateData
   >();
   private liveHeadIds = new Set<string>();
+  /** In-flight loadBucket promises so callers can await a join instead of no-op. */
+  private bucketLoadPromises = new Map<string, Promise<void>>();
   private catchUpTimer: ReturnType<typeof setTimeout> | null = null;
   private catchUpInFlight = false;
   private catchUpQueued = false;
   private scrollToTopHandler: (() => void) | null = null;
 
   constructor() {
-    makeAutoObservable(this, {}, { autoBind: true });
+    makeAutoObservable(
+      this,
+      {
+        bucketLoadPromises: false,
+      },
+      { autoBind: true },
+    );
   }
 
   setSearchStore(store: SearchStore): void {
@@ -409,9 +417,20 @@ export default class FeedStore {
     updateShelf();
   }
 
+  isShelfHydrated(bucket: string): boolean {
+    return this.hydratedShelves.has(bucket);
+  }
+
   async loadBucket(bucket: string, opts: LoadBucketOpts = {}): Promise<void> {
     if (bucket === "for-you") return;
-    if (this.loadingBuckets.has(bucket) && !opts.force) return;
+
+    const inFlight = this.bucketLoadPromises.get(bucket);
+    if (inFlight && !opts.force) {
+      // Join the in-flight request — a bare return made For You think shelves
+      // were ready while the first load was still outstanding (blank flash).
+      await inFlight;
+      return;
+    }
 
     const isShelf = !!opts.asShelf;
     const existingPagination = this.paginationByBucket[bucket];
@@ -445,6 +464,22 @@ export default class FeedStore {
       return;
     }
 
+    const run = this.runLoadBucket(bucket, opts, isShelf);
+    this.bucketLoadPromises.set(bucket, run);
+    try {
+      await run;
+    } finally {
+      if (this.bucketLoadPromises.get(bucket) === run) {
+        this.bucketLoadPromises.delete(bucket);
+      }
+    }
+  }
+
+  private async runLoadBucket(
+    bucket: string,
+    opts: LoadBucketOpts,
+    isShelf: boolean,
+  ): Promise<void> {
     this.touchSet("loadingBuckets", (s) => {
       s.add(bucket);
     });

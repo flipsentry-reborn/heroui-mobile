@@ -23,6 +23,7 @@ import {
 } from "@/mocks/data/tier-slots";
 import { readJson, writeJson } from "@/lib/storage";
 import type { FlipSentryTier } from "@/models/subscription";
+import { mockDelay } from "@/mocks/delay";
 import {
   getPersistedSubscription,
 } from "@/mocks/services/subscription";
@@ -31,10 +32,6 @@ const GROUPS_KEY = "@flipsentry/search-groups";
 
 let groups: SearchGroup[] = structuredClone(homeGroupsFixture);
 let hydrated = false;
-
-function delay(ms = 100): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -122,13 +119,13 @@ export function buildHomePlan(
 
 export async function listGroups(): Promise<SearchGroup[]> {
   await ensureHydrated();
-  await delay();
+  await mockDelay();
   return structuredClone(sortSearchGroups(groups));
 }
 
 export async function getHome(): Promise<HomeState> {
   await ensureHydrated();
-  await delay();
+  await mockDelay();
   const sub = await getPersistedSubscription();
   const tier = sub.hasActiveSubscription ? sub.currentTier : null;
   return {
@@ -197,7 +194,7 @@ export async function createGroup(
   input: CreateHomeSearchInput,
 ): Promise<SearchGroup> {
   await ensureHydrated();
-  await delay(200);
+  await mockDelay();
 
   if (input.settings.length === 0) {
     throw new Error("Select at least one platform and location.");
@@ -252,7 +249,7 @@ export async function updateGroup(
   input: UpdateHomeSearchInput,
 ): Promise<SearchGroup> {
   await ensureHydrated();
-  await delay(200);
+  await mockDelay();
 
   const index = groups.findIndex((group) => group.id === id);
   if (index < 0) {
@@ -317,7 +314,7 @@ export async function toggleGroupActive(
   active: boolean,
 ): Promise<SearchGroup | null> {
   await ensureHydrated();
-  await delay(150);
+  await mockDelay();
   const group = groups.find((g) => g.id === groupId);
   if (!group) return null;
   group.settings = group.settings.map((s) => ({ ...s, isActive: active }));
@@ -330,7 +327,7 @@ export async function toggleGroupActive(
 
 export async function deleteGroup(groupId: string): Promise<boolean> {
   await ensureHydrated();
-  await delay(150);
+  await mockDelay();
   const before = groups.length;
   groups = groups.filter((g) => g.id !== groupId);
   if (groups.length < before) {

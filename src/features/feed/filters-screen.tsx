@@ -313,6 +313,7 @@ export const FiltersScreen = observer(function FiltersScreen({
           });
           return updated != null;
         },
+        getErrorMessage: () => filterStore.lastError,
       });
     },
     [filterStore, toast],

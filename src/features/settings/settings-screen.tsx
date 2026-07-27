@@ -33,6 +33,7 @@ import {
   saveCachedAppearance,
   type AppearanceMode,
 } from "@/lib/appearance";
+import { toUserErrorMessage } from "@/lib/user-error-message";
 import type {
   SettingsState,
   UserPreferences,
@@ -206,8 +207,8 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
         showSalvageTitle: merged.showSalvageTitle,
         distanceUnit: merged.distanceUnit,
       });
-    } catch {
-      Alert.alert("Error", "Failed to update preference");
+    } catch (error) {
+      Alert.alert("Error", toUserErrorMessage(error));
     }
   };
 
@@ -294,7 +295,7 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
             <SettingsRow
               icon="notifications-outline"
               title="Notifications"
-              description="Alerts for new matching listings"
+              description="Push alerts and quiet hours"
               onPress={() => router.push("/settings/notification")}
             />
             <SettingsRow

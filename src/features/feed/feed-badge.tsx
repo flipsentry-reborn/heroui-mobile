@@ -8,23 +8,27 @@ import { getValuationTier, type ValuationTier } from "@/models/feed";
 import type { FeedFilterSummary } from "@/models/user-filter";
 import { useStore } from "@/store/store";
 
-type BadgeScale = "default" | "detail";
+type BadgeScale = "default" | "detail" | "rail";
 
 const BADGE_SIZE_CLASS: Record<BadgeScale, string> = {
   default:
     "h-5 min-h-5 max-h-5 items-center justify-center rounded-md px-1 py-0",
   detail:
     "h-6 min-h-6 max-h-6 items-center justify-center rounded-md px-1.5 py-0",
+  /** ~7% under default — For You rail cards. */
+  rail: "h-[19px] min-h-[19px] max-h-[19px] items-center justify-center rounded px-0.5 py-0",
 };
 
 const BADGE_LABEL_SIZE_CLASS: Record<BadgeScale, string> = {
   default: "text-xs font-extrabold leading-none",
   detail: "text-sm font-extrabold leading-none",
+  rail: "text-[11px] font-extrabold leading-none",
 };
 
 const FILTER_DOT_SIZE_CLASS: Record<BadgeScale, string> = {
   default: "h-2 w-2",
   detail: "h-2.5 w-2.5",
+  rail: "h-[7px] w-[7px]",
 };
 
 /**

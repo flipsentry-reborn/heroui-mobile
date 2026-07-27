@@ -3,6 +3,7 @@ import type { Pagination } from "@/models/pagination";
 import { isCarListing, resolveDisplayValuation } from "@/models/feed";
 import { MOCK_FEED_ITEMS } from "@/mocks/data/feed";
 import { getLocalCompsForFeed } from "@/mocks/data/local-comps";
+import { mockDelay } from "@/mocks/delay";
 import {
   getActiveFilterIds,
   peekActiveFilterIds,
@@ -33,10 +34,6 @@ export type GetFeedParams = {
   /** Sold page: only listings sold/pending within this many days. */
   maxDays?: number | null;
 };
-
-function delay(ms = 450): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function matchesSoldStatus(
   item: FeedItem,
@@ -159,7 +156,7 @@ function matchesCategory(
 }
 
 export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
-  await delay();
+  await mockDelay();
   const category = params.category ?? "all";
   const query = (params.query ?? "").trim().toLowerCase();
   const soldStatus = params.soldStatus ?? "all";
@@ -214,7 +211,7 @@ export async function getFeedPage(
         : 40;
   const pageNumber = Math.max(1, params.pageNumber ?? 1);
 
-  await delay();
+  await mockDelay();
   const activeFilterIds = await getActiveFilterIds();
 
   const filtered = MOCK_FEED_ITEMS.filter((item) => {
@@ -273,7 +270,7 @@ export async function getFeedById(id: string): Promise<FeedItem | null> {
 }
 
 export async function toggleFavorite(id: string): Promise<FeedItem | null> {
-  await delay(120);
+  await mockDelay();
   const item = MOCK_FEED_ITEMS.find((f) => f.id === id);
   if (!item) return null;
   item.isFavorite = !item.isFavorite;
@@ -285,7 +282,7 @@ export async function getLocalComps(
   feedId: string,
   params: GetLocalCompsParams = {},
 ): Promise<FeedItem[]> {
-  await delay(400);
+  await mockDelay();
 
   const source = MOCK_FEED_ITEMS.find((f) => f.id === feedId);
   if (!source || !isCarListing(source)) return [];

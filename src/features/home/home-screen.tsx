@@ -87,6 +87,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
         kind: "delete",
         title: actionTitle(group),
         onCommit: () => searchStore.deleteSearchGroup(group.id),
+        getErrorMessage: () => searchStore.lastError,
       });
     },
     [searchStore, toast],
@@ -101,6 +102,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
           const updated = await searchStore.setGroupActive(group.id, active);
           return updated != null;
         },
+        getErrorMessage: () => searchStore.lastError,
       });
     },
     [searchStore, toast],

@@ -49,9 +49,9 @@ const FEED_OPEN_LOG = "FeedOpen";
  */
 const IMAGE_H_GRID = 168;
 const IMAGE_H_LIST = 212;
-/** Wider rail cards for For You shelves (not square). */
-const IMAGE_H_RAIL = 142;
-const RAIL_WIDTH = 200;
+/** Wider rail cards for For You shelves (not square). ~7% under prior size. */
+const IMAGE_H_RAIL = 132;
+const RAIL_WIDTH = 186;
 /** Featured shelves (e.g. Top Rated) render ~7% larger. */
 const FEATURED_SCALE = 1.07;
 
@@ -116,12 +116,16 @@ function FeedItemInner({
   const statusBadges = getOrderedStatusBadges(feed);
   const valuation = resolveDisplayValuation(feed);
   const hasFilterMatches = (feed.filters?.length ?? 0) > 0;
-  const avgProfitLabel =
+  const avgProfit =
     showAvgProfit && valuation?.fairPrice != null
-      ? formatAvgProfitLabel(
-          valuation.profit ?? valuation.fairPrice - feed.price,
-          feed.currencySymbol,
-        )
+      ? (valuation.profit ?? valuation.fairPrice - feed.price)
+      : null;
+  // Sold page: only show profit badge when at least 5% profitable.
+  const avgProfitLabel =
+    avgProfit != null &&
+    feed.price > 0 &&
+    avgProfit / feed.price >= 0.05
+      ? formatAvgProfitLabel(avgProfit, feed.currencySymbol)
       : null;
   const distanceUnit = userStore.preferences?.distanceUnit ?? "mi";
   const mileageDisplay = resolveFeedMileageDisplay(feed);
@@ -196,8 +200,8 @@ function FeedItemInner({
       : "text-[12px] text-muted";
   const dimClass = "text-muted";
   const platformSize = isRail ? 13 : isList ? 16 : 14;
-  const badgeScale = isList ? "detail" : "default";
-  const favoriteSize = isList ? 15 : 13;
+  const badgeScale = isList ? "detail" : isRail ? "rail" : "default";
+  const favoriteSize = isList ? 15 : isRail ? 12 : 13;
   const aiIconSize = isRail ? 16 : isList ? 19 : 17;
   const statusLabel = getListingStatusLabel(feed);
 
@@ -218,7 +222,9 @@ function FeedItemInner({
         variant="transparent"
         className={`${isRail ? "" : "flex-1 "}gap-0 overflow-visible rounded-none border-0 bg-transparent p-0`}
       >
-        <View className="relative overflow-hidden rounded-lg">
+        <View
+          className={`relative overflow-hidden ${isRail ? "rounded-2xl" : "rounded-lg"}`}
+        >
           <Image
             source={imageUrl ? { uri: imageUrl } : null}
             placeholder={DEFAULT_IMAGE_PLACEHOLDER}

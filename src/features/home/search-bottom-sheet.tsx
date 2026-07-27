@@ -964,6 +964,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
         }
         return false;
       },
+      getErrorMessage: () => searchStore.lastError,
     });
   };
 

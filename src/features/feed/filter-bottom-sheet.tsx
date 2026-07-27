@@ -257,6 +257,7 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
         }
         return false;
       },
+      getErrorMessage: () => filterStore.lastError,
     });
   };
 
@@ -309,6 +310,7 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
           childSheetOpen={childSheetOpen}
           canSave={canSave}
           submitting={filterStore.submitting}
+          errorMessage={filterStore.lastError}
           onSave={() => {
             void handleSave();
           }}
@@ -387,6 +389,7 @@ function FilterSheetBody({
   childSheetOpen,
   canSave,
   submitting,
+  errorMessage,
   onSave,
   dismissRef,
 }: {
@@ -416,6 +419,7 @@ function FilterSheetBody({
   childSheetOpen: boolean;
   canSave: boolean;
   submitting: boolean;
+  errorMessage: string | null;
   onSave: () => void;
   /** Lets parent dismiss with the same animated close as Cancel. */
   dismissRef: MutableRefObject<(() => void) | null>;
@@ -571,6 +575,12 @@ function FilterSheetBody({
             }
           />
         </SearchSheetGroup>
+
+        {errorMessage != null ? (
+          <Typography type="body-xs" className="mx-5 mb-2 text-danger">
+            {errorMessage}
+          </Typography>
+        ) : null}
 
         <View className="flex-row gap-3 px-5 pb-6 pt-0">
           <Button

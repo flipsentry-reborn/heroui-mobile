@@ -24,9 +24,10 @@ type ApiErrorBody = {
 };
 
 /**
- * Match prior axios reject shapes used by auth screens / catalogs:
- * - 400 + ASP.NET model state → string[]
- * - 400 / API message fields → Error
+ * Normalize API error bodies for UI / stores:
+ * - FluentValidation ExceptionMiddleware → bare JSON string or string[]
+ * - ASP.NET model state → { errors: { field: string[] } }
+ * - Result.Failure → { error } / { message }
  * - otherwise keep HTTPError (call sites read `.response.status`)
  *   with `.message` rewritten so UI never shows method/URL.
  */
@@ -34,9 +35,9 @@ async function normalizeHttpError(error: unknown): Promise<unknown> {
   if (!(error instanceof HTTPError)) return error;
 
   const status = error.response.status;
-  let data: ApiErrorBody | string | undefined;
+  let data: unknown;
   try {
-    data = (await error.response.clone().json()) as ApiErrorBody;
+    data = await error.response.clone().json();
   } catch {
     try {
       data = await error.response.clone().text();
@@ -45,23 +46,33 @@ async function normalizeHttpError(error: unknown): Promise<unknown> {
     }
   }
 
-  if (status === 400 && data && typeof data === "object") {
-    if (data.errors && typeof data.errors === "object") {
-      const modelStateErrors: string[] = [];
-      for (const key of Object.keys(data.errors)) {
-        const messages = data.errors[key];
-        if (messages) modelStateErrors.push(...messages);
-      }
-      if (modelStateErrors.length > 0) return modelStateErrors;
-    }
-    const message = data.error || data.message;
-    if (typeof message === "string" && message.trim()) {
-      return withHttpStatus(new Error(message.trim()), status);
+  if (typeof data === "string" && data.trim()) {
+    return withHttpStatus(new Error(data.trim()), status);
+  }
+
+  if (Array.isArray(data)) {
+    const messages = data
+      .filter((part): part is string => typeof part === "string")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (messages.length > 0) {
+      return withHttpStatus(new Error(messages.join(", ")), status);
     }
   }
 
   if (data && typeof data === "object") {
-    const message = data.error || data.message;
+    const body = data as ApiErrorBody;
+    if (status === 400 && body.errors && typeof body.errors === "object") {
+      const modelStateErrors: string[] = [];
+      for (const key of Object.keys(body.errors)) {
+        const messages = body.errors[key];
+        if (messages) modelStateErrors.push(...messages);
+      }
+      if (modelStateErrors.length > 0) {
+        return withHttpStatus(new Error(modelStateErrors.join(", ")), status);
+      }
+    }
+    const message = body.error || body.message;
     if (typeof message === "string" && message.trim()) {
       return withHttpStatus(new Error(message.trim()), status);
     }

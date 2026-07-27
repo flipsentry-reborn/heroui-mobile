@@ -121,25 +121,31 @@ function SearchActionProgressToast({
   subject,
   title,
   onCommit,
+  getErrorMessage,
   ...toastProps
 }: ToastRenderProps & {
   kind: SearchActionKind;
   subject: ActionSubject;
   title: string;
   onCommit: () => Promise<boolean>;
+  getErrorMessage?: () => string | null | undefined;
 }): JSX.Element {
   const copy = actionCopy(kind, subject);
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<ActionPhase>("running");
   const [attempt, setAttempt] = useState(0);
+  const [failureLabel, setFailureLabel] = useState(copy.failed);
   const settled = useRef(false);
   const onCommitRef = useRef(onCommit);
   onCommitRef.current = onCommit;
+  const getErrorMessageRef = useRef(getErrorMessage);
+  getErrorMessageRef.current = getErrorMessage;
 
   useEffect(() => {
     settled.current = false;
     setProgress(0);
     setPhase("running");
+    setFailureLabel(copy.failed);
 
     let value = 0;
     const failAt: number | null = shouldFakeFail(kind)
@@ -167,13 +173,21 @@ function SearchActionProgressToast({
           .current()
           .then((ok) => {
             if (!ok) {
+              const message = getErrorMessageRef.current?.()?.trim();
+              if (message) setFailureLabel(message);
               setPhase("failed");
               return;
             }
             setPhase("done");
             setTimeout(() => hide(), 700);
           })
-          .catch(() => {
+          .catch((error: unknown) => {
+            const fromGetter = getErrorMessageRef.current?.()?.trim();
+            if (fromGetter) {
+              setFailureLabel(fromGetter);
+            } else if (error instanceof Error && error.message.trim()) {
+              setFailureLabel(error.message.trim());
+            }
             setPhase("failed");
           });
       }
@@ -183,7 +197,7 @@ function SearchActionProgressToast({
       settled.current = true;
       clearInterval(tick);
     };
-  }, [attempt, hide, kind]);
+  }, [attempt, copy.failed, hide, kind]);
 
   const color: ProgressColor =
     phase === "failed" ? "danger" : phase === "done" ? "success" : copy.color;
@@ -195,7 +209,7 @@ function SearchActionProgressToast({
         : copy.toastVariant;
   const label =
     phase === "failed"
-      ? copy.failed
+      ? failureLabel
       : phase === "done"
         ? copy.done
         : copy.running;
@@ -278,6 +292,8 @@ export function showSearchActionProgress(
     /** Defaults to search; pass `filter` for filter create/update/delete/pause. */
     subject?: ActionSubject;
     onCommit: () => Promise<boolean>;
+    /** Prefer store `lastError` after a failed commit so API messages reach the toast. */
+    getErrorMessage?: () => string | null | undefined;
   },
 ): string {
   const subject = options.subject ?? "search";
@@ -290,6 +306,7 @@ export function showSearchActionProgress(
         subject={subject}
         title={options.title}
         onCommit={options.onCommit}
+        getErrorMessage={options.getErrorMessage}
       />
     ),
   });

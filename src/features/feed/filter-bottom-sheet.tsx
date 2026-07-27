@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { observer } from "mobx-react-lite";
-import type { JSX } from "react";
-import { useEffect, useMemo, useState } from "react";
+import type { JSX, MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import {
   BottomSheet,
@@ -98,6 +98,7 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
   const [mileageOpen, setMileageOpen] = useState(false);
   const [keywordsOpen, setKeywordsOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
+  const dismissSheetRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -246,7 +247,12 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
             ? await filterStore.updateFilter(editId, payload)
             : await filterStore.createFilter(payload);
         if (saved != null) {
-          handleClose();
+          // Animate out like Cancel — don't flip `isOpen` off immediately.
+          if (dismissSheetRef.current != null) {
+            dismissSheetRef.current();
+          } else {
+            handleClose();
+          }
           return true;
         }
         return false;
@@ -306,6 +312,7 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
           onSave={() => {
             void handleSave();
           }}
+          dismissRef={dismissSheetRef}
         />
       </SheetShell>
 
@@ -381,6 +388,7 @@ function FilterSheetBody({
   canSave,
   submitting,
   onSave,
+  dismissRef,
 }: {
   title: string;
   name: string;
@@ -409,10 +417,13 @@ function FilterSheetBody({
   canSave: boolean;
   submitting: boolean;
   onSave: () => void;
+  /** Lets parent dismiss with the same animated close as Cancel. */
+  dismissRef: MutableRefObject<(() => void) | null>;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const [muted, accentForeground] = useThemeColor(["muted", "accent-foreground"]);
   const dismiss = () => onOpenChange(false);
+  dismissRef.current = dismiss;
   const isVehicle = filterType === "Vehicle";
 
   return (

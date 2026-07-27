@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { observer } from "mobx-react-lite";
-import type { JSX } from "react";
+import type { JSX, MutableRefObject } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import {
@@ -265,6 +265,7 @@ function SearchSheetContent({
   submitting,
   errorMessage,
   onConfirm,
+  dismissRef,
 }: {
   title: string;
   locationPlaceName: string | null;
@@ -301,10 +302,13 @@ function SearchSheetContent({
   submitting: boolean;
   errorMessage: string | null;
   onConfirm: () => void;
+  /** Lets parent dismiss with the same animated close as Cancel. */
+  dismissRef: MutableRefObject<(() => void) | null>;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const [muted, accentForeground] = useThemeColor(["muted", "accent-foreground"]);
   const dismiss = () => onOpenChange(false);
+  dismissRef.current = dismiss;
   const hasSearchType = searchType != null;
 
   const handleConfirm = () => {
@@ -506,6 +510,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
   const [locationOpen, setLocationOpen] = useState(false);
   const [iphoneModelsOpen, setIphoneModelsOpen] = useState(false);
   const [carMakesOpen, setCarMakesOpen] = useState(false);
+  const dismissSheetRef = useRef<(() => void) | null>(null);
   const [minPrice, setMinPrice] = useState("300");
   const [maxPrice, setMaxPrice] = useState("");
   const [minYear, setMinYear] = useState("");
@@ -949,7 +954,12 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
             ? await searchStore.updateGroup(editId, payload)
             : await searchStore.createGroup(payload);
         if (saved != null) {
-          handleClose();
+          // Animate out like Cancel — don't flip `visible` off immediately.
+          if (dismissSheetRef.current != null) {
+            dismissSheetRef.current();
+          } else {
+            handleClose();
+          }
           return true;
         }
         return false;
@@ -1012,6 +1022,7 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
           onConfirm={() => {
             void handleConfirm();
           }}
+          dismissRef={dismissSheetRef}
         />
       </SheetShell>
 

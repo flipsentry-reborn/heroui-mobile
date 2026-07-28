@@ -49,9 +49,9 @@ const FEED_OPEN_LOG = "FeedOpen";
  */
 const IMAGE_H_GRID = 168;
 const IMAGE_H_LIST = 212;
-/** Wider rail cards for For You shelves (not square). ~7% under prior size. */
-const IMAGE_H_RAIL = 132;
-const RAIL_WIDTH = 186;
+/** Wider rail cards for For You shelves (not square). ~15% under prior size. */
+const IMAGE_H_RAIL = 121;
+const RAIL_WIDTH = 170;
 /** Featured shelves (e.g. Top Rated) render ~7% larger. */
 const FEATURED_SCALE = 1.07;
 
@@ -201,7 +201,7 @@ function FeedItemInner({
   const dimClass = "text-muted";
   const platformSize = isRail ? 13 : isList ? 16 : 14;
   const badgeScale = isList ? "detail" : isRail ? "rail" : "default";
-  const favoriteSize = isList ? 15 : isRail ? 12 : 13;
+  const favoriteSize = isList ? 15 : isRail ? 11 : 13;
   const aiIconSize = isRail ? 16 : isList ? 19 : 17;
   const statusLabel = getListingStatusLabel(feed);
 

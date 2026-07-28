@@ -92,14 +92,14 @@ type ForYouRow =
       pending: boolean;
     };
 
-/** Matches FeedItem rail footprint (186×132 image + text). */
+/** Matches FeedItem rail footprint (170×121 image + text). */
 function ShelfCardSkeletonRail({
   featured = false,
 }: {
   featured?: boolean;
 }): JSX.Element {
-  const cardW = featured ? 199 : 186;
-  const imageH = featured ? 141 : 132;
+  const cardW = featured ? 182 : 170;
+  const imageH = featured ? 129 : 121;
   const rowH = featured
     ? FEED_RAIL_FEATURED_ROW_HEIGHT
     : FEED_RAIL_ROW_HEIGHT;

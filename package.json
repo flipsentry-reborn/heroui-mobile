@@ -5,7 +5,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "node --require ./scripts/patch-node-style-text.cjs ./node_modules/expo/bin/cli start",
-    "android": "node --require ./scripts/patch-node-style-text.cjs ./node_modules/expo/bin/cli run:android",
+    "android": "node ./scripts/run-android.cjs",
     "ios": "node --require ./scripts/patch-node-style-text.cjs ./node_modules/expo/bin/cli start --ios",
     "prebuild:android": "node --require ./scripts/patch-node-style-text.cjs ./node_modules/expo/bin/cli prebuild --platform android",
     "lint": "eslint .",

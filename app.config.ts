@@ -35,6 +35,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
     },
     android: {
+      package: "com.flipsentry.mobile",
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#121212",
@@ -50,6 +51,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     plugins: [
       "expo-router",
+      "expo-dev-client",
       [
         "expo-splash-screen",
         {

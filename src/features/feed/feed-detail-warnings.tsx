@@ -45,7 +45,6 @@ export function FeedDetailWarnings({
       selectionMode="single"
       hideSeparator
       isCollapsible
-      defaultValue="warnings"
       animation="disable-all"
       className="shadow-none"
     >

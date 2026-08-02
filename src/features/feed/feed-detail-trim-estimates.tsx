@@ -7,14 +7,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomSheet, Chip, cn, PressableFeedback, Typography, useThemeColor } from "heroui-native";
 import { withUniwind } from "uniwind";
 
-import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import { SheetShell } from "@/features/home/sheet-shell";
 import { resolveTrimEstimates } from "@/mocks/data/trim-estimates";
 import { resolveExternalFairPrice, type ListingValuation } from "@/models/feed";
 
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
 
-/** Yellowish AI sparkles — pairs with the New/Beta badge on Advanced. */
+/** Yellowish AI sparkles — matches AI Warnings accent. */
 const AI_ICON_COLOR = "#E8C547";
 
 function formatPrice(price: number, symbol: string): string {
@@ -68,10 +67,8 @@ export function FeedDetailTrimEstimates({
         onPress={() => setVisible(true)}
       >
         <PressableFeedback.Highlight />
-        <View className="flex-row items-center gap-3 px-3 py-3">
-          <View className="h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background">
-            <Ionicons name="sparkles" size={16} color={AI_ICON_COLOR} />
-          </View>
+        <View className="flex-row items-center gap-2.5 px-3 py-3">
+          <Ionicons name="sparkles" size={18} color={AI_ICON_COLOR} />
 
           <View className="min-w-0 flex-1 gap-1">
             <Typography
@@ -82,28 +79,20 @@ export function FeedDetailTrimEstimates({
             >
               Advanced Calculation
             </Typography>
-            <View className="min-w-0 flex-row items-center gap-1.5">
-              <FeedCategoryBadge label="New" inline />
-              <Typography
-                type="body-xs"
-                className="min-w-0 shrink text-[11px] text-muted"
-                numberOfLines={1}
-              >
-                {selected?.trim ?? `${options.length} trim estimates`}
-              </Typography>
-            </View>
+            <Typography
+              type="body-xs"
+              className="min-w-0 text-[11px] text-muted"
+              numberOfLines={1}
+            >
+              {selected?.trim ?? `${options.length} trim estimates`}
+            </Typography>
           </View>
 
-          <View className="shrink-0 items-end gap-0.5">
+          <View className="shrink-0 flex-row items-center gap-0.5">
             <Typography type="body-sm" weight="bold" className="text-[15px] text-foreground">
               {formatPrice(selectedFair, currencySymbol)}
             </Typography>
-            <View className="flex-row items-center gap-0.5">
-              <Typography type="body-xs" className="text-[10px] text-muted">
-                Book value
-              </Typography>
-              <Ionicons name="chevron-forward" size={13} color={muted} />
-            </View>
+            <Ionicons name="chevron-forward" size={13} color={muted} />
           </View>
         </View>
       </PressableFeedback>
@@ -119,15 +108,12 @@ export function FeedDetailTrimEstimates({
           <View className="gap-1 px-5 pb-3 pt-4">
             <View className="flex-row items-center gap-2.5">
               <Ionicons name="sparkles" size={18} color={AI_ICON_COLOR} />
-              <View className="min-w-0 flex-1 flex-row items-center gap-1.5">
-                <BottomSheet.Title
-                  className="min-w-0 shrink text-left text-xl font-bold"
-                  numberOfLines={1}
-                >
-                  Advanced Calculation
-                </BottomSheet.Title>
-                <FeedCategoryBadge label="New" inline />
-              </View>
+              <BottomSheet.Title
+                className="min-w-0 flex-1 text-left text-xl font-bold"
+                numberOfLines={1}
+              >
+                Advanced Calculation
+              </BottomSheet.Title>
               <BottomSheet.Close />
             </View>
             <BottomSheet.Description className="pl-[28px] text-left">

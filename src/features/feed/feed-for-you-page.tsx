@@ -32,7 +32,6 @@ import { useBottomChrome } from "@/contexts/bottom-chrome-context";
 import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import {
   FEED_RAIL_DRAW_DISTANCE,
-  FEED_RAIL_FEATURED_ROW_HEIGHT,
   FEED_RAIL_ROW_HEIGHT,
 } from "@/features/feed/feed-flash-list";
 import { FeedItem } from "@/features/feed/feed-item";
@@ -158,30 +157,20 @@ type ForYouRow =
       pending: boolean;
     };
 
-/** Matches FeedItem rail footprint (187×133 image + text). */
-function ShelfCardSkeletonRail({
-  featured = false,
-}: {
-  featured?: boolean;
-}): JSX.Element {
-  const cardW = featured ? 200 : 187;
-  const imageH = featured ? 142 : 133;
-  const rowH = featured
-    ? FEED_RAIL_FEATURED_ROW_HEIGHT
-    : FEED_RAIL_ROW_HEIGHT;
-
+/** Matches FeedItem rail footprint (187×168 image + text). */
+function ShelfCardSkeletonRail(): JSX.Element {
   return (
     <SkeletonGroup
       isLoading
       isSkeletonOnly
       className="flex-row px-3"
-      style={{ height: rowH }}
+      style={{ height: FEED_RAIL_ROW_HEIGHT }}
     >
       {[0, 1, 2].map((key) => (
-        <View key={key} className="mr-2" style={{ width: cardW }}>
+        <View key={key} className="mr-2" style={{ width: 187 }}>
           <SkeletonGroup.Item
             className="w-full rounded-lg"
-            style={{ height: imageH }}
+            style={{ height: 168 }}
           />
           <View className="mt-1 gap-0.5 px-0.5">
             <SkeletonGroup.Item className="h-4 w-16 rounded-md" />
@@ -198,7 +187,6 @@ function ShelfRail({
   items,
   onPressItem,
   onToggleFavorite,
-  featured = false,
   contentPadding = 12,
   /**
    * Accordion expand mounts content mid-animation — FlashList init delays
@@ -209,25 +197,19 @@ function ShelfRail({
   items: FeedModel[];
   onPressItem?: (id: string) => void;
   onToggleFavorite: (id: string) => void;
-  featured?: boolean;
   contentPadding?: number;
   lightweight?: boolean;
 }): JSX.Element {
-  const rowHeight = featured
-    ? FEED_RAIL_FEATURED_ROW_HEIGHT
-    : FEED_RAIL_ROW_HEIGHT;
-
   const renderItem = useCallback<ListRenderItem<FeedModel>>(
     ({ item }) => (
       <FeedItem
         feed={item}
         layout="rail"
-        featured={featured}
         onPress={onPressItem}
         onToggleFavorite={onToggleFavorite}
       />
     ),
-    [featured, onPressItem, onToggleFavorite],
+    [onPressItem, onToggleFavorite],
   );
 
   const keyExtractor = useCallback((item: FeedModel) => item.id, []);
@@ -241,7 +223,7 @@ function ShelfRail({
         directionalLockEnabled
         disableIntervalMomentum
         decelerationRate="fast"
-        style={{ height: rowHeight }}
+        style={{ height: FEED_RAIL_ROW_HEIGHT }}
         contentContainerStyle={{ paddingHorizontal: contentPadding }}
       >
         {items.map((item) => (
@@ -249,7 +231,6 @@ function ShelfRail({
             key={item.id}
             feed={item}
             layout="rail"
-            featured={featured}
             onPress={onPressItem}
             onToggleFavorite={onToggleFavorite}
           />
@@ -267,7 +248,7 @@ function ShelfRail({
       drawDistance={FEED_RAIL_DRAW_DISTANCE}
       showsHorizontalScrollIndicator={false}
       // Fixed height so nested horizontal lists don't collapse before measure.
-      style={{ height: rowHeight }}
+      style={{ height: FEED_RAIL_ROW_HEIGHT }}
       contentContainerStyle={{
         paddingHorizontal: contentPadding,
       }}
@@ -678,13 +659,12 @@ export const FeedForYouPage = observer(function FeedForYouPage({
         />
       );
       const rail = item.pending ? (
-        <ShelfCardSkeletonRail featured={featured} />
+        <ShelfCardSkeletonRail />
       ) : (
         <ShelfRail
           items={item.items}
           onPressItem={onPressItem}
           onToggleFavorite={onToggleFavorite}
-          featured={featured}
         />
       );
 

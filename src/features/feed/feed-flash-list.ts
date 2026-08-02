@@ -6,6 +6,5 @@ export const FEED_GRID_DRAW_DISTANCE = 480;
 export const FEED_RAIL_DRAW_DISTANCE = 320;
 export const FEED_FOR_YOU_DRAW_DISTANCE = 400;
 
-/** Matches FeedItem rail card footprint (image + 3 text rows + padding). */
-export const FEED_RAIL_ROW_HEIGHT = 208;
-export const FEED_RAIL_FEATURED_ROW_HEIGHT = 221;
+/** Matches FeedItem rail card footprint (same image H as grid + 3 text rows). */
+export const FEED_RAIL_ROW_HEIGHT = 243;

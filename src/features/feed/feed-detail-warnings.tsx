@@ -10,7 +10,6 @@ import {
 import { withUniwind } from "uniwind";
 
 import { AiEstimationIcon } from "@/components/icons/ai-estimation-icon";
-import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import type { FeedValuationWarning } from "@/models/feed";
 
 const StyledIonicons = withUniwind(Ionicons);
@@ -52,17 +51,14 @@ export function FeedDetailWarnings({
         <Accordion.Trigger className="z-0 px-3 py-3">
           <View className="min-w-0 flex-1 flex-row items-center gap-2.5">
             <AiEstimationIcon size={18} />
-            <View className="min-w-0 flex-1 flex-row items-center gap-1.5">
-              <Typography
-                type="body-sm"
-                weight="semibold"
-                className="min-w-0 shrink text-foreground"
-                numberOfLines={1}
-              >
-                AI Warnings
-              </Typography>
-              <FeedCategoryBadge label="AI" inline />
-            </View>
+            <Typography
+              type="body-sm"
+              weight="semibold"
+              className="min-w-0 flex-1 shrink text-foreground"
+              numberOfLines={1}
+            >
+              AI Warnings
+            </Typography>
             <View className="rounded-full bg-warning/15 px-2 py-0.5">
               <Typography type="body-xs" className="text-[11px] text-warning">
                 {warnings.length}

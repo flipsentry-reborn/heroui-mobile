@@ -54,7 +54,7 @@ import {
 import { useStore } from "@/store/store";
 
 const FEED_OPEN_LOG = "FeedOpen";
-const DESC_COLLAPSE_LENGTH = 160;
+const DESC_COLLAPSE_LENGTH = 320;
 
 const PLATFORM_CTA: Record<FeedPlatform, string> = {
   facebookMarketplace: "#1877F2",

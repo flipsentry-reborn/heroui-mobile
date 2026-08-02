@@ -40,20 +40,14 @@ import { useStore } from "@/store/store";
 const FEED_OPEN_LOG = "FeedOpen";
 
 /**
- * Image sizing is layout-split so For You shelves can grow without
- * affecting category / grid feed cards:
- * - grid  → IMAGE_H_GRID (2-col pages, detail similar, etc.)
- * - list  → IMAGE_H_LIST (1-col full-width cards)
- * - rail  → IMAGE_H_RAIL + RAIL_WIDTH (For You horizontal shelves)
- * - featured shelves also multiply rail by FEATURED_SCALE (~7%)
+ * Image sizing by layout:
+ * - grid / rail → IMAGE_H (2-col category + For You shelves share size)
+ * - list        → IMAGE_H_LIST (1-col full-width cards)
  */
-const IMAGE_H_GRID = 168;
+const IMAGE_H = 168;
 const IMAGE_H_LIST = 212;
-/** Wider rail cards for For You shelves (not square). */
-const IMAGE_H_RAIL = 133;
+/** Fixed shelf width — matches ~2-col category card footprint. */
 const RAIL_WIDTH = 187;
-/** Featured shelves (e.g. Top Rated) render ~7% larger. */
-const FEATURED_SCALE = 1.07;
 
 interface FeedItemProps {
   feed: FeedModel;
@@ -61,8 +55,6 @@ interface FeedItemProps {
   onToggleFavorite?: (id: string) => void;
   /** grid = 2-col feed; list = 1-col same card; rail = For You shelf */
   layout?: "grid" | "list" | "rail";
-  /** Slightly larger rail cards for featured shelves. */
-  featured?: boolean;
   /**
    * Top-left stack badge after filter match (e.g. Sold “Found 3 hours ago”).
    * Same Chip shell/type as FilterMatchBadge / StatusBadge.
@@ -94,7 +86,6 @@ function FeedItemInner({
   onPress,
   onToggleFavorite,
   layout = "grid",
-  featured = false,
   imageTopLabel,
   showAvgProfit = false,
   imageCornerLabel,
@@ -138,13 +129,7 @@ function FeedItemInner({
   const primaryLocation = feed.locationText?.split(",")[0]?.trim() || null;
   const isRail = layout === "rail";
   const isList = layout === "list";
-  const scale = isRail && featured ? FEATURED_SCALE : 1;
-  const railW = Math.round(RAIL_WIDTH * scale);
-  const imageH = isRail
-    ? Math.round(IMAGE_H_RAIL * scale)
-    : isList
-      ? IMAGE_H_LIST
-      : IMAGE_H_GRID;
+  const imageH = isList ? IMAGE_H_LIST : IMAGE_H;
 
   const handleShimmerDone = useCallback(() => {
     setShowNewShimmer(false);
@@ -169,40 +154,16 @@ function FeedItemInner({
     onToggleFavorite?.(feed.id);
   }, [feed.id, onToggleFavorite]);
 
-  /** Rail compact; list (1-col) larger; grid mid. */
-  const priceClass = isRail
-    ? featured
-      ? "text-[14px] leading-[18px]"
-      : "text-[13px] leading-[18px]"
-    : isList
-      ? "text-[17px] leading-6"
-      : featured
-        ? "text-[16px] leading-5"
-        : "text-[15px] leading-5";
-  const titleClass = isRail
-    ? featured
-      ? "text-[13px] leading-[17px]"
-      : "text-[12px] leading-4"
-    : isList
-      ? "text-[15px] leading-5"
-      : featured
-        ? "text-[15px] leading-5"
-        : "text-sm leading-5";
-  const metaClass = isRail
-    ? "text-[11px] leading-[14px]"
-    : isList
-      ? "text-[13px] leading-4"
-      : "text-xs";
-  const estClass = isRail
-    ? "text-[11px] text-muted"
-    : isList
-      ? "text-[14px] text-muted"
-      : "text-[12px] text-muted";
+  /** List (1-col) larger; grid + rail share category sizing. */
+  const priceClass = isList ? "text-[17px] leading-6" : "text-[15px] leading-5";
+  const titleClass = isList ? "text-[15px] leading-5" : "text-sm leading-5";
+  const metaClass = isList ? "text-[13px] leading-4" : "text-xs";
+  const estClass = isList ? "text-[14px] text-muted" : "text-[12px] text-muted";
   const dimClass = "text-muted";
-  const platformSize = isRail ? 13 : isList ? 16 : 14;
-  const badgeScale = isList ? "detail" : isRail ? "rail" : "default";
-  const favoriteSize = isList ? 15 : isRail ? 11 : 13;
-  const aiIconSize = isRail ? 16 : isList ? 19 : 17;
+  const platformSize = isList ? 16 : 14;
+  const badgeScale = isList ? "detail" : "default";
+  const favoriteSize = isList ? 15 : 13;
+  const aiIconSize = isList ? 19 : 17;
   const statusLabel = getListingStatusLabel(feed);
 
   return (
@@ -215,7 +176,7 @@ function FeedItemInner({
             ? "mb-2.5 flex-1 px-px"
             : "mb-0.5 flex-1 px-px"
       }
-      style={isRail ? { width: railW } : undefined}
+      style={isRail ? { width: RAIL_WIDTH } : undefined}
       animation={{ scale: { value: 0.98 } }}
     >
       <Card
@@ -414,7 +375,6 @@ function feedItemPropsEqual(
   return (
     prev.feed === next.feed &&
     prev.layout === next.layout &&
-    prev.featured === next.featured &&
     prev.hideFavorite === next.hideFavorite &&
     prev.imageTopLabel === next.imageTopLabel &&
     prev.showAvgProfit === next.showAvgProfit &&

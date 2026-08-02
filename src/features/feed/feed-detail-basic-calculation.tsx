@@ -7,7 +7,6 @@ import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   BottomSheet,
-  Chip,
   PressableFeedback,
   Separator,
   Typography,
@@ -17,7 +16,7 @@ import { withUniwind } from "uniwind";
 
 import { SheetShell } from "@/features/home/sheet-shell";
 import { formatOdometer, getOdometerDisplayValue } from "@/lib/distance-utils";
-import { getValuationTier, type ListingValuation } from "@/models/feed";
+import type { ListingValuation } from "@/models/feed";
 import { useStore } from "@/store/store";
 
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
@@ -84,15 +83,6 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
 
   if (!valuation.calculated) return null;
 
-  const tier = getValuationTier(valuation.buySignal);
-  const tierLabel =
-    tier === "greatDeal"
-      ? "Great deal"
-      : tier === "goodValue"
-        ? "Good value"
-        : tier === "fairPrice"
-          ? "Fair"
-          : "Overpriced";
   const isPhone = valuation.valuationType === "iphone" || valuation.valuationType === "samsung";
   const distanceUnit = userStore.preferences?.distanceUnit ?? "mi";
   const titleLine = isPhone
@@ -114,10 +104,8 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
         onPress={() => setVisible(true)}
       >
         <PressableFeedback.Highlight />
-        <View className="flex-row items-center gap-3 px-3 py-3">
-          <View className="h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background">
-            <Ionicons name="analytics-outline" size={16} color={BASIC_ICON_COLOR} />
-          </View>
+        <View className="flex-row items-center gap-2.5 px-3 py-3">
+          <Ionicons name="analytics-outline" size={18} color={BASIC_ICON_COLOR} />
 
           <View className="min-w-0 flex-1 gap-1">
             <Typography
@@ -128,42 +116,21 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
             >
               Basic Calculation
             </Typography>
-            <View className="min-w-0 flex-row items-center gap-1.5">
-              <Typography
-                type="body-xs"
-                className="min-w-0 shrink text-[11px] text-muted"
-                numberOfLines={1}
-              >
-                {valuation.compCount} comparable{" "}
-                {valuation.compCount === 1 ? "listing" : "listings"}
-              </Typography>
-              <Chip
-                size="sm"
-                variant="soft"
-                color={
-                  tier === "greatDeal" || tier === "goodValue"
-                    ? "success"
-                    : tier === "fairPrice"
-                      ? "warning"
-                      : "danger"
-                }
-                className="h-5 shrink-0 px-1.5"
-              >
-                <Chip.Label className="text-[10px]">{tierLabel}</Chip.Label>
-              </Chip>
-            </View>
+            <Typography
+              type="body-xs"
+              className="min-w-0 text-[11px] text-muted"
+              numberOfLines={1}
+            >
+              {valuation.compCount} comparable{" "}
+              {valuation.compCount === 1 ? "listing" : "listings"}
+            </Typography>
           </View>
 
-          <View className="shrink-0 items-end gap-0.5">
+          <View className="shrink-0 flex-row items-center gap-0.5">
             <Typography type="body-sm" weight="bold" className="text-[15px] text-foreground">
               {formatPrice(valuation.fairPrice, currencySymbol)}
             </Typography>
-            <View className="flex-row items-center gap-0.5">
-              <Typography type="body-xs" className="text-[10px] text-muted">
-                Fair value
-              </Typography>
-              <Ionicons name="chevron-forward" size={13} color={muted} />
-            </View>
+            <Ionicons name="chevron-forward" size={13} color={muted} />
           </View>
         </View>
       </PressableFeedback>

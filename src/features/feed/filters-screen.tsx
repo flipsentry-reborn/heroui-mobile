@@ -1,18 +1,23 @@
 import { Ionicons } from "@expo/vector-icons";
 import { observer } from "mobx-react-lite";
-import type { ComponentProps, JSX } from "react";
-import { useCallback, useEffect, useState } from "react";
+import type { JSX } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Accordion,
   Alert,
+  BottomSheet,
   Button,
+  Checkbox,
   Chip,
+  ControlField,
+  Label,
   ListGroup,
   Menu,
   Separator,
   SkeletonGroup,
+  Slider,
   Switch,
   Typography,
   useThemeColor,
@@ -22,25 +27,66 @@ import { Badge, EmptyState } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
 import { BrandButton } from "@/components/ui/brand-button";
+import {
+  applyScoreTierSelection,
+  clampMinProfit,
+  MIN_PROFIT_MAX,
+  MIN_PROFIT_MIN,
+  MIN_PROFIT_STEP,
+  type FeedDisplayPrefs,
+  type ScoreTierKey,
+} from "@/domain/feed-display-prefs";
 import { FilterBottomSheet } from "@/features/feed/filter-bottom-sheet";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import { formatOpenRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
+import {
+  SHEET_BACKGROUND_CLASS_NAME,
+  SHEET_CONTENT_CLASS_NAME,
+  SHEET_CONTENT_CONTAINER_CLASS_NAME,
+} from "@/features/home/sheet-chrome";
+import { SheetShell } from "@/features/home/sheet-shell";
 import { formatPriceShort } from "@/mocks/services/home";
 import type { UserFilter } from "@/models/user-filter";
 import { useStore } from "@/store/store";
 
 const StyledIonicons = withUniwind(Ionicons);
-type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
-function filterTypeMeta(filter: UserFilter): {
+const SCORE_TIER_OPTIONS: {
+  key: ScoreTierKey;
   label: string;
-  icon: IoniconName;
-  iconClassName: string;
-} {
-  return filter.filterType === "Vehicle"
-    ? { label: "Vehicle", icon: "car-sport-outline", iconClassName: "text-emerald-500" }
-    : { label: "Custom", icon: "options-outline", iconClassName: "text-orange-500" };
+  swatchClassName: string;
+}[] = [
+  { key: "showGreat", label: "Great", swatchClassName: "bg-violet-600" },
+  { key: "showGood", label: "Good", swatchClassName: "bg-sky-600" },
+  { key: "showFair", label: "Fair", swatchClassName: "bg-amber-500" },
+  { key: "showBad", label: "Bad", swatchClassName: "bg-red-600" },
+];
+
+function toSliderValue(next: number | number[]): number | null {
+  const value = Array.isArray(next) ? next[0] : next;
+  return typeof value === "number" ? value : null;
+}
+
+function formatMinProfitLabel(value: number): string {
+  if (value <= 0) return "Any";
+  return `$${formatPriceShort(value)}+`;
+}
+
+function displayPrefsSummary(prefs: FeedDisplayPrefs): string {
+  const tiers = SCORE_TIER_OPTIONS.filter((option) => prefs[option.key]).map(
+    (option) => option.label,
+  );
+  const scorePart =
+    tiers.length === SCORE_TIER_OPTIONS.length
+      ? "All scores"
+      : tiers.length === 0
+        ? "No valuation only"
+        : tiers.join(", ");
+  return `${formatMinProfitLabel(prefs.minProfit)} · ${scorePart}`;
+}
+function filterTypeLabel(filter: UserFilter): string {
+  return filter.filterType === "Vehicle" ? "Vehicle" : "Custom";
 }
 
 function keywordCount(filter: UserFilter): number {
@@ -93,7 +139,7 @@ function criteriaLabels(filter: UserFilter): string[] {
 
 function collapsedSummary(filter: UserFilter): string {
   const labels = criteriaLabels(filter);
-  return [filterTypeMeta(filter).label, ...labels.slice(0, 2)].join(" · ");
+  return [filterTypeLabel(filter), ...labels.slice(0, 2)].join(" · ");
 }
 
 function FiltersHeader({ onBack }: { onBack: () => void }): JSX.Element {
@@ -180,7 +226,7 @@ function SelectedFiltersSection({
   return (
     <View className="mx-3 mt-5 overflow-hidden rounded-3xl bg-surface px-3 py-3">
       <Typography type="body-xs" className="mb-2.5 text-muted">
-        Feed Filters
+        Selected for feed
       </Typography>
       <View className="flex-row flex-wrap gap-2">
         {filters.map((filter) => (
@@ -212,6 +258,142 @@ function SelectedFiltersSection({
   );
 }
 
+const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element {
+  const insets = useSafeAreaInsets();
+  const { filterStore } = useStore();
+  const prefs = filterStore.displayPrefs;
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [draftProfit, setDraftProfit] = useState(prefs.minProfit);
+
+  useEffect(() => {
+    if (sheetOpen) setDraftProfit(prefs.minProfit);
+  }, [sheetOpen, prefs.minProfit]);
+
+  const summary = useMemo(() => displayPrefsSummary(prefs), [prefs]);
+
+  const setTier = useCallback(
+    (key: ScoreTierKey, selected: boolean) => {
+      filterStore.setDisplayPrefs(applyScoreTierSelection(prefs, key, selected));
+    },
+    [filterStore, prefs],
+  );
+
+  const commitProfit = useCallback(
+    (value: number) => {
+      const next = clampMinProfit(value);
+      setDraftProfit(next);
+      filterStore.setDisplayPrefs({ minProfit: next });
+    },
+    [filterStore],
+  );
+
+  return (
+    <>
+      <View
+        className="border-t border-border bg-background px-3 pt-2"
+        style={{ paddingBottom: Math.max(insets.bottom, 10) }}
+      >
+        <ListGroup className="overflow-hidden rounded-3xl bg-surface">
+          <SearchBottomSheetRow
+            icon="trending-up-outline"
+            iconClassName="text-violet-500"
+            title="Show Only Those Deals"
+            description={summary}
+            onPress={() => setSheetOpen(true)}
+            isLast
+          />
+        </ListGroup>
+      </View>
+
+      <SheetShell visible={sheetOpen} onClose={() => setSheetOpen(false)}>
+        <BottomSheet.Content
+          enableDynamicSizing
+          className={SHEET_CONTENT_CLASS_NAME}
+          backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
+          contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
+        >
+          <View className="gap-4 px-4 pt-1" style={{ paddingBottom: insets.bottom + 20 }}>
+            <View className="flex-row items-center gap-2.5 px-1">
+              <StyledIonicons name="trending-up-outline" size={18} className="text-violet-500" />
+              <BottomSheet.Title className="min-w-0 flex-1 text-left text-xl font-bold">
+                Show Only Those Deals
+              </BottomSheet.Title>
+              <BottomSheet.Close />
+            </View>
+
+            <View className="overflow-hidden rounded-3xl bg-surface px-4 py-4">
+              <View className="mb-3 flex-row items-center justify-between">
+                <Typography type="body-sm" className="text-foreground">
+                  Min profit
+                </Typography>
+                <Typography type="body-sm" className="text-muted">
+                  {formatMinProfitLabel(draftProfit)}
+                </Typography>
+              </View>
+              <Slider
+                value={draftProfit}
+                minValue={MIN_PROFIT_MIN}
+                maxValue={MIN_PROFIT_MAX}
+                step={MIN_PROFIT_STEP}
+                onChange={(next) => {
+                  const value = toSliderValue(next);
+                  if (value != null) setDraftProfit(clampMinProfit(value));
+                }}
+                onChangeEnd={(next) => {
+                  const value = toSliderValue(next);
+                  if (value != null) commitProfit(value);
+                }}
+              >
+                <Slider.Track>
+                  <Slider.Fill />
+                  <Slider.Thumb />
+                </Slider.Track>
+              </Slider>
+              <View className="mt-2 flex-row justify-between">
+                <Typography type="body-xs" className="text-muted">
+                  $0
+                </Typography>
+                <Typography type="body-xs" className="text-muted">
+                  ${formatPriceShort(MIN_PROFIT_MAX)}
+                </Typography>
+              </View>
+            </View>
+
+            <View className="overflow-hidden rounded-3xl bg-surface px-3 py-1">
+              {SCORE_TIER_OPTIONS.map((option, index) => (
+                <View key={option.key}>
+                  {index > 0 ? <Separator className="my-0" /> : null}
+                  <ControlField
+                    isSelected={prefs[option.key]}
+                    onSelectedChange={(selected) => setTier(option.key, selected)}
+                    className="py-3"
+                  >
+                    <View className="min-w-0 flex-1 flex-row items-center gap-2.5">
+                      <View className={`h-2.5 w-2.5 rounded-full ${option.swatchClassName}`} />
+                      <Label className="text-[15px] text-foreground">{option.label}</Label>
+                    </View>
+                    <ControlField.Indicator>
+                      <Checkbox />
+                    </ControlField.Indicator>
+                  </ControlField>
+                </View>
+              ))}
+              <Separator className="my-0" />
+              <ControlField isSelected isDisabled className="py-3">
+                <Label className="min-w-0 flex-1 text-[15px] text-foreground">
+                  No Valuation
+                </Label>
+                <ControlField.Indicator>
+                  <Checkbox isSelected isDisabled />
+                </ControlField.Indicator>
+              </ControlField>
+            </View>
+          </View>
+        </BottomSheet.Content>
+      </SheetShell>
+    </>
+  );
+});
 function FilterAccordionItem({
   filter,
   onEdit,
@@ -227,7 +409,6 @@ function FilterAccordionItem({
   onToggleSelected: (filter: UserFilter, selected: boolean) => void;
   onToggleNotifications: (filter: UserFilter, selected: boolean) => void;
 }): JSX.Element {
-  const meta = filterTypeMeta(filter);
   const criteria = criteriaLabels(filter);
 
   return (
@@ -252,12 +433,9 @@ function FilterAccordionItem({
               </Badge>
             ) : null}
           </View>
-          <View className="flex-row items-center gap-1.5">
-            <StyledIonicons name={meta.icon} size={15} className={meta.iconClassName} />
-            <Typography type="body-xs" className="min-w-0 flex-1 text-muted" numberOfLines={1}>
-              {collapsedSummary(filter)}
-            </Typography>
-          </View>
+          <Typography type="body-xs" className="text-muted" numberOfLines={1}>
+            {collapsedSummary(filter)}
+          </Typography>
         </View>
         <Accordion.Indicator />
         <Pressable
@@ -489,12 +667,14 @@ export const FiltersScreen = observer(function FiltersScreen({
       <FiltersHeader onBack={onBack} />
 
       {initialLoading ? (
-        <FiltersSkeleton />
+        <View className="flex-1">
+          <FiltersSkeleton />
+        </View>
       ) : (
         <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}
-          contentContainerClassName="pb-10 pt-3"
+          contentContainerClassName="pb-6 pt-3"
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
         >
           <View className="mb-3 flex-row items-center justify-between px-3">
@@ -506,7 +686,7 @@ export const FiltersScreen = observer(function FiltersScreen({
                 Tap the checkmark to select a filter.
               </Typography>
             </View>
-            <BrandButton className="h-9 min-h-9 gap-1 !rounded-full px-2.5" onPress={openCreate}>
+            <BrandButton className="h-9 min-h-9 gap-1 !rounded-xl px-2.5" onPress={openCreate}>
               <Ionicons name="add" size={14} color={accentForeground} />
               <BrandButton.Label className="text-[13px] leading-[17px]">
                 New Filter
@@ -575,6 +755,8 @@ export const FiltersScreen = observer(function FiltersScreen({
           />
         </ScrollView>
       )}
+
+      <FeedDisplayPrefsBar />
 
       {sheetMounted ? (
         <FilterBottomSheet

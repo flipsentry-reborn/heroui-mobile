@@ -14,6 +14,13 @@ import {
   prependId,
 } from "@/domain/feed-routing";
 import {
+  DEFAULT_FEED_DISPLAY_PREFS,
+  deriveMinBuySignal,
+  deriveMinProfit,
+  matchesFeedDisplayPrefs,
+  type FeedDisplayPrefs,
+} from "@/domain/feed-display-prefs";
+import {
   DEFAULT_FEED_LAYOUT_MODE,
   FEED_LAYOUT_STORAGE_KEY,
   isFeedLayoutMode,
@@ -335,8 +342,34 @@ export default class FeedStore {
     return selected.length > 0 ? selected : undefined;
   }
 
+  private displayPrefs(): FeedDisplayPrefs {
+    return this.filterStore?.displayPrefs ?? DEFAULT_FEED_DISPLAY_PREFS;
+  }
+
+  private listQueryExtras(): {
+    minBuySignal?: number;
+    minProfit?: number;
+    displayPrefs: FeedDisplayPrefs;
+  } {
+    const prefs = this.displayPrefs();
+    return {
+      minBuySignal: deriveMinBuySignal(prefs),
+      minProfit: deriveMinProfit(prefs),
+      displayPrefs: prefs,
+    };
+  }
+
   /** After selected filters change — dirty + reload For You buckets (not saved). */
   onSelectedFiltersChanged(): void {
+    this.markNonSavedBucketsDirtyAndReload();
+  }
+
+  /** After local score/profit display prefs change — refresh loaded buckets. */
+  onDisplayPrefsChanged(): void {
+    this.markNonSavedBucketsDirtyAndReload();
+  }
+
+  private markNonSavedBucketsDirtyAndReload(): void {
     const keys = new Set<string>([
       ...Object.keys(this.lists),
       ...Object.keys(this.shelves),
@@ -549,6 +582,7 @@ export default class FeedStore {
         pageSize,
         soldStatus: opts.soldStatus,
         maxDays: opts.maxDays,
+        ...this.listQueryExtras(),
       });
       const items = result.data ?? [];
 
@@ -638,6 +672,7 @@ export default class FeedStore {
         pageSize,
         soldStatus: opts.soldStatus,
         maxDays: opts.maxDays,
+        ...this.listQueryExtras(),
       });
       const items = result.data ?? [];
 
@@ -731,6 +766,7 @@ export default class FeedStore {
         filterIds,
         pageSize,
         ...(bucket === "sold" ? { maxDays: 1 } : {}),
+        ...this.listQueryExtras(),
       });
       const items = result.data ?? [];
 
@@ -848,6 +884,13 @@ export default class FeedStore {
       const resolved = this.items.get(feed.id) ?? feed;
       const filterTabs = this.searchStore?.filterTabs ?? [];
       const selectedFilterIds = this.filterStore?.selectedFilterIds ?? [];
+      if (!matchesFeedDisplayPrefs(resolved, this.displayPrefs())) {
+        debugLog.info(FEED_LIVE_LOG, "applyLiveFeed skipped (display prefs)", {
+          id: resolved.id,
+          t: Date.now(),
+        });
+        return;
+      }
       const buckets = bucketsForLiveFeed(
         resolved,
         tabs,

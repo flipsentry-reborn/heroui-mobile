@@ -1,6 +1,14 @@
 import { makeAutoObservable, runInAction } from "mobx";
 
 import agent from "@/api/agent";
+import {
+  areFeedDisplayPrefsEqual,
+  DEFAULT_FEED_DISPLAY_PREFS,
+  FEED_DISPLAY_PREFS_STORAGE_KEY,
+  parseFeedDisplayPrefs,
+  type FeedDisplayPrefs,
+} from "@/domain/feed-display-prefs";
+import { readJson, writeJson } from "@/lib/storage";
 import { toUserErrorMessage } from "@/lib/user-error-message";
 import type {
   CreateUserFilterInput,
@@ -32,6 +40,9 @@ export default class FilterStore {
   submitting = false;
   hasLoaded = false;
   lastError: string | null = null;
+  /** Local-only feed score/profit prefs (device storage until backend owns them). */
+  displayPrefs: FeedDisplayPrefs = { ...DEFAULT_FEED_DISPLAY_PREFS };
+  displayPrefsHydrated = false;
   private searchStore: SearchStore | null = null;
   private feedStore: FeedStore | null = null;
 
@@ -57,6 +68,34 @@ export default class FilterStore {
 
   get selectedFilterIds(): string[] {
     return this.selectedFilters.map((f) => f.id);
+  }
+
+  async loadDisplayPrefs(): Promise<void> {
+    try {
+      const saved = await readJson<unknown>(FEED_DISPLAY_PREFS_STORAGE_KEY);
+      const parsed = parseFeedDisplayPrefs(saved);
+      if (parsed != null) {
+        runInAction(() => {
+          this.displayPrefs = parsed;
+        });
+      }
+    } finally {
+      runInAction(() => {
+        this.displayPrefsHydrated = true;
+      });
+    }
+  }
+
+  setDisplayPrefs(patch: Partial<Omit<FeedDisplayPrefs, "showNoValuation">>): void {
+    const next: FeedDisplayPrefs = {
+      ...this.displayPrefs,
+      ...patch,
+      showNoValuation: true,
+    };
+    if (areFeedDisplayPrefsEqual(this.displayPrefs, next)) return;
+    this.displayPrefs = next;
+    void writeJson(FEED_DISPLAY_PREFS_STORAGE_KEY, next);
+    this.feedStore?.onDisplayPrefsChanged();
   }
 
   async loadFilters(force = false): Promise<void> {

@@ -9,6 +9,10 @@ import {
   buildLiveFeedParams,
 } from "@/api/feed-query";
 import {
+  DEFAULT_FEED_DISPLAY_PREFS,
+  matchesFeedDisplayPrefs,
+} from "@/domain/feed-display-prefs";
+import {
   startFeedHub,
   stopFeedHub,
   type FeedHubHandlers,
@@ -177,11 +181,12 @@ const liveFeedApi = {
   list: async (params?: GetFeedParams): Promise<PaginatedResult<FeedItem[]>> => {
     const category = params?.category ?? "all";
     const result = await liveFeed.list(buildLiveFeedParams(params ?? {}));
+    const prefs = params?.displayPrefs ?? DEFAULT_FEED_DISPLAY_PREFS;
     const items = applyClientCategoryFilter(
       result.data ?? [],
       category,
       params?.groupIds,
-    );
+    ).filter((item) => matchesFeedDisplayPrefs(item, prefs));
     return {
       data: items,
       pagination: result.pagination,

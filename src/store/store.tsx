@@ -120,6 +120,7 @@ async function hydrate(): Promise<void> {
     stores.userStore.bootstrap(),
     stores.feedStore.loadLayoutMode(),
     stores.feedStore.loadYourSearchesExpanded(),
+    stores.filterStore.loadDisplayPrefs(),
   ]);
   await ensureRealtimeSession();
 }

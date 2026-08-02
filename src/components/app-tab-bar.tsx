@@ -17,8 +17,9 @@ type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
 const StyledAnimatedView = withUniwind(Animated.View);
 
-const TAB_ROW_MIN_HEIGHT = 52;
-const HIDE_EXTRA_OFFSET = 18;
+const TAB_ROW_MIN_HEIGHT = 44;
+const HIDE_EXTRA_OFFSET = 15;
+const TAB_ICON_SIZE = 20;
 
 const TAB_ICONS: Record<string, { outline: IoniconName; filled: IoniconName }> = {
   home: { outline: "home-outline", filled: "home" },
@@ -51,7 +52,7 @@ export const AppTabBar = observer(function AppTabBar({
   navigation,
 }: BottomTabBarProps): JSX.Element {
   const insets = useSafeAreaInsets();
-  const bottomPad = Math.max(insets.bottom, 10);
+  const bottomPad = Math.max(insets.bottom, 8);
   const { feedStore, searchStore } = useStore();
   const {
     registerTabBarHandlers,
@@ -144,7 +145,7 @@ export const AppTabBar = observer(function AppTabBar({
         </View>
       ) : null}
       <View
-        className="min-h-[52px] flex-row items-center pt-2"
+        className="min-h-[44px] flex-row items-center pt-1"
         style={{ paddingBottom: bottomPad }}
       >
         {state.routes.map((route, index) => {
@@ -191,27 +192,27 @@ export const AppTabBar = observer(function AppTabBar({
                     : (options.tabBarAccessibilityLabel ?? label)
               }
               onPress={onPress}
-              className="flex-1 items-center justify-center py-1.5"
+              className="flex-1 items-center justify-center py-1"
               animation={{ scale: { value: 0.94 } }}
             >
               <View className="relative">
                 <Ionicons
                   name={focused ? icons.filled : icons.outline}
-                  size={24}
+                  size={TAB_ICON_SIZE}
                   color={color}
                 />
                 {route.name === "feed" && showNewItems ? (
                   <View
                     accessibilityElementsHidden
                     importantForAccessibility="no"
-                    className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full border-[1.5px] border-background bg-[#34C759]"
+                    className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border border-background bg-[#34C759]"
                   />
                 ) : null}
                 {route.name === "home" && showNoActiveSearches ? (
                   <View
                     accessibilityElementsHidden
                     importantForAccessibility="no"
-                    className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full border-[1.5px] border-background"
+                    className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border border-background"
                     style={{ backgroundColor: dangerColor }}
                   />
                 ) : null}
@@ -219,7 +220,7 @@ export const AppTabBar = observer(function AppTabBar({
               <Typography
                 type="body-xs"
                 weight={focused ? "semibold" : "medium"}
-                className="mt-0.5"
+                className="mt-0"
                 style={{ color }}
               >
                 {label}

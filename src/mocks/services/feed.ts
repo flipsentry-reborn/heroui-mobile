@@ -1,6 +1,11 @@
 import type { FeedItem } from "@/models/feed";
 import type { Pagination } from "@/models/pagination";
 import { isCarListing, resolveDisplayValuation } from "@/models/feed";
+import {
+  DEFAULT_FEED_DISPLAY_PREFS,
+  matchesFeedDisplayPrefs,
+  type FeedDisplayPrefs,
+} from "@/domain/feed-display-prefs";
 import { MOCK_FEED_ITEMS } from "@/mocks/data/feed";
 import { getLocalCompsForFeed } from "@/mocks/data/local-comps";
 import { mockDelay } from "@/mocks/delay";
@@ -33,6 +38,12 @@ export type GetFeedParams = {
   soldStatus?: SoldStatusFilter;
   /** Sold page: only listings sold/pending within this many days. */
   maxDays?: number | null;
+  /** GetAll minBuySignal — floor for valued listings; unvalued always pass. */
+  minBuySignal?: number;
+  /** GetAll minProfit — floor for valued listings; unvalued always pass. */
+  minProfit?: number;
+  /** Local display prefs — exact tier/profit client gate (No Valuation always). */
+  displayPrefs?: FeedDisplayPrefs;
 };
 
 function matchesSoldStatus(
@@ -177,6 +188,14 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
       if (!matchesSoldStatus(item, soldStatus)) return false;
       if (!matchesMaxDays(item, maxDays)) return false;
     }
+    if (
+      !matchesFeedDisplayPrefs(
+        item,
+        params.displayPrefs ?? DEFAULT_FEED_DISPLAY_PREFS,
+      )
+    ) {
+      return false;
+    }
     if (!query) return true;
     return (
       item.title.toLowerCase().includes(query) ||
@@ -227,6 +246,14 @@ export async function getFeedPage(
     if (category === "sold") {
       if (!matchesSoldStatus(item, soldStatus)) return false;
       if (!matchesMaxDays(item, maxDays)) return false;
+    }
+    if (
+      !matchesFeedDisplayPrefs(
+        item,
+        params.displayPrefs ?? DEFAULT_FEED_DISPLAY_PREFS,
+      )
+    ) {
+      return false;
     }
     if (!query) return true;
     return (

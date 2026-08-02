@@ -19,7 +19,6 @@ import Animated, { LinearTransition } from "react-native-reanimated";
 import {
   Accordion,
   AccordionLayoutTransition,
-  Chip,
   PressableFeedback,
   SkeletonGroup,
   Surface,
@@ -65,6 +64,8 @@ function selectedFiltersLabel(count: number): string {
     : `${count} Filters Are Selected`;
 }
 
+const SELECTED_FILTER_DOT_VISIBLE = 5;
+
 function SelectedFiltersBanner({
   filters,
   onPress,
@@ -72,47 +73,51 @@ function SelectedFiltersBanner({
   filters: UserFilter[];
   onPress: () => void;
 }): JSX.Element {
+  const visible = filters.slice(0, SELECTED_FILTER_DOT_VISIBLE);
+  const overflow = filters.length - visible.length;
+
   return (
     <PressableFeedback
       onPress={onPress}
-      className="mx-3 mb-2.5 overflow-hidden rounded-2xl border border-border bg-surface-secondary"
+      className="mx-3 mt-3 mb-1 overflow-hidden rounded-2xl border border-border bg-surface-secondary"
       animation={{ scale: { value: 0.99 } }}
       accessibilityRole="button"
       accessibilityLabel={`${selectedFiltersLabel(filters.length)}. Tap to manage filters.`}
     >
-      <View className="gap-2 px-3 py-2.5">
-        <View className="flex-row items-center gap-2">
-          <StyledIonicons
-            name="funnel-outline"
-            size={16}
-            className="text-accent"
-          />
-          <Typography
-            type="body"
-            weight="semibold"
-            className="flex-1 text-[14px] text-foreground"
-          >
-            {selectedFiltersLabel(filters.length)}
-          </Typography>
-          <StyledIonicons
-            name="chevron-forward"
-            size={16}
-            className="text-muted"
-          />
-        </View>
-        <View className="flex-row flex-wrap gap-1.5">
-          {filters.map((filter) => (
-            <Chip key={filter.id} size="sm" variant="secondary">
-              <View
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: filter.color }}
-              />
-              <Chip.Label className="text-[11px] text-foreground">
-                {filter.name}
-              </Chip.Label>
-            </Chip>
+      <View className="flex-row items-center gap-2.5 px-3 py-2.5">
+        <View className="flex-row items-center">
+          {visible.map((filter, index) => (
+            <View
+              key={filter.id}
+              className={`h-5 w-5 rounded-full border-2 border-border ${
+                index === 0 ? "" : "-ml-2.5"
+              }`}
+              style={{
+                backgroundColor: filter.color,
+                zIndex: visible.length - index,
+              }}
+            />
           ))}
+          {overflow > 0 ? (
+            <View className="z-0 -ml-2.5 h-5 min-w-5 items-center justify-center rounded-full border-2 border-border bg-default px-1">
+              <Typography className="text-[9px] leading-none text-muted">
+                +{overflow}
+              </Typography>
+            </View>
+          ) : null}
         </View>
+        <Typography
+          type="body"
+          weight="semibold"
+          className="flex-1 text-[14px] text-foreground"
+        >
+          {selectedFiltersLabel(filters.length)}
+        </Typography>
+        <StyledIonicons
+          name="chevron-forward"
+          size={16}
+          className="text-muted"
+        />
       </View>
     </PressableFeedback>
   );

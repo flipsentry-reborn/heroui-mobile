@@ -12,6 +12,7 @@ import {
   Menu,
   Separator,
   SkeletonGroup,
+  Surface,
   Switch,
   Typography,
   useThemeColor,
@@ -20,7 +21,9 @@ import {
 import { EmptyState } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
+import { BrandButton } from "@/components/ui/brand-button";
 import { FilterBottomSheet } from "@/features/feed/filter-bottom-sheet";
+import { showFilterToast } from "@/features/feed/filter-toast";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import { formatOpenRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
 import { formatPriceShort } from "@/mocks/services/home";
@@ -175,13 +178,15 @@ function FilterActionsMenu({
   onEdit: (filter: UserFilter) => void;
   onDelete: (filter: UserFilter) => void;
 }): JSX.Element {
+  const [accentForeground] = useThemeColor(["accent-foreground"]);
+
   return (
     <Menu>
       <Menu.Trigger asChild>
-        <Button variant="secondary" className="mt-1 min-h-11 w-full" isDisabled={disabled}>
-          <StyledIonicons name="ellipsis-horizontal" size={18} className="text-foreground" />
-          <Button.Label>Actions</Button.Label>
-        </Button>
+        <BrandButton className="mt-1 min-h-12 w-full" isDisabled={disabled}>
+          <Ionicons name="create" size={18} color={accentForeground} />
+          <BrandButton.Label>Actions</BrandButton.Label>
+        </BrandButton>
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Overlay className="bg-backdrop" />
@@ -189,16 +194,72 @@ function FilterActionsMenu({
           <Menu.Group>
             <Menu.Item id="edit" onPress={() => onEdit(filter)}>
               <StyledIonicons name="create-outline" size={18} className="text-foreground" />
-              <Menu.ItemTitle>Edit filter</Menu.ItemTitle>
+              <Menu.ItemTitle>Edit</Menu.ItemTitle>
             </Menu.Item>
             <Menu.Item id="delete" variant="danger" onPress={() => onDelete(filter)}>
               <StyledIonicons name="trash-outline" size={18} className="text-danger" />
-              <Menu.ItemTitle>Delete filter</Menu.ItemTitle>
+              <Menu.ItemTitle>Delete</Menu.ItemTitle>
             </Menu.Item>
           </Menu.Group>
         </Menu.Content>
       </Menu.Portal>
     </Menu>
+  );
+}
+
+function SelectedFiltersSection({
+  filters,
+  busy,
+  onDeselect,
+}: {
+  filters: UserFilter[];
+  busy: boolean;
+  onDeselect: (filter: UserFilter) => void;
+}): JSX.Element | null {
+  if (filters.length === 0) return null;
+
+  return (
+    <View className="mt-5 px-3">
+      <Surface className="gap-3 rounded-2xl p-3">
+        <Typography className="text-[15px] font-semibold text-foreground">
+          Selected Filters
+        </Typography>
+        <View className="flex-row flex-wrap gap-2">
+          {filters.map((filter) => (
+            <View
+              key={filter.id}
+              className="flex-row items-center gap-2 rounded-full border border-border bg-surface-secondary px-2.5 py-1.5"
+            >
+              <View
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: filter.color }}
+              />
+              <Typography
+                type="body-xs"
+                className="max-w-[140px] text-foreground"
+                numberOfLines={1}
+              >
+                {filter.name}
+              </Typography>
+              <Pressable
+                onPress={() => onDeselect(filter)}
+                disabled={busy}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={`Deselect ${filter.name}`}
+                className="h-5 w-5 items-center justify-center"
+              >
+                <StyledIonicons
+                  name="close"
+                  size={14}
+                  className={busy ? "text-muted opacity-50" : "text-muted"}
+                />
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      </Surface>
+    </View>
   );
 }
 
@@ -224,40 +285,42 @@ function FilterAccordionItem({
 
   return (
     <Accordion.Item value={filter.id}>
-      <View className="relative">
-        <Accordion.Trigger className="gap-3 px-3 py-3 pr-14">
-          <View className="h-9 w-1.5 rounded-full" style={{ backgroundColor: filter.color }} />
-          <View className="min-w-0 flex-1 gap-1">
-            <View className="flex-row items-center gap-2">
-              <Typography
-                className="min-w-0 flex-1 text-[15px] font-medium text-foreground"
-                numberOfLines={1}
-              >
-                {filter.name}
-              </Typography>
-              {!filter.isActive ? (
-                <Chip size="sm" variant="secondary">
-                  <Chip.Label className="text-xs text-muted">Paused</Chip.Label>
-                </Chip>
-              ) : null}
-            </View>
-            <View className="flex-row items-center gap-1.5">
-              <StyledIonicons name={meta.icon} size={15} className="text-muted" />
-              <Typography type="body-xs" className="min-w-0 flex-1 text-muted" numberOfLines={1}>
-                {collapsedSummary(filter)}
-              </Typography>
-            </View>
+      <Accordion.Trigger className="gap-3 px-3 py-3">
+        <View
+          className="h-9 w-1.5 shrink-0 rounded-full"
+          style={{ backgroundColor: filter.color }}
+        />
+        <View className="min-w-0 flex-1 gap-1">
+          <View className="flex-row items-center gap-2">
+            <Typography
+              type="body"
+              className="min-w-0 flex-1 text-[15px] font-medium text-foreground"
+              numberOfLines={1}
+            >
+              {filter.name}
+            </Typography>
+            {!filter.isActive ? (
+              <Chip size="sm" variant="secondary">
+                <Chip.Label className="text-xs text-muted">Paused</Chip.Label>
+              </Chip>
+            ) : null}
           </View>
-          <Accordion.Indicator />
-        </Accordion.Trigger>
+          <View className="flex-row items-center gap-1.5">
+            <StyledIonicons name={meta.icon} size={15} className="text-muted" />
+            <Typography type="body-xs" className="min-w-0 flex-1 text-muted" numberOfLines={1}>
+              {collapsedSummary(filter)}
+            </Typography>
+          </View>
+        </View>
+        <Accordion.Indicator />
         <Pressable
           onPress={() => onToggleSelected(filter, !filter.isSelected)}
           disabled={busy}
-          hitSlop={6}
+          hitSlop={8}
           accessibilityRole="checkbox"
           accessibilityLabel={`Select ${filter.name}`}
           accessibilityState={{ checked: filter.isSelected, disabled: busy }}
-          className="absolute right-1 top-2 h-11 w-11 items-center justify-center"
+          className="h-10 w-10 shrink-0 items-center justify-center"
         >
           <StyledIonicons
             name={filter.isSelected ? "checkmark-circle" : "checkmark-circle-outline"}
@@ -265,7 +328,7 @@ function FilterAccordionItem({
             className={filter.isSelected ? "text-success" : "text-muted opacity-55"}
           />
         </Pressable>
-      </View>
+      </Accordion.Trigger>
 
       <Accordion.Content className="px-3 pb-3 pt-0">
         {criteria.length > 0 ? (
@@ -354,6 +417,7 @@ export const FiltersScreen = observer(function FiltersScreen({
 }): JSX.Element {
   const { filterStore } = useStore();
   const { toast } = useToast();
+  const [accentForeground] = useThemeColor(["accent-foreground"]);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<UserFilter | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -384,46 +448,60 @@ export const FiltersScreen = observer(function FiltersScreen({
   }, [filterStore]);
 
   const handleToggleActive = useCallback(
-    (filter: UserFilter, active: boolean) => {
-      showSearchActionProgress(toast, {
-        kind: active ? "start" : "pause",
-        subject: "filter",
+    async (filter: UserFilter, active: boolean) => {
+      const updated = await filterStore.updateFilter(filter.id, {
+        isActive: active,
+      });
+      if (updated == null) {
+        showFilterToast(toast, {
+          kind: "error",
+          errorLabel: filterStore.lastError ?? undefined,
+        });
+        return;
+      }
+      showFilterToast(toast, {
+        kind: active ? "enabled" : "disabled",
         title: filter.name,
-        onCommit: async () =>
-          (await filterStore.updateFilter(filter.id, { isActive: active })) != null,
-        getErrorMessage: () => filterStore.lastError,
       });
     },
     [filterStore, toast]
   );
 
   const handleToggleSelected = useCallback(
-    (filter: UserFilter, selected: boolean) => {
-      showSearchActionProgress(toast, {
-        kind: "update",
-        subject: "filter",
-        title: `${filter.name}: Selection`,
-        onCommit: async () =>
-          (await filterStore.updateFilter(filter.id, {
-            isSelected: selected,
-          })) != null,
-        getErrorMessage: () => filterStore.lastError,
+    async (filter: UserFilter, selected: boolean) => {
+      const updated = await filterStore.updateFilter(filter.id, {
+        isSelected: selected,
+      });
+      if (updated == null) {
+        showFilterToast(toast, {
+          kind: "error",
+          errorLabel: filterStore.lastError ?? undefined,
+        });
+        return;
+      }
+      showFilterToast(toast, {
+        kind: selected ? "selected" : "deselected",
+        title: filter.name,
       });
     },
     [filterStore, toast]
   );
 
   const handleToggleNotifications = useCallback(
-    (filter: UserFilter, enabled: boolean) => {
-      showSearchActionProgress(toast, {
-        kind: "update",
-        subject: "filter",
-        title: `${filter.name}: Notifications`,
-        onCommit: async () =>
-          (await filterStore.updateFilter(filter.id, {
-            notificationEnabled: enabled,
-          })) != null,
-        getErrorMessage: () => filterStore.lastError,
+    async (filter: UserFilter, enabled: boolean) => {
+      const updated = await filterStore.updateFilter(filter.id, {
+        notificationEnabled: enabled,
+      });
+      if (updated == null) {
+        showFilterToast(toast, {
+          kind: "error",
+          errorLabel: filterStore.lastError ?? undefined,
+        });
+        return;
+      }
+      showFilterToast(toast, {
+        kind: enabled ? "notificationsOn" : "notificationsOff",
+        title: filter.name,
       });
     },
     [filterStore, toast]
@@ -444,6 +522,7 @@ export const FiltersScreen = observer(function FiltersScreen({
 
   const initialLoading = !filterStore.hasLoaded && filterStore.loading;
   const hasFilters = filterStore.filters.length > 0;
+  const selectedFilters = filterStore.selectedFilters;
 
   return (
     <View className="flex-1 bg-background">
@@ -467,10 +546,12 @@ export const FiltersScreen = observer(function FiltersScreen({
                 Tap the checkmark to select a filter.
               </Typography>
             </View>
-            <Button size="sm" variant="secondary" className="min-h-9" onPress={openCreate}>
-              <StyledIonicons name="add" size={16} className="text-foreground" />
-              <Button.Label>New filter</Button.Label>
-            </Button>
+            <BrandButton className="h-9 min-h-9 gap-1 !rounded-full px-2.5" onPress={openCreate}>
+              <Ionicons name="add" size={14} color={accentForeground} />
+              <BrandButton.Label className="text-[13px] leading-[17px]">
+                New Filter
+              </BrandButton.Label>
+            </BrandButton>
           </View>
 
           {filterStore.lastError != null ? (
@@ -489,7 +570,7 @@ export const FiltersScreen = observer(function FiltersScreen({
               selectionMode="single"
               isCollapsible
               variant="surface"
-              className="mx-3 gap-2"
+              className="mx-3 w-auto gap-2"
             >
               {filterStore.filters.map((filter) => (
                 <FilterAccordionItem
@@ -498,9 +579,15 @@ export const FiltersScreen = observer(function FiltersScreen({
                   busy={filterStore.submitting}
                   onEdit={openEdit}
                   onDelete={handleDelete}
-                  onToggleActive={handleToggleActive}
-                  onToggleSelected={handleToggleSelected}
-                  onToggleNotifications={handleToggleNotifications}
+                  onToggleActive={(nextFilter, active) => {
+                    void handleToggleActive(nextFilter, active);
+                  }}
+                  onToggleSelected={(nextFilter, selected) => {
+                    void handleToggleSelected(nextFilter, selected);
+                  }}
+                  onToggleNotifications={(nextFilter, enabled) => {
+                    void handleToggleNotifications(nextFilter, enabled);
+                  }}
                 />
               ))}
             </Accordion>
@@ -518,14 +605,22 @@ export const FiltersScreen = observer(function FiltersScreen({
                   </EmptyState.Description>
                 </EmptyState.Header>
                 <EmptyState.Content>
-                  <Button variant="secondary" className="min-h-11" onPress={openCreate}>
-                    <StyledIonicons name="add" size={18} className="text-foreground" />
-                    <Button.Label>Create filter</Button.Label>
-                  </Button>
+                  <BrandButton className="min-h-11 px-5" onPress={openCreate}>
+                    <Ionicons name="add" size={18} color={accentForeground} />
+                    <BrandButton.Label>Create filter</BrandButton.Label>
+                  </BrandButton>
                 </EmptyState.Content>
               </EmptyState>
             </View>
           ) : null}
+
+          <SelectedFiltersSection
+            filters={selectedFilters}
+            busy={filterStore.submitting}
+            onDeselect={(filter) => {
+              void handleToggleSelected(filter, false);
+            }}
+          />
         </ScrollView>
       )}
 

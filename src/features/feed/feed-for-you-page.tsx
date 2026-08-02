@@ -57,20 +57,22 @@ const FOR_YOU_ACCORDION_LAYOUT = LinearTransition.springify()
 const FOR_YOU_INSET_SHELF_CLASS =
   "w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl bg-surface-inset px-0 py-2";
 
-function enabledFiltersLabel(count: number): string {
-  return count === 1 ? "1 Filter Enabled" : `${count} Filters Enabled`;
+function selectedFiltersLabel(count: number): string {
+  return count === 1
+    ? "1 Filter Is Selected"
+    : `${count} Filters Are Selected`;
 }
 
-const ENABLED_FILTER_DOT_VISIBLE = 5;
+const SELECTED_FILTER_DOT_VISIBLE = 5;
 
-function EnabledFiltersBanner({
+function SelectedFiltersBanner({
   filters,
   onPress,
 }: {
   filters: UserFilter[];
   onPress: () => void;
 }): JSX.Element {
-  const visible = filters.slice(0, ENABLED_FILTER_DOT_VISIBLE);
+  const visible = filters.slice(0, SELECTED_FILTER_DOT_VISIBLE);
   const overflow = filters.length - visible.length;
 
   return (
@@ -79,7 +81,7 @@ function EnabledFiltersBanner({
       className="mx-3 mt-3 mb-1 overflow-hidden rounded-2xl border border-border bg-surface-secondary"
       animation={{ scale: { value: 0.99 } }}
       accessibilityRole="button"
-      accessibilityLabel={`${enabledFiltersLabel(filters.length)}. Tap to manage filters.`}
+      accessibilityLabel={`${selectedFiltersLabel(filters.length)}. Tap to manage filters.`}
     >
       <View className="flex-row items-center gap-2.5 px-3 py-2.5">
         <View className="flex-row items-center">
@@ -108,7 +110,7 @@ function EnabledFiltersBanner({
           weight="semibold"
           className="flex-1 text-[14px] text-foreground"
         >
-          {enabledFiltersLabel(filters.length)}
+          {selectedFiltersLabel(filters.length)}
         </Typography>
         <StyledIonicons
           name="chevron-forward"
@@ -313,7 +315,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
   const forYouShelves = searchStore.forYouShelves;
   const yourSearchChildren = searchStore.yourSearchChildren;
   const yourFilterChildren = searchStore.yourFilterChildren;
-  const enabledFilters = filterStore.activeFilters;
+  const selectedFilters = filterStore.activeFilters;
   const yourSearchesExpanded = feedStore.yourSearchesExpanded;
   const feedCategoryKeys = useMemo(
     () => new Set(searchStore.feedCategories.map((c) => c.key)),
@@ -728,9 +730,9 @@ export const FeedForYouPage = observer(function FeedForYouPage({
           />
         }
       >
-        {enabledFilters.length > 0 ? (
-          <EnabledFiltersBanner
-            filters={enabledFilters}
+        {selectedFilters.length > 0 ? (
+          <SelectedFiltersBanner
+            filters={selectedFilters}
             onPress={() => router.push("/filters")}
           />
         ) : null}

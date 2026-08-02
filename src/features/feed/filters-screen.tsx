@@ -214,19 +214,19 @@ function FilterActionsMenu({
   );
 }
 
-function EnabledFiltersSection({
+function SelectedFiltersSection({
   filters,
-  onDisable,
+  onDeselect,
 }: {
   filters: UserFilter[];
-  onDisable: (filter: UserFilter) => void;
+  onDeselect: (filter: UserFilter) => void;
 }): JSX.Element | null {
   if (filters.length === 0) return null;
 
   return (
     <View className="mx-3 mt-5 overflow-hidden rounded-3xl bg-surface px-3 py-3">
       <Typography type="body-xs" className="mb-2.5 text-muted">
-        Enabled for feed
+        Selected for feed
       </Typography>
       <View className="flex-row flex-wrap gap-2">
         {filters.map((filter) => (
@@ -243,10 +243,10 @@ function EnabledFiltersSection({
               {filter.name}
             </Typography>
             <Pressable
-              onPress={() => onDisable(filter)}
+              onPress={() => onDeselect(filter)}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel={`Disable ${filter.name}`}
+              accessibilityLabel={`Deselect ${filter.name}`}
               className="h-5 w-5 items-center justify-center"
             >
               <StyledIonicons name="close" size={14} className="text-muted" />
@@ -438,6 +438,20 @@ function FilterAccordionItem({
           </Typography>
         </View>
         <Accordion.Indicator />
+        <Pressable
+          onPress={() => onToggleActive(filter, !filter.isActive)}
+          hitSlop={8}
+          accessibilityRole="checkbox"
+          accessibilityLabel={`Select ${filter.name}`}
+          accessibilityState={{ checked: filter.isActive }}
+          className="h-10 w-10 shrink-0 items-center justify-center"
+        >
+          <StyledIonicons
+            name={filter.isActive ? "checkmark-circle" : "checkmark-circle-outline"}
+            size={24}
+            className={filter.isActive ? "text-success" : "text-muted opacity-55"}
+          />
+        </Pressable>
       </Accordion.Trigger>
 
       <Accordion.Content className="gap-2 px-3 pb-3 pt-0">
@@ -456,21 +470,6 @@ function FilterAccordionItem({
         )}
 
         <ListGroup>
-          <SearchBottomSheetRow
-            icon="power"
-            iconClassName={filter.isActive ? "text-emerald-500" : "text-muted"}
-            title="Enabled"
-            description="Match this filter against new listings."
-            showChevron={false}
-            isLast={false}
-            right={
-              <Switch
-                isSelected={filter.isActive}
-                onSelectedChange={(selected) => onToggleActive(filter, selected)}
-                accessibilityLabel="Enabled"
-              />
-            }
-          />
           <SearchBottomSheetRow
             icon="notifications"
             iconClassName={filter.notificationEnabled ? "text-violet-500" : "text-muted"}
@@ -584,7 +583,7 @@ export const FiltersScreen = observer(function FiltersScreen({
   const handleToggleActive = useCallback(
     (filter: UserFilter, active: boolean) => {
       showSearchActionProgress(toast, {
-        kind: active ? "enable" : "disable",
+        kind: active ? "select" : "deselect",
         subject: "filter",
         title: filter.name,
         onCommit: async () => {
@@ -653,7 +652,7 @@ export const FiltersScreen = observer(function FiltersScreen({
                 Feed Filters
               </Typography>
               <Typography type="body-xs" className="mt-0.5 text-muted">
-                Enable filters to match listings and scope your feed.
+                Tap the checkmark to select a filter.
               </Typography>
             </View>
             <BrandButton className="h-9 min-h-9 gap-1 !rounded-xl px-2.5" onPress={openCreate}>
@@ -714,9 +713,9 @@ export const FiltersScreen = observer(function FiltersScreen({
             </View>
           ) : null}
 
-          <EnabledFiltersSection
+          <SelectedFiltersSection
             filters={activeFilters}
-            onDisable={(filter) => {
+            onDeselect={(filter) => {
               handleToggleActive(filter, false);
             }}
           />

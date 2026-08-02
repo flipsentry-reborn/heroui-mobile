@@ -13,6 +13,8 @@ export type SearchActionKind =
   | "start"
   | "create"
   | "update"
+  | "select"
+  | "deselect"
   | "enable"
   | "disable"
   | "notificationsOn"
@@ -103,6 +105,24 @@ function actionCopy(kind: SearchActionKind, subject: ActionSubject): ActionCopy 
         color: "accent",
         toastVariant: "success",
         icon: "create-outline",
+      };
+    case "select":
+      return {
+        running: `Activating ${noun}…`,
+        done: `${Noun} activated`,
+        failed: "Activation failed",
+        color: "success",
+        toastVariant: "success",
+        icon: "checkmark-circle",
+      };
+    case "deselect":
+      return {
+        running: `Deactivating ${noun}…`,
+        done: `${Noun} deactivated`,
+        failed: "Deactivation failed",
+        color: "accent",
+        toastVariant: "accent",
+        icon: "checkmark-circle-outline",
       };
     case "enable":
       return {

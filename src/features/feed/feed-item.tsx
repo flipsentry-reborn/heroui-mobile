@@ -49,9 +49,9 @@ const FEED_OPEN_LOG = "FeedOpen";
  */
 const IMAGE_H_GRID = 168;
 const IMAGE_H_LIST = 212;
-/** Wider rail cards for For You shelves (not square). ~15% under prior size. */
-const IMAGE_H_RAIL = 121;
-const RAIL_WIDTH = 170;
+/** Wider rail cards for For You shelves (not square). */
+const IMAGE_H_RAIL = 133;
+const RAIL_WIDTH = 187;
 /** Featured shelves (e.g. Top Rated) render ~7% larger. */
 const FEATURED_SCALE = 1.07;
 
@@ -223,7 +223,7 @@ function FeedItemInner({
         className={`${isRail ? "" : "flex-1 "}gap-0 overflow-visible rounded-none border-0 bg-transparent p-0`}
       >
         <View
-          className={`relative overflow-hidden ${isRail ? "rounded-2xl" : "rounded-lg"}`}
+          className="relative overflow-hidden rounded-lg"
         >
           <Image
             source={imageUrl ? { uri: imageUrl } : null}

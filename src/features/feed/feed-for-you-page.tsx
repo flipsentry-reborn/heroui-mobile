@@ -158,14 +158,14 @@ type ForYouRow =
       pending: boolean;
     };
 
-/** Matches FeedItem rail footprint (170×121 image + text). */
+/** Matches FeedItem rail footprint (187×133 image + text). */
 function ShelfCardSkeletonRail({
   featured = false,
 }: {
   featured?: boolean;
 }): JSX.Element {
-  const cardW = featured ? 182 : 170;
-  const imageH = featured ? 129 : 121;
+  const cardW = featured ? 200 : 187;
+  const imageH = featured ? 142 : 133;
   const rowH = featured
     ? FEED_RAIL_FEATURED_ROW_HEIGHT
     : FEED_RAIL_ROW_HEIGHT;
@@ -180,7 +180,7 @@ function ShelfCardSkeletonRail({
       {[0, 1, 2].map((key) => (
         <View key={key} className="mr-2" style={{ width: cardW }}>
           <SkeletonGroup.Item
-            className="w-full rounded-2xl"
+            className="w-full rounded-lg"
             style={{ height: imageH }}
           />
           <View className="mt-1 gap-0.5 px-0.5">

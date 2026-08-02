@@ -16,7 +16,7 @@ const BADGE_SIZE_CLASS: Record<BadgeScale, string> = {
   detail:
     "h-6 min-h-6 max-h-6 items-center justify-center rounded-md px-1.5 py-0",
   /** ~15% under default — For You rail cards. */
-  rail: "h-[17px] min-h-[17px] max-h-[17px] items-center justify-center rounded px-0.5 py-0",
+  rail: "h-[17px] min-h-[17px] max-h-[17px] items-center justify-center rounded-md px-0.5 py-0",
 };
 
 const BADGE_LABEL_SIZE_CLASS: Record<BadgeScale, string> = {

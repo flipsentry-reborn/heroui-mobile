@@ -130,12 +130,13 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
     [],
   );
 
-  const handleSheetClose = () => {
+  /** Called after SheetShell finishes the close animation. */
+  const handleSheetClose = useCallback(() => {
     setSheetOpen(false);
     setSheetMounted(false);
     setEditingGroup(null);
     setEditSection(null);
-  };
+  }, []);
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -217,6 +218,11 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
 
       {sheetMounted ? (
         <SearchBottomSheet
+          key={
+            editingGroup != null
+              ? `edit-${editingGroup.id}-${editSection ?? "all"}`
+              : "create"
+          }
           visible={sheetOpen}
           onClose={handleSheetClose}
           locationLabel={locationLabel}

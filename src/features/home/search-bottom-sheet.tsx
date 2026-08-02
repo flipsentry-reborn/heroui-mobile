@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { observer } from "mobx-react-lite";
 import type { JSX, MutableRefObject } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View } from "react-native";
+import { InteractionManager, View } from "react-native";
 import {
   BottomSheet,
   Button,
@@ -688,30 +688,41 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     openedSectionKeyRef.current = sectionKey;
     setRevealParentAfterShortcut(false);
 
-    switch (initialSection) {
-      case "location":
-      case "platforms":
-        setLocationOpen(true);
-        break;
-      case "makes":
-        setCarMakesOpen(true);
-        break;
-      case "price":
-        setPriceOpen(true);
-        break;
-      case "year":
-        setYearOpen(true);
-        break;
-      case "mileage":
-        setMileageOpen(true);
-        break;
-      case "models":
-        setIphoneModelsOpen(true);
-        break;
-      case "keywords":
-        setKeywordsOpen(true);
-        break;
-    }
+    // Defer past menu dismiss + edit prefill so nested SheetShell can measure fully
+    // (same class of bug as Filters "New Filter" vs Actions → Edit).
+    const task = InteractionManager.runAfterInteractions(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          switch (initialSection) {
+            case "location":
+            case "platforms":
+              setLocationOpen(true);
+              break;
+            case "makes":
+              setCarMakesOpen(true);
+              break;
+            case "price":
+              setPriceOpen(true);
+              break;
+            case "year":
+              setYearOpen(true);
+              break;
+            case "mileage":
+              setMileageOpen(true);
+              break;
+            case "models":
+              setIphoneModelsOpen(true);
+              break;
+            case "keywords":
+              setKeywordsOpen(true);
+              break;
+          }
+        });
+      });
+    });
+    return () => {
+      task.cancel();
+    };
   }, [visible, initialSection, editingGroup]);
 
   const handleSearchTypeChange = (type: SearchType) => {

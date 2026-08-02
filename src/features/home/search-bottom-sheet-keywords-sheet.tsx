@@ -486,6 +486,7 @@ export function SearchBottomSheetKeywordsSheet({
   return (
     <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
       <KeywordsSheetContent
+        key={isOpen ? "open" : "closed"}
         keywords={draft}
         onKeywordsChange={setDraft}
         onPersist={onKeywordsChange}

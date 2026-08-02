@@ -257,6 +257,7 @@ export function SearchBottomSheetPriceSheet({
   return (
     <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
       <PriceSheetContent
+        key={isOpen ? `${title}-${min}-${max}` : "closed"}
         title={title}
         min={draftMin}
         max={draftMax}

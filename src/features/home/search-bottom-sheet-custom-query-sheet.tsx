@@ -139,6 +139,7 @@ export function SearchBottomSheetCustomQuerySheet({
   return (
     <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
       <CustomQuerySheetContent
+        key={isOpen ? value : "closed"}
         title={title}
         fieldTitle={fieldTitle}
         value={draft}

@@ -404,6 +404,8 @@ export const FiltersScreen = observer(function FiltersScreen({
   const { toast } = useToast();
   const [accentForeground] = useThemeColor(["accent-foreground"]);
   const [sheetOpen, setSheetOpen] = useState(false);
+  /** Remount sheet on each open (same as home New Search) so create form isn't stale. */
+  const [sheetMounted, setSheetMounted] = useState(false);
   const [editing, setEditing] = useState<UserFilter | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedFilter, setExpandedFilter] = useState<string | undefined>();
@@ -414,12 +416,23 @@ export const FiltersScreen = observer(function FiltersScreen({
 
   const openCreate = useCallback(() => {
     setEditing(null);
+    setSheetMounted(true);
     setSheetOpen(true);
   }, []);
 
   const openEdit = useCallback((filter: UserFilter) => {
     setEditing(filter);
+    setSheetMounted(true);
     setSheetOpen(true);
+  }, []);
+
+  const handleSheetOpenChange = useCallback((open: boolean) => {
+    setSheetOpen(open);
+    if (!open) {
+      // SheetShell already finished the close animation before calling onClose.
+      setSheetMounted(false);
+      setEditing(null);
+    }
   }, []);
 
   const retry = useCallback(() => {
@@ -595,7 +608,13 @@ export const FiltersScreen = observer(function FiltersScreen({
         </ScrollView>
       )}
 
-      <FilterBottomSheet isOpen={sheetOpen} onOpenChange={setSheetOpen} editingFilter={editing} />
+      {sheetMounted ? (
+        <FilterBottomSheet
+          isOpen={sheetOpen}
+          onOpenChange={handleSheetOpenChange}
+          editingFilter={editing}
+        />
+      ) : null}
     </View>
   );
 });

@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { observer } from "mobx-react-lite";
 import type { JSX, MutableRefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -14,6 +15,7 @@ import {
   useThemeColor,
   useToast,
 } from "heroui-native";
+import { withUniwind } from "uniwind";
 
 import { FilterColorSheet } from "@/features/feed/filter-color-sheet";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
@@ -47,11 +49,13 @@ import {
 import {
   SHEET_BACKGROUND_CLASS_NAME,
   SHEET_CONTENT_CLASS_NAME,
-  SHEET_CONTENT_CONTAINER_CLASS_NAME,
+  SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
 import { isValidFilterHex, type UserFilter, type UserFilterType } from "@/models/user-filter";
 import { useStore } from "@/store/store";
+
+const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
 
 function parseOptionalNumber(value: string): number | undefined {
   const trimmed = value.trim();
@@ -460,6 +464,7 @@ function FilterSheetBody({
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const [muted, accentForeground] = useThemeColor(["muted", "accent-foreground"]);
+  const snapPoints = useMemo(() => ["78%", "94%"], []);
   const dismiss = useCallback(() => onOpenChange(false), [onOpenChange]);
   useEffect(() => {
     dismissRef.current = dismiss;
@@ -469,149 +474,163 @@ function FilterSheetBody({
   }, [dismiss, dismissRef]);
   const isVehicle = filterType === "Vehicle";
 
+  // Fixed snap points (not dynamic sizing) so keyboardBehavior="extend" can lift
+  // the sheet when Name / custom query inputs focus — same pattern as Price/Keywords.
   return (
     <BottomSheet.Content
+      snapPoints={snapPoints}
+      enableDynamicSizing={false}
+      enableOverDrag={false}
       enableContentPanningGesture={!childSheetOpen}
       keyboardBehavior={childSheetOpen ? undefined : "extend"}
       keyboardBlurBehavior={childSheetOpen ? undefined : "restore"}
       android_keyboardInputMode={childSheetOpen ? undefined : "adjustResize"}
       className={SHEET_CONTENT_CLASS_NAME}
-      contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
+      contentContainerClassName={SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME}
       backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
       handleComponent={null}
     >
-      <View>
-        <SearchBottomSheetHeader title={title} />
+      <View className="flex-1">
+        <View className="shrink-0">
+          <SearchBottomSheetHeader title={title} />
+        </View>
 
-        <SearchBottomSheetSection>
-          <SearchBottomSheetRow
-            icon="text"
-            iconClassName="text-orange-500"
-            title="Name"
-            required
-            requiredTone="warning"
-            showChevron={false}
-            isLast={false}
-            right={
-              <View className="min-w-0 max-w-[200px] flex-1">
-                <CustomSearchInput value={name} onChange={onNameChange} invalidTone="warning" />
-              </View>
-            }
-          />
-          <SearchBottomSheetRow
-            icon="color-palette"
-            iconClassName="text-pink-500"
-            title="Color"
-            required
-            requiredTone="warning"
-            showChevron={false}
-            isLast={false}
-            onPress={onOpenColor}
-            right={
-              hasColor ? (
-                <View className="flex-row items-center gap-1.5">
-                  <View
-                    className="h-5 w-5 rounded-full border border-border"
-                    style={{ backgroundColor: color }}
-                  />
-                  <Ionicons name="chevron-forward" size={16} color={muted} />
-                </View>
-              ) : (
-                <SearchSheetValue label="Required" requiredEmpty />
-              )
-            }
-          />
-          <SearchBottomSheetRow
-            icon="swap-vertical"
-            iconClassName="text-emerald-500"
-            title="Search Type"
-            required
-            requiredTone="warning"
-            showChevron={false}
-            isLast={false}
-            right={
-              typeLocked ? (
-                <Typography type="body-sm" className="text-foreground">
-                  {FILTER_TYPE_OPTIONS.find((o) => o.value === filterType)?.label ?? filterType}
-                </Typography>
-              ) : (
-                <SearchBottomSheetTypeSelect
-                  value={filterType}
-                  onChange={onFilterTypeChange}
-                  options={FILTER_TYPE_OPTIONS}
-                  accessibilityLabelPrefix="Filter type"
-                />
-              )
-            }
-          />
-          <SearchBottomSheetRow
-            icon="notifications"
-            iconClassName="text-violet-500"
-            title="Notifications"
-            showChevron={false}
-            isLast
-            right={
-              <Switch isSelected={notificationEnabled} onSelectedChange={onNotificationChange} />
-            }
-          />
-        </SearchBottomSheetSection>
-
-        <SearchSheetGroup title="Filters">
-          {!isVehicle ? (
-            <SearchSheetRow
-              title="Search query"
+        <StyledBottomSheetScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          className="min-h-0 flex-1"
+          contentContainerClassName="pb-2"
+        >
+          <SearchBottomSheetSection>
+            <SearchBottomSheetRow
+              icon="text"
+              iconClassName="text-orange-500"
+              title="Name"
               required
               requiredTone="warning"
+              showChevron={false}
               isLast={false}
               right={
                 <View className="min-w-0 max-w-[200px] flex-1">
-                  <CustomSearchInput
-                    value={customQuery}
-                    onChange={onCustomQueryChange}
-                    placeholder="Required"
-                    invalidTone="warning"
-                  />
+                  <CustomSearchInput value={name} onChange={onNameChange} invalidTone="warning" />
                 </View>
               }
             />
-          ) : null}
-          <SearchSheetRow
-            title="Price"
-            isLast={false}
-            onPress={onOpenPrice}
-            right={<SearchSheetValue label={priceLabel} emphasized={hasPriceFilter} />}
-          />
-          {isVehicle ? (
-            <>
-              <SearchSheetRow
-                title="Year"
-                isLast={false}
-                onPress={onOpenYear}
-                right={<SearchSheetValue label={yearLabel} emphasized={hasYearFilter} />}
-              />
-              <SearchSheetRow
-                title="Mileage"
-                isLast={false}
-                onPress={onOpenMileage}
-                right={<SearchSheetValue label={mileageLabel} emphasized={hasMileageFilter} />}
-              />
-            </>
-          ) : null}
-          <SearchSheetRow
-            title="Keywords"
-            isLast
-            onPress={onOpenKeywords}
-            right={<SearchSheetValue label={keywordsLabel} emphasized={hasKeywords} />}
-          />
-        </SearchSheetGroup>
+            <SearchBottomSheetRow
+              icon="color-palette"
+              iconClassName="text-pink-500"
+              title="Color"
+              required
+              requiredTone="warning"
+              showChevron={false}
+              isLast={false}
+              onPress={onOpenColor}
+              right={
+                hasColor ? (
+                  <View className="flex-row items-center gap-1.5">
+                    <View
+                      className="h-5 w-5 rounded-full border border-border"
+                      style={{ backgroundColor: color }}
+                    />
+                    <Ionicons name="chevron-forward" size={16} color={muted} />
+                  </View>
+                ) : (
+                  <SearchSheetValue label="Required" requiredEmpty />
+                )
+              }
+            />
+            <SearchBottomSheetRow
+              icon="swap-vertical"
+              iconClassName="text-emerald-500"
+              title="Search Type"
+              required
+              requiredTone="warning"
+              showChevron={false}
+              isLast={false}
+              right={
+                typeLocked ? (
+                  <Typography type="body-sm" className="text-foreground">
+                    {FILTER_TYPE_OPTIONS.find((o) => o.value === filterType)?.label ?? filterType}
+                  </Typography>
+                ) : (
+                  <SearchBottomSheetTypeSelect
+                    value={filterType}
+                    onChange={onFilterTypeChange}
+                    options={FILTER_TYPE_OPTIONS}
+                    accessibilityLabelPrefix="Filter type"
+                  />
+                )
+              }
+            />
+            <SearchBottomSheetRow
+              icon="notifications"
+              iconClassName="text-violet-500"
+              title="Notifications"
+              showChevron={false}
+              isLast
+              right={
+                <Switch isSelected={notificationEnabled} onSelectedChange={onNotificationChange} />
+              }
+            />
+          </SearchBottomSheetSection>
 
-        {validationMessage != null || errorMessage != null ? (
-          <FieldError isInvalid className="mx-5 mb-2">
-            {validationMessage ?? errorMessage}
-          </FieldError>
-        ) : null}
+          <SearchSheetGroup title="Filters">
+            {!isVehicle ? (
+              <SearchSheetRow
+                title="Search query"
+                required
+                requiredTone="warning"
+                isLast={false}
+                right={
+                  <View className="min-w-0 max-w-[200px] flex-1">
+                    <CustomSearchInput
+                      value={customQuery}
+                      onChange={onCustomQueryChange}
+                      placeholder="Required"
+                      invalidTone="warning"
+                    />
+                  </View>
+                }
+              />
+            ) : null}
+            <SearchSheetRow
+              title="Price"
+              isLast={false}
+              onPress={onOpenPrice}
+              right={<SearchSheetValue label={priceLabel} emphasized={hasPriceFilter} />}
+            />
+            {isVehicle ? (
+              <>
+                <SearchSheetRow
+                  title="Year"
+                  isLast={false}
+                  onPress={onOpenYear}
+                  right={<SearchSheetValue label={yearLabel} emphasized={hasYearFilter} />}
+                />
+                <SearchSheetRow
+                  title="Mileage"
+                  isLast={false}
+                  onPress={onOpenMileage}
+                  right={<SearchSheetValue label={mileageLabel} emphasized={hasMileageFilter} />}
+                />
+              </>
+            ) : null}
+            <SearchSheetRow
+              title="Keywords"
+              isLast
+              onPress={onOpenKeywords}
+              right={<SearchSheetValue label={keywordsLabel} emphasized={hasKeywords} />}
+            />
+          </SearchSheetGroup>
 
-        <View className="flex-row gap-3 px-5 pb-6 pt-0">
+          {validationMessage != null || errorMessage != null ? (
+            <FieldError isInvalid className="mx-5 mb-2">
+              {validationMessage ?? errorMessage}
+            </FieldError>
+          ) : null}
+        </StyledBottomSheetScrollView>
+
+        <View className="shrink-0 flex-row gap-3 px-5 pb-6 pt-2">
           <Button
             variant="tertiary"
             className="min-h-12 flex-1 bg-surface"

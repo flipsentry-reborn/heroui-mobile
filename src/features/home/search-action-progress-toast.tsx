@@ -108,18 +108,18 @@ function actionCopy(kind: SearchActionKind, subject: ActionSubject): ActionCopy 
       };
     case "select":
       return {
-        running: `Selecting ${noun}…`,
-        done: `${Noun} selected`,
-        failed: "Select failed",
+        running: `Activating ${noun}…`,
+        done: `${Noun} activated`,
+        failed: "Activation failed",
         color: "success",
         toastVariant: "success",
         icon: "checkmark-circle",
       };
     case "deselect":
       return {
-        running: `Deselecting ${noun}…`,
-        done: `${Noun} deselected`,
-        failed: "Deselect failed",
+        running: `Deactivating ${noun}…`,
+        done: `${Noun} deactivated`,
+        failed: "Deactivation failed",
         color: "accent",
         toastVariant: "accent",
         icon: "checkmark-circle-outline",

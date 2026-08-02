@@ -9,16 +9,16 @@ import {
   Alert,
   Button,
   Chip,
+  ListGroup,
   Menu,
   Separator,
   SkeletonGroup,
-  Surface,
   Switch,
   Typography,
   useThemeColor,
   useToast,
 } from "heroui-native";
-import { EmptyState } from "heroui-native-pro";
+import { Badge, EmptyState } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
 import { BrandButton } from "@/components/ui/brand-button";
@@ -26,6 +26,7 @@ import { FilterBottomSheet } from "@/features/feed/filter-bottom-sheet";
 import { showFilterToast } from "@/features/feed/filter-toast";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import { formatOpenRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
+import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
 import { formatPriceShort } from "@/mocks/services/home";
 import type { UserFilter } from "@/models/user-filter";
 import { useStore } from "@/store/store";
@@ -36,10 +37,11 @@ type IoniconName = ComponentProps<typeof Ionicons>["name"];
 function filterTypeMeta(filter: UserFilter): {
   label: string;
   icon: IoniconName;
+  iconClassName: string;
 } {
   return filter.filterType === "Vehicle"
-    ? { label: "Vehicle", icon: "car-sport-outline" }
-    : { label: "Custom", icon: "options-outline" };
+    ? { label: "Vehicle", icon: "car-sport-outline", iconClassName: "text-emerald-500" }
+    : { label: "Custom", icon: "options-outline", iconClassName: "text-orange-500" };
 }
 
 function keywordCount(filter: UserFilter): number {
@@ -122,44 +124,11 @@ function FiltersHeader({ onBack }: { onBack: () => void }): JSX.Element {
             numberOfLines={1}
             className="text-[17px] text-foreground"
           >
-            Filters
+            Feed Filters
           </Typography>
         </View>
       </View>
       <Separator />
-    </View>
-  );
-}
-
-function FilterControlRow({
-  icon,
-  iconClassName,
-  title,
-  description,
-  selected,
-  onSelectedChange,
-}: {
-  icon: IoniconName;
-  iconClassName: string;
-  title: string;
-  description: string;
-  selected: boolean;
-  onSelectedChange: (selected: boolean) => void;
-}): JSX.Element {
-  return (
-    <View className="flex-row items-center gap-3 py-2.5">
-      <StyledIonicons name={icon} size={19} className={iconClassName} />
-      <View className="min-w-0 flex-1 gap-0.5">
-        <Typography className="text-[15px] font-normal text-foreground">{title}</Typography>
-        <Typography type="body-xs" className="text-muted">
-          {description}
-        </Typography>
-      </View>
-      <Switch
-        isSelected={selected}
-        onSelectedChange={onSelectedChange}
-        accessibilityLabel={title}
-      />
     </View>
   );
 }
@@ -214,41 +183,36 @@ function SelectedFiltersSection({
   if (filters.length === 0) return null;
 
   return (
-    <View className="mt-5 px-3">
-      <Surface className="gap-3 rounded-2xl p-3">
-        <Typography className="text-[15px] font-semibold text-foreground">
-          Selected Filters
-        </Typography>
-        <View className="flex-row flex-wrap gap-2">
-          {filters.map((filter) => (
-            <View
-              key={filter.id}
-              className="flex-row items-center gap-2 rounded-full border border-border bg-surface-secondary px-2.5 py-1.5"
+    <View className="mx-3 mt-5 overflow-hidden rounded-3xl bg-surface px-3 py-3">
+      <Typography type="body-xs" className="mb-2.5 text-muted">
+        Feed Filters
+      </Typography>
+      <View className="flex-row flex-wrap gap-2">
+        {filters.map((filter) => (
+          <View
+            key={filter.id}
+            className="flex-row items-center gap-2 rounded-full border border-border bg-surface-secondary px-2.5 py-1.5"
+          >
+            <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: filter.color }} />
+            <Typography
+              type="body-xs"
+              className="max-w-[140px] text-foreground"
+              numberOfLines={1}
             >
-              <View
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: filter.color }}
-              />
-              <Typography
-                type="body-xs"
-                className="max-w-[140px] text-foreground"
-                numberOfLines={1}
-              >
-                {filter.name}
-              </Typography>
-              <Pressable
-                onPress={() => onDeselect(filter)}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel={`Deselect ${filter.name}`}
-                className="h-5 w-5 items-center justify-center"
-              >
-                <StyledIonicons name="close" size={14} className="text-muted" />
-              </Pressable>
-            </View>
-          ))}
-        </View>
-      </Surface>
+              {filter.name}
+            </Typography>
+            <Pressable
+              onPress={() => onDeselect(filter)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={`Deselect ${filter.name}`}
+              className="h-5 w-5 items-center justify-center"
+            >
+              <StyledIonicons name="close" size={14} className="text-muted" />
+            </Pressable>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
@@ -278,7 +242,7 @@ function FilterAccordionItem({
           className="h-9 w-1.5 shrink-0 rounded-full"
           style={{ backgroundColor: filter.color }}
         />
-        <View className="min-w-0 flex-1 gap-1">
+        <View className="min-w-0 flex-1 gap-1.5">
           <View className="flex-row items-center gap-2">
             <Typography
               type="body"
@@ -288,13 +252,13 @@ function FilterAccordionItem({
               {filter.name}
             </Typography>
             {!filter.isActive ? (
-              <Chip size="sm" variant="secondary">
-                <Chip.Label className="text-xs text-muted">Paused</Chip.Label>
-              </Chip>
+              <Badge color="warning" variant="soft" size="sm">
+                Paused
+              </Badge>
             ) : null}
           </View>
           <View className="flex-row items-center gap-1.5">
-            <StyledIonicons name={meta.icon} size={15} className="text-muted" />
+            <StyledIonicons name={meta.icon} size={15} className={meta.iconClassName} />
             <Typography type="body-xs" className="min-w-0 flex-1 text-muted" numberOfLines={1}>
               {collapsedSummary(filter)}
             </Typography>
@@ -317,40 +281,53 @@ function FilterAccordionItem({
         </Pressable>
       </Accordion.Trigger>
 
-      <Accordion.Content className="px-3 pb-3 pt-0">
+      <Accordion.Content className="gap-2 px-3 pb-3 pt-0">
         {criteria.length > 0 ? (
-          <View className="mb-3 flex-row flex-wrap gap-1.5">
+          <View className="flex-row flex-wrap gap-1.5">
             {criteria.map((label, index) => (
               <Chip key={`${label}-${index}`} size="sm" variant="secondary">
-                <Chip.Label className="text-xs text-muted">{label}</Chip.Label>
+                <Chip.Label className="text-[10px] text-muted">{label}</Chip.Label>
               </Chip>
             ))}
           </View>
         ) : (
-          <Typography type="body-xs" className="mb-3 text-muted">
+          <Typography type="body-xs" className="text-muted">
             No optional criteria set.
           </Typography>
         )}
 
-        <View className="overflow-hidden rounded-xl bg-surface-secondary px-3">
-          <FilterControlRow
-            icon="power-outline"
-            iconClassName={filter.isActive ? "text-success" : "text-muted"}
+        <ListGroup>
+          <SearchBottomSheetRow
+            icon="power"
+            iconClassName={filter.isActive ? "text-emerald-500" : "text-muted"}
             title="Enabled"
             description="Match this filter against new listings."
-            selected={filter.isActive}
-            onSelectedChange={(selected) => onToggleActive(filter, selected)}
+            showChevron={false}
+            isLast={false}
+            right={
+              <Switch
+                isSelected={filter.isActive}
+                onSelectedChange={(selected) => onToggleActive(filter, selected)}
+                accessibilityLabel="Enabled"
+              />
+            }
           />
-          <Separator className="opacity-50" />
-          <FilterControlRow
-            icon="notifications-outline"
-            iconClassName={filter.notificationEnabled ? "text-foreground" : "text-muted"}
+          <SearchBottomSheetRow
+            icon="notifications"
+            iconClassName={filter.notificationEnabled ? "text-violet-500" : "text-muted"}
             title="Notifications"
             description="Allow alerts for listings matched by this filter."
-            selected={filter.notificationEnabled}
-            onSelectedChange={(selected) => onToggleNotifications(filter, selected)}
+            showChevron={false}
+            isLast
+            right={
+              <Switch
+                isSelected={filter.notificationEnabled}
+                onSelectedChange={(selected) => onToggleNotifications(filter, selected)}
+                accessibilityLabel="Notifications"
+              />
+            }
           />
-        </View>
+        </ListGroup>
 
         <FilterActionsMenu filter={filter} disabled={false} onEdit={onEdit} onDelete={onDelete} />
       </Accordion.Content>
@@ -532,7 +509,7 @@ export const FiltersScreen = observer(function FiltersScreen({
           <View className="mb-3 flex-row items-center justify-between px-3">
             <View className="min-w-0 flex-1 pr-3">
               <Typography className="text-[17px] font-semibold text-foreground">
-                Your filters
+                Feed Filters
               </Typography>
               <Typography type="body-xs" className="mt-0.5 text-muted">
                 Tap the checkmark to select a filter.
@@ -577,7 +554,7 @@ export const FiltersScreen = observer(function FiltersScreen({
               ))}
             </Accordion>
           ) : filterStore.lastError == null ? (
-            <View className="mx-3 mt-6 rounded-xl bg-surface px-4 py-10">
+            <View className="mx-3 mt-6 rounded-3xl bg-surface px-4 py-10">
               <EmptyState>
                 <EmptyState.Header>
                   <EmptyState.Media variant="icon">

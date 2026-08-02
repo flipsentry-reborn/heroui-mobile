@@ -42,7 +42,6 @@ const SEED_FILTERS: UserFilter[] = [
     filterType: "Custom",
     vehicleQuery: null,
     customQuery: {
-      query: "iphone",
       minPrice: undefined,
       maxPrice: 800,
     },
@@ -59,6 +58,13 @@ const SEED_FILTERS: UserFilter[] = [
 function normalizeFilter(filter: UserFilter): UserFilter {
   return {
     ...filter,
+    customQuery:
+      filter.customQuery == null
+        ? filter.customQuery
+        : {
+            minPrice: filter.customQuery.minPrice,
+            maxPrice: filter.customQuery.maxPrice,
+          },
     isSelected: filter.isSelected ?? false,
   };
 }
@@ -169,7 +175,6 @@ export async function createFilter(
     customQuery:
       input.filterType === "Custom"
         ? {
-            query: input.customQuery?.query ?? "",
             minPrice: numOrUndef(input.customQuery?.minPrice),
             maxPrice: numOrUndef(input.customQuery?.maxPrice),
           }
@@ -224,7 +229,6 @@ export async function updateFilter(
     customQuery:
       existing.filterType === "Custom" && input.customQuery !== undefined
         ? {
-            query: input.customQuery?.query ?? existing.customQuery?.query ?? "",
             minPrice: numOrUndef(input.customQuery?.minPrice),
             maxPrice: numOrUndef(input.customQuery?.maxPrice),
           }

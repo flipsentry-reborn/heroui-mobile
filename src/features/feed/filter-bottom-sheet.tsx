@@ -95,7 +95,6 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [filterType, setFilterType] = useState<UserFilterType>("Vehicle");
-  const [customQuery, setCustomQuery] = useState("");
   const [color, setColor] = useState("");
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const [minPrice, setMinPrice] = useState("");
@@ -117,7 +116,6 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
     if (editingFilter) {
       setName(editingFilter.name);
       setFilterType(editingFilter.filterType);
-      setCustomQuery(editingFilter.customQuery?.query ?? "");
       setColor(editingFilter.color);
       setNotificationEnabled(editingFilter.notificationEnabled);
       setMinPrice(
@@ -163,7 +161,6 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
     }
     setName("");
     setFilterType("Vehicle");
-    setCustomQuery("");
     setColor("");
     setNotificationEnabled(true);
     setMinPrice("");
@@ -188,16 +185,13 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
   }, [editingFilter, filterStore.filters]);
 
   const validationMessage = useMemo(() => {
-    if (filterType === "Custom" && !isCustomSearchQueryValid(customQuery)) {
-      return "Custom search query must be at least 2 characters";
-    }
     return (
       rangeError("Price", minPrice, maxPrice) ??
       (filterType === "Vehicle"
         ? (yearError(minYear, maxYear) ?? rangeError("Mileage", minMileage, maxMileage))
         : null)
     );
-  }, [customQuery, filterType, maxMileage, maxPrice, maxYear, minMileage, minPrice, minYear]);
+  }, [filterType, maxMileage, maxPrice, maxYear, minMileage, minPrice, minYear]);
 
   const canSave = useMemo(() => {
     if (!isCustomSearchQueryValid(name)) return false;
@@ -252,7 +246,6 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
       customQuery:
         filterType === "Custom"
           ? {
-              query: customQuery.trim(),
               minPrice: parseOptionalNumber(minPrice),
               maxPrice: parseOptionalNumber(maxPrice),
             }
@@ -316,8 +309,6 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
           filterType={filterType}
           onFilterTypeChange={setFilterType}
           typeLocked={editingFilter != null}
-          customQuery={customQuery}
-          onCustomQueryChange={setCustomQuery}
           color={color}
           hasColor={isValidFilterHex(color)}
           onOpenColor={() => setColorOpen(true)}
@@ -399,8 +390,6 @@ function FilterSheetBody({
   filterType,
   onFilterTypeChange,
   typeLocked,
-  customQuery,
-  onCustomQueryChange,
   color,
   hasColor,
   onOpenColor,
@@ -432,8 +421,6 @@ function FilterSheetBody({
   filterType: UserFilterType;
   onFilterTypeChange: (v: UserFilterType) => void;
   typeLocked: boolean;
-  customQuery: string;
-  onCustomQueryChange: (v: string) => void;
   color: string;
   hasColor: boolean;
   onOpenColor: () => void;
@@ -473,7 +460,7 @@ function FilterSheetBody({
   const isVehicle = filterType === "Vehicle";
 
   // Fixed snap points (not dynamic sizing) so keyboardBehavior="extend" can lift
-  // the sheet when Name / custom query inputs focus — same pattern as Price/Keywords.
+  // the sheet when Name focuses — same pattern as Price/Keywords.
   return (
     <BottomSheet.Content
       snapPoints={snapPoints}
@@ -580,24 +567,6 @@ function FilterSheetBody({
           </SearchBottomSheetSection>
 
           <SearchSheetGroup title="Filters">
-            {!isVehicle ? (
-              <SearchSheetRow
-                title="Search query"
-                required
-                requiredTone="warning"
-                isLast={false}
-                right={
-                  <View className="min-w-0 max-w-[200px] flex-1">
-                    <CustomSearchInput
-                      value={customQuery}
-                      onChange={onCustomQueryChange}
-                      placeholder="Required"
-                      invalidTone="warning"
-                    />
-                  </View>
-                }
-              />
-            ) : null}
             <SearchSheetRow
               title="Price"
               isLast={false}

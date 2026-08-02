@@ -84,10 +84,6 @@ function criteriaLabels(filter: UserFilter): string[] {
     }
   }
 
-  if (filter.filterType === "Custom" && filter.customQuery?.query?.trim()) {
-    labels.push(`Query: ${filter.customQuery.query.trim()}`);
-  }
-
   const keywords = keywordCount(filter);
   if (keywords > 0) {
     labels.push(keywords === 1 ? "1 keyword" : `${keywords} keywords`);

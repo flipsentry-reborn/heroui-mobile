@@ -1,6 +1,12 @@
-import type { CarQuery, CustomQuery } from "@/models/create-search-setting";
+import type { CarQuery } from "@/models/create-search-setting";
 
 export type UserFilterType = "Vehicle" | "Custom";
+
+/** Custom filter criteria — price only (no marketplace search query). */
+export interface FilterCustomQuery {
+  minPrice?: number;
+  maxPrice?: number;
+}
 
 export interface UserFilter {
   id: string;
@@ -8,7 +14,7 @@ export interface UserFilter {
   color: string;
   filterType: UserFilterType;
   vehicleQuery?: CarQuery | null;
-  customQuery?: CustomQuery | null;
+  customQuery?: FilterCustomQuery | null;
   titleIncluders: string[];
   descriptionIncluders: string[];
   notificationEnabled: boolean;
@@ -24,7 +30,7 @@ export interface CreateUserFilterInput {
   color: string;
   filterType: UserFilterType;
   vehicleQuery?: CarQuery | null;
-  customQuery?: CustomQuery | null;
+  customQuery?: FilterCustomQuery | null;
   titleIncluders?: string[];
   descriptionIncluders?: string[];
   notificationEnabled?: boolean;
@@ -36,7 +42,7 @@ export interface UpdateUserFilterInput {
   name?: string;
   color?: string;
   vehicleQuery?: CarQuery | null;
-  customQuery?: CustomQuery | null;
+  customQuery?: FilterCustomQuery | null;
   titleIncluders?: string[];
   descriptionIncluders?: string[];
   notificationEnabled?: boolean;

@@ -1,7 +1,8 @@
 import { requests } from "@/api/http/client";
-import type { CarQuery, CustomQuery } from "@/models/create-search-setting";
+import type { CarQuery } from "@/models/create-search-setting";
 import type {
   CreateUserFilterInput,
+  FilterCustomQuery,
   UpdateUserFilterInput,
   UserFilter,
   UserFilterType,
@@ -13,7 +14,7 @@ interface ApiUserFilter {
   color: string;
   filterType: string;
   vehicleQuery?: CarQuery | null;
-  customQuery?: CustomQuery | null;
+  customQuery?: FilterCustomQuery | null;
   titleIncluders?: string[];
   descriptionIncluders?: string[];
   notificationEnabled: boolean;
@@ -21,6 +22,16 @@ interface ApiUserFilter {
   isSelected?: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+function mapCustomQuery(
+  customQuery?: FilterCustomQuery | null,
+): FilterCustomQuery | null {
+  if (customQuery == null) return null;
+  return {
+    minPrice: customQuery.minPrice,
+    maxPrice: customQuery.maxPrice,
+  };
 }
 
 function mapFilter(api: ApiUserFilter): UserFilter {
@@ -32,7 +43,7 @@ function mapFilter(api: ApiUserFilter): UserFilter {
     color: api.color,
     filterType: filterType as UserFilterType,
     vehicleQuery: api.vehicleQuery ?? null,
-    customQuery: api.customQuery ?? null,
+    customQuery: mapCustomQuery(api.customQuery),
     titleIncluders: api.titleIncluders ?? [],
     descriptionIncluders: api.descriptionIncluders ?? [],
     notificationEnabled: api.notificationEnabled ?? true,
@@ -64,7 +75,6 @@ function buildCreatePayload(input: CreateUserFilterInput) {
     customQuery:
       input.filterType === "Custom"
         ? {
-            query: input.customQuery?.query ?? "",
             minPrice: input.customQuery?.minPrice ?? null,
             maxPrice: input.customQuery?.maxPrice ?? null,
           }
@@ -93,7 +103,13 @@ function buildUpdatePayload(input: UpdateUserFilterInput) {
           maxMileage: input.vehicleQuery.maxMileage ?? null,
         }
       : input.vehicleQuery,
-    customQuery: input.customQuery,
+    customQuery:
+      input.customQuery != null
+        ? {
+            minPrice: input.customQuery.minPrice ?? null,
+            maxPrice: input.customQuery.maxPrice ?? null,
+          }
+        : input.customQuery,
     titleIncluders: input.titleIncluders,
     descriptionIncluders: input.descriptionIncluders,
     notificationEnabled: input.notificationEnabled,

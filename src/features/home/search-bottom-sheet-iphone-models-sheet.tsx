@@ -13,7 +13,6 @@ import Animated, {
 import {
   Accordion,
   BottomSheet,
-  Button,
   Chip,
   cn,
   Input,
@@ -28,6 +27,7 @@ import {
 import { withUniwind } from "uniwind";
 
 import agent from "@/api/agent";
+import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import { sanitizePriceInput } from "@/features/home/search-bottom-sheet-price-sheet";
 import {
   SHEET_BACKGROUND_CLASS_NAME,
@@ -608,38 +608,37 @@ function IphoneModelsSheetContent({
       contentContainerClassName={SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME}
     >
       <View className="flex-1">
-        <View className="flex-row items-center justify-between px-5 pb-1 pt-4">
-          <View className="w-16" />
-          <View className="flex-row items-center gap-2">
-            <Typography type="body" weight="normal">
-              Models
-            </Typography>
-            <CountBadge value={selectedCount} />
-          </View>
-          {loading || loadError != null ? (
-            <View className="min-w-16" />
-          ) : (
+        <SearchBottomSheetHeader
+          title="Models"
+          onCancel={dismiss}
+          onSave={handleSave}
+          saveDisabled={loading || loadError != null || selectedCount === 0}
+          titleAccessory={<CountBadge value={selectedCount} />}
+        />
+
+        {loading || loadError != null ? null : (
+          <View className="px-5 pb-1">
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={
                 allSelected ? "Clear all models" : "Select all models"
               }
               onPress={handleSelectAll}
-              className="min-w-16 items-end py-1"
+              className="self-end py-1"
               hitSlop={8}
             >
-              <Typography type="body-sm" className="text-sky-400">
+              <Typography type="body-sm" weight="semibold" className="text-sky-500">
                 {allSelected ? "Clear" : "Select all"}
               </Typography>
             </Pressable>
-          )}
-        </View>
+          </View>
+        )}
 
         <StyledBottomSheetScrollView
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           className="flex-1"
-          contentContainerClassName="gap-3 px-3 pb-4 pt-3"
+          contentContainerClassName="gap-3 px-3 pb-6 pt-3"
         >
           {loading || !initialized ? (
             <View className="items-center gap-3 py-16">
@@ -714,28 +713,6 @@ function IphoneModelsSheetContent({
             </Typography>
           ) : null}
         </StyledBottomSheetScrollView>
-
-        <View className="gap-2 px-5 pb-6 pt-2">
-          <View className="flex-row gap-3">
-            <Button
-              variant="tertiary"
-              className="min-h-12 flex-1 rounded-2xl bg-surface"
-              onPress={dismiss}
-            >
-              <Button.Label>Cancel</Button.Label>
-            </Button>
-            <Button
-              variant="primary"
-              className="min-h-12 flex-1 rounded-2xl"
-              isDisabled={
-                loading || loadError != null || selectedCount === 0
-              }
-              onPress={handleSave}
-            >
-              <Button.Label>Save</Button.Label>
-            </Button>
-          </View>
-        </View>
       </View>
     </BottomSheet.Content>
   );

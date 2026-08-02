@@ -2,8 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
 import { useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
-import { BottomSheet, Button, Typography, useBottomSheet } from "heroui-native";
+import { BottomSheet, useBottomSheet } from "heroui-native";
 
+import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import { SearchSheetGroup } from "@/features/home/search-sheet-group";
 import {
   SHEET_BACKGROUND_CLASS_NAME,
@@ -47,11 +48,12 @@ function ColorSheetContent({
       contentContainerClassName={SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME}
     >
       <View>
-        <View className="items-center px-5 pb-1 pt-4">
-          <Typography type="body" weight="normal">
-            Color
-          </Typography>
-        </View>
+        <SearchBottomSheetHeader
+          title="Color"
+          onCancel={dismiss}
+          onSave={handleSave}
+          saveDisabled={!canSave}
+        />
 
         <SearchSheetGroup title="Choose a color">
           <View className="flex-row flex-wrap gap-3 px-4 py-4">
@@ -86,20 +88,6 @@ function ColorSheetContent({
             })}
           </View>
         </SearchSheetGroup>
-
-        <View className="flex-row gap-3 px-5 pb-6 pt-2">
-          <Button variant="tertiary" className="min-h-12 flex-1 bg-surface" onPress={dismiss}>
-            <Button.Label>Cancel</Button.Label>
-          </Button>
-          <Button
-            variant="primary"
-            className="min-h-12 flex-1"
-            isDisabled={!canSave}
-            onPress={handleSave}
-          >
-            <Button.Label>Save</Button.Label>
-          </Button>
-        </View>
       </View>
     </BottomSheet.Content>
   );

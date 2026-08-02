@@ -6,7 +6,6 @@ import { View, type TextInput } from "react-native";
 import {
   Accordion,
   BottomSheet,
-  Button,
   Chip,
   Input,
   Menu,
@@ -17,6 +16,7 @@ import {
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
+import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import { SearchSheetGroup } from "@/features/home/search-sheet-group";
 import {
   SHEET_BACKGROUND_CLASS_NAME,
@@ -365,17 +365,19 @@ function KeywordsSheetContent({
       contentContainerClassName={SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME}
     >
       <View className="flex-1">
-        <View className="shrink-0 items-center px-5 pb-1 pt-4">
-          <Typography type="body" weight="normal">
-            Keywords
-          </Typography>
+        <View className="shrink-0">
+          <SearchBottomSheetHeader
+            title="Keywords"
+            onCancel={dismiss}
+            onSave={handleSave}
+          />
         </View>
 
         <StyledBottomSheetScrollView
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           className="min-h-0 flex-1"
-          contentContainerClassName="pb-2 pt-2"
+          contentContainerClassName="pb-6 pt-2"
         >
           <View className="mb-3 px-3">
             <Accordion
@@ -441,23 +443,6 @@ function KeywordsSheetContent({
             }
           />
         </StyledBottomSheetScrollView>
-
-        <View className="shrink-0 flex-row gap-3 px-5 pb-6 pt-2">
-          <Button
-            variant="tertiary"
-            className="min-h-12 flex-1 rounded-2xl bg-surface"
-            onPress={dismiss}
-          >
-            <Button.Label>Cancel</Button.Label>
-          </Button>
-          <Button
-            variant="primary"
-            className="min-h-12 flex-1 rounded-2xl"
-            onPress={handleSave}
-          >
-            <Button.Label>Save</Button.Label>
-          </Button>
-        </View>
       </View>
     </BottomSheet.Content>
   );

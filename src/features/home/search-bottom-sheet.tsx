@@ -5,8 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { InteractionManager, View } from "react-native";
 import {
   BottomSheet,
-  Button,
-  Spinner,
   Switch,
   Typography,
   useBottomSheet,
@@ -306,7 +304,7 @@ function SearchSheetContent({
   dismissRef: MutableRefObject<(() => void) | null>;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
-  const [muted, accentForeground] = useThemeColor(["muted", "accent-foreground"]);
+  const [muted] = useThemeColor(["muted"]);
   const dismiss = () => onOpenChange(false);
   dismissRef.current = dismiss;
   const hasSearchType = searchType != null;
@@ -339,7 +337,14 @@ function SearchSheetContent({
       handleComponent={null}
     >
       <View>
-        <SearchBottomSheetHeader title={title} />
+        <SearchBottomSheetHeader
+          title={title}
+          onCancel={dismiss}
+          onSave={handleConfirm}
+          cancelDisabled={submitting}
+          saveDisabled={saveDisabled}
+          saveLabel={submitting ? "Saving…" : "Save"}
+        />
 
         <SearchBottomSheetSection>
           <SearchBottomSheetRow
@@ -454,28 +459,6 @@ function SearchSheetContent({
             onOpenChange: onKeywordsOpenChange,
           }}
         />
-
-        <View className="flex-row gap-3 px-5 pb-6 pt-0">
-          <Button
-            variant="tertiary"
-            className="min-h-12 flex-1 rounded-2xl bg-surface"
-            onPress={dismiss}
-            isDisabled={submitting}
-          >
-            <Button.Label>Cancel</Button.Label>
-          </Button>
-          <Button
-            variant="primary"
-            className="min-h-12 flex-1 rounded-2xl"
-            onPress={handleConfirm}
-            isDisabled={saveDisabled}
-          >
-            {submitting ? (
-              <Spinner size="sm" color={accentForeground} />
-            ) : null}
-            <Button.Label>{submitting ? "Saving…" : "Save"}</Button.Label>
-          </Button>
-        </View>
       </View>
     </BottomSheet.Content>
   );

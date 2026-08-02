@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 import {
   BottomSheet,
-  Button,
   Checkbox,
   ControlField,
   Label,
@@ -17,6 +16,7 @@ import { withUniwind } from "uniwind";
 
 import PlatformIcon from "@/components/icons/PlatformIcon";
 import { SEARCH_PLATFORMS } from "@/features/home/search-bottom-sheet-platforms-sheet";
+import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import {
   SHEET_BACKGROUND_CLASS_NAME,
   SHEET_CONTENT_CLASS_NAME,
@@ -75,13 +75,16 @@ function PlatformsSheetContent({
       contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
     >
       <View>
-        <View className="items-center px-5 pb-1 pt-4">
-          <Typography type="body" weight="normal">
-            Platforms
-          </Typography>
-        </View>
+        <SearchBottomSheetHeader
+          title="Platforms"
+          onCancel={dismiss}
+          onSave={() => {
+            onPlatformsChange(draft);
+            dismiss();
+          }}
+        />
 
-        <View className="mx-3 mb-2 overflow-hidden rounded-3xl bg-surface shadow-surface">
+        <View className="mx-3 mb-6 overflow-hidden rounded-3xl bg-surface shadow-surface">
           {catalog.map((platform, index) => {
             const isSelected = draft.includes(platform.id);
             const isLast = index === catalog.length - 1;
@@ -114,26 +117,6 @@ function PlatformsSheetContent({
               </View>
             );
           })}
-        </View>
-
-        <View className="flex-row gap-3 px-5 pb-6 pt-2">
-          <Button
-            variant="tertiary"
-            className="min-h-12 flex-1 rounded-2xl bg-surface"
-            onPress={dismiss}
-          >
-            <Button.Label>Cancel</Button.Label>
-          </Button>
-          <Button
-            variant="primary"
-            className="min-h-12 flex-1 rounded-2xl"
-            onPress={() => {
-              onPlatformsChange(draft);
-              dismiss();
-            }}
-          >
-            <Button.Label>Save</Button.Label>
-          </Button>
         </View>
       </View>
     </BottomSheet.Content>

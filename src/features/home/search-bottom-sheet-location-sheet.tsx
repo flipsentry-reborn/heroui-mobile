@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import {
   BottomSheet,
-  Button,
   Typography,
   useBottomSheet,
 } from "heroui-native";
@@ -31,6 +30,7 @@ import {
   LocationPlatformsSheet,
 } from "@/features/home/location-platforms-section";
 import { LocationRadius } from "@/features/home/location-radius";
+import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import {
   SHEET_BACKGROUND_CLASS_NAME,
   SHEET_CONTENT_CLASS_NAME,
@@ -199,17 +199,18 @@ function LocationSheetContent({
       contentContainerClassName={SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME}
     >
       <View className="flex-1">
-        <View className="items-center px-5 pb-1 pt-4">
-          <Typography type="body" weight="normal">
-            Location
-          </Typography>
-        </View>
+        <SearchBottomSheetHeader
+          title="Location"
+          onCancel={dismiss}
+          onSave={handleSave}
+          saveDisabled={!canSave}
+        />
 
         <StyledBottomSheetScrollView
           className="flex-1"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerClassName="gap-5 px-3 pb-4 pt-2"
+          contentContainerClassName="gap-5 px-3 pb-6 pt-2"
         >
           <LocationMap
             main={main}
@@ -260,24 +261,6 @@ function LocationSheetContent({
           infoReason={infoReason}
           onInfoReasonChange={setInfoReason}
         />
-
-        <View className="flex-row gap-3 px-5 pb-6 pt-2">
-          <Button
-            variant="tertiary"
-            className="min-h-12 flex-1 rounded-2xl bg-surface"
-            onPress={dismiss}
-          >
-            <Button.Label>Cancel</Button.Label>
-          </Button>
-          <Button
-            variant="primary"
-            className="min-h-12 flex-1 rounded-2xl"
-            isDisabled={!canSave}
-            onPress={handleSave}
-          >
-            <Button.Label>Save</Button.Label>
-          </Button>
-        </View>
       </View>
     </BottomSheet.Content>
   );

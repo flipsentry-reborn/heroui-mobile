@@ -6,9 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import {
   BottomSheet,
-  Button,
   FieldError,
-  Spinner,
   Switch,
   Typography,
   useBottomSheet,
@@ -463,7 +461,7 @@ function FilterSheetBody({
   dismissRef: MutableRefObject<(() => void) | null>;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
-  const [muted, accentForeground] = useThemeColor(["muted", "accent-foreground"]);
+  const [muted] = useThemeColor(["muted"]);
   const snapPoints = useMemo(() => ["78%", "94%"], []);
   const dismiss = useCallback(() => onOpenChange(false), [onOpenChange]);
   useEffect(() => {
@@ -492,14 +490,21 @@ function FilterSheetBody({
     >
       <View className="flex-1">
         <View className="shrink-0">
-          <SearchBottomSheetHeader title={title} />
+          <SearchBottomSheetHeader
+            title={title}
+            onCancel={dismiss}
+            onSave={onSave}
+            cancelDisabled={submitting}
+            saveDisabled={!canSave || submitting}
+            saveLabel={submitting ? "Saving…" : "Save"}
+          />
         </View>
 
         <StyledBottomSheetScrollView
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           className="min-h-0 flex-1"
-          contentContainerClassName="pb-2"
+          contentContainerClassName="pb-6"
         >
           <SearchBottomSheetSection>
             <SearchBottomSheetRow
@@ -629,26 +634,6 @@ function FilterSheetBody({
             </FieldError>
           ) : null}
         </StyledBottomSheetScrollView>
-
-        <View className="shrink-0 flex-row gap-3 px-5 pb-6 pt-2">
-          <Button
-            variant="tertiary"
-            className="min-h-12 flex-1 bg-surface"
-            onPress={dismiss}
-            isDisabled={submitting}
-          >
-            <Button.Label>Cancel</Button.Label>
-          </Button>
-          <Button
-            variant="primary"
-            className="min-h-12 flex-1"
-            onPress={onSave}
-            isDisabled={!canSave || submitting}
-          >
-            {submitting ? <Spinner size="sm" color={accentForeground} /> : null}
-            <Button.Label>{submitting ? "Saving…" : "Save"}</Button.Label>
-          </Button>
-        </View>
       </View>
     </BottomSheet.Content>
   );

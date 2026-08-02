@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
 import {
   BottomSheet,
-  Button,
   ListGroup,
   Separator,
   Typography,
@@ -15,6 +14,7 @@ import {
 import { withUniwind } from "uniwind";
 
 import agent from "@/api/agent";
+import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import {
   SHEET_BACKGROUND_CLASS_NAME,
   SHEET_CONTENT_CLASS_NAME,
@@ -202,11 +202,14 @@ function CarMakesSheetContent({
       contentContainerClassName={SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME}
     >
       <View className="flex-1">
-        <View className="flex-row items-center justify-between px-5 pb-1 pt-4">
-          <View className="w-16" />
-          <Typography type="body" weight="normal">
-            Makes
-          </Typography>
+        <SearchBottomSheetHeader
+          title="Makes"
+          onCancel={dismiss}
+          onSave={handleSave}
+          saveDisabled={!canSave}
+        />
+
+        <View className="px-5 pb-2">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={
@@ -216,15 +219,16 @@ function CarMakesSheetContent({
             }
             disabled={loading || makeNames.length === 0}
             onPress={handleHeaderSelectAll}
-            className="min-w-16 items-end py-1"
+            className="self-end py-1"
             hitSlop={8}
           >
             <Typography
               type="body-sm"
+              weight="semibold"
               className={
                 loading || makeNames.length === 0
                   ? "text-muted"
-                  : "text-sky-400"
+                  : "text-sky-500"
               }
             >
               {selection.anyMake || selection.selectedIds.length > 0
@@ -312,24 +316,6 @@ function CarMakesSheetContent({
             </Typography>
           ) : null}
         </StyledBottomSheetScrollView>
-
-        <View className="flex-row gap-3 px-5 pb-6 pt-2">
-          <Button
-            variant="tertiary"
-            className="min-h-12 flex-1 rounded-2xl bg-surface"
-            onPress={dismiss}
-          >
-            <Button.Label>Cancel</Button.Label>
-          </Button>
-          <Button
-            variant="primary"
-            className="min-h-12 flex-1 rounded-2xl"
-            isDisabled={!canSave}
-            onPress={handleSave}
-          >
-            <Button.Label>Save</Button.Label>
-          </Button>
-        </View>
       </View>
     </BottomSheet.Content>
   );

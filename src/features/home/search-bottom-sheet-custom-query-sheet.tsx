@@ -1,17 +1,13 @@
 import type { JSX } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
-import {
-  BottomSheet,
-  Button,
-  Typography,
-  useBottomSheet,
-} from "heroui-native";
+import { BottomSheet, useBottomSheet } from "heroui-native";
 
 import {
   CustomSearchInput,
   isCustomSearchQueryValid,
 } from "@/features/home/search-bottom-sheet-criteria";
+import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import {
   SearchSheetGroup,
   SearchSheetRow,
@@ -63,11 +59,12 @@ function CustomQuerySheetContent({
       contentContainerClassName={SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME}
     >
       <View>
-        <View className="items-center px-5 pb-1 pt-4">
-          <Typography type="body" weight="normal">
-            {title}
-          </Typography>
-        </View>
+        <SearchBottomSheetHeader
+          title={title}
+          onCancel={dismiss}
+          onSave={handleSave}
+          saveDisabled={!canSave}
+        />
         <SearchSheetGroup>
           <SearchSheetRow
             title={fieldTitle}
@@ -86,23 +83,6 @@ function CustomQuerySheetContent({
             }
           />
         </SearchSheetGroup>
-        <View className="flex-row gap-3 px-5 pb-6 pt-2">
-          <Button
-            variant="tertiary"
-            className="min-h-12 flex-1 rounded-2xl bg-surface"
-            onPress={dismiss}
-          >
-            <Button.Label>Cancel</Button.Label>
-          </Button>
-          <Button
-            variant="primary"
-            className="min-h-12 flex-1 rounded-2xl"
-            isDisabled={!canSave}
-            onPress={handleSave}
-          >
-            <Button.Label>Save</Button.Label>
-          </Button>
-        </View>
       </View>
     </BottomSheet.Content>
   );

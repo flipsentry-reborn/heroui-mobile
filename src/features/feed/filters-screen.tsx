@@ -23,7 +23,6 @@ import { withUniwind } from "uniwind";
 
 import { BrandButton } from "@/components/ui/brand-button";
 import { FilterBottomSheet } from "@/features/feed/filter-bottom-sheet";
-import { showFilterToast } from "@/features/feed/filter-toast";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import { formatOpenRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
@@ -424,17 +423,15 @@ export const FiltersScreen = observer(function FiltersScreen({
 
   const handleToggleActive = useCallback(
     (filter: UserFilter, active: boolean) => {
-      showFilterToast(toast, {
-        kind: active ? "enabled" : "disabled",
+      showSearchActionProgress(toast, {
+        kind: active ? "enable" : "disable",
+        subject: "filter",
         title: filter.name,
-      });
-      void filterStore.updateFilter(filter.id, { isActive: active }).then((updated) => {
-        if (updated == null) {
-          showFilterToast(toast, {
-            kind: "error",
-            errorLabel: filterStore.lastError ?? undefined,
-          });
-        }
+        onCommit: async () => {
+          const updated = await filterStore.updateFilter(filter.id, { isActive: active });
+          return updated != null;
+        },
+        getErrorMessage: () => filterStore.lastError,
       });
     },
     [filterStore, toast]
@@ -442,17 +439,15 @@ export const FiltersScreen = observer(function FiltersScreen({
 
   const handleToggleSelected = useCallback(
     (filter: UserFilter, selected: boolean) => {
-      showFilterToast(toast, {
-        kind: selected ? "selected" : "deselected",
+      showSearchActionProgress(toast, {
+        kind: selected ? "select" : "deselect",
+        subject: "filter",
         title: filter.name,
-      });
-      void filterStore.updateFilter(filter.id, { isSelected: selected }).then((updated) => {
-        if (updated == null) {
-          showFilterToast(toast, {
-            kind: "error",
-            errorLabel: filterStore.lastError ?? undefined,
-          });
-        }
+        onCommit: async () => {
+          const updated = await filterStore.updateFilter(filter.id, { isSelected: selected });
+          return updated != null;
+        },
+        getErrorMessage: () => filterStore.lastError,
       });
     },
     [filterStore, toast]
@@ -460,17 +455,17 @@ export const FiltersScreen = observer(function FiltersScreen({
 
   const handleToggleNotifications = useCallback(
     (filter: UserFilter, enabled: boolean) => {
-      showFilterToast(toast, {
+      showSearchActionProgress(toast, {
         kind: enabled ? "notificationsOn" : "notificationsOff",
+        subject: "filter",
         title: filter.name,
-      });
-      void filterStore.updateFilter(filter.id, { notificationEnabled: enabled }).then((updated) => {
-        if (updated == null) {
-          showFilterToast(toast, {
-            kind: "error",
-            errorLabel: filterStore.lastError ?? undefined,
+        onCommit: async () => {
+          const updated = await filterStore.updateFilter(filter.id, {
+            notificationEnabled: enabled,
           });
-        }
+          return updated != null;
+        },
+        getErrorMessage: () => filterStore.lastError,
       });
     },
     [filterStore, toast]

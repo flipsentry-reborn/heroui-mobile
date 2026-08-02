@@ -12,7 +12,13 @@ export type SearchActionKind =
   | "pause"
   | "start"
   | "create"
-  | "update";
+  | "update"
+  | "select"
+  | "deselect"
+  | "enable"
+  | "disable"
+  | "notificationsOn"
+  | "notificationsOff";
 
 export type ActionSubject = "search" | "filter";
 
@@ -41,7 +47,7 @@ type ActionCopy = {
   done: string;
   failed: string;
   color: ProgressColor;
-  toastVariant: "danger" | "warning" | "success";
+  toastVariant: "danger" | "warning" | "success" | "accent";
   icon: IoniconName;
 };
 
@@ -99,6 +105,60 @@ function actionCopy(kind: SearchActionKind, subject: ActionSubject): ActionCopy 
         color: "accent",
         toastVariant: "success",
         icon: "create-outline",
+      };
+    case "select":
+      return {
+        running: `Selecting ${noun}…`,
+        done: `${Noun} selected`,
+        failed: "Select failed",
+        color: "success",
+        toastVariant: "success",
+        icon: "checkmark-circle",
+      };
+    case "deselect":
+      return {
+        running: `Deselecting ${noun}…`,
+        done: `${Noun} deselected`,
+        failed: "Deselect failed",
+        color: "accent",
+        toastVariant: "accent",
+        icon: "checkmark-circle-outline",
+      };
+    case "enable":
+      return {
+        running: `Enabling ${noun}…`,
+        done: `${Noun} enabled`,
+        failed: "Enable failed",
+        color: "success",
+        toastVariant: "success",
+        icon: "play-outline",
+      };
+    case "disable":
+      return {
+        running: `Disabling ${noun}…`,
+        done: `${Noun} disabled`,
+        failed: "Disable failed",
+        color: "warning",
+        toastVariant: "warning",
+        icon: "pause-outline",
+      };
+    case "notificationsOn":
+      return {
+        running: "Enabling notifications…",
+        done: "Notifications enabled",
+        failed: "Could not enable notifications",
+        color: "success",
+        toastVariant: "success",
+        icon: "notifications-outline",
+      };
+    case "notificationsOff":
+      return {
+        running: "Disabling notifications…",
+        done: "Notifications disabled",
+        failed: "Could not disable notifications",
+        color: "warning",
+        toastVariant: "warning",
+        icon: "notifications-off-outline",
       };
   }
 }
@@ -235,7 +295,7 @@ function SearchActionProgressToast({
       className="rounded-2xl px-3.5 py-3"
       {...toastProps}
     >
-      <View className="w-full gap-2.5 pr-6">
+      <View className="w-full gap-2.5">
         <View className="flex-row items-center gap-2.5">
           <View className="h-8 w-8 items-center justify-center rounded-full bg-default">
             <StyledIonicons
@@ -279,7 +339,6 @@ function SearchActionProgressToast({
           </Toast.Action>
         ) : null}
       </View>
-      <Toast.Close className="absolute top-2 right-2" iconProps={{ size: 14 }} />
     </Toast>
   );
 }
@@ -289,7 +348,7 @@ export function showSearchActionProgress(
   options: {
     kind: SearchActionKind;
     title: string;
-    /** Defaults to search; pass `filter` for filter create/update/delete/pause. */
+    /** Defaults to search; pass `filter` for filter create/update/delete/select/enable. */
     subject?: ActionSubject;
     onCommit: () => Promise<boolean>;
     /** Prefer store `lastError` after a failed commit so API messages reach the toast. */

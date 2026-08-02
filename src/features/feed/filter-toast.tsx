@@ -113,7 +113,7 @@ function FilterInfoToast({
       className="rounded-2xl px-3.5 py-3"
       {...toastProps}
     >
-      <View className="w-full flex-row items-center gap-2.5 pr-6">
+      <View className="w-full flex-row items-center gap-2.5">
         <View className="h-8 w-8 items-center justify-center rounded-full bg-default">
           <StyledIonicons name={copy.icon} size={16} className={copy.iconClassName} />
         </View>
@@ -126,7 +126,6 @@ function FilterInfoToast({
           ) : null}
         </View>
       </View>
-      <Toast.Close className="absolute top-2 right-2" iconProps={{ size: 14 }} />
     </Toast>
   );
 }

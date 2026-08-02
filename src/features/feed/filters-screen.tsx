@@ -137,7 +137,6 @@ function FilterControlRow({
   title,
   description,
   selected,
-  disabled,
   onSelectedChange,
 }: {
   icon: IoniconName;
@@ -145,7 +144,6 @@ function FilterControlRow({
   title: string;
   description: string;
   selected: boolean;
-  disabled: boolean;
   onSelectedChange: (selected: boolean) => void;
 }): JSX.Element {
   return (
@@ -159,7 +157,6 @@ function FilterControlRow({
       </View>
       <Switch
         isSelected={selected}
-        isDisabled={disabled}
         onSelectedChange={onSelectedChange}
         accessibilityLabel={title}
       />
@@ -209,11 +206,9 @@ function FilterActionsMenu({
 
 function SelectedFiltersSection({
   filters,
-  busy,
   onDeselect,
 }: {
   filters: UserFilter[];
-  busy: boolean;
   onDeselect: (filter: UserFilter) => void;
 }): JSX.Element | null {
   if (filters.length === 0) return null;
@@ -243,17 +238,12 @@ function SelectedFiltersSection({
               </Typography>
               <Pressable
                 onPress={() => onDeselect(filter)}
-                disabled={busy}
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={`Deselect ${filter.name}`}
                 className="h-5 w-5 items-center justify-center"
               >
-                <StyledIonicons
-                  name="close"
-                  size={14}
-                  className={busy ? "text-muted opacity-50" : "text-muted"}
-                />
+                <StyledIonicons name="close" size={14} className="text-muted" />
               </Pressable>
             </View>
           ))}
@@ -265,7 +255,6 @@ function SelectedFiltersSection({
 
 function FilterAccordionItem({
   filter,
-  busy,
   onEdit,
   onDelete,
   onToggleActive,
@@ -273,7 +262,6 @@ function FilterAccordionItem({
   onToggleNotifications,
 }: {
   filter: UserFilter;
-  busy: boolean;
   onEdit: (filter: UserFilter) => void;
   onDelete: (filter: UserFilter) => void;
   onToggleActive: (filter: UserFilter, selected: boolean) => void;
@@ -315,11 +303,10 @@ function FilterAccordionItem({
         <Accordion.Indicator />
         <Pressable
           onPress={() => onToggleSelected(filter, !filter.isSelected)}
-          disabled={busy}
           hitSlop={8}
           accessibilityRole="checkbox"
           accessibilityLabel={`Select ${filter.name}`}
-          accessibilityState={{ checked: filter.isSelected, disabled: busy }}
+          accessibilityState={{ checked: filter.isSelected }}
           className="h-10 w-10 shrink-0 items-center justify-center"
         >
           <StyledIonicons
@@ -352,7 +339,6 @@ function FilterAccordionItem({
             title="Enabled"
             description="Match this filter against new listings."
             selected={filter.isActive}
-            disabled={busy}
             onSelectedChange={(selected) => onToggleActive(filter, selected)}
           />
           <Separator className="opacity-50" />
@@ -362,12 +348,11 @@ function FilterAccordionItem({
             title="Notifications"
             description="Allow alerts for listings matched by this filter."
             selected={filter.notificationEnabled}
-            disabled={busy}
             onSelectedChange={(selected) => onToggleNotifications(filter, selected)}
           />
         </View>
 
-        <FilterActionsMenu filter={filter} disabled={busy} onEdit={onEdit} onDelete={onDelete} />
+        <FilterActionsMenu filter={filter} disabled={false} onEdit={onEdit} onDelete={onDelete} />
       </Accordion.Content>
     </Accordion.Item>
   );
@@ -448,60 +433,54 @@ export const FiltersScreen = observer(function FiltersScreen({
   }, [filterStore]);
 
   const handleToggleActive = useCallback(
-    async (filter: UserFilter, active: boolean) => {
-      const updated = await filterStore.updateFilter(filter.id, {
-        isActive: active,
-      });
-      if (updated == null) {
-        showFilterToast(toast, {
-          kind: "error",
-          errorLabel: filterStore.lastError ?? undefined,
-        });
-        return;
-      }
+    (filter: UserFilter, active: boolean) => {
       showFilterToast(toast, {
         kind: active ? "enabled" : "disabled",
         title: filter.name,
+      });
+      void filterStore.updateFilter(filter.id, { isActive: active }).then((updated) => {
+        if (updated == null) {
+          showFilterToast(toast, {
+            kind: "error",
+            errorLabel: filterStore.lastError ?? undefined,
+          });
+        }
       });
     },
     [filterStore, toast]
   );
 
   const handleToggleSelected = useCallback(
-    async (filter: UserFilter, selected: boolean) => {
-      const updated = await filterStore.updateFilter(filter.id, {
-        isSelected: selected,
-      });
-      if (updated == null) {
-        showFilterToast(toast, {
-          kind: "error",
-          errorLabel: filterStore.lastError ?? undefined,
-        });
-        return;
-      }
+    (filter: UserFilter, selected: boolean) => {
       showFilterToast(toast, {
         kind: selected ? "selected" : "deselected",
         title: filter.name,
+      });
+      void filterStore.updateFilter(filter.id, { isSelected: selected }).then((updated) => {
+        if (updated == null) {
+          showFilterToast(toast, {
+            kind: "error",
+            errorLabel: filterStore.lastError ?? undefined,
+          });
+        }
       });
     },
     [filterStore, toast]
   );
 
   const handleToggleNotifications = useCallback(
-    async (filter: UserFilter, enabled: boolean) => {
-      const updated = await filterStore.updateFilter(filter.id, {
-        notificationEnabled: enabled,
-      });
-      if (updated == null) {
-        showFilterToast(toast, {
-          kind: "error",
-          errorLabel: filterStore.lastError ?? undefined,
-        });
-        return;
-      }
+    (filter: UserFilter, enabled: boolean) => {
       showFilterToast(toast, {
         kind: enabled ? "notificationsOn" : "notificationsOff",
         title: filter.name,
+      });
+      void filterStore.updateFilter(filter.id, { notificationEnabled: enabled }).then((updated) => {
+        if (updated == null) {
+          showFilterToast(toast, {
+            kind: "error",
+            errorLabel: filterStore.lastError ?? undefined,
+          });
+        }
       });
     },
     [filterStore, toast]
@@ -576,18 +555,11 @@ export const FiltersScreen = observer(function FiltersScreen({
                 <FilterAccordionItem
                   key={filter.id}
                   filter={filter}
-                  busy={filterStore.submitting}
                   onEdit={openEdit}
                   onDelete={handleDelete}
-                  onToggleActive={(nextFilter, active) => {
-                    void handleToggleActive(nextFilter, active);
-                  }}
-                  onToggleSelected={(nextFilter, selected) => {
-                    void handleToggleSelected(nextFilter, selected);
-                  }}
-                  onToggleNotifications={(nextFilter, enabled) => {
-                    void handleToggleNotifications(nextFilter, enabled);
-                  }}
+                  onToggleActive={handleToggleActive}
+                  onToggleSelected={handleToggleSelected}
+                  onToggleNotifications={handleToggleNotifications}
                 />
               ))}
             </Accordion>
@@ -616,9 +588,8 @@ export const FiltersScreen = observer(function FiltersScreen({
 
           <SelectedFiltersSection
             filters={selectedFilters}
-            busy={filterStore.submitting}
             onDeselect={(filter) => {
-              void handleToggleSelected(filter, false);
+              handleToggleSelected(filter, false);
             }}
           />
         </ScrollView>

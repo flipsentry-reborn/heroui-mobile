@@ -41,15 +41,15 @@ export function FeedDetailWarnings({
 
   return (
     <Accordion
-      variant="surface"
+      variant="default"
       selectionMode="single"
       hideSeparator
       isCollapsible
       animation="disable-all"
-      className="shadow-none"
+      className="overflow-hidden rounded-2xl border border-border bg-surface-secondary shadow-none"
     >
       <Accordion.Item value="warnings">
-        <Accordion.Trigger className="z-0 py-2.5">
+        <Accordion.Trigger className="z-0 px-3 py-3">
           <View className="min-w-0 flex-1 flex-row items-center gap-2.5">
             <AiEstimationIcon size={18} />
             <View className="min-w-0 flex-1 flex-row items-center gap-1.5">
@@ -71,7 +71,7 @@ export function FeedDetailWarnings({
           </View>
           <Accordion.Indicator />
         </Accordion.Trigger>
-        <Accordion.Content className="pt-0">
+        <Accordion.Content className="px-3 pb-3 pt-0">
           <Typography type="body-xs" className="mb-2 text-[11px] text-muted">
             Our AI flagged these while estimating this listing.
           </Typography>

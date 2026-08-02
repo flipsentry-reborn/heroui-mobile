@@ -10,6 +10,22 @@ import type {
 import type FeedStore from "@/store/feedStore";
 import type SearchStore from "@/store/searchStore";
 
+function applyFilterUpdate(previous: UserFilter, input: UpdateUserFilterInput): UserFilter {
+  return {
+    ...previous,
+    name: input.name ?? previous.name,
+    color: input.color ?? previous.color,
+    vehicleQuery: input.vehicleQuery !== undefined ? input.vehicleQuery : previous.vehicleQuery,
+    customQuery: input.customQuery !== undefined ? input.customQuery : previous.customQuery,
+    titleIncluders: input.titleIncluders ?? previous.titleIncluders,
+    descriptionIncluders: input.descriptionIncluders ?? previous.descriptionIncluders,
+    notificationEnabled: input.notificationEnabled ?? previous.notificationEnabled,
+    isActive: input.isActive ?? previous.isActive,
+    isSelected: input.isSelected ?? previous.isSelected,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export default class FilterStore {
   filters: UserFilter[] = [];
   loading = false;
@@ -75,7 +91,7 @@ export default class FilterStore {
       runInAction(() => {
         this.filters = [filter, ...this.filters];
       });
-      await this.searchStore?.loadFeedTabAvailability(true);
+      void this.searchStore?.loadFeedTabAvailability(true);
       if (filter.isSelected) {
         this.feedStore?.onSelectedFiltersChanged();
       }
@@ -92,36 +108,53 @@ export default class FilterStore {
     }
   }
 
-  async updateFilter(
-    id: string,
-    input: UpdateUserFilterInput,
-  ): Promise<UserFilter | null> {
-    if (this.submitting) return null;
-    this.submitting = true;
-    this.lastError = null;
+  async updateFilter(id: string, input: UpdateUserFilterInput): Promise<UserFilter | null> {
     const previous = this.filters.find((f) => f.id === id);
+    if (previous == null) {
+      this.lastError = "Filter not found";
+      return null;
+    }
+
+    this.lastError = null;
+    const optimistic = applyFilterUpdate(previous, input);
+    runInAction(() => {
+      this.filters = this.filters.map((f) => (f.id === id ? optimistic : f));
+    });
+
+    const selectionChanged =
+      input.isSelected !== undefined && previous.isSelected !== optimistic.isSelected;
+    const activeChanged = input.isActive !== undefined && previous.isActive !== optimistic.isActive;
+    const criteriaChanged =
+      input.vehicleQuery !== undefined ||
+      input.customQuery !== undefined ||
+      input.titleIncluders !== undefined ||
+      input.descriptionIncluders !== undefined;
+
+    if (selectionChanged) {
+      this.feedStore?.onSelectedFiltersChanged();
+    }
+    if (activeChanged || criteriaChanged) {
+      void this.searchStore?.loadFeedTabAvailability(true);
+    }
+
     try {
       const filter = await agent.Filters.update(id, input);
       runInAction(() => {
         this.filters = this.filters.map((f) => (f.id === id ? filter : f));
       });
-      await this.searchStore?.loadFeedTabAvailability(true);
-      if (
-        input.isSelected !== undefined &&
-        previous?.isSelected !== filter.isSelected
-      ) {
-        this.feedStore?.onSelectedFiltersChanged();
-      }
       return filter;
     } catch (error) {
       runInAction(() => {
+        this.filters = this.filters.map((f) => (f.id === id ? previous : f));
         this.lastError = toUserErrorMessage(error);
       });
+      if (selectionChanged) {
+        this.feedStore?.onSelectedFiltersChanged();
+      }
+      if (activeChanged || criteriaChanged) {
+        void this.searchStore?.loadFeedTabAvailability(true);
+      }
       return null;
-    } finally {
-      runInAction(() => {
-        this.submitting = false;
-      });
     }
   }
 
@@ -135,7 +168,7 @@ export default class FilterStore {
       runInAction(() => {
         this.filters = this.filters.filter((f) => f.id !== id);
       });
-      await this.searchStore?.loadFeedTabAvailability(true);
+      void this.searchStore?.loadFeedTabAvailability(true);
       if (previous?.isSelected) {
         this.feedStore?.onSelectedFiltersChanged();
       }

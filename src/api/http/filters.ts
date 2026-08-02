@@ -19,7 +19,6 @@ interface ApiUserFilter {
   descriptionIncluders?: string[];
   notificationEnabled: boolean;
   isActive: boolean;
-  isSelected?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,7 +47,6 @@ function mapFilter(api: ApiUserFilter): UserFilter {
     descriptionIncluders: api.descriptionIncluders ?? [],
     notificationEnabled: api.notificationEnabled ?? true,
     isActive: api.isActive ?? true,
-    isSelected: api.isSelected ?? false,
     createdAt: api.createdAt,
     updatedAt: api.updatedAt,
   };
@@ -83,7 +81,6 @@ function buildCreatePayload(input: CreateUserFilterInput) {
     descriptionIncluders: input.descriptionIncluders ?? [],
     notificationEnabled: input.notificationEnabled ?? true,
     isActive: input.isActive ?? true,
-    isSelected: input.isSelected ?? false,
   };
 }
 
@@ -114,7 +111,6 @@ function buildUpdatePayload(input: UpdateUserFilterInput) {
     descriptionIncluders: input.descriptionIncluders,
     notificationEnabled: input.notificationEnabled,
     isActive: input.isActive,
-    isSelected: input.isSelected,
   };
 }
 

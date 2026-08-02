@@ -13,8 +13,6 @@ export type SearchActionKind =
   | "start"
   | "create"
   | "update"
-  | "select"
-  | "deselect"
   | "enable"
   | "disable"
   | "notificationsOn"
@@ -105,24 +103,6 @@ function actionCopy(kind: SearchActionKind, subject: ActionSubject): ActionCopy 
         color: "accent",
         toastVariant: "success",
         icon: "create-outline",
-      };
-    case "select":
-      return {
-        running: `Activating ${noun}…`,
-        done: `${Noun} activated`,
-        failed: "Activation failed",
-        color: "success",
-        toastVariant: "success",
-        icon: "checkmark-circle",
-      };
-    case "deselect":
-      return {
-        running: `Deactivating ${noun}…`,
-        done: `${Noun} deactivated`,
-        failed: "Deactivation failed",
-        color: "accent",
-        toastVariant: "accent",
-        icon: "checkmark-circle-outline",
       };
     case "enable":
       return {
@@ -348,7 +328,7 @@ export function showSearchActionProgress(
   options: {
     kind: SearchActionKind;
     title: string;
-    /** Defaults to search; pass `filter` for filter create/update/delete/select/enable. */
+    /** Defaults to search; pass `filter` for filter create/update/delete/enable. */
     subject?: ActionSubject;
     onCommit: () => Promise<boolean>;
     /** Prefer store `lastError` after a failed commit so API messages reach the toast. */

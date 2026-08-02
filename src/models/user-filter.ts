@@ -19,8 +19,6 @@ export interface UserFilter {
   descriptionIncluders: string[];
   notificationEnabled: boolean;
   isActive: boolean;
-  /** Scopes For You feed viewing — independent of isActive. */
-  isSelected: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,7 +33,6 @@ export interface CreateUserFilterInput {
   descriptionIncluders?: string[];
   notificationEnabled?: boolean;
   isActive?: boolean;
-  isSelected?: boolean;
 }
 
 export interface UpdateUserFilterInput {
@@ -47,7 +44,6 @@ export interface UpdateUserFilterInput {
   descriptionIncluders?: string[];
   notificationEnabled?: boolean;
   isActive?: boolean;
-  isSelected?: boolean;
 }
 
 export interface FeedFilterSummary {

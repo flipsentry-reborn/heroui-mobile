@@ -338,8 +338,8 @@ export default class FeedStore {
       return id ? [id] : undefined;
     }
 
-    const selected = this.filterStore?.selectedFilterIds ?? [];
-    return selected.length > 0 ? selected : undefined;
+    const active = this.filterStore?.activeFilterIds ?? [];
+    return active.length > 0 ? active : undefined;
   }
 
   private displayPrefs(): FeedDisplayPrefs {
@@ -883,7 +883,7 @@ export default class FeedStore {
       this.upsertItem(feed);
       const resolved = this.items.get(feed.id) ?? feed;
       const filterTabs = this.searchStore?.filterTabs ?? [];
-      const selectedFilterIds = this.filterStore?.selectedFilterIds ?? [];
+      const activeFilterIds = this.filterStore?.activeFilterIds ?? [];
       if (!matchesFeedDisplayPrefs(resolved, this.displayPrefs())) {
         debugLog.info(FEED_LIVE_LOG, "applyLiveFeed skipped (display prefs)", {
           id: resolved.id,
@@ -895,7 +895,7 @@ export default class FeedStore {
         resolved,
         tabs,
         filterTabs,
-        selectedFilterIds,
+        activeFilterIds,
       );
       this.liveHeadIds.add(resolved.id);
 

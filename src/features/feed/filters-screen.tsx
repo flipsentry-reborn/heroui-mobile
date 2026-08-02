@@ -214,19 +214,19 @@ function FilterActionsMenu({
   );
 }
 
-function SelectedFiltersSection({
+function EnabledFiltersSection({
   filters,
-  onDeselect,
+  onDisable,
 }: {
   filters: UserFilter[];
-  onDeselect: (filter: UserFilter) => void;
+  onDisable: (filter: UserFilter) => void;
 }): JSX.Element | null {
   if (filters.length === 0) return null;
 
   return (
     <View className="mx-3 mt-5 overflow-hidden rounded-3xl bg-surface px-3 py-3">
       <Typography type="body-xs" className="mb-2.5 text-muted">
-        Selected for feed
+        Enabled for feed
       </Typography>
       <View className="flex-row flex-wrap gap-2">
         {filters.map((filter) => (
@@ -243,10 +243,10 @@ function SelectedFiltersSection({
               {filter.name}
             </Typography>
             <Pressable
-              onPress={() => onDeselect(filter)}
+              onPress={() => onDisable(filter)}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel={`Deselect ${filter.name}`}
+              accessibilityLabel={`Disable ${filter.name}`}
               className="h-5 w-5 items-center justify-center"
             >
               <StyledIonicons name="close" size={14} className="text-muted" />
@@ -401,14 +401,12 @@ function FilterAccordionItem({
   onEdit,
   onDelete,
   onToggleActive,
-  onToggleSelected,
   onToggleNotifications,
 }: {
   filter: UserFilter;
   onEdit: (filter: UserFilter) => void;
   onDelete: (filter: UserFilter) => void;
   onToggleActive: (filter: UserFilter, selected: boolean) => void;
-  onToggleSelected: (filter: UserFilter, selected: boolean) => void;
   onToggleNotifications: (filter: UserFilter, selected: boolean) => void;
 }): JSX.Element {
   const criteria = criteriaLabels(filter);
@@ -440,20 +438,6 @@ function FilterAccordionItem({
           </Typography>
         </View>
         <Accordion.Indicator />
-        <Pressable
-          onPress={() => onToggleSelected(filter, !filter.isSelected)}
-          hitSlop={8}
-          accessibilityRole="checkbox"
-          accessibilityLabel={`Select ${filter.name}`}
-          accessibilityState={{ checked: filter.isSelected }}
-          className="h-10 w-10 shrink-0 items-center justify-center"
-        >
-          <StyledIonicons
-            name={filter.isSelected ? "checkmark-circle" : "checkmark-circle-outline"}
-            size={24}
-            className={filter.isSelected ? "text-success" : "text-muted opacity-55"}
-          />
-        </Pressable>
       </Accordion.Trigger>
 
       <Accordion.Content className="gap-2 px-3 pb-3 pt-0">
@@ -613,22 +597,6 @@ export const FiltersScreen = observer(function FiltersScreen({
     [filterStore, toast]
   );
 
-  const handleToggleSelected = useCallback(
-    (filter: UserFilter, selected: boolean) => {
-      showSearchActionProgress(toast, {
-        kind: selected ? "select" : "deselect",
-        subject: "filter",
-        title: filter.name,
-        onCommit: async () => {
-          const updated = await filterStore.updateFilter(filter.id, { isSelected: selected });
-          return updated != null;
-        },
-        getErrorMessage: () => filterStore.lastError,
-      });
-    },
-    [filterStore, toast]
-  );
-
   const handleToggleNotifications = useCallback(
     (filter: UserFilter, enabled: boolean) => {
       showSearchActionProgress(toast, {
@@ -662,7 +630,7 @@ export const FiltersScreen = observer(function FiltersScreen({
 
   const initialLoading = !filterStore.hasLoaded && filterStore.loading;
   const hasFilters = filterStore.filters.length > 0;
-  const selectedFilters = filterStore.selectedFilters;
+  const activeFilters = filterStore.activeFilters;
 
   return (
     <View className="flex-1 bg-background">
@@ -685,7 +653,7 @@ export const FiltersScreen = observer(function FiltersScreen({
                 Feed Filters
               </Typography>
               <Typography type="body-xs" className="mt-0.5 text-muted">
-                Tap the checkmark to select a filter.
+                Enable filters to match listings and scope your feed.
               </Typography>
             </View>
             <BrandButton className="h-9 min-h-9 gap-1 !rounded-xl px-2.5" onPress={openCreate}>
@@ -719,7 +687,6 @@ export const FiltersScreen = observer(function FiltersScreen({
                   onEdit={openEdit}
                   onDelete={handleDelete}
                   onToggleActive={handleToggleActive}
-                  onToggleSelected={handleToggleSelected}
                   onToggleNotifications={handleToggleNotifications}
                 />
               ))}
@@ -747,10 +714,10 @@ export const FiltersScreen = observer(function FiltersScreen({
             </View>
           ) : null}
 
-          <SelectedFiltersSection
-            filters={selectedFilters}
-            onDeselect={(filter) => {
-              handleToggleSelected(filter, false);
+          <EnabledFiltersSection
+            filters={activeFilters}
+            onDisable={(filter) => {
+              handleToggleActive(filter, false);
             }}
           />
         </ScrollView>

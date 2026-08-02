@@ -25,8 +25,6 @@ type ToastRenderProps = {
 export type FilterToastKind =
   | "enabled"
   | "disabled"
-  | "selected"
-  | "deselected"
   | "notificationsOn"
   | "notificationsOff"
   | "error";
@@ -53,20 +51,6 @@ function filterToastCopy(kind: FilterToastKind, errorLabel?: string): FilterToas
         variant: "warning",
         icon: "pause-outline",
         iconClassName: "text-warning",
-      };
-    case "selected":
-      return {
-        label: "Filter selected",
-        variant: "success",
-        icon: "checkmark-circle",
-        iconClassName: "text-success",
-      };
-    case "deselected":
-      return {
-        label: "Filter deselected",
-        variant: "default",
-        icon: "checkmark-circle-outline",
-        iconClassName: "text-muted",
       };
     case "notificationsOn":
       return {

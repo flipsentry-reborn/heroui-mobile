@@ -29,7 +29,6 @@ function applyFilterUpdate(previous: UserFilter, input: UpdateUserFilterInput): 
     descriptionIncluders: input.descriptionIncluders ?? previous.descriptionIncluders,
     notificationEnabled: input.notificationEnabled ?? previous.notificationEnabled,
     isActive: input.isActive ?? previous.isActive,
-    isSelected: input.isSelected ?? previous.isSelected,
     updatedAt: new Date().toISOString(),
   };
 }
@@ -62,12 +61,8 @@ export default class FilterStore {
     return this.filters.filter((f) => f.isActive);
   }
 
-  get selectedFilters(): UserFilter[] {
-    return this.filters.filter((f) => f.isSelected);
-  }
-
-  get selectedFilterIds(): string[] {
-    return this.selectedFilters.map((f) => f.id);
+  get activeFilterIds(): string[] {
+    return this.activeFilters.map((f) => f.id);
   }
 
   async loadDisplayPrefs(): Promise<void> {
@@ -131,7 +126,7 @@ export default class FilterStore {
         this.filters = [filter, ...this.filters];
       });
       void this.searchStore?.loadFeedTabAvailability(true);
-      if (filter.isSelected) {
+      if (filter.isActive) {
         this.feedStore?.onSelectedFiltersChanged();
       }
       return filter;
@@ -160,8 +155,6 @@ export default class FilterStore {
       this.filters = this.filters.map((f) => (f.id === id ? optimistic : f));
     });
 
-    const selectionChanged =
-      input.isSelected !== undefined && previous.isSelected !== optimistic.isSelected;
     const activeChanged = input.isActive !== undefined && previous.isActive !== optimistic.isActive;
     const criteriaChanged =
       input.vehicleQuery !== undefined ||
@@ -169,7 +162,7 @@ export default class FilterStore {
       input.titleIncluders !== undefined ||
       input.descriptionIncluders !== undefined;
 
-    if (selectionChanged) {
+    if (activeChanged) {
       this.feedStore?.onSelectedFiltersChanged();
     }
     if (activeChanged || criteriaChanged) {
@@ -187,7 +180,7 @@ export default class FilterStore {
         this.filters = this.filters.map((f) => (f.id === id ? previous : f));
         this.lastError = toUserErrorMessage(error);
       });
-      if (selectionChanged) {
+      if (activeChanged) {
         this.feedStore?.onSelectedFiltersChanged();
       }
       if (activeChanged || criteriaChanged) {
@@ -208,7 +201,7 @@ export default class FilterStore {
         this.filters = this.filters.filter((f) => f.id !== id);
       });
       void this.searchStore?.loadFeedTabAvailability(true);
-      if (previous?.isSelected) {
+      if (previous?.isActive) {
         this.feedStore?.onSelectedFiltersChanged();
       }
       return true;

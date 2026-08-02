@@ -31,7 +31,6 @@ const SEED_FILTERS: UserFilter[] = [
     descriptionIncluders: [],
     notificationEnabled: true,
     isActive: true,
-    isSelected: false,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
   },
@@ -49,7 +48,6 @@ const SEED_FILTERS: UserFilter[] = [
     descriptionIncluders: [],
     notificationEnabled: true,
     isActive: true,
-    isSelected: false,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
   },
@@ -65,7 +63,6 @@ function normalizeFilter(filter: UserFilter): UserFilter {
             minPrice: filter.customQuery.minPrice,
             maxPrice: filter.customQuery.maxPrice,
           },
-    isSelected: filter.isSelected ?? false,
   };
 }
 
@@ -183,7 +180,6 @@ export async function createFilter(
     descriptionIncluders: input.descriptionIncluders ?? [],
     notificationEnabled: input.notificationEnabled ?? true,
     isActive: input.isActive ?? true,
-    isSelected: input.isSelected ?? false,
     createdAt: now,
     updatedAt: now,
   };
@@ -239,7 +235,6 @@ export async function updateFilter(
     notificationEnabled:
       input.notificationEnabled ?? existing.notificationEnabled,
     isActive: input.isActive ?? existing.isActive,
-    isSelected: input.isSelected ?? existing.isSelected ?? false,
     updatedAt: new Date().toISOString(),
   };
   const next = [...filters];

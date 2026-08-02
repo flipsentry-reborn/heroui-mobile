@@ -27,25 +27,37 @@ export function buildLiveFeedParams(
     qs.append("bestPicksMaxHours", "72");
   } else if (category === "sold") {
     appendSoldParams(qs, params);
-  } else if (params.filterIds != null && params.filterIds.length > 0) {
-    for (const id of params.filterIds) {
-      qs.append("filterIds", id);
+  }
+
+  // Saved never scopes by filterIds. Other categories may combine category
+  // flags with filterIds and/or groupIds (selected filters + your searches).
+  if (category !== "saved") {
+    const filterIds =
+      params.filterIds != null && params.filterIds.length > 0
+        ? params.filterIds
+        : category.startsWith("filter:")
+          ? [category.slice("filter:".length)]
+          : [];
+    for (const id of filterIds) {
+      if (id) qs.append("filterIds", id);
     }
-  } else if (params.groupIds != null && params.groupIds.length > 0) {
-    for (const id of params.groupIds) {
-      qs.append("groupIds", id);
+
+    const groupIds =
+      params.groupIds != null && params.groupIds.length > 0
+        ? params.groupIds
+        : category !== "all" &&
+            category !== "for-you" &&
+            category !== "price-drop" &&
+            category !== "best-picks" &&
+            category !== "sold" &&
+            !category.startsWith("filter:") &&
+            !category.startsWith("type:") &&
+            !category.startsWith("custom:")
+          ? [category.replace(/^group-/, "")]
+          : [];
+    for (const id of groupIds) {
+      if (id) qs.append("groupIds", id);
     }
-  } else if (category.startsWith("filter:")) {
-    qs.append("filterIds", category.slice("filter:".length));
-  } else if (
-    category !== "all" &&
-    category !== "for-you" &&
-    category !== "price-drop" &&
-    !category.startsWith("type:") &&
-    !category.startsWith("custom:")
-  ) {
-    // Legacy / user search group id
-    qs.append("groupIds", category.replace(/^group-/, ""));
   }
 
   // Default clean bucket for main feed

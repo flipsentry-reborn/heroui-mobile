@@ -32,6 +32,7 @@ import type {
   FeedValuationUpdateData,
 } from "@/models/feed";
 import type { Pagination } from "@/models/pagination";
+import type FilterStore from "@/store/filterStore";
 import type SearchStore from "@/store/searchStore";
 
 const CATCH_UP_LOG = "FeedCatchUp";
@@ -89,6 +90,7 @@ export default class FeedStore {
   yourSearchesExpanded = DEFAULT_YOUR_SEARCHES_EXPANDED;
 
   private searchStore: SearchStore | null = null;
+  private filterStore: FilterStore | null = null;
   private pendingFeeds: FeedItem[] = [];
   /** Patches that arrived before the feed was in `items` (SignalR race). */
   private pendingImageUpdates = new Map<string, FeedImageUpdateData>();
@@ -105,7 +107,7 @@ export default class FeedStore {
   private scrollToTopHandler: (() => void) | null = null;
 
   constructor() {
-    makeAutoObservable(
+    makeAutoObservable<this, "bucketLoadPromises">(
       this,
       {
         bucketLoadPromises: false,
@@ -116,6 +118,10 @@ export default class FeedStore {
 
   setSearchStore(store: SearchStore): void {
     this.searchStore = store;
+  }
+
+  setFilterStore(store: FilterStore): void {
+    this.filterStore = store;
   }
 
   setActiveCategory(key: string): void {
@@ -311,7 +317,52 @@ export default class FeedStore {
   }
 
   private filterIdsFor(bucket: string): string[] | undefined {
-    return this.searchStore?.filterIdsForCategory(bucket);
+    // Saved is never scoped by selected filters.
+    if (bucket === "saved") return undefined;
+
+    const tabIds = this.searchStore?.filterIdsForCategory(bucket);
+    if (tabIds != null && tabIds.length > 0) {
+      return tabIds;
+    }
+
+    // Explicit filter tab fallback when tabs aren't hydrated yet.
+    if (bucket.startsWith("filter:")) {
+      const id = bucket.slice("filter:".length).trim();
+      return id ? [id] : undefined;
+    }
+
+    const selected = this.filterStore?.selectedFilterIds ?? [];
+    return selected.length > 0 ? selected : undefined;
+  }
+
+  /** After selected filters change — dirty + reload For You buckets (not saved). */
+  onSelectedFiltersChanged(): void {
+    const keys = new Set<string>([
+      ...Object.keys(this.lists),
+      ...Object.keys(this.shelves),
+      ...this.loadedBuckets,
+      ...this.hydratedShelves,
+    ]);
+    for (const bucket of keys) {
+      if (bucket === "saved" || bucket === "for-you") continue;
+      this.touchSet("dirtyBuckets", (s) => {
+        s.add(bucket);
+      });
+    }
+    void this.reloadDirtyBuckets();
+  }
+
+  private async reloadDirtyBuckets(): Promise<void> {
+    const dirty = [...this.dirtyBuckets].filter(
+      (bucket) => bucket !== "saved" && bucket !== "for-you",
+    );
+    await Promise.all(
+      dirty.map((bucket) => {
+        const asShelf =
+          this.hydratedShelves.has(bucket) && !(bucket in this.lists);
+        return this.loadBucket(bucket, { force: true, asShelf });
+      }),
+    );
   }
 
   private touchSet(
@@ -796,7 +847,13 @@ export default class FeedStore {
       this.upsertItem(feed);
       const resolved = this.items.get(feed.id) ?? feed;
       const filterTabs = this.searchStore?.filterTabs ?? [];
-      const buckets = bucketsForLiveFeed(resolved, tabs, filterTabs);
+      const selectedFilterIds = this.filterStore?.selectedFilterIds ?? [];
+      const buckets = bucketsForLiveFeed(
+        resolved,
+        tabs,
+        filterTabs,
+        selectedFilterIds,
+      );
       this.liveHeadIds.add(resolved.id);
 
       for (const bucket of buckets) {

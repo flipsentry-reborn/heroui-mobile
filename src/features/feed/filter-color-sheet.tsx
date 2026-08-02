@@ -1,14 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
-import {
-  BottomSheet,
-  Button,
-  Typography,
-  useBottomSheet,
-  useThemeColor,
-} from "heroui-native";
+import { BottomSheet, Button, Typography, useBottomSheet } from "heroui-native";
 
 import { SearchSheetGroup } from "@/features/home/search-sheet-group";
 import {
@@ -17,10 +11,7 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import {
-  FILTER_COLOR_PRESETS,
-  isValidFilterHex,
-} from "@/models/user-filter";
+import { FILTER_COLOR_PRESETS, isValidFilterHex } from "@/models/user-filter";
 
 function ColorSheetContent({
   color,
@@ -34,11 +25,9 @@ function ColorSheetContent({
   onPersist: (color: string) => void;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
-  const [border] = useThemeColor(["border"]);
   const snapPoints = useMemo(() => ["45%", "65%"], []);
   const selected = color.trim().toUpperCase();
-  const canSave =
-    isValidFilterHex(selected) && !usedColors.has(selected);
+  const canSave = isValidFilterHex(selected) && !usedColors.has(selected);
   const dismiss = () => onOpenChange(false);
 
   const handleSave = () => {
@@ -64,7 +53,7 @@ function ColorSheetContent({
           </Typography>
         </View>
 
-        <SearchSheetGroup>
+        <SearchSheetGroup title="Choose a color">
           <View className="flex-row flex-wrap gap-3 px-4 py-4">
             {FILTER_COLOR_PRESETS.map((preset) => {
               const isSelected = selected === preset;
@@ -76,23 +65,16 @@ function ColorSheetContent({
                   key={preset}
                   disabled={disabled}
                   onPress={() => onColorChange(preset)}
-                  className="h-9 w-9 items-center justify-center rounded-full"
-                  style={{
-                    backgroundColor: preset,
-                    opacity: isUsed ? 0.4 : 1,
-                    borderWidth: isSelected ? 3 : 1,
-                    borderColor: isSelected ? border : "transparent",
-                  }}
+                  className={`h-10 w-10 items-center justify-center rounded-full ${
+                    isSelected ? "border-[3px] border-foreground" : "border border-transparent"
+                  } ${isUsed ? "opacity-40" : "opacity-100"}`}
+                  style={{ backgroundColor: preset }}
                   accessibilityRole="button"
                   accessibilityState={{
                     selected: isSelected,
                     disabled,
                   }}
-                  accessibilityLabel={
-                    isUsed
-                      ? `Color ${preset} already used`
-                      : `Color ${preset}`
-                  }
+                  accessibilityLabel={isUsed ? `Color ${preset} already used` : `Color ${preset}`}
                 >
                   {isUsed ? (
                     <View className="absolute inset-0 items-center justify-center rounded-full bg-black/35">
@@ -106,16 +88,12 @@ function ColorSheetContent({
         </SearchSheetGroup>
 
         <View className="flex-row gap-3 px-5 pb-6 pt-2">
-          <Button
-            variant="tertiary"
-            className="min-h-12 flex-1 rounded-2xl bg-surface"
-            onPress={dismiss}
-          >
+          <Button variant="tertiary" className="min-h-12 flex-1 bg-surface" onPress={dismiss}>
             <Button.Label>Cancel</Button.Label>
           </Button>
           <Button
             variant="primary"
-            className="min-h-12 flex-1 rounded-2xl"
+            className="min-h-12 flex-1"
             isDisabled={!canSave}
             onPress={handleSave}
           >
@@ -135,6 +113,27 @@ interface FilterColorSheetProps {
   onColorChange: (color: string) => void;
 }
 
+function ColorSheetDraft({
+  initialColor,
+  usedColors,
+  onColorChange,
+}: {
+  initialColor: string;
+  usedColors: ReadonlySet<string>;
+  onColorChange: (color: string) => void;
+}): JSX.Element {
+  const [draftColor, setDraftColor] = useState(initialColor);
+
+  return (
+    <ColorSheetContent
+      color={draftColor}
+      usedColors={usedColors}
+      onColorChange={setDraftColor}
+      onPersist={onColorChange}
+    />
+  );
+}
+
 export function FilterColorSheet({
   isOpen,
   onOpenChange,
@@ -142,20 +141,13 @@ export function FilterColorSheet({
   usedColors,
   onColorChange,
 }: FilterColorSheetProps): JSX.Element | null {
-  const [draftColor, setDraftColor] = useState(color);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setDraftColor(color);
-  }, [color, isOpen]);
-
   return (
     <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
-      <ColorSheetContent
-        color={draftColor}
+      <ColorSheetDraft
+        key={isOpen ? color : "closed"}
+        initialColor={color}
         usedColors={usedColors}
-        onColorChange={setDraftColor}
-        onPersist={onColorChange}
+        onColorChange={onColorChange}
       />
     </SheetShell>
   );

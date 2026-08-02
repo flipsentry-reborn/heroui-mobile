@@ -4,23 +4,13 @@ import type { JSX } from "react";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  BottomSheet,
-  Chip,
-  cn,
-  PressableFeedback,
-  Typography,
-  useThemeColor,
-} from "heroui-native";
+import { BottomSheet, Chip, cn, PressableFeedback, Typography, useThemeColor } from "heroui-native";
 import { withUniwind } from "uniwind";
 
 import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import { SheetShell } from "@/features/home/sheet-shell";
 import { resolveTrimEstimates } from "@/mocks/data/trim-estimates";
-import {
-  resolveExternalFairPrice,
-  type ListingValuation,
-} from "@/models/feed";
+import { resolveExternalFairPrice, type ListingValuation } from "@/models/feed";
 
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
 
@@ -60,13 +50,9 @@ export function FeedDetailTrimEstimates({
   const snapPoints = useMemo(() => ["55%", "88%"], []);
 
   const options = useMemo(() => resolveTrimEstimates(valuation), [valuation]);
-  const selected = useMemo(
-    () => options.find((o) => o.isSelected),
-    [options],
-  );
+  const selected = useMemo(() => options.find((o) => o.isSelected), [options]);
   const selectedFair =
-    resolveExternalFairPrice(valuation.countryCode, selected?.marketplace) ??
-    valuation.fairPrice;
+    resolveExternalFairPrice(valuation.countryCode, selected?.marketplace) ?? valuation.fairPrice;
 
   if (options.length === 0) return null;
 
@@ -77,67 +63,48 @@ export function FeedDetailTrimEstimates({
       <PressableFeedback
         accessibilityRole="button"
         accessibilityLabel="Open advanced calculation"
-        className="w-auto overflow-hidden rounded-2xl bg-surface"
+        className="w-full overflow-hidden rounded-2xl border border-border bg-surface-secondary"
         animation={{ scale: { value: 0.98 } }}
         onPress={() => setVisible(true)}
       >
-        <View className="gap-1 px-3 py-2">
-          <View className="flex-row items-center gap-2.5">
+        <PressableFeedback.Highlight />
+        <View className="flex-row items-center gap-3 px-3 py-3">
+          <View className="h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background">
             <Ionicons name="sparkles" size={16} color={AI_ICON_COLOR} />
-            <View className="min-w-0 flex-1 flex-row items-center gap-1.5">
-              <Typography
-                type="body-sm"
-                weight="semibold"
-                className="min-w-0 shrink text-foreground"
-                numberOfLines={1}
-              >
-                Advanced Calculation
-              </Typography>
-              <FeedCategoryBadge label="New" inline />
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={muted} />
           </View>
-          {selected != null ? (
-            <View className="flex-row items-center gap-1.5 pl-[26px]">
-              <Typography
-                type="body-xs"
-                weight="medium"
-                className="min-w-0 shrink text-foreground"
-                numberOfLines={1}
-              >
-                {selected.trim}
-              </Typography>
-              <Chip
-                size="sm"
-                variant="soft"
-                color="success"
-                className="h-5 shrink-0 px-1.5"
-              >
-                <Chip.Label className="text-[10px]">Selected</Chip.Label>
-              </Chip>
-              <Typography
-                type="body-xs"
-                weight="semibold"
-                className="ml-auto shrink-0 text-foreground"
-              >
-                {formatPrice(
-                  resolveExternalFairPrice(
-                    valuation.countryCode,
-                    selected.marketplace,
-                  ) ?? selectedFair,
-                  currencySymbol,
-                )}
-              </Typography>
-            </View>
-          ) : (
+
+          <View className="min-w-0 flex-1 gap-1">
             <Typography
-              type="body-xs"
-              className="pl-[26px] text-muted"
+              type="body-sm"
+              weight="semibold"
+              className="text-[14px] text-foreground"
               numberOfLines={1}
             >
-              {options.length} trims
+              Advanced Calculation
             </Typography>
-          )}
+            <View className="min-w-0 flex-row items-center gap-1.5">
+              <FeedCategoryBadge label="New" inline />
+              <Typography
+                type="body-xs"
+                className="min-w-0 shrink text-[11px] text-muted"
+                numberOfLines={1}
+              >
+                {selected?.trim ?? `${options.length} trim estimates`}
+              </Typography>
+            </View>
+          </View>
+
+          <View className="shrink-0 items-end gap-0.5">
+            <Typography type="body-sm" weight="bold" className="text-[15px] text-foreground">
+              {formatPrice(selectedFair, currencySymbol)}
+            </Typography>
+            <View className="flex-row items-center gap-0.5">
+              <Typography type="body-xs" className="text-[10px] text-muted">
+                Book value
+              </Typography>
+              <Ionicons name="chevron-forward" size={13} color={muted} />
+            </View>
+          </View>
         </View>
       </PressableFeedback>
 
@@ -176,11 +143,7 @@ export function FeedDetailTrimEstimates({
             contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
           >
             {options.map((option, index) => {
-              const fair =
-                resolveExternalFairPrice(
-                  valuation.countryCode,
-                  option.marketplace,
-                ) ?? 0;
+              const fair = resolveExternalFairPrice(valuation.countryCode, option.marketplace) ?? 0;
               const delta = fair - selectedFair;
               const isSelected = !!option.isSelected;
 
@@ -189,7 +152,7 @@ export function FeedDetailTrimEstimates({
                   key={`${option.vehicleId ?? option.trim ?? "trim"}-${index}`}
                   className={cn(
                     "flex-row items-center gap-2 rounded-lg px-2 py-2.5",
-                    isSelected && "bg-success/15",
+                    isSelected && "bg-success/15"
                   )}
                 >
                   <View className="min-w-0 flex-1 flex-row items-center gap-1.5">
@@ -208,9 +171,7 @@ export function FeedDetailTrimEstimates({
                         color="success"
                         className="h-5 shrink-0 px-1.5"
                       >
-                        <Chip.Label className="text-[10px]">
-                          Selected
-                        </Chip.Label>
+                        <Chip.Label className="text-[10px]">Selected</Chip.Label>
                       </Chip>
                     ) : null}
                   </View>
@@ -220,18 +181,14 @@ export function FeedDetailTrimEstimates({
                       type="body-xs"
                       className={cn(
                         "shrink-0 text-[11px]",
-                        delta > 0 ? "text-success" : "text-danger",
+                        delta > 0 ? "text-success" : "text-danger"
                       )}
                     >
                       {formatDelta(delta, currencySymbol)}
                     </Typography>
                   ) : null}
 
-                  <Typography
-                    type="body-xs"
-                    weight="semibold"
-                    className="shrink-0 text-foreground"
-                  >
+                  <Typography type="body-xs" weight="semibold" className="shrink-0 text-foreground">
                     {formatPrice(fair, currencySymbol)}
                   </Typography>
                 </View>

@@ -19,6 +19,7 @@ import Animated, { LinearTransition } from "react-native-reanimated";
 import {
   Accordion,
   AccordionLayoutTransition,
+  Chip,
   PressableFeedback,
   SkeletonGroup,
   Surface,
@@ -39,6 +40,7 @@ import { FeedItem } from "@/features/feed/feed-item";
 import { feedCategoryHref } from "@/features/feed/feed-nav";
 import { FEED_SHELF_LIMIT } from "@/domain/feed-routing";
 import type { FeedItem as FeedModel } from "@/models/feed";
+import type { UserFilter } from "@/models/user-filter";
 import { useStore } from "@/store/store";
 
 const StyledIonicons = withUniwind(Ionicons);
@@ -56,6 +58,65 @@ const FOR_YOU_ACCORDION_LAYOUT = LinearTransition.springify()
 /** Best Picks + Your Filters — recessed darker panel (shared). */
 const FOR_YOU_INSET_SHELF_CLASS =
   "w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl bg-surface-inset px-0 py-2";
+
+function selectedFiltersLabel(count: number): string {
+  return count === 1
+    ? "1 Filter Is Selected"
+    : `${count} Filters Are Selected`;
+}
+
+function SelectedFiltersBanner({
+  filters,
+  onPress,
+}: {
+  filters: UserFilter[];
+  onPress: () => void;
+}): JSX.Element {
+  return (
+    <PressableFeedback
+      onPress={onPress}
+      className="mx-3 mb-2.5 overflow-hidden rounded-2xl border border-border bg-surface-secondary"
+      animation={{ scale: { value: 0.99 } }}
+      accessibilityRole="button"
+      accessibilityLabel={`${selectedFiltersLabel(filters.length)}. Tap to manage filters.`}
+    >
+      <View className="gap-2 px-3 py-2.5">
+        <View className="flex-row items-center gap-2">
+          <StyledIonicons
+            name="funnel-outline"
+            size={16}
+            className="text-accent"
+          />
+          <Typography
+            type="body"
+            weight="semibold"
+            className="flex-1 text-[14px] text-foreground"
+          >
+            {selectedFiltersLabel(filters.length)}
+          </Typography>
+          <StyledIonicons
+            name="chevron-forward"
+            size={16}
+            className="text-muted"
+          />
+        </View>
+        <View className="flex-row flex-wrap gap-1.5">
+          {filters.map((filter) => (
+            <Chip key={filter.id} size="sm" variant="secondary">
+              <View
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: filter.color }}
+              />
+              <Chip.Label className="text-[11px] text-foreground">
+                {filter.name}
+              </Chip.Label>
+            </Chip>
+          ))}
+        </View>
+      </View>
+    </PressableFeedback>
+  );
+}
 
 interface FeedForYouPageProps {
   query: string;
@@ -263,11 +324,12 @@ export const FeedForYouPage = observer(function FeedForYouPage({
   onOpenCategory,
 }: FeedForYouPageProps): JSX.Element {
   const router = useRouter();
-  const { searchStore, feedStore } = useStore();
+  const { searchStore, feedStore, filterStore } = useStore();
   const { onFeedScroll, onFeedScrollEnd } = useBottomChrome();
   const forYouShelves = searchStore.forYouShelves;
   const yourSearchChildren = searchStore.yourSearchChildren;
   const yourFilterChildren = searchStore.yourFilterChildren;
+  const selectedFilters = filterStore.selectedFilters;
   const yourSearchesExpanded = feedStore.yourSearchesExpanded;
   const feedCategoryKeys = useMemo(
     () => new Set(searchStore.feedCategories.map((c) => c.key)),
@@ -683,6 +745,12 @@ export const FeedForYouPage = observer(function FeedForYouPage({
           />
         }
       >
+        {selectedFilters.length > 0 ? (
+          <SelectedFiltersBanner
+            filters={selectedFilters}
+            onPress={() => router.push("/filters")}
+          />
+        ) : null}
         {rows.map((row) => renderRow(row))}
       </Animated.ScrollView>
     </View>

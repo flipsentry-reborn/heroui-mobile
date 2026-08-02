@@ -31,6 +31,7 @@ const SEED_FILTERS: UserFilter[] = [
     descriptionIncluders: [],
     notificationEnabled: true,
     isActive: true,
+    isSelected: false,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
   },
@@ -49,10 +50,18 @@ const SEED_FILTERS: UserFilter[] = [
     descriptionIncluders: [],
     notificationEnabled: true,
     isActive: true,
+    isSelected: false,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
   },
 ];
+
+function normalizeFilter(filter: UserFilter): UserFilter {
+  return {
+    ...filter,
+    isSelected: filter.isSelected ?? false,
+  };
+}
 
 let cache: UserFilter[] | null = null;
 
@@ -61,7 +70,7 @@ async function ensureHydrated(): Promise<UserFilter[]> {
   const stored = await readJson<UserFilter[]>(STORAGE_KEY);
   const seeded = await readJson<boolean>(SEEDED_KEY);
   if (stored != null && stored.length > 0) {
-    cache = stored;
+    cache = stored.map(normalizeFilter);
     return cache;
   }
   // First launch (or empty store before seed flag): ship demo filters.
@@ -71,7 +80,7 @@ async function ensureHydrated(): Promise<UserFilter[]> {
     await writeJson(SEEDED_KEY, true);
     return cache;
   }
-  cache = stored ?? [];
+  cache = (stored ?? []).map(normalizeFilter);
   return cache;
 }
 
@@ -169,6 +178,7 @@ export async function createFilter(
     descriptionIncluders: input.descriptionIncluders ?? [],
     notificationEnabled: input.notificationEnabled ?? true,
     isActive: input.isActive ?? true,
+    isSelected: input.isSelected ?? false,
     createdAt: now,
     updatedAt: now,
   };
@@ -225,6 +235,7 @@ export async function updateFilter(
     notificationEnabled:
       input.notificationEnabled ?? existing.notificationEnabled,
     isActive: input.isActive ?? existing.isActive,
+    isSelected: input.isSelected ?? existing.isSelected ?? false,
     updatedAt: new Date().toISOString(),
   };
   const next = [...filters];

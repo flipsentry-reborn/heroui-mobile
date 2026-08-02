@@ -24,6 +24,14 @@ function wireFeedToSearch(feedStore: FeedStore, searchStore: SearchStore): void 
   searchStore.setFeedStore(feedStore);
 }
 
+function wireFilterToFeed(
+  filterStore: FilterStore,
+  feedStore: FeedStore,
+): void {
+  filterStore.setFeedStore(feedStore);
+  feedStore.setFilterStore(filterStore);
+}
+
 function createStores(): Omit<RootStore, "resetStores" | "hydrate"> {
   const commonStore = new CommonStore();
   const userStore = new UserStore(commonStore);
@@ -34,6 +42,7 @@ function createStores(): Omit<RootStore, "resetStores" | "hydrate"> {
   searchStore.setSubscriptionStore(subscriptionStore);
   filterStore.setSearchStore(searchStore);
   wireFeedToSearch(feedStore, searchStore);
+  wireFilterToFeed(filterStore, feedStore);
   return {
     commonStore,
     userStore,
@@ -81,6 +90,7 @@ function resetStores(): void {
   searchStore.setSubscriptionStore(subscriptionStore);
   filterStore.setSearchStore(searchStore);
   wireFeedToSearch(feedStore, searchStore);
+  wireFilterToFeed(filterStore, feedStore);
   stores = {
     commonStore,
     userStore,

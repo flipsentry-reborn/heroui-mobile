@@ -47,7 +47,6 @@ import {
 } from "@/mocks/services/home";
 
 interface SearchCardsProps {
-  /** Full list — keep mounted so filter changes can layout-animate. */
   groups: SearchGroup[];
   statusFilter?: SearchStatusFilter;
   emptyMessage?: string;
@@ -461,17 +460,14 @@ function SearchDepthItem({
   index,
   groupCount,
   groupIds,
-  isVisible,
   onEdit,
   onDelete,
   onToggle,
 }: {
   group: SearchGroup;
-  /** Index among currently visible cards; -1 when filtered out. */
   index: number;
   groupCount: number;
   groupIds: string[];
-  isVisible: boolean;
   onEdit?: (group: SearchGroup, section?: SearchEditSection) => void;
   onDelete?: (group: SearchGroup) => void;
   onToggle?: (group: SearchGroup, active: boolean) => void;
@@ -482,13 +478,13 @@ function SearchDepthItem({
   const status = groupStatus(group);
 
   useEffect(() => {
-    scale.value = withTiming(isExpanded && isVisible ? 1 : 0.97, {
+    scale.value = withTiming(isExpanded ? 1 : 0.97, {
       duration: 200,
     });
-  }, [isExpanded, isVisible, scale]);
+  }, [isExpanded, scale]);
 
   const depthStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: isVisible ? scale.value : 1 }],
+    transform: [{ scale: scale.value }],
   }));
 
   const expandedIds = useMemo(() => {
@@ -503,39 +499,25 @@ function SearchDepthItem({
   const isAfterSelected = prevId != null && expandedIds.has(prevId);
 
   const showDivider =
-    isVisible &&
-    index >= 0 &&
-    index < groupCount - 1 &&
-    !isExpanded &&
-    !isBeforeSelected;
+    index < groupCount - 1 && !isExpanded && !isBeforeSelected;
 
   return (
-    <StyledAnimatedView
-      layout={DEPTH_LAYOUT_TRANSITION}
-      pointerEvents={isVisible ? "auto" : "none"}
-      style={depthStyle}
-      className={cn(!isVisible && "h-0 overflow-hidden opacity-0")}
-    >
+    <StyledAnimatedView layout={DEPTH_LAYOUT_TRANSITION} style={depthStyle}>
       <StyledAnimatedView
         layout={DEPTH_LAYOUT_TRANSITION}
         className={cn(
           "overflow-hidden bg-surface",
-          isVisible && index === 0 && !isExpanded && "rounded-t-2xl",
-          isVisible &&
-            index === groupCount - 1 &&
+          index === 0 && !isExpanded && "rounded-t-2xl",
+          index === groupCount - 1 &&
             !isExpanded &&
             !isBeforeSelected &&
             "rounded-b-3xl",
-          isVisible && isBeforeSelected && "rounded-b-2xl",
-          isVisible && isExpanded && "rounded-2xl",
-          isVisible && isAfterSelected && "rounded-t-2xl",
-          isVisible && isExpanded && index === 0 && "mb-2",
-          isVisible &&
-            isExpanded &&
-            index > 0 &&
-            index < groupCount - 1 &&
-            "my-2",
-          isVisible && isExpanded && index === groupCount - 1 && "mt-2",
+          isBeforeSelected && "rounded-b-2xl",
+          isExpanded && "rounded-2xl",
+          isAfterSelected && "rounded-t-2xl",
+          isExpanded && index === 0 && "mb-2",
+          isExpanded && index > 0 && index < groupCount - 1 && "my-2",
+          isExpanded && index === groupCount - 1 && "mt-2",
         )}
       >
         <Accordion.Trigger className="gap-2 px-3 py-3">
@@ -581,12 +563,14 @@ function SearchDepthItem({
         <Accordion.Content className="gap-2 px-3 pb-3 pt-0">
           <MetaChipRow group={group} />
           <PlatformRows group={group} />
-          <SearchCardActionsMenu
-            group={group}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onToggle={onToggle}
-          />
+          {isExpanded ? (
+            <SearchCardActionsMenu
+              group={group}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onToggle={onToggle}
+            />
+          ) : null}
         </Accordion.Content>
       </StyledAnimatedView>
       {showDivider ? (
@@ -728,12 +712,13 @@ export function SearchCards({
 }: SearchCardsProps): JSX.Element {
   const [expandedValue, setExpandedValue] = useState<string | undefined>();
 
-  const visibleIds = useMemo(
-    () =>
-      groups
-        .filter((group) => matchesStatusFilter(group, statusFilter))
-        .map((group) => group.id),
+  const visibleGroups = useMemo(
+    () => groups.filter((group) => matchesStatusFilter(group, statusFilter)),
     [groups, statusFilter],
+  );
+  const visibleIds = useMemo(
+    () => visibleGroups.map((group) => group.id),
+    [visibleGroups],
   );
 
   useEffect(() => {
@@ -754,15 +739,18 @@ export function SearchCards({
     );
   }
 
+  if (visibleGroups.length === 0) {
+    return (
+      <SearchCardsEmpty
+        message={emptyMessage}
+        onCreate={statusFilter === "active" ? onCreate : undefined}
+        createLabel={createLabel}
+      />
+    );
+  }
+
   return (
     <View>
-      {visibleIds.length === 0 ? (
-        <SearchCardsEmpty
-          message={emptyMessage}
-          onCreate={statusFilter === "active" ? onCreate : undefined}
-          createLabel={createLabel}
-        />
-      ) : null}
       <Accordion
         value={expandedValue}
         onValueChange={(next: string | string[] | undefined) => {
@@ -776,41 +764,30 @@ export function SearchCards({
         selectionMode="single"
         isCollapsible
         hideSeparator
-        className={cn(
-          "mx-3 w-auto overflow-visible",
-          visibleIds.length === 0 && "h-0 overflow-hidden opacity-0",
-        )}
+        className="mx-3 w-auto overflow-visible"
         animation={{
           layout: {
             value: DEPTH_LAYOUT_TRANSITION,
           },
         }}
       >
-        {groups.map((group) => {
-          const isVisible = visibleIds.includes(group.id);
-          const index = visibleIds.indexOf(group.id);
-          return (
-            <Accordion.Item
-              key={group.id}
-              value={group.id}
-              className={cn(
-                "overflow-visible",
-                !isVisible && "h-0 overflow-hidden",
-              )}
-            >
-              <SearchDepthItem
-                group={group}
-                index={index}
-                groupCount={visibleIds.length}
-                groupIds={visibleIds}
-                isVisible={isVisible}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onToggle={onToggle}
-              />
-            </Accordion.Item>
-          );
-        })}
+        {visibleGroups.map((group, index) => (
+          <Accordion.Item
+            key={group.id}
+            value={group.id}
+            className="overflow-visible"
+          >
+            <SearchDepthItem
+              group={group}
+              index={index}
+              groupCount={visibleGroups.length}
+              groupIds={visibleIds}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onToggle={onToggle}
+            />
+          </Accordion.Item>
+        ))}
       </Accordion>
     </View>
   );

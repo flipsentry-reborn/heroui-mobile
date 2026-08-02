@@ -94,18 +94,22 @@ function matchesCategory(
   groupIds?: string[],
   filterIds?: string[],
 ): boolean {
-  if (filterIds != null && filterIds.length > 0) {
-    return matchesFilterIds(item, filterIds);
-  }
-  if (category.startsWith("filter:")) {
-    const id = category.slice("filter:".length).trim();
-    return matchesFilterIds(item, id ? [id] : []);
-  }
+  // Saved never applies selected/tab filterIds.
+  if (category === "saved") return item.isFavorite;
+
+  const effectiveFilterIds =
+    filterIds != null && filterIds.length > 0
+      ? filterIds
+      : category.startsWith("filter:")
+        ? [category.slice("filter:".length).trim()].filter(Boolean)
+        : undefined;
+  if (!matchesFilterIds(item, effectiveFilterIds)) return false;
+
   if (category === "for-you" || category === "all") return true;
+  if (category.startsWith("filter:")) return true;
   if (category === "sold") {
     return !!item.isSold || !!item.isPending || !!item.isRemoved;
   }
-  if (category === "saved") return item.isFavorite;
   if (category === "best-picks") {
     return (resolveDisplayValuation(item)?.buySignal ?? 0) >= 60;
   }

@@ -16,10 +16,7 @@ import {
 import { withUniwind } from "uniwind";
 
 import { SheetShell } from "@/features/home/sheet-shell";
-import {
-  formatOdometer,
-  getOdometerDisplayValue,
-} from "@/lib/distance-utils";
+import { formatOdometer, getOdometerDisplayValue } from "@/lib/distance-utils";
 import { getValuationTier, type ListingValuation } from "@/models/feed";
 import { useStore } from "@/store/store";
 
@@ -96,9 +93,7 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
         : tier === "fairPrice"
           ? "Fair"
           : "Overpriced";
-  const isPhone =
-    valuation.valuationType === "iphone" ||
-    valuation.valuationType === "samsung";
+  const isPhone = valuation.valuationType === "iphone" || valuation.valuationType === "samsung";
   const distanceUnit = userStore.preferences?.distanceUnit ?? "mi";
   const titleLine = isPhone
     ? [
@@ -114,42 +109,61 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
       <PressableFeedback
         accessibilityRole="button"
         accessibilityLabel="Open basic calculation"
-        className="w-auto overflow-hidden rounded-2xl bg-surface"
+        className="w-full overflow-hidden rounded-2xl border border-border bg-surface-secondary"
         animation={{ scale: { value: 0.98 } }}
         onPress={() => setVisible(true)}
       >
-        <View className="gap-1 px-3 py-2">
-          <View className="flex-row items-center gap-2.5">
+        <PressableFeedback.Highlight />
+        <View className="flex-row items-center gap-3 px-3 py-3">
+          <View className="h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background">
             <Ionicons name="analytics-outline" size={16} color={BASIC_ICON_COLOR} />
+          </View>
+
+          <View className="min-w-0 flex-1 gap-1">
             <Typography
               type="body-sm"
               weight="semibold"
-              className="min-w-0 flex-1 text-foreground"
+              className="text-[14px] text-foreground"
               numberOfLines={1}
             >
               Basic Calculation
             </Typography>
-            <Ionicons name="chevron-forward" size={16} color={muted} />
+            <View className="min-w-0 flex-row items-center gap-1.5">
+              <Typography
+                type="body-xs"
+                className="min-w-0 shrink text-[11px] text-muted"
+                numberOfLines={1}
+              >
+                {valuation.compCount} comparable{" "}
+                {valuation.compCount === 1 ? "listing" : "listings"}
+              </Typography>
+              <Chip
+                size="sm"
+                variant="soft"
+                color={
+                  tier === "greatDeal" || tier === "goodValue"
+                    ? "success"
+                    : tier === "fairPrice"
+                      ? "warning"
+                      : "danger"
+                }
+                className="h-5 shrink-0 px-1.5"
+              >
+                <Chip.Label className="text-[10px]">{tierLabel}</Chip.Label>
+              </Chip>
+            </View>
           </View>
-          <View className="flex-row items-center gap-1.5 pl-[26px]">
-            <Typography
-              type="body-xs"
-              weight="medium"
-              className="min-w-0 shrink text-foreground"
-              numberOfLines={1}
-            >
-              {valuation.compCount} comps
-            </Typography>
-            <Chip size="sm" variant="soft" className="h-5 shrink-0 px-1.5">
-              <Chip.Label className="text-[10px]">{tierLabel}</Chip.Label>
-            </Chip>
-            <Typography
-              type="body-xs"
-              weight="semibold"
-              className="ml-auto shrink-0 text-foreground"
-            >
+
+          <View className="shrink-0 items-end gap-0.5">
+            <Typography type="body-sm" weight="bold" className="text-[15px] text-foreground">
               {formatPrice(valuation.fairPrice, currencySymbol)}
             </Typography>
+            <View className="flex-row items-center gap-0.5">
+              <Typography type="body-xs" className="text-[10px] text-muted">
+                Fair value
+              </Typography>
+              <Ionicons name="chevron-forward" size={13} color={muted} />
+            </View>
           </View>
         </View>
       </PressableFeedback>
@@ -164,11 +178,7 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
         >
           <View className="gap-1 px-5 pb-3 pt-4">
             <View className="flex-row items-center gap-2.5">
-              <Ionicons
-                name="analytics-outline"
-                size={18}
-                color={BASIC_ICON_COLOR}
-              />
+              <Ionicons name="analytics-outline" size={18} color={BASIC_ICON_COLOR} />
               <BottomSheet.Title
                 className="min-w-0 flex-1 text-left text-xl font-bold"
                 numberOfLines={1}
@@ -194,11 +204,7 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
                 <Typography type="body-xs" className="text-muted">
                   Fair price
                 </Typography>
-                <Typography
-                  type="body-sm"
-                  weight="semibold"
-                  className="text-foreground"
-                >
+                <Typography type="body-sm" weight="semibold" className="text-foreground">
                   {formatPrice(valuation.fairPrice, currencySymbol)}
                 </Typography>
               </View>
@@ -238,19 +244,11 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
                 <>
                   <DetailRow
                     label="Your CVS"
-                    value={
-                      valuation.targetCvs != null
-                        ? valuation.targetCvs.toFixed(2)
-                        : "—"
-                    }
+                    value={valuation.targetCvs != null ? valuation.targetCvs.toFixed(2) : "—"}
                   />
                   <DetailRow
                     label="Market median CVS"
-                    value={
-                      valuation.medianCvs != null
-                        ? valuation.medianCvs.toFixed(2)
-                        : "—"
-                    }
+                    value={valuation.medianCvs != null ? valuation.medianCvs.toFixed(2) : "—"}
                   />
                   <DetailRow
                     label="Percentile"
@@ -272,19 +270,12 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
                   <DetailRow
                     label="Model"
                     value={
-                      valuation.iphoneModel ||
-                      valuation.samsungModel ||
-                      valuation.model ||
-                      "—"
+                      valuation.iphoneModel || valuation.samsungModel || valuation.model || "—"
                     }
                   />
                   <DetailRow
                     label="Storage"
-                    value={
-                      valuation.storageGb != null
-                        ? `${valuation.storageGb}GB`
-                        : "—"
-                    }
+                    value={valuation.storageGb != null ? `${valuation.storageGb}GB` : "—"}
                   />
                   <DetailRow
                     label="Battery"
@@ -301,10 +292,7 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
                     label="Year / make / model"
                     value={`${valuation.year} ${valuation.make} ${valuation.model}`}
                   />
-                  <DetailRow
-                    label="Trim"
-                    value={valuation.trim || "none detected"}
-                  />
+                  <DetailRow label="Trim" value={valuation.trim || "none detected"} />
                   <DetailRow
                     label="Odometer band"
                     value={
@@ -317,21 +305,14 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
                   />
                 </>
               )}
-              <DetailRow
-                label="Calculated"
-                value={formatDate(valuation.calculatedAt)}
-              />
+              <DetailRow label="Calculated" value={formatDate(valuation.calculatedAt)} />
               <DetailRow label="Source" value="Local comps" />
             </View>
 
             {valuation.warnings != null && valuation.warnings.length > 0 ? (
               <View className="gap-1 rounded-xl bg-warning/10 px-3 py-2.5">
                 {valuation.warnings.map((warning) => (
-                  <Typography
-                    key={warning}
-                    type="body-xs"
-                    className="text-warning"
-                  >
+                  <Typography key={warning} type="body-xs" className="text-warning">
                     {warning}
                   </Typography>
                 ))}

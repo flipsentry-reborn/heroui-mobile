@@ -7,6 +7,7 @@ import type {
   UpdateUserFilterInput,
   UserFilter,
 } from "@/models/user-filter";
+import type FeedStore from "@/store/feedStore";
 import type SearchStore from "@/store/searchStore";
 
 export default class FilterStore {
@@ -16,6 +17,7 @@ export default class FilterStore {
   hasLoaded = false;
   lastError: string | null = null;
   private searchStore: SearchStore | null = null;
+  private feedStore: FeedStore | null = null;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -25,8 +27,20 @@ export default class FilterStore {
     this.searchStore = store;
   }
 
+  setFeedStore(store: FeedStore): void {
+    this.feedStore = store;
+  }
+
   get activeFilters(): UserFilter[] {
     return this.filters.filter((f) => f.isActive);
+  }
+
+  get selectedFilters(): UserFilter[] {
+    return this.filters.filter((f) => f.isSelected);
+  }
+
+  get selectedFilterIds(): string[] {
+    return this.selectedFilters.map((f) => f.id);
   }
 
   async loadFilters(force = false): Promise<void> {
@@ -62,6 +76,9 @@ export default class FilterStore {
         this.filters = [filter, ...this.filters];
       });
       await this.searchStore?.loadFeedTabAvailability(true);
+      if (filter.isSelected) {
+        this.feedStore?.onSelectedFiltersChanged();
+      }
       return filter;
     } catch (error) {
       runInAction(() => {
@@ -82,12 +99,19 @@ export default class FilterStore {
     if (this.submitting) return null;
     this.submitting = true;
     this.lastError = null;
+    const previous = this.filters.find((f) => f.id === id);
     try {
       const filter = await agent.Filters.update(id, input);
       runInAction(() => {
         this.filters = this.filters.map((f) => (f.id === id ? filter : f));
       });
       await this.searchStore?.loadFeedTabAvailability(true);
+      if (
+        input.isSelected !== undefined &&
+        previous?.isSelected !== filter.isSelected
+      ) {
+        this.feedStore?.onSelectedFiltersChanged();
+      }
       return filter;
     } catch (error) {
       runInAction(() => {
@@ -105,12 +129,16 @@ export default class FilterStore {
     if (this.submitting) return false;
     this.submitting = true;
     this.lastError = null;
+    const previous = this.filters.find((f) => f.id === id);
     try {
       await agent.Filters.delete(id);
       runInAction(() => {
         this.filters = this.filters.filter((f) => f.id !== id);
       });
       await this.searchStore?.loadFeedTabAvailability(true);
+      if (previous?.isSelected) {
+        this.feedStore?.onSelectedFiltersChanged();
+      }
       return true;
     } catch (error) {
       runInAction(() => {

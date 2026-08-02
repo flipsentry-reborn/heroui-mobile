@@ -75,6 +75,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
       setLocationLabel(formatLocationLabel(getLocationDraft()));
       return () => {
         setSheetOpen(false);
+        setSheetMounted(false);
         setEditingGroup(null);
         setEditSection(null);
       };
@@ -131,6 +132,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
 
   const handleSheetClose = () => {
     setSheetOpen(false);
+    setSheetMounted(false);
     setEditingGroup(null);
     setEditSection(null);
   };

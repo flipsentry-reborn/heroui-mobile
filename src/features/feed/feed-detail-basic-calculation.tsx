@@ -15,6 +15,7 @@ import {
 import { withUniwind } from "uniwind";
 
 import { SheetShell } from "@/features/home/sheet-shell";
+import { SheetContent } from "@/features/home/sheet-content";
 import { formatOdometer, getOdometerDisplayValue } from "@/lib/distance-utils";
 import type { ListingValuation } from "@/models/feed";
 import { useStore } from "@/store/store";
@@ -136,7 +137,7 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
       </PressableFeedback>
 
       <SheetShell visible={visible} onClose={() => setVisible(false)}>
-        <BottomSheet.Content
+        <SheetContent
           snapPoints={snapPoints}
           enableOverDrag={false}
           enableDynamicSizing={false}
@@ -286,7 +287,7 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
               </View>
             ) : null}
           </StyledBottomSheetScrollView>
-        </BottomSheet.Content>
+        </SheetContent>
       </SheetShell>
     </View>
   );

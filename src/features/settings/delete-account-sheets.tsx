@@ -24,6 +24,7 @@ import {
   SHEET_CONTENT_CONTAINER_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
+import { SheetContent } from "@/features/home/sheet-content";
 import { toUserErrorMessage } from "@/lib/user-error-message";
 import { useStore } from "@/store/store";
 import { USE_MOCK } from "@/api/config";
@@ -89,7 +90,7 @@ function DeleteAccountContent({
 
   if (step === "confirm") {
     return (
-      <BottomSheet.Content
+      <SheetContent
         className={SHEET_CONTENT_CLASS_NAME}
         backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
         handleComponent={null}
@@ -125,12 +126,12 @@ function DeleteAccountContent({
             </View>
           </View>
         </View>
-      </BottomSheet.Content>
+      </SheetContent>
     );
   }
 
   return (
-    <BottomSheet.Content
+    <SheetContent
       className={SHEET_CONTENT_CLASS_NAME}
       backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
       handleComponent={null}
@@ -237,7 +238,7 @@ function DeleteAccountContent({
           </Button>
         </View>
       </View>
-    </BottomSheet.Content>
+    </SheetContent>
   );
 }
 

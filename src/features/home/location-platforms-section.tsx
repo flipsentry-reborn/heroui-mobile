@@ -23,6 +23,7 @@ import {
   SHEET_CONTENT_CONTAINER_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
+import { SheetContent } from "@/features/home/sheet-content";
 import type { LocationPlatform } from "@/mocks/data/locations";
 
 const StyledIonicons = withUniwind(Ionicons);
@@ -66,7 +67,7 @@ function PlatformsSheetContent({
   }, [platforms]);
 
   return (
-    <BottomSheet.Content
+    <SheetContent
       enableDynamicSizing
       enableOverDrag={false}
       className={SHEET_CONTENT_CLASS_NAME}
@@ -119,7 +120,7 @@ function PlatformsSheetContent({
           })}
         </View>
       </View>
-    </BottomSheet.Content>
+    </SheetContent>
   );
 }
 

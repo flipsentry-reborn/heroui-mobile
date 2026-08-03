@@ -15,6 +15,7 @@ import {
   SHEET_CONTENT_CONTAINER_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
+import { SheetContent } from "@/features/home/sheet-content";
 import { useStore } from "@/store/store";
 
 const UpgradeSlotsContent = observer(function UpgradeSlotsContent(): JSX.Element {
@@ -26,7 +27,7 @@ const UpgradeSlotsContent = observer(function UpgradeSlotsContent(): JSX.Element
   const dismiss = () => onOpenChange(false);
 
   return (
-    <BottomSheet.Content
+    <SheetContent
       className={SHEET_CONTENT_CLASS_NAME}
       backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
       handleComponent={null}
@@ -58,7 +59,7 @@ const UpgradeSlotsContent = observer(function UpgradeSlotsContent(): JSX.Element
           </Button>
         </View>
       </View>
-    </BottomSheet.Content>
+    </SheetContent>
   );
 });
 

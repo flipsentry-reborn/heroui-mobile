@@ -56,6 +56,7 @@ import {
   SHEET_CONTENT_CONTAINER_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
+import { SheetContent } from "@/features/home/sheet-content";
 import {
   buildDraftSettingRows,
   creditSettingsIntoIntervalOptions,
@@ -326,8 +327,7 @@ function SearchSheetContent({
   };
 
   return (
-    <BottomSheet.Content
-      enableContentPanningGesture={!childSheetOpen}
+    <SheetContent
       keyboardBehavior={childSheetOpen ? undefined : "extend"}
       keyboardBlurBehavior={childSheetOpen ? undefined : "restore"}
       android_keyboardInputMode={childSheetOpen ? undefined : "adjustResize"}
@@ -460,7 +460,7 @@ function SearchSheetContent({
           }}
         />
       </View>
-    </BottomSheet.Content>
+    </SheetContent>
   );
 }
 

@@ -18,6 +18,7 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
+import { SheetContent } from "@/features/home/sheet-content";
 
 function CustomQuerySheetContent({
   title,
@@ -46,7 +47,7 @@ function CustomQuerySheetContent({
   };
 
   return (
-    <BottomSheet.Content
+    <SheetContent
       snapPoints={snapPoints}
       enableDynamicSizing={false}
       enableOverDrag={false}
@@ -84,7 +85,7 @@ function CustomQuerySheetContent({
           />
         </SearchSheetGroup>
       </View>
-    </BottomSheet.Content>
+    </SheetContent>
   );
 }
 

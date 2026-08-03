@@ -20,6 +20,7 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
+import { SheetContent } from "@/features/home/sheet-content";
 import {
   AUTH_CONTROL_BACKGROUND,
   AUTH_PLACEHOLDER_COLOR,
@@ -175,7 +176,7 @@ function CountryDialCodeSheet({
 
   return (
     <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
-      <BottomSheet.Content
+      <SheetContent
         snapPoints={["85%"]}
         enableDynamicSizing={false}
         enableOverDrag={false}
@@ -248,7 +249,7 @@ function CountryDialCodeSheet({
             }
           />
         </View>
-      </BottomSheet.Content>
+      </SheetContent>
     </SheetShell>
   );
 }

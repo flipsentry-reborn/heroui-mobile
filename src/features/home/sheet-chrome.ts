@@ -1,5 +1,6 @@
 /**
- * Shared BottomSheet.Content chrome matching New Search.
+ * Shared sheet chrome matching New Search.
+ * Prefer `SheetContent` (defaults content panning off).
  * Keep overflow-hidden so rounded-t-[32px] actually clips corners.
  */
 export const SHEET_CONTENT_CLASS_NAME = "overflow-hidden";

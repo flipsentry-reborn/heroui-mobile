@@ -21,6 +21,7 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
+import { SheetContent } from "@/features/home/sheet-content";
 import type { CarMake } from "@/models/car-make";
 
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
@@ -189,7 +190,7 @@ function CarMakesSheetContent({
     (selection.anyMake || selection.selectedIds.length > 0);
 
   return (
-    <BottomSheet.Content
+    <SheetContent
       snapPoints={snapPoints}
       enableOverDrag={false}
       enableDynamicSizing={false}
@@ -317,7 +318,7 @@ function CarMakesSheetContent({
           ) : null}
         </StyledBottomSheetScrollView>
       </View>
-    </BottomSheet.Content>
+    </SheetContent>
   );
 }
 

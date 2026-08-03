@@ -58,15 +58,18 @@ function normalizeTier(
 export function mapLiveStatusToApp(
   live: LiveSubscriptionStatus,
 ): SubscriptionStatus {
+  const tier =
+    normalizeTier(live.tier) ??
+    (live.isTrialActive ? normalizeTier(live.trialTier) : null);
   return {
-    hasActiveSubscription: live.hasActiveSubscription,
-    hasActiveTrial: live.isTrialActive,
-    tier: normalizeTier(live.tier),
-    totalSlots: live.totalSlots,
-    usedSlots: live.usedSlots,
-    remainingSlots: live.remainingSlots,
-    allowedSlotSettings: live.allowedSlotSettings,
-    remainingSlotSettings: live.remainingSlotSettings,
+    hasActiveSubscription: Boolean(live.hasActiveSubscription),
+    hasActiveTrial: Boolean(live.isTrialActive),
+    tier,
+    totalSlots: live.totalSlots ?? 0,
+    usedSlots: live.usedSlots ?? 0,
+    remainingSlots: live.remainingSlots ?? 0,
+    allowedSlotSettings: live.allowedSlotSettings ?? [],
+    remainingSlotSettings: live.remainingSlotSettings ?? [],
   };
 }
 

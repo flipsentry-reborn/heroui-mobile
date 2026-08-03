@@ -52,6 +52,11 @@ export default class SubscriptionStore {
     return this.status?.remainingSlots ?? 0;
   }
 
+  /** Paid plan or active trial — required before create is allowed. */
+  get hasSearchAccess(): boolean {
+    return this.hasActiveSubscription || this.hasActiveTrial;
+  }
+
   get intervalOptions(): IntervalOption[] {
     if (this.status == null) return [];
     return buildIntervalOptions(
@@ -61,7 +66,9 @@ export default class SubscriptionStore {
   }
 
   get canCreate(): boolean {
-    return canCreateSearch(this.remainingSlots);
+    return canCreateSearch(this.remainingSlots, {
+      hasAccess: this.hasSearchAccess,
+    });
   }
 
   applyState(state: SubscriptionState): void {
@@ -69,6 +76,18 @@ export default class SubscriptionStore {
     this.hasActiveSubscription = state.hasActiveSubscription;
     this.hasActiveTrial = state.hasActiveTrial;
     this.plans = state.plans;
+    this.hasLoaded = true;
+  }
+
+  applyStatus(status: SubscriptionStatus): void {
+    this.status = status;
+    this.hasActiveSubscription = status.hasActiveSubscription;
+    this.hasActiveTrial = status.hasActiveTrial;
+    if (status.tier != null) {
+      this.currentTier = status.tier;
+    } else if (!status.hasActiveSubscription && !status.hasActiveTrial) {
+      this.currentTier = null;
+    }
     this.hasLoaded = true;
   }
 
@@ -97,7 +116,7 @@ export default class SubscriptionStore {
   async refreshStatus(groups: SearchGroup[]): Promise<void> {
     const status = await agent.Subscription.status(groups);
     runInAction(() => {
-      this.status = status;
+      this.applyStatus(status);
     });
   }
 

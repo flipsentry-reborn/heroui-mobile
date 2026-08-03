@@ -11,7 +11,12 @@ import {
   buildYourSearchChildren,
   type FeedCategoryDef,
 } from "@/features/feed/build-feed-categories";
-import { buildHomePlan, isGroupPaused, sortSearchGroups } from "@/mocks/services/home";
+import {
+  buildHomePlan,
+  buildHomePlanFromStatus,
+  isGroupPaused,
+  sortSearchGroups,
+} from "@/mocks/services/home";
 import type { HomePlan, SearchGroup } from "@/mocks/data/home";
 import { toUserErrorMessage } from "@/lib/user-error-message";
 import type {
@@ -60,10 +65,15 @@ export default class SearchStore {
   }
 
   get homePlan(): HomePlan {
-    const tier = this.subscriptionStore?.hasActiveSubscription
-      ? this.subscriptionStore.currentTier
-      : null;
-    return buildHomePlan(tier, this.searchGroups);
+    const sub = this.subscriptionStore;
+    if (sub?.status != null) {
+      return buildHomePlanFromStatus(sub.status);
+    }
+    const hasAccess = sub?.hasSearchAccess ?? false;
+    const tier = hasAccess ? (sub?.currentTier ?? null) : null;
+    return buildHomePlan(tier, this.searchGroups, {
+      hasActiveTrial: sub?.hasActiveTrial === true && !sub.hasActiveSubscription,
+    });
   }
 
   get canCreateSearch(): boolean {

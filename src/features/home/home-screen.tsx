@@ -18,6 +18,7 @@ import {
   SearchStatusSegment,
   type SearchStatusFilter,
 } from "@/features/home/search-status-segment";
+import { UpgradeSlotsSheet } from "@/features/home/upgrade-slots-sheet";
 import type { SearchGroup } from "@/mocks/data/home";
 import {
   formatLocationLabel,
@@ -40,6 +41,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
   const [accentForeground] = useThemeColor(["accent-foreground"]);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetMounted, setSheetMounted] = useState(false);
+  const [upgradeSheetOpen, setUpgradeSheetOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<SearchGroup | null>(null);
   const [editSection, setEditSection] = useState<SearchEditSection | null>(
     null,
@@ -76,6 +78,7 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
       return () => {
         setSheetOpen(false);
         setSheetMounted(false);
+        setUpgradeSheetOpen(false);
         setEditingGroup(null);
         setEditSection(null);
       };
@@ -111,14 +114,14 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
 
   const handleNewSearch = useCallback(() => {
     if (!searchStore.canCreateSearch) {
-      router.push("/settings/subscription");
+      setUpgradeSheetOpen(true);
       return;
     }
     setEditingGroup(null);
     setEditSection(null);
     setSheetMounted(true);
     setSheetOpen(true);
-  }, [router, searchStore.canCreateSearch]);
+  }, [searchStore.canCreateSearch]);
 
   const handleEditAndOpen = useCallback(
     (group: SearchGroup, section?: SearchEditSection) => {
@@ -231,6 +234,11 @@ export const HomeScreen = observer(function HomeScreen(): JSX.Element {
           initialSection={editSection}
         />
       ) : null}
+
+      <UpgradeSlotsSheet
+        isOpen={upgradeSheetOpen}
+        onOpenChange={setUpgradeSheetOpen}
+      />
     </View>
   );
 });

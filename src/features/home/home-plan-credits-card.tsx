@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Chip } from "heroui-native";
@@ -13,6 +14,9 @@ import { Fonts } from "@/lib/fonts";
 import type { HomePlan } from "@/mocks/data/home";
 import type { SubscriptionPlan } from "@/mocks/data/subscription";
 import { formatIntervalLabel } from "@/mocks/services/home";
+
+/** Matches location sheet Instant speed affordance. */
+const INSTANT_YELLOW = "#eab308";
 
 interface HomePlanCreditsCardProps {
   homePlan: HomePlan;
@@ -78,7 +82,7 @@ export function HomePlanCreditsCard({
               color: palette.text,
             }}
           >
-            {homePlan.remainingSearches} / {homePlan.maxSearches}
+            {homePlan.usedSearches} / {homePlan.maxSearches}
           </Text>
           <Text
             style={{
@@ -87,34 +91,41 @@ export function HomePlanCreditsCard({
               color: palette.textMuted,
             }}
           >
-            remaining searches
+            used searches
           </Text>
         </View>
 
         <View className="flex-row flex-wrap gap-1.5">
-          {homePlan.credits.map((c) => (
-            <Chip
-              key={c.intervalSeconds}
-              size="sm"
-              variant="secondary"
-              color="default"
-              className={
-                isSubscribed
-                  ? "border border-white/12 bg-white/10 px-2.5 py-1"
-                  : "border border-black/10 bg-black/5 px-2.5 py-1"
-              }
-            >
-              <Chip.Label
+          {homePlan.credits.map((c) => {
+            const isInstant = c.intervalSeconds === 60;
+            const used = Math.max(0, c.total - c.remaining);
+            return (
+              <Chip
+                key={c.intervalSeconds}
+                size="sm"
+                variant="secondary"
+                color="default"
                 className={
                   isSubscribed
-                    ? "text-[11px] text-white"
-                    : "text-[11px] text-black"
+                    ? "flex-row items-center gap-1 border border-white/12 bg-white/10 px-2.5 py-1"
+                    : "flex-row items-center gap-1 border border-black/10 bg-black/5 px-2.5 py-1"
                 }
               >
-                {formatIntervalLabel(c.intervalSeconds)}: {c.remaining}/{c.total}
-              </Chip.Label>
-            </Chip>
-          ))}
+                {isInstant ? (
+                  <Ionicons name="flash" size={12} color={INSTANT_YELLOW} />
+                ) : null}
+                <Chip.Label
+                  className={
+                    isSubscribed
+                      ? "text-[11px] text-white"
+                      : "text-[11px] text-black"
+                  }
+                >
+                  {formatIntervalLabel(c.intervalSeconds)}: {used}/{c.total}
+                </Chip.Label>
+              </Chip>
+            );
+          })}
         </View>
       </View>
     </Pressable>

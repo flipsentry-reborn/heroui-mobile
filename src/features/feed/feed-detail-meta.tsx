@@ -19,7 +19,7 @@ function formatTimeAgo(dateString: string): string {
 
 /**
  * Format backend `foundInSeconds` for display.
- * Never shows `0 sec` — sub-minute floors round up to `1 sec`.
+ * Backend already applies platform lag + last-digit fallback when ≤ 0 / exact minutes.
  */
 export function formatFoundInSeconds(seconds: number): string {
   const totalSeconds = Math.max(0, Math.floor(seconds));
@@ -27,7 +27,7 @@ export function formatFoundInSeconds(seconds: number): string {
   const totalHours = Math.floor(totalMinutes / 60);
 
   if (totalMinutes < 1) {
-    return `${Math.max(1, totalSeconds)} sec`;
+    return `${totalSeconds} sec`;
   }
   if (totalHours < 1) {
     const sec = totalSeconds % 60;

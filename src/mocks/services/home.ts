@@ -89,6 +89,7 @@ function allSettings(): SearchSetting[] {
 export function buildHomePlan(
   tier: FlipSentryTier | null,
   groupList: SearchGroup[],
+  options?: { hasActiveTrial?: boolean },
 ): HomePlan {
   const allowed = getAllowedSlotSettings(tier);
   const usedByInterval = countUsedSlotsByInterval(
@@ -105,14 +106,61 @@ export function buildHomePlan(
   const remainingSearches = sumSlotValues(remaining);
   const usedSearches = Math.max(0, maxSearches - remainingSearches);
   const effectiveTier: FlipSentryTier = tier ?? "hunter";
+  const displayName =
+    tier != null
+      ? options?.hasActiveTrial
+        ? `Trial · ${TIER_DISPLAY_NAMES[tier]}`
+        : TIER_DISPLAY_NAMES[tier]
+      : options?.hasActiveTrial
+        ? "Trial"
+        : "Not subscribed";
 
   return {
     tier: effectiveTier,
-    displayName:
-      tier != null ? TIER_DISPLAY_NAMES[tier] : "Not subscribed",
+    displayName,
     maxSearches,
     remainingSearches,
     usedSearches,
+    credits,
+  };
+}
+
+/** Prefer live/mock subscription status so home credits match create gating. */
+export function buildHomePlanFromStatus(status: {
+  hasActiveSubscription: boolean;
+  hasActiveTrial: boolean;
+  tier: FlipSentryTier | null;
+  totalSlots: number;
+  usedSlots: number;
+  remainingSlots: number;
+  allowedSlotSettings: Array<{ interval: number; value: number }>;
+  remainingSlotSettings: Array<{ interval: number; value: number }>;
+}): HomePlan {
+  const remainingByInterval = new Map(
+    status.remainingSlotSettings.map((s) => [s.interval, s.value]),
+  );
+  const credits: CreditBucket[] = status.allowedSlotSettings.map((s) => ({
+    intervalSeconds: s.interval,
+    total: s.value,
+    remaining: remainingByInterval.get(s.interval) ?? 0,
+  }));
+  const tier = status.tier;
+  const displayName = status.hasActiveSubscription
+    ? tier != null
+      ? TIER_DISPLAY_NAMES[tier]
+      : "Subscribed"
+    : status.hasActiveTrial
+      ? tier != null
+        ? `Trial · ${TIER_DISPLAY_NAMES[tier]}`
+        : "Trial"
+      : "Not subscribed";
+
+  return {
+    tier: tier ?? "hunter",
+    displayName,
+    maxSearches: status.totalSlots,
+    remainingSearches: status.remainingSlots,
+    usedSearches: status.usedSlots,
     credits,
   };
 }

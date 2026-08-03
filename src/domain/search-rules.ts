@@ -145,7 +145,11 @@ export function countUsedSlotsExcludingGroup(
   );
 }
 
-export function canCreateSearch(remainingSlots: number): boolean {
+export function canCreateSearch(
+  remainingSlots: number,
+  options?: { hasAccess?: boolean },
+): boolean {
+  if (options?.hasAccess === false) return false;
   return remainingSlots > 0;
 }
 

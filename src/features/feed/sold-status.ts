@@ -18,14 +18,14 @@ type ListingStatusFields = Pick<
 
 /**
  * Mirrors backend `FeedHelpers.GetPlatformListingDelay`:
- * Facebook ~7m, OfferUp ~30m, else 0.
+ * Facebook ~6m45s, OfferUp ~30m, else 0.
  * Use for wall-clock ages from `creationTime`.
  * For "Found in" duration, prefer API `foundInSeconds` (already delay-adjusted).
  */
 export function getPlatformListingDelayMs(platform: FeedPlatform): number {
   switch (platform) {
     case "facebookMarketplace":
-      return 7 * 60 * 1000;
+      return (6 * 60 + 45) * 1000;
     case "offerUp":
       return 30 * 60 * 1000;
     default:

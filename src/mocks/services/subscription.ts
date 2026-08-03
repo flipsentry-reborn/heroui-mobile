@@ -79,7 +79,10 @@ export function buildSubscriptionStatus(
   state: SubscriptionPersistedState,
   groups: SearchGroup[],
 ): SubscriptionStatus {
-  const tier = state.hasActiveSubscription ? state.currentTier : null;
+  const tier =
+    state.hasActiveSubscription || state.hasActiveTrial
+      ? state.currentTier
+      : null;
   const allowed = getAllowedSlotSettings(tier);
   const usedByInterval = countUsedSlotsByInterval(
     groups.flatMap((g) => g.settings),

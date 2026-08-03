@@ -1,8 +1,11 @@
-import { Ionicons } from "@expo/vector-icons";
 import type { JSX } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Chip } from "heroui-native";
 
+import {
+  InstantIcon,
+  isInstantInterval,
+} from "@/components/icons/instant-icon";
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
 import { SubscriptionCardBackdrop } from "@/features/settings/subscription-card-backdrop";
 import {
@@ -14,9 +17,6 @@ import { Fonts } from "@/lib/fonts";
 import type { HomePlan } from "@/mocks/data/home";
 import type { SubscriptionPlan } from "@/mocks/data/subscription";
 import { formatIntervalLabel } from "@/mocks/services/home";
-
-/** Matches location sheet Instant speed affordance. */
-const INSTANT_YELLOW = "#eab308";
 
 interface HomePlanCreditsCardProps {
   homePlan: HomePlan;
@@ -97,7 +97,7 @@ export function HomePlanCreditsCard({
 
         <View className="flex-row flex-wrap gap-1.5">
           {homePlan.credits.map((c) => {
-            const isInstant = c.intervalSeconds === 60;
+            const isInstant = isInstantInterval(c.intervalSeconds);
             const used = Math.max(0, c.total - c.remaining);
             return (
               <Chip
@@ -111,9 +111,7 @@ export function HomePlanCreditsCard({
                     : "flex-row items-center gap-1 border border-black/10 bg-black/5 px-2.5 py-1"
                 }
               >
-                {isInstant ? (
-                  <Ionicons name="flash" size={12} color={INSTANT_YELLOW} />
-                ) : null}
+                {isInstant ? <InstantIcon size={12} /> : null}
                 <Chip.Label
                   className={
                     isSubscribed

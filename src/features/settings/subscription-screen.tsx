@@ -19,6 +19,11 @@ import { useUniwind } from "uniwind";
 /** Soft edge fade while scrolling plans (top + bottom). */
 const SCROLL_EDGE_FADE = 40;
 
+import {
+  featureMentionsInstant,
+  InstantIcon,
+  INSTANT_YELLOW,
+} from "@/components/icons/instant-icon";
 import { HeroBoltIcon } from "@/features/settings/hero-bolt-icon";
 import { SubscriptionPlansSkeleton } from "@/features/settings/settings-skeletons";
 import { SubscriptionCardBackdrop } from "@/features/settings/subscription-card-backdrop";
@@ -35,14 +40,21 @@ import { formatPlanPrice } from "@/mocks/data/subscription";
 import { useStore } from "@/store/store";
 
 function FeatureRow({ feature }: { feature: string }): JSX.Element {
+  const isInstant = featureMentionsInstant(feature);
   return (
     <View className="flex-row items-start gap-2.5">
-      <Ionicons
-        name="checkmark"
-        size={16}
-        color="rgba(255,255,255,0.85)"
-        style={{ marginTop: 2 }}
-      />
+      {isInstant ? (
+        <View style={{ marginTop: 2 }}>
+          <InstantIcon size={16} color={INSTANT_YELLOW} />
+        </View>
+      ) : (
+        <Ionicons
+          name="checkmark"
+          size={16}
+          color="rgba(255,255,255,0.85)"
+          style={{ marginTop: 2 }}
+        />
+      )}
       <Text
         style={{
           flex: 1,

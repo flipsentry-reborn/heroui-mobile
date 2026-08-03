@@ -32,6 +32,10 @@ import { Badge, EmptyState } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
 import { BrandButton } from "@/components/ui/brand-button";
+import {
+  InstantIcon,
+  isInstantInterval,
+} from "@/components/icons/instant-icon";
 import PlatformIcon from "@/components/icons/PlatformIcon";
 import { SEARCH_PLATFORMS } from "@/features/home/search-bottom-sheet-platforms-sheet";
 import { formatOpenRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
@@ -171,9 +175,14 @@ function PlatformRows({ group }: { group: SearchGroup }): JSX.Element {
             <Typography type="body-sm" className="mr-2 flex-1" numberOfLines={1}>
               {cityFromLocation(setting.locationName)}
             </Typography>
-            <Typography type="body-xs" className="mr-2 text-muted">
-              {formatIntervalLabel(setting.runIntervalSeconds)}
-            </Typography>
+            <View className="mr-2 flex-row items-center gap-1">
+              {isInstantInterval(setting.runIntervalSeconds) ? (
+                <InstantIcon size={12} />
+              ) : null}
+              <Typography type="body-xs" className="text-muted">
+                {formatIntervalLabel(setting.runIntervalSeconds)}
+              </Typography>
+            </View>
             {setting.isActive ? (
               <Badge color="success" variant="soft" size="sm">
                 Active

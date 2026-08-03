@@ -12,6 +12,7 @@ import {
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
+import { InstantIcon } from "@/components/icons/instant-icon";
 import {
   LOCATION_RUN_SPEEDS,
   locationRunSpeedLabel,
@@ -22,7 +23,6 @@ import { cityFromLocation } from "@/mocks/services/home";
 
 const StyledIonicons = withUniwind(Ionicons);
 const StyledAnimatedView = withUniwind(Animated.View);
-const INSTANT_YELLOW = "#eab308";
 
 export interface LocationSpeedOptionState {
   speed: LocationRunSpeed;
@@ -90,11 +90,7 @@ function LocationSpeedSelect({
         >
           {speed === "instant" ? (
             <View className="flex-row items-center gap-1">
-              <StyledIonicons
-                name="flash"
-                size={14}
-                className="text-yellow-500"
-              />
+              <InstantIcon size={14} className="text-yellow-500" />
               <Typography
                 type="body-sm"
                 className={isActive ? "text-foreground" : "text-muted"}
@@ -138,11 +134,7 @@ function LocationSpeedSelect({
                     <>
                       {option.speed === "instant" ? (
                         <View className="min-w-0 flex-1 flex-row items-center gap-1.5">
-                          <Ionicons
-                            name="flash"
-                            size={14}
-                            color={INSTANT_YELLOW}
-                          />
+                          <InstantIcon size={14} />
                           <Select.ItemLabel />
                         </View>
                       ) : (

@@ -4,19 +4,20 @@ import agent from "@/api/agent";
 import {
   areFeedDisplayPrefsEqual,
   DEFAULT_FEED_DISPLAY_PREFS,
-  FEED_DISPLAY_PREFS_STORAGE_KEY,
-  parseFeedDisplayPrefs,
+  deriveMinBuySignal,
+  prefsFromDealSettings,
   type FeedDisplayPrefs,
 } from "@/domain/feed-display-prefs";
-import { readJson, writeJson } from "@/lib/storage";
 import { toUserErrorMessage } from "@/lib/user-error-message";
 import type {
   CreateUserFilterInput,
   UpdateUserFilterInput,
   UserFilter,
 } from "@/models/user-filter";
+import type { UserPreferences } from "@/models/user";
 import type FeedStore from "@/store/feedStore";
 import type SearchStore from "@/store/searchStore";
+import type UserStore from "@/store/userStore";
 
 function applyFilterUpdate(previous: UserFilter, input: UpdateUserFilterInput): UserFilter {
   return {
@@ -39,11 +40,12 @@ export default class FilterStore {
   submitting = false;
   hasLoaded = false;
   lastError: string | null = null;
-  /** Local-only feed score/profit prefs (device storage until backend owns them). */
+  /** Deal display prefs — backed by user preferences API (MinBuySignal / MinProfit). */
   displayPrefs: FeedDisplayPrefs = { ...DEFAULT_FEED_DISPLAY_PREFS };
   displayPrefsHydrated = false;
   private searchStore: SearchStore | null = null;
   private feedStore: FeedStore | null = null;
+  private userStore: UserStore | null = null;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -57,6 +59,10 @@ export default class FilterStore {
     this.feedStore = store;
   }
 
+  setUserStore(store: UserStore): void {
+    this.userStore = store;
+  }
+
   get activeFilters(): UserFilter[] {
     return this.filters.filter((f) => f.isActive);
   }
@@ -65,15 +71,21 @@ export default class FilterStore {
     return this.activeFilters.map((f) => f.id);
   }
 
+  /** Apply deal prefs from loaded user preferences (or fetch if missing). */
   async loadDisplayPrefs(): Promise<void> {
     try {
-      const saved = await readJson<unknown>(FEED_DISPLAY_PREFS_STORAGE_KEY);
-      const parsed = parseFeedDisplayPrefs(saved);
-      if (parsed != null) {
-        runInAction(() => {
-          this.displayPrefs = parsed;
-        });
+      let prefs = this.userStore?.preferences ?? null;
+      if (prefs == null) {
+        prefs = await agent.Account.getPreferences();
+        if (this.userStore != null) {
+          runInAction(() => {
+            this.userStore!.preferences = prefs;
+          });
+        }
       }
+      this.applyFromUserPreferences(prefs);
+    } catch {
+      // Keep defaults when prefs are unavailable.
     } finally {
       runInAction(() => {
         this.displayPrefsHydrated = true;
@@ -81,16 +93,58 @@ export default class FilterStore {
     }
   }
 
-  setDisplayPrefs(patch: Partial<Omit<FeedDisplayPrefs, "showNoValuation">>): void {
+  applyFromUserPreferences(prefs: UserPreferences | null | undefined): void {
+    if (prefs == null) return;
+    const next = prefsFromDealSettings(prefs.minBuySignal, prefs.minProfit);
+    runInAction(() => {
+      this.displayPrefs = next;
+      this.displayPrefsHydrated = true;
+    });
+  }
+
+  async setDisplayPrefs(
+    patch: Partial<Omit<FeedDisplayPrefs, "showNoValuation">>,
+  ): Promise<void> {
     const next: FeedDisplayPrefs = {
       ...this.displayPrefs,
       ...patch,
       showNoValuation: true,
     };
     if (areFeedDisplayPrefsEqual(this.displayPrefs, next)) return;
-    this.displayPrefs = next;
-    void writeJson(FEED_DISPLAY_PREFS_STORAGE_KEY, next);
+
+    const previous = this.displayPrefs;
+    runInAction(() => {
+      this.displayPrefs = next;
+    });
     this.feedStore?.onDisplayPrefsChanged();
+
+    const minBuySignal = deriveMinBuySignal(next);
+    const minProfit = next.minProfit;
+
+    try {
+      const base =
+        this.userStore?.preferences ?? (await agent.Account.getPreferences());
+      const updated = await agent.Account.updatePreferences({
+        ...base,
+        minBuySignal,
+        minProfit,
+      });
+      runInAction(() => {
+        if (this.userStore != null) {
+          this.userStore.preferences = updated;
+        }
+        this.displayPrefs = prefsFromDealSettings(
+          updated.minBuySignal,
+          updated.minProfit,
+        );
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.displayPrefs = previous;
+        this.lastError = toUserErrorMessage(error);
+      });
+      this.feedStore?.onDisplayPrefsChanged();
+    }
   }
 
   async loadFilters(force = false): Promise<void> {

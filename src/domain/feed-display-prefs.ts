@@ -1,8 +1,6 @@
 import {
-  getValuationTier,
   resolveDisplayValuation,
   type FeedItem,
-  type ValuationTier,
 } from "@/models/feed";
 
 export const FEED_DISPLAY_PREFS_STORAGE_KEY = "flipsentry.feedDisplayPrefs";
@@ -11,13 +9,10 @@ export const MIN_PROFIT_MIN = 0;
 export const MIN_PROFIT_MAX = 5000;
 export const MIN_PROFIT_STEP = 50;
 
-/** Matches getValuationTier floors — used for GetAll minBuySignal. */
-export const TIER_MIN_BUY_SIGNAL: Record<ValuationTier, number> = {
-  greatDeal: 75,
-  goodValue: 50,
-  fairPrice: 25,
-  overpriced: 0,
-};
+/** Persisted score buckets: 100 = all tiers; else min buy-signal floor. */
+export const DEAL_SCORE_ALL = 100;
+export const DEAL_SCORE_OPTIONS = [100, 75, 50, 25] as const;
+export type DealScoreOption = (typeof DEAL_SCORE_OPTIONS)[number];
 
 export type ScoreTierKey = "showGreat" | "showGood" | "showFair" | "showBad";
 
@@ -48,22 +43,101 @@ export const DEFAULT_FEED_DISPLAY_PREFS: FeedDisplayPrefs = {
   showNoValuation: true,
 };
 
-const TIER_FLAG: Record<ValuationTier, keyof FeedDisplayPrefs> = {
-  greatDeal: "showGreat",
-  goodValue: "showGood",
-  fairPrice: "showFair",
-  overpriced: "showBad",
-};
-
 export function clampMinProfit(value: number): number {
   if (!Number.isFinite(value)) return MIN_PROFIT_MIN;
   const stepped = Math.round(value / MIN_PROFIT_STEP) * MIN_PROFIT_STEP;
   return Math.min(MIN_PROFIT_MAX, Math.max(MIN_PROFIT_MIN, stepped));
 }
 
+export function normalizeDealScore(value: number | null | undefined): DealScoreOption {
+  if (value === 75 || value === 50 || value === 25 || value === 100) return value;
+  if (value == null || !Number.isFinite(value) || value >= 100 || value <= 0) {
+    return DEAL_SCORE_ALL;
+  }
+  if (value >= 75) return 75;
+  if (value >= 50) return 50;
+  if (value >= 25) return 25;
+  return DEAL_SCORE_ALL;
+}
+
+/**
+ * Cascade → persisted score:
+ * Great/all → 100, Good → 75, Fair → 50, Bad → 25.
+ */
+export function deriveMinBuySignal(prefs: FeedDisplayPrefs): DealScoreOption {
+  if (prefs.showGreat || !hasAnyScoreTierSelected(prefs)) return DEAL_SCORE_ALL;
+  if (prefs.showGood) return 75;
+  if (prefs.showFair) return 50;
+  return 25;
+}
+
+/** Query/API: omit filter when score is "all" (100). */
+export function effectiveMinBuySignalForQuery(
+  prefs: FeedDisplayPrefs,
+): number | undefined {
+  const score = deriveMinBuySignal(prefs);
+  return score < DEAL_SCORE_ALL ? score : undefined;
+}
+
+export function deriveMinProfit(prefs: FeedDisplayPrefs): number | undefined {
+  return prefs.minProfit > 0 ? prefs.minProfit : undefined;
+}
+
+export function prefsFromDealSettings(
+  minBuySignal: number | null | undefined,
+  minProfit: number | null | undefined,
+): FeedDisplayPrefs {
+  const score = normalizeDealScore(minBuySignal);
+  const profit = clampMinProfit(typeof minProfit === "number" ? minProfit : 0);
+  if (score >= DEAL_SCORE_ALL) {
+    return {
+      minProfit: profit,
+      showGreat: true,
+      showGood: true,
+      showFair: true,
+      showBad: true,
+      showNoValuation: true,
+    };
+  }
+  if (score >= 75) {
+    return {
+      minProfit: profit,
+      showGreat: false,
+      showGood: true,
+      showFair: true,
+      showBad: true,
+      showNoValuation: true,
+    };
+  }
+  if (score >= 50) {
+    return {
+      minProfit: profit,
+      showGreat: false,
+      showGood: false,
+      showFair: true,
+      showBad: true,
+      showNoValuation: true,
+    };
+  }
+  return {
+    minProfit: profit,
+    showGreat: false,
+    showGood: false,
+    showFair: false,
+    showBad: true,
+    showNoValuation: true,
+  };
+}
+
 export function parseFeedDisplayPrefs(raw: unknown): FeedDisplayPrefs | null {
   if (raw == null || typeof raw !== "object") return null;
   const obj = raw as Record<string, unknown>;
+  if (typeof obj.minBuySignal === "number" || typeof obj.minProfit === "number") {
+    return prefsFromDealSettings(
+      typeof obj.minBuySignal === "number" ? obj.minBuySignal : DEAL_SCORE_ALL,
+      typeof obj.minProfit === "number" ? obj.minProfit : 0,
+    );
+  }
   return normalizeScoreTierCascade({
     minProfit: clampMinProfit(
       typeof obj.minProfit === "number" ? obj.minProfit : DEFAULT_FEED_DISPLAY_PREFS.minProfit,
@@ -141,34 +215,10 @@ function hasAnyScoreTierSelected(prefs: FeedDisplayPrefs): boolean {
   return prefs.showGreat || prefs.showGood || prefs.showFair || prefs.showBad;
 }
 
-export function isTierShown(prefs: FeedDisplayPrefs, tier: ValuationTier): boolean {
-  // Empty selection = no score filter (same as all selected).
-  if (!hasAnyScoreTierSelected(prefs)) return true;
-  const key = TIER_FLAG[tier];
-  return prefs[key] === true;
-}
-
 /**
- * Maps selected score tiers → GetAll `minBuySignal`.
- * Unvalued listings always pass on the server when this is set.
- * Empty selection = no score filter (same as all selected).
+ * Same rule as backend GetAll / notify: score 100 = all; else buySignal >= score.
+ * Unvalued listings always pass. Min profit floors valued listings only.
  */
-export function deriveMinBuySignal(prefs: FeedDisplayPrefs): number | undefined {
-  const floors: number[] = [];
-  if (prefs.showGreat) floors.push(TIER_MIN_BUY_SIGNAL.greatDeal);
-  if (prefs.showGood) floors.push(TIER_MIN_BUY_SIGNAL.goodValue);
-  if (prefs.showFair) floors.push(TIER_MIN_BUY_SIGNAL.fairPrice);
-  if (prefs.showBad) floors.push(TIER_MIN_BUY_SIGNAL.overpriced);
-
-  if (floors.length === 4 || floors.length === 0) return undefined;
-  return Math.min(...floors);
-}
-
-export function deriveMinProfit(prefs: FeedDisplayPrefs): number | undefined {
-  return prefs.minProfit > 0 ? prefs.minProfit : undefined;
-}
-
-/** Exact client match for tier gaps + profit (No Valuation always allowed). */
 export function matchesFeedDisplayPrefs(
   item: Pick<FeedItem, "compValuation" | "externalValuation">,
   prefs: FeedDisplayPrefs,
@@ -178,8 +228,10 @@ export function matchesFeedDisplayPrefs(
     return prefs.showNoValuation;
   }
 
-  const tier = getValuationTier(valuation.buySignal);
-  if (!isTierShown(prefs, tier)) return false;
+  const minBuySignal = deriveMinBuySignal(prefs);
+  if (minBuySignal < DEAL_SCORE_ALL && valuation.buySignal < minBuySignal) {
+    return false;
+  }
 
   const minProfit = deriveMinProfit(prefs);
   if (minProfit != null && (valuation.profit ?? 0) < minProfit) {

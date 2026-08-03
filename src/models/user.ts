@@ -34,6 +34,10 @@ export interface UserPreferences {
   showRebuiltTitle: boolean;
   showSalvageTitle: boolean;
   distanceUnit: "mi" | "km";
+  /** 100 = all scores; 75/50/25 = min buy-signal floor. */
+  minBuySignal: number;
+  /** 0 = no profit filter. */
+  minProfit: number;
 }
 
 export interface UserLoginFormValues {

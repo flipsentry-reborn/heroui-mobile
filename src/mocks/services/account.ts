@@ -61,6 +61,8 @@ const defaultPreferences: UserPreferences = {
   showRebuiltTitle: false,
   showSalvageTitle: false,
   distanceUnit: "mi",
+  minBuySignal: 100,
+  minProfit: 0,
 };
 
 const defaultNotificationSettings: UserNotificationSettings = {

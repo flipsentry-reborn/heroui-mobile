@@ -86,7 +86,7 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
   const router = useRouter();
   const { toast } = useToast();
   const background = useThemeColor("background");
-  const { userStore, subscriptionStore, feedStore } = useStore();
+  const { userStore, subscriptionStore, feedStore, filterStore } = useStore();
   const [state, setState] = useState<SettingsState | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [hideOpen, setHideOpen] = useState(false);
@@ -196,6 +196,8 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
         showRebuiltTitle: merged.showRebuiltTitle,
         showSalvageTitle: merged.showSalvageTitle,
         distanceUnit: merged.distanceUnit,
+        minBuySignal: 100,
+        minProfit: 0,
       };
       await userStore.updatePreferences({
         ...apiBase,
@@ -207,6 +209,8 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
         showSalvageTitle: merged.showSalvageTitle,
         distanceUnit: merged.distanceUnit,
       });
+      // Keep deal prefs in sync if settings overwrite the preferences payload.
+      filterStore.applyFromUserPreferences(userStore.preferences);
     } catch (error) {
       Alert.alert("Error", toUserErrorMessage(error));
     }

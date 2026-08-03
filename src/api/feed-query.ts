@@ -65,7 +65,12 @@ export function buildLiveFeedParams(
     qs.append("contentBucket", "Clean");
   }
 
-  if (params.minBuySignal != null && params.minBuySignal > 0) {
+  // 100 = all scores (no server buy-signal filter).
+  if (
+    params.minBuySignal != null &&
+    params.minBuySignal > 0 &&
+    params.minBuySignal < 100
+  ) {
     qs.append("minBuySignal", String(params.minBuySignal));
   }
   if (params.minProfit != null && params.minProfit > 0) {

@@ -278,7 +278,7 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
   }, []);
 
   const handleSheetClose = useCallback(() => {
-    filterStore.setDisplayPrefs({
+    void filterStore.setDisplayPrefs({
       minProfit: clampMinProfit(draft.minProfit),
       showGreat: draft.showGreat,
       showGood: draft.showGood,

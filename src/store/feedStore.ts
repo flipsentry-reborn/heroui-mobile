@@ -15,8 +15,8 @@ import {
 } from "@/domain/feed-routing";
 import {
   DEFAULT_FEED_DISPLAY_PREFS,
-  deriveMinBuySignal,
   deriveMinProfit,
+  effectiveMinBuySignalForQuery,
   matchesFeedDisplayPrefs,
   type FeedDisplayPrefs,
 } from "@/domain/feed-display-prefs";
@@ -353,7 +353,7 @@ export default class FeedStore {
   } {
     const prefs = this.displayPrefs();
     return {
-      minBuySignal: deriveMinBuySignal(prefs),
+      minBuySignal: effectiveMinBuySignalForQuery(prefs),
       minProfit: deriveMinProfit(prefs),
       displayPrefs: prefs,
     };

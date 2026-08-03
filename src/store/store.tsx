@@ -32,6 +32,10 @@ function wireFilterToFeed(
   feedStore.setFilterStore(filterStore);
 }
 
+function wireFilterToUser(filterStore: FilterStore, userStore: UserStore): void {
+  filterStore.setUserStore(userStore);
+}
+
 function createStores(): Omit<RootStore, "resetStores" | "hydrate"> {
   const commonStore = new CommonStore();
   const userStore = new UserStore(commonStore);
@@ -43,6 +47,7 @@ function createStores(): Omit<RootStore, "resetStores" | "hydrate"> {
   filterStore.setSearchStore(searchStore);
   wireFeedToSearch(feedStore, searchStore);
   wireFilterToFeed(filterStore, feedStore);
+  wireFilterToUser(filterStore, userStore);
   return {
     commonStore,
     userStore,
@@ -91,6 +96,7 @@ function resetStores(): void {
   filterStore.setSearchStore(searchStore);
   wireFeedToSearch(feedStore, searchStore);
   wireFilterToFeed(filterStore, feedStore);
+  wireFilterToUser(filterStore, userStore);
   stores = {
     commonStore,
     userStore,
@@ -108,9 +114,13 @@ async function ensureRealtimeSession(): Promise<void> {
     stores.searchStore.loadSearchGroups(),
     stores.filterStore.loadFilters(true),
     stores.userStore.loadPreferences().catch(() => {
-      // Prefs are best-effort for distance unit / hide filters
+      // Prefs are best-effort for distance unit / hide filters / deal prefs
     }),
   ]);
+  stores.filterStore.applyFromUserPreferences(stores.userStore.preferences);
+  if (!stores.filterStore.displayPrefsHydrated) {
+    await stores.filterStore.loadDisplayPrefs();
+  }
   stores.feedStore.flushPendingFeeds();
   await startFeedHubConnection();
 }
@@ -120,7 +130,6 @@ async function hydrate(): Promise<void> {
     stores.userStore.bootstrap(),
     stores.feedStore.loadLayoutMode(),
     stores.feedStore.loadYourSearchesExpanded(),
-    stores.filterStore.loadDisplayPrefs(),
   ]);
   await ensureRealtimeSession();
 }

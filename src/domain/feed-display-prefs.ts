@@ -19,9 +19,6 @@ export const TIER_MIN_BUY_SIGNAL: Record<ValuationTier, number> = {
   overpriced: 0,
 };
 
-/** Above max buy signal (0–100) so only unvalued listings pass GetAll. */
-export const ONLY_NO_VALUATION_MIN_BUY_SIGNAL = 101;
-
 export type ScoreTierKey = "showGreat" | "showGood" | "showFair" | "showBad";
 
 /** Best → worst. Selecting a tier also selects every worse tier below it. */
@@ -140,7 +137,13 @@ export function normalizeScoreTierCascade(prefs: FeedDisplayPrefs): FeedDisplayP
   return { ...prefs, showGreat: false, showGood: false, showFair: false, showBad: false };
 }
 
+function hasAnyScoreTierSelected(prefs: FeedDisplayPrefs): boolean {
+  return prefs.showGreat || prefs.showGood || prefs.showFair || prefs.showBad;
+}
+
 export function isTierShown(prefs: FeedDisplayPrefs, tier: ValuationTier): boolean {
+  // Empty selection = no score filter (same as all selected).
+  if (!hasAnyScoreTierSelected(prefs)) return true;
   const key = TIER_FLAG[tier];
   return prefs[key] === true;
 }
@@ -148,6 +151,7 @@ export function isTierShown(prefs: FeedDisplayPrefs, tier: ValuationTier): boole
 /**
  * Maps selected score tiers → GetAll `minBuySignal`.
  * Unvalued listings always pass on the server when this is set.
+ * Empty selection = no score filter (same as all selected).
  */
 export function deriveMinBuySignal(prefs: FeedDisplayPrefs): number | undefined {
   const floors: number[] = [];
@@ -156,8 +160,7 @@ export function deriveMinBuySignal(prefs: FeedDisplayPrefs): number | undefined 
   if (prefs.showFair) floors.push(TIER_MIN_BUY_SIGNAL.fairPrice);
   if (prefs.showBad) floors.push(TIER_MIN_BUY_SIGNAL.overpriced);
 
-  if (floors.length === 4) return undefined;
-  if (floors.length === 0) return ONLY_NO_VALUATION_MIN_BUY_SIGNAL;
+  if (floors.length === 4 || floors.length === 0) return undefined;
   return Math.min(...floors);
 }
 

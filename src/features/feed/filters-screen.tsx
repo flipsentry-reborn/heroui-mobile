@@ -78,11 +78,9 @@ function displayPrefsSummary(prefs: FeedDisplayPrefs): string {
     (option) => option.label,
   );
   const scorePart =
-    tiers.length === SCORE_TIER_OPTIONS.length
+    tiers.length === 0 || tiers.length === SCORE_TIER_OPTIONS.length
       ? "All scores"
-      : tiers.length === 0
-        ? "No valuation only"
-        : tiers.join(", ");
+      : tiers.join(", ");
   return `${formatMinProfitLabel(prefs.minProfit)} · ${scorePart}`;
 }
 function filterTypeLabel(filter: UserFilter): string {
@@ -263,29 +261,32 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
   const { filterStore } = useStore();
   const prefs = filterStore.displayPrefs;
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [draftProfit, setDraftProfit] = useState(prefs.minProfit);
+  const [draft, setDraft] = useState<FeedDisplayPrefs>(prefs);
 
   useEffect(() => {
-    if (sheetOpen) setDraftProfit(prefs.minProfit);
-  }, [sheetOpen, prefs.minProfit]);
+    if (sheetOpen) setDraft(prefs);
+  }, [sheetOpen, prefs]);
 
   const summary = useMemo(() => displayPrefsSummary(prefs), [prefs]);
 
-  const setTier = useCallback(
-    (key: ScoreTierKey, selected: boolean) => {
-      filterStore.setDisplayPrefs(applyScoreTierSelection(prefs, key, selected));
-    },
-    [filterStore, prefs],
-  );
+  const setTier = useCallback((key: ScoreTierKey, selected: boolean) => {
+    setDraft((current) => ({
+      ...current,
+      ...applyScoreTierSelection(current, key, selected),
+      showNoValuation: true,
+    }));
+  }, []);
 
-  const commitProfit = useCallback(
-    (value: number) => {
-      const next = clampMinProfit(value);
-      setDraftProfit(next);
-      filterStore.setDisplayPrefs({ minProfit: next });
-    },
-    [filterStore],
-  );
+  const handleSheetClose = useCallback(() => {
+    filterStore.setDisplayPrefs({
+      minProfit: clampMinProfit(draft.minProfit),
+      showGreat: draft.showGreat,
+      showGood: draft.showGood,
+      showFair: draft.showFair,
+      showBad: draft.showBad,
+    });
+    setSheetOpen(false);
+  }, [draft, filterStore]);
 
   return (
     <>
@@ -305,7 +306,7 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
         </ListGroup>
       </View>
 
-      <SheetShell visible={sheetOpen} onClose={() => setSheetOpen(false)}>
+      <SheetShell visible={sheetOpen} onClose={handleSheetClose}>
         <BottomSheet.Content
           enableDynamicSizing
           className={SHEET_CONTENT_CLASS_NAME}
@@ -321,27 +322,37 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
               <BottomSheet.Close />
             </View>
 
+            <Alert status="warning">
+              <Alert.Indicator />
+              <Alert.Content className="min-w-0 flex-1">
+                <Alert.Title>
+                  This automatically applies to your notification settings. Use with
+                  caution.
+                </Alert.Title>
+              </Alert.Content>
+            </Alert>
+
             <View className="overflow-hidden rounded-3xl bg-surface px-4 py-4">
               <View className="mb-3 flex-row items-center justify-between">
                 <Typography type="body" className="text-foreground">
                   Min profit
                 </Typography>
                 <Typography type="body-sm" className="text-muted">
-                  {formatMinProfitLabel(draftProfit)}
+                  {formatMinProfitLabel(draft.minProfit)}
                 </Typography>
               </View>
               <Slider
-                value={draftProfit}
+                value={draft.minProfit}
                 minValue={MIN_PROFIT_MIN}
                 maxValue={MIN_PROFIT_MAX}
                 step={MIN_PROFIT_STEP}
                 onChange={(next) => {
                   const value = toSliderValue(next);
-                  if (value != null) setDraftProfit(clampMinProfit(value));
-                }}
-                onChangeEnd={(next) => {
-                  const value = toSliderValue(next);
-                  if (value != null) commitProfit(value);
+                  if (value == null) return;
+                  const minProfit = clampMinProfit(value);
+                  setDraft((current) =>
+                    current.minProfit === minProfit ? current : { ...current, minProfit },
+                  );
                 }}
               >
                 <Slider.Track>
@@ -364,7 +375,7 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
                 <View key={option.key}>
                   {index > 0 ? <Separator className="my-0" /> : null}
                   <ControlField
-                    isSelected={prefs[option.key]}
+                    isSelected={draft[option.key]}
                     onSelectedChange={(selected) => setTier(option.key, selected)}
                     className="py-3"
                   >

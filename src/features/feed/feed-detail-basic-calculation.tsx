@@ -277,9 +277,9 @@ export const FeedDetailBasicCalculation = observer(function FeedDetailBasicCalcu
             </View>
 
             {valuation.warnings != null && valuation.warnings.length > 0 ? (
-              <View className="gap-1 rounded-xl bg-warning/10 px-3 py-2.5">
+              <View className="gap-1 rounded-xl bg-uncertain/10 px-3 py-2.5">
                 {valuation.warnings.map((warning) => (
-                  <Typography key={warning} type="body-xs" className="text-warning">
+                  <Typography key={warning} type="body-xs" className="text-uncertain">
                     {warning}
                   </Typography>
                 ))}

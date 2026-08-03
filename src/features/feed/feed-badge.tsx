@@ -85,14 +85,13 @@ export function FeedBadge({
   );
 }
 
-export function ValuationBadge({
-  buySignal,
+export function ValuationTierBadge({
+  tier,
   scale = "default",
 }: {
-  buySignal: number;
+  tier: ValuationTier;
   scale?: BadgeScale;
 }): JSX.Element {
-  const tier = getValuationTier(buySignal);
   return (
     <FeedBadge
       label={TIER_LABEL[tier]}
@@ -101,6 +100,16 @@ export function ValuationBadge({
       labelClass={TIER_TEXT[tier]}
     />
   );
+}
+
+export function ValuationBadge({
+  buySignal,
+  scale = "default",
+}: {
+  buySignal: number;
+  scale?: BadgeScale;
+}): JSX.Element {
+  return <ValuationTierBadge tier={getValuationTier(buySignal)} scale={scale} />;
 }
 
 /** Negotiable, ASAP, Damaged, Dealer, etc. — same shell, different bg. */

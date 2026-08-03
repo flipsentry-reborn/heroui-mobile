@@ -85,7 +85,7 @@ export const FeedHeader = observer(function FeedHeader({
       className="z-20 bg-background"
     >
       <View className="px-3 pb-0 pt-0.5">
-        <View className="h-8 flex-row items-center">
+        <View className="h-9 flex-row items-center gap-2.5">
           {searchOpen ? (
             <>
               <View className="flex-1">
@@ -95,16 +95,16 @@ export const FeedHeader = observer(function FeedHeader({
                   className="w-full"
                   animation="disable-all"
                 >
-                  <SearchField.Group className="h-8 rounded-field border border-border bg-surface-secondary">
+                  <SearchField.Group className="h-9 rounded-field border border-border bg-surface-secondary">
                     <SearchField.SearchIcon
-                      iconProps={{ color: muted, size: 16 }}
+                      iconProps={{ color: muted, size: 18 }}
                     />
                     <SearchField.Input
                       ref={inputRef}
                       autoFocus
                       placeholder="Search cars, phones"
                       placeholderTextColor={muted}
-                      className="text-sm font-normal text-foreground"
+                      className="text-[15px] font-normal text-foreground"
                       returnKeyType="search"
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -118,9 +118,9 @@ export const FeedHeader = observer(function FeedHeader({
               <Pressable
                 onPress={closeSearch}
                 accessibilityLabel="Clear search"
-                className="ml-1.5 h-8 w-8 items-center justify-center rounded-field bg-surface-secondary"
+                className="h-9 w-9 items-center justify-center rounded-field bg-surface-secondary"
               >
-                <Ionicons name="close" size={16} color={foreground} />
+                <Ionicons name="close" size={18} color={foreground} />
               </Pressable>
             </>
           ) : (
@@ -134,7 +134,7 @@ export const FeedHeader = observer(function FeedHeader({
                 />
               </View>
               <View className="flex-1" />
-              <Badge.Anchor className="mr-1.5">
+              <Badge.Anchor>
                 <Pressable
                   onPress={onFiltersPress}
                   accessibilityRole="button"
@@ -145,13 +145,13 @@ export const FeedHeader = observer(function FeedHeader({
                   }
                   className={
                     filtersActive
-                      ? "h-8 flex-row items-center gap-1 rounded-field bg-accent px-2.5"
-                      : "h-8 flex-row items-center gap-1 rounded-field border border-border bg-surface-secondary px-2.5"
+                      ? "h-9 flex-row items-center gap-1.5 rounded-field bg-accent px-3"
+                      : "h-9 flex-row items-center gap-1.5 rounded-field border border-border bg-surface-secondary px-3"
                   }
                 >
                   <Ionicons
                     name="options-outline"
-                    size={14}
+                    size={16}
                     color={filtersActive ? accentForeground : muted}
                   />
                   <Typography
@@ -159,8 +159,8 @@ export const FeedHeader = observer(function FeedHeader({
                     weight="medium"
                     className={
                       filtersActive
-                        ? "text-[12px] text-accent-foreground"
-                        : "text-[12px] text-muted"
+                        ? "text-[13.5px] text-accent-foreground"
+                        : "text-[13.5px] text-muted"
                     }
                   >
                     Filters
@@ -181,9 +181,9 @@ export const FeedHeader = observer(function FeedHeader({
                 onPress={openSearch}
                 accessibilityRole="button"
                 accessibilityLabel="Search listings"
-                className="h-8 w-8 items-center justify-center rounded-field border border-border bg-surface-secondary"
+                className="h-9 w-9 items-center justify-center rounded-field border border-border bg-surface-secondary"
               >
-                <Ionicons name="search" size={16} color={muted} />
+                <Ionicons name="search" size={18} color={muted} />
               </Pressable>
             </>
           )}

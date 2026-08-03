@@ -48,6 +48,8 @@ const FEED_OPEN_LOG = "FeedOpen";
 
 /** Collapse reconnect + AppState resume into one catch-up run. */
 const CATCH_UP_DEBOUNCE_MS = 600;
+/** Coalesce rapid filter / deal-pref toggles into one dirty reload. */
+const FILTER_RELOAD_DEBOUNCE_MS = 350;
 /** Bound live queue while feed tabs are still loading. */
 const PENDING_FEEDS_MAX = 80;
 /** Bound pending image/valuation patches that race ahead of ReceiveFeed. */
@@ -109,15 +111,17 @@ export default class FeedStore {
   /** In-flight loadBucket promises so callers can await a join instead of no-op. */
   private bucketLoadPromises = new Map<string, Promise<void>>();
   private catchUpTimer: ReturnType<typeof setTimeout> | null = null;
+  private filterReloadTimer: ReturnType<typeof setTimeout> | null = null;
   private catchUpInFlight = false;
   private catchUpQueued = false;
   private scrollToTopHandler: (() => void) | null = null;
 
   constructor() {
-    makeAutoObservable<this, "bucketLoadPromises">(
+    makeAutoObservable<this, "bucketLoadPromises" | "filterReloadTimer">(
       this,
       {
         bucketLoadPromises: false,
+        filterReloadTimer: false,
       },
       { autoBind: true },
     );
@@ -361,15 +365,20 @@ export default class FeedStore {
 
   /** After selected filters change — dirty + reload For You buckets (not saved). */
   onSelectedFiltersChanged(): void {
-    this.markNonSavedBucketsDirtyAndReload();
+    this.scheduleNonSavedBucketsReload();
   }
 
-  /** After local score/profit display prefs change — refresh loaded buckets. */
+  /**
+   * After score/profit display prefs change:
+   * 1) instantly shrink in-memory lists/shelves to the new floor
+   * 2) debounced force-reload so raised/lowered thresholds refetch from API
+   */
   onDisplayPrefsChanged(): void {
-    this.markNonSavedBucketsDirtyAndReload();
+    this.applyDisplayPrefsLocally();
+    this.scheduleNonSavedBucketsReload();
   }
 
-  private markNonSavedBucketsDirtyAndReload(): void {
+  private scheduleNonSavedBucketsReload(): void {
     const keys = new Set<string>([
       ...Object.keys(this.lists),
       ...Object.keys(this.shelves),
@@ -382,7 +391,40 @@ export default class FeedStore {
         s.add(bucket);
       });
     }
-    void this.reloadDirtyBuckets();
+    if (this.filterReloadTimer != null) {
+      clearTimeout(this.filterReloadTimer);
+    }
+    this.filterReloadTimer = setTimeout(() => {
+      this.filterReloadTimer = null;
+      void this.reloadDirtyBuckets();
+    }, FILTER_RELOAD_DEBOUNCE_MS);
+  }
+
+  /** Drop items that no longer pass deal prefs (cannot restore — reload does). */
+  private applyDisplayPrefsLocally(): void {
+    const prefs = this.displayPrefs();
+    const filterIds = (ids: string[]): string[] =>
+      ids.filter((id) => {
+        const item = this.items.get(id);
+        return item != null && matchesFeedDisplayPrefs(item, prefs);
+      });
+
+    for (const bucket of Object.keys(this.lists)) {
+      if (bucket === "saved") continue;
+      const current = this.lists[bucket] ?? [];
+      const next = filterIds(current);
+      if (next.length !== current.length) {
+        this.setListIds(bucket, next);
+      }
+    }
+    for (const bucket of Object.keys(this.shelves)) {
+      if (bucket === "saved") continue;
+      const current = this.shelves[bucket] ?? [];
+      const next = filterIds(current);
+      if (next.length !== current.length) {
+        this.setShelfIds(bucket, next);
+      }
+    }
   }
 
   private async reloadDirtyBuckets(): Promise<void> {
@@ -509,11 +551,19 @@ export default class FeedStore {
     if (bucket === "for-you") return;
 
     const inFlight = this.bucketLoadPromises.get(bucket);
-    if (inFlight && !opts.force) {
-      // Join the in-flight request — a bare return made For You think shelves
-      // were ready while the first load was still outstanding (blank flash).
-      await inFlight;
-      return;
+    if (inFlight) {
+      if (!opts.force) {
+        // Join the in-flight request — a bare return made For You think shelves
+        // were ready while the first load was still outstanding (blank flash).
+        await inFlight;
+        return;
+      }
+      // Force reload: wait so a stale response cannot overwrite newer prefs.
+      try {
+        await inFlight;
+      } catch {
+        // ignore prior failure; we still force-reload below
+      }
     }
 
     const isShelf = !!opts.asShelf;

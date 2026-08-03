@@ -5,6 +5,7 @@ import {
   areFeedDisplayPrefsEqual,
   DEFAULT_FEED_DISPLAY_PREFS,
   deriveMinBuySignal,
+  normalizeScoreTierCascade,
   prefsFromDealSettings,
   type FeedDisplayPrefs,
 } from "@/domain/feed-display-prefs";
@@ -105,17 +106,18 @@ export default class FilterStore {
   async setDisplayPrefs(
     patch: Partial<Omit<FeedDisplayPrefs, "showNoValuation">>,
   ): Promise<void> {
-    const next: FeedDisplayPrefs = {
+    const next = normalizeScoreTierCascade({
       ...this.displayPrefs,
       ...patch,
       showNoValuation: true,
-    };
+    });
     if (areFeedDisplayPrefsEqual(this.displayPrefs, next)) return;
 
     const previous = this.displayPrefs;
     runInAction(() => {
       this.displayPrefs = next;
     });
+    // Instant local filter + debounced network reload.
     this.feedStore?.onDisplayPrefsChanged();
 
     const minBuySignal = deriveMinBuySignal(next);
@@ -129,15 +131,18 @@ export default class FilterStore {
         minBuySignal,
         minProfit,
       });
+      const confirmed = prefsFromDealSettings(
+        updated.minBuySignal,
+        updated.minProfit,
+      );
       runInAction(() => {
         if (this.userStore != null) {
           this.userStore.preferences = updated;
         }
-        this.displayPrefs = prefsFromDealSettings(
-          updated.minBuySignal,
-          updated.minProfit,
-        );
+        this.displayPrefs = confirmed;
       });
+      // Reload after persist so buckets use server-confirmed floors (and win races).
+      this.feedStore?.onDisplayPrefsChanged();
     } catch (error) {
       runInAction(() => {
         this.displayPrefs = previous;

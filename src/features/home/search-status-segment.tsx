@@ -27,62 +27,62 @@ export function SearchStatusSegment({
     <View className="bg-background px-3 pb-3 pt-1">
       <Segment
         value={value}
-        size="md"
+        size="lg"
         className="w-full"
         onValueChange={(next) => onValueChange(next as SearchStatusFilter)}
       >
-        <Segment.Group className="w-full">
+        <Segment.Group className="w-full gap-1">
           <Segment.Indicator />
           <Segment.Item
             value="all"
-            className="min-h-10 flex-1 flex-row items-center justify-center gap-1.5"
+            className="min-h-11 flex-1 flex-row items-center justify-center gap-2"
           >
             {({ isSelected }) => (
               <>
                 <StyledIonicons
                   name="layers-outline"
-                  size={16}
+                  size={18}
                   className={
                     isSelected ? "text-segment-foreground" : "text-muted"
                   }
                 />
-                <Segment.Label>{`All (${allCount})`}</Segment.Label>
+                <Segment.Label className="text-[16.5px]">{`All (${allCount})`}</Segment.Label>
               </>
             )}
           </Segment.Item>
           <Segment.Separator betweenValues={["all", "active"]} />
           <Segment.Item
             value="active"
-            className="min-h-10 flex-1 flex-row items-center justify-center gap-1.5"
+            className="min-h-11 flex-1 flex-row items-center justify-center gap-2"
           >
             {({ isSelected }) => (
               <>
                 <StyledIonicons
                   name="play-circle-outline"
-                  size={16}
+                  size={18}
                   className={
                     isSelected ? "text-segment-foreground" : "text-muted"
                   }
                 />
-                <Segment.Label>{`Active (${activeCount})`}</Segment.Label>
+                <Segment.Label className="text-[16.5px]">{`Active (${activeCount})`}</Segment.Label>
               </>
             )}
           </Segment.Item>
           <Segment.Separator betweenValues={["active", "paused"]} />
           <Segment.Item
             value="paused"
-            className="min-h-10 flex-1 flex-row items-center justify-center gap-1.5"
+            className="min-h-11 flex-1 flex-row items-center justify-center gap-2"
           >
             {({ isSelected }) => (
               <>
                 <StyledIonicons
                   name="pause-circle-outline"
-                  size={16}
+                  size={18}
                   className={
                     isSelected ? "text-segment-foreground" : "text-muted"
                   }
                 />
-                <Segment.Label>{`Paused (${pausedCount})`}</Segment.Label>
+                <Segment.Label className="text-[16.5px]">{`Paused (${pausedCount})`}</Segment.Label>
               </>
             )}
           </Segment.Item>

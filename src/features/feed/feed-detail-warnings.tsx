@@ -5,7 +5,6 @@ import {
   Accordion,
   Separator,
   Typography,
-  useThemeColor,
 } from "heroui-native";
 import { withUniwind } from "uniwind";
 
@@ -29,13 +28,12 @@ interface FeedDetailWarningsProps {
 
 /**
  * AI valuation insights accordion (KBB / external analysis notes).
+ * Non-info accents use the same amber as uncertain odometer values.
  * Layout animations disabled so it scrolls with the detail page.
  */
 export function FeedDetailWarnings({
   warnings,
 }: FeedDetailWarningsProps): JSX.Element | null {
-  const [warningColor] = useThemeColor(["warning"]);
-
   if (warnings.length === 0) return null;
 
   return (
@@ -59,8 +57,8 @@ export function FeedDetailWarnings({
             >
               AI Warnings
             </Typography>
-            <View className="rounded-full bg-warning/15 px-2 py-0.5">
-              <Typography type="body-xs" className="text-[11px] text-warning">
+            <View className="rounded-full bg-uncertain/15 px-2 py-0.5">
+              <Typography type="body-xs" className="text-[11px] text-uncertain">
                 {warnings.length}
               </Typography>
             </View>
@@ -75,23 +73,28 @@ export function FeedDetailWarnings({
             {warnings.map((warning, index) => {
               const isLast = index === warnings.length - 1;
               const isInfo = warning.severity === "info";
-              const iconColor = isInfo
-                ? AI_ICON_COLOR
-                : warningColor || "#d97706";
 
               return (
                 <View key={`${warning.type ?? "w"}:${warning.message}`}>
                   <View className="flex-row items-start gap-2.5 py-2">
-                    <StyledIonicons
-                      name={warningIcon(warning.severity)}
-                      size={15}
-                      className="mt-0.5"
-                      color={iconColor}
-                    />
+                    {isInfo ? (
+                      <StyledIonicons
+                        name={warningIcon(warning.severity)}
+                        size={15}
+                        className="mt-0.5"
+                        color={AI_ICON_COLOR}
+                      />
+                    ) : (
+                      <StyledIonicons
+                        name={warningIcon(warning.severity)}
+                        size={15}
+                        className="mt-0.5 text-uncertain"
+                      />
+                    )}
                     <Typography
                       type="body-xs"
                       className={`min-w-0 flex-1 text-xs leading-4 ${
-                        isInfo ? "text-foreground" : "text-warning"
+                        isInfo ? "text-foreground" : "text-uncertain"
                       }`}
                     >
                       {warning.message}

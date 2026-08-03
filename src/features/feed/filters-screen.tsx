@@ -17,7 +17,6 @@ import {
   Menu,
   Separator,
   SkeletonGroup,
-  Slider,
   Switch,
   Typography,
   useThemeColor,
@@ -30,13 +29,18 @@ import { BrandButton } from "@/components/ui/brand-button";
 import {
   applyScoreTierSelection,
   clampMinProfit,
-  MIN_PROFIT_MAX,
-  MIN_PROFIT_MIN,
-  MIN_PROFIT_STEP,
+  normalizeScoreTierCascade,
   type FeedDisplayPrefs,
   type ScoreTierKey,
 } from "@/domain/feed-display-prefs";
+import { ValuationTierBadge } from "@/features/feed/feed-badge";
 import { FilterBottomSheet } from "@/features/feed/filter-bottom-sheet";
+import { showFilterToast } from "@/features/feed/filter-toast";
+import {
+  formatMinProfitLabel,
+  MinProfitSlider,
+} from "@/features/feed/min-profit-slider";
+import type { ValuationTier } from "@/models/feed";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import { formatOpenRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
@@ -55,23 +59,13 @@ const StyledIonicons = withUniwind(Ionicons);
 const SCORE_TIER_OPTIONS: {
   key: ScoreTierKey;
   label: string;
-  swatchClassName: string;
+  tier: ValuationTier;
 }[] = [
-  { key: "showGreat", label: "Great", swatchClassName: "bg-violet-600" },
-  { key: "showGood", label: "Good", swatchClassName: "bg-sky-600" },
-  { key: "showFair", label: "Fair", swatchClassName: "bg-amber-500" },
-  { key: "showBad", label: "Bad", swatchClassName: "bg-red-600" },
+  { key: "showBad", label: "Bad", tier: "overpriced" },
+  { key: "showFair", label: "Fair", tier: "fairPrice" },
+  { key: "showGood", label: "Good", tier: "goodValue" },
+  { key: "showGreat", label: "Great", tier: "greatDeal" },
 ];
-
-function toSliderValue(next: number | number[]): number | null {
-  const value = Array.isArray(next) ? next[0] : next;
-  return typeof value === "number" ? value : null;
-}
-
-function formatMinProfitLabel(value: number): string {
-  if (value <= 0) return "Any";
-  return `$${formatPriceShort(value)}+`;
-}
 
 function displayPrefsSummary(prefs: FeedDisplayPrefs): string {
   const tiers = SCORE_TIER_OPTIONS.filter((option) => prefs[option.key]).map(
@@ -270,20 +264,27 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
   const summary = useMemo(() => displayPrefsSummary(prefs), [prefs]);
 
   const setTier = useCallback((key: ScoreTierKey, selected: boolean) => {
-    setDraft((current) => ({
-      ...current,
-      ...applyScoreTierSelection(current, key, selected),
-      showNoValuation: true,
-    }));
+    setDraft((current) =>
+      normalizeScoreTierCascade({
+        ...current,
+        ...applyScoreTierSelection(current, key, selected),
+        showNoValuation: true,
+      }),
+    );
   }, []);
 
   const handleSheetClose = useCallback(() => {
-    void filterStore.setDisplayPrefs({
+    const next = normalizeScoreTierCascade({
+      ...draft,
       minProfit: clampMinProfit(draft.minProfit),
-      showGreat: draft.showGreat,
-      showGood: draft.showGood,
-      showFair: draft.showFair,
-      showBad: draft.showBad,
+      showNoValuation: true,
+    });
+    void filterStore.setDisplayPrefs({
+      minProfit: next.minProfit,
+      showGreat: next.showGreat,
+      showGood: next.showGood,
+      showFair: next.showFair,
+      showBad: next.showBad,
     });
     setSheetOpen(false);
   }, [draft, filterStore]);
@@ -309,6 +310,7 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
       <SheetShell visible={sheetOpen} onClose={handleSheetClose}>
         <BottomSheet.Content
           enableDynamicSizing
+          enableContentPanningGesture={false}
           className={SHEET_CONTENT_CLASS_NAME}
           backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
           contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
@@ -333,7 +335,7 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
             </Alert>
 
             <View className="overflow-hidden rounded-3xl bg-surface px-4 py-4">
-              <View className="mb-3 flex-row items-center justify-between">
+              <View className="mb-1 flex-row items-center justify-between">
                 <Typography type="body" className="text-foreground">
                   Min profit
                 </Typography>
@@ -341,33 +343,14 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
                   {formatMinProfitLabel(draft.minProfit)}
                 </Typography>
               </View>
-              <Slider
+              <MinProfitSlider
                 value={draft.minProfit}
-                minValue={MIN_PROFIT_MIN}
-                maxValue={MIN_PROFIT_MAX}
-                step={MIN_PROFIT_STEP}
-                onChange={(next) => {
-                  const value = toSliderValue(next);
-                  if (value == null) return;
-                  const minProfit = clampMinProfit(value);
+                onChange={(minProfit) => {
                   setDraft((current) =>
                     current.minProfit === minProfit ? current : { ...current, minProfit },
                   );
                 }}
-              >
-                <Slider.Track>
-                  <Slider.Fill />
-                  <Slider.Thumb />
-                </Slider.Track>
-              </Slider>
-              <View className="mt-2 flex-row justify-between">
-                <Typography type="body-xs" className="text-muted">
-                  $0
-                </Typography>
-                <Typography type="body-xs" className="text-muted">
-                  ${formatPriceShort(MIN_PROFIT_MAX)}
-                </Typography>
-              </View>
+              />
             </View>
 
             <View className="overflow-hidden rounded-3xl bg-surface px-3 py-1">
@@ -378,12 +361,10 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
                     isSelected={draft[option.key]}
                     onSelectedChange={(selected) => setTier(option.key, selected)}
                     className="py-3"
+                    accessibilityLabel={option.label}
                   >
-                    <View className="min-w-0 flex-1 flex-row items-center gap-2.5">
-                      <View className={`h-2.5 w-2.5 rounded-full ${option.swatchClassName}`} />
-                      <Label className="text-[15px] font-normal text-foreground">
-                        {option.label}
-                      </Label>
+                    <View className="min-w-0 flex-1 flex-row items-center">
+                      <ValuationTierBadge tier={option.tier} scale="detail" />
                     </View>
                     <ControlField.Indicator>
                       <Checkbox />
@@ -593,15 +574,17 @@ export const FiltersScreen = observer(function FiltersScreen({
 
   const handleToggleActive = useCallback(
     (filter: UserFilter, active: boolean) => {
-      showSearchActionProgress(toast, {
-        kind: active ? "select" : "deselect",
-        subject: "filter",
+      showFilterToast(toast, {
+        kind: active ? "enabled" : "disabled",
         title: filter.name,
-        onCommit: async () => {
-          const updated = await filterStore.updateFilter(filter.id, { isActive: active });
-          return updated != null;
-        },
-        getErrorMessage: () => filterStore.lastError,
+      });
+      void filterStore.updateFilter(filter.id, { isActive: active }).then((updated) => {
+        if (updated != null) return;
+        showFilterToast(toast, {
+          kind: "error",
+          title: filter.name,
+          errorLabel: filterStore.lastError ?? "Could not update filter",
+        });
       });
     },
     [filterStore, toast]
@@ -609,18 +592,20 @@ export const FiltersScreen = observer(function FiltersScreen({
 
   const handleToggleNotifications = useCallback(
     (filter: UserFilter, enabled: boolean) => {
-      showSearchActionProgress(toast, {
+      showFilterToast(toast, {
         kind: enabled ? "notificationsOn" : "notificationsOff",
-        subject: "filter",
         title: filter.name,
-        onCommit: async () => {
-          const updated = await filterStore.updateFilter(filter.id, {
-            notificationEnabled: enabled,
-          });
-          return updated != null;
-        },
-        getErrorMessage: () => filterStore.lastError,
       });
+      void filterStore
+        .updateFilter(filter.id, { notificationEnabled: enabled })
+        .then((updated) => {
+          if (updated != null) return;
+          showFilterToast(toast, {
+            kind: "error",
+            title: filter.name,
+            errorLabel: filterStore.lastError ?? "Could not update filter",
+          });
+        });
     },
     [filterStore, toast]
   );

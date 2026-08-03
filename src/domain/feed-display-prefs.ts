@@ -6,22 +6,31 @@ import {
 export const FEED_DISPLAY_PREFS_STORAGE_KEY = "flipsentry.feedDisplayPrefs";
 
 export const MIN_PROFIT_MIN = 0;
-export const MIN_PROFIT_MAX = 5000;
-export const MIN_PROFIT_STEP = 50;
+export const MIN_PROFIT_MAX = 3000;
+export const MIN_PROFIT_STEP = 1;
 
-/** Persisted score buckets: 100 = all tiers; else min buy-signal floor. */
+/**
+ * Persisted score buckets (match backend DealDisplayPreferenceHelper):
+ * 100 = all tiers (no buy-signal filter)
+ * 75  = Great only   (buySignal >= 75)
+ * 50  = Good+Great   (buySignal >= 50)
+ * 25  = Fair+Good+Great (buySignal >= 25)
+ *
+ * Tier bands (see getValuationTier):
+ * Great >= 75, Good >= 50, Fair >= 25, Bad < 25.
+ */
 export const DEAL_SCORE_ALL = 100;
 export const DEAL_SCORE_OPTIONS = [100, 75, 50, 25] as const;
 export type DealScoreOption = (typeof DEAL_SCORE_OPTIONS)[number];
 
 export type ScoreTierKey = "showGreat" | "showGood" | "showFair" | "showBad";
 
-/** Best → worst. Selecting a tier also selects every worse tier below it. */
+/** Worst → best. Selecting a tier selects that tier and every better one. */
 export const SCORE_TIER_KEYS: ScoreTierKey[] = [
-  "showGreat",
-  "showGood",
-  "showFair",
   "showBad",
+  "showFair",
+  "showGood",
+  "showGreat",
 ];
 
 export type FeedDisplayPrefs = {
@@ -61,14 +70,14 @@ export function normalizeDealScore(value: number | null | undefined): DealScoreO
 }
 
 /**
- * Cascade → persisted score:
- * Great/all → 100, Good → 75, Fair → 50, Bad → 25.
+ * Cascade → persisted min buy-signal floor:
+ * Bad/all → 100, Fair+ → 25, Good+ → 50, Great → 75.
  */
 export function deriveMinBuySignal(prefs: FeedDisplayPrefs): DealScoreOption {
-  if (prefs.showGreat || !hasAnyScoreTierSelected(prefs)) return DEAL_SCORE_ALL;
-  if (prefs.showGood) return 75;
-  if (prefs.showFair) return 50;
-  return 25;
+  if (!hasAnyScoreTierSelected(prefs) || prefs.showBad) return DEAL_SCORE_ALL;
+  if (prefs.showFair) return 25;
+  if (prefs.showGood) return 50;
+  return 75;
 }
 
 /** Query/API: omit filter when score is "all" (100). */
@@ -100,31 +109,34 @@ export function prefsFromDealSettings(
     };
   }
   if (score >= 75) {
+    // Great only
     return {
       minProfit: profit,
-      showGreat: false,
-      showGood: true,
-      showFair: true,
-      showBad: true,
+      showGreat: true,
+      showGood: false,
+      showFair: false,
+      showBad: false,
       showNoValuation: true,
     };
   }
   if (score >= 50) {
+    // Good + Great
     return {
       minProfit: profit,
-      showGreat: false,
-      showGood: false,
-      showFair: true,
-      showBad: true,
+      showGreat: true,
+      showGood: true,
+      showFair: false,
+      showBad: false,
       showNoValuation: true,
     };
   }
+  // Fair + Good + Great (min 25)
   return {
     minProfit: profit,
-    showGreat: false,
-    showGood: false,
-    showFair: false,
-    showBad: true,
+    showGreat: true,
+    showGood: true,
+    showFair: true,
+    showBad: false,
     showNoValuation: true,
   };
 }
@@ -163,10 +175,12 @@ export function parseFeedDisplayPrefs(raw: unknown): FeedDisplayPrefs | null {
 }
 
 /**
- * Cascade rules (best → worst):
- * - Select Great → Great + Good + Fair + Bad
- * - Select Good → Good + Fair + Bad
- * - Deselect Good → Great + Good off (Fair/Bad stay if on)
+ * Cascade rules (worst → best / "this and better"):
+ * - Select Fair → Fair + Good + Great (Bad off)
+ * - Select Good → Good + Great
+ * - Select Great → Great only
+ * - Select Bad → all tiers
+ * - Deselect Fair → Bad + Fair off (Good/Great stay if on)
  */
 export function applyScoreTierSelection(
   prefs: FeedDisplayPrefs,
@@ -182,8 +196,8 @@ export function applyScoreTierSelection(
   };
 
   if (selected) {
-    for (let i = index; i < SCORE_TIER_KEYS.length; i += 1) {
-      next[SCORE_TIER_KEYS[i]] = true;
+    for (let i = 0; i < SCORE_TIER_KEYS.length; i += 1) {
+      next[SCORE_TIER_KEYS[i]] = i >= index;
     }
   } else {
     for (let i = 0; i <= index; i += 1) {
@@ -194,19 +208,19 @@ export function applyScoreTierSelection(
   return next;
 }
 
-/** Force cascade consistency from the best selected tier downward. */
+/** Force cascade consistency from the worst selected tier upward. */
 export function normalizeScoreTierCascade(prefs: FeedDisplayPrefs): FeedDisplayPrefs {
-  if (prefs.showGreat) {
+  if (prefs.showBad) {
     return { ...prefs, showGreat: true, showGood: true, showFair: true, showBad: true };
   }
-  if (prefs.showGood) {
-    return { ...prefs, showGreat: false, showGood: true, showFair: true, showBad: true };
-  }
   if (prefs.showFair) {
-    return { ...prefs, showGreat: false, showGood: false, showFair: true, showBad: true };
+    return { ...prefs, showGreat: true, showGood: true, showFair: true, showBad: false };
   }
-  if (prefs.showBad) {
-    return { ...prefs, showGreat: false, showGood: false, showFair: false, showBad: true };
+  if (prefs.showGood) {
+    return { ...prefs, showGreat: true, showGood: true, showFair: false, showBad: false };
+  }
+  if (prefs.showGreat) {
+    return { ...prefs, showGreat: true, showGood: false, showFair: false, showBad: false };
   }
   return { ...prefs, showGreat: false, showGood: false, showFair: false, showBad: false };
 }

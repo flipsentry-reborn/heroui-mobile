@@ -3,8 +3,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
-import { useRef } from "react";
-import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
+import { useEffect, useMemo, useRef } from "react";
+import { FlatList, Pressable, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Button,
@@ -20,10 +20,13 @@ import { useStore } from "@/store/store";
 
 /** Matches `AppTabBar` row + bottom inset so the feed FAB clears the dock. */
 const TAB_BAR_ROW_HEIGHT = 48;
-const SCROLL_FADE_SIZE = 100;
-const EDGE_FADE_EXTRA = 48;
+const SCROLL_FADE_SIZE = 36;
 const FAB_END_INSET = 16;
 const FAB_SIZE_CLASS = "size-9 min-h-9 min-w-9 rounded-full p-0";
+const LIST_PAD_V = 12;
+const ROW_GAP = 8;
+/** Approx row height for initial scroll (py-2.5 + text-lg + gap). */
+const ESTIMATED_ROW_HEIGHT = 44;
 
 function feedPickerFabBottom(insets: { bottom: number }): number {
   const bottomPad = Math.max(insets.bottom, 8);
@@ -32,51 +35,6 @@ function feedPickerFabBottom(insets: { bottom: number }): number {
 
 function pageBackdrop(isDark: boolean): string {
   return isDark ? "#000000" : "#ffffff";
-}
-
-function fadeTransparent(backdrop: string): string {
-  return backdrop === "#000000" ? "rgba(0,0,0,0)" : "rgba(255,255,255,0)";
-}
-
-function FeedCategoryPickerEdgeFades({
-  backdrop,
-  topHeight,
-  bottomHeight,
-}: {
-  backdrop: string;
-  topHeight: number;
-  bottomHeight: number;
-}): JSX.Element {
-  const transparent = fadeTransparent(backdrop);
-
-  return (
-    <>
-      <LinearGradient
-        colors={[backdrop, transparent]}
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: topHeight,
-          zIndex: 20,
-        }}
-      />
-      <LinearGradient
-        colors={[transparent, backdrop]}
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: bottomHeight,
-          zIndex: 20,
-        }}
-      />
-    </>
-  );
 }
 
 function FeedCategorySelectItem({
@@ -208,15 +166,44 @@ export const FeedCategoryPickerScreen = observer(
     const { searchStore, feedStore } = useStore();
     const categories = searchStore.feedCategories;
     const activeCategory = feedStore.activeCategory;
-    const scrollRef = useRef<ScrollView>(null);
+    const listRef = useRef<FlatList<FeedCategoryDef>>(null);
+    const didCenterRef = useRef(false);
 
     /** List grows from the bottom; capped at 70% height, with 10% clear below. */
     const listMaxHeight = screenHeight * 0.7;
     const bottomClearance = screenHeight * 0.1;
-    const topFadeHeight = SCROLL_FADE_SIZE + EDGE_FADE_EXTRA;
-    const bottomFadeHeight = SCROLL_FADE_SIZE;
     /** Match feed FAB screen position (includes tab-bar clearance). */
     const closeFabBottom = feedPickerFabBottom(insets);
+
+    const selectedIndex = useMemo(
+      () => categories.findIndex((c) => c.key === activeCategory),
+      [activeCategory, categories],
+    );
+
+    useEffect(() => {
+      didCenterRef.current = false;
+      if (selectedIndex < 0 || categories.length === 0) return;
+
+      const centerSelected = () => {
+        if (didCenterRef.current) return;
+        didCenterRef.current = true;
+        try {
+          listRef.current?.scrollToIndex({
+            index: selectedIndex,
+            animated: false,
+            viewPosition: 0.5,
+          });
+        } catch {
+          // Layout may not be ready; onScrollToIndexFailed retries.
+          didCenterRef.current = false;
+        }
+      };
+
+      const id = requestAnimationFrame(() => {
+        requestAnimationFrame(centerSelected);
+      });
+      return () => cancelAnimationFrame(id);
+    }, [categories.length, selectedIndex]);
 
     const closePicker = () => {
       if (router.canGoBack()) {
@@ -254,34 +241,52 @@ export const FeedCategoryPickerScreen = observer(
             color={backdrop}
             size={SCROLL_FADE_SIZE}
           >
-            <ScrollView
-              ref={scrollRef}
+            <FlatList
+              ref={listRef}
+              data={categories}
+              keyExtractor={(item) => item.key}
               style={{ maxHeight: listMaxHeight }}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={{
-                paddingTop: 12,
-                paddingBottom: 12,
+                paddingTop: LIST_PAD_V,
+                paddingBottom: LIST_PAD_V,
+                paddingHorizontal: 16,
               }}
-            >
-              <View className="items-start gap-2 px-4">
-                {categories.map((category) => (
-                  <FeedCategorySelectItem
-                    key={category.key}
-                    category={category}
-                    isSelected={category.key === activeCategory}
-                    onPress={() => handleSelect(category.key)}
-                  />
-                ))}
-              </View>
-            </ScrollView>
+              ItemSeparatorComponent={() => <View style={{ height: ROW_GAP }} />}
+              getItemLayout={(_, index) => ({
+                length: ESTIMATED_ROW_HEIGHT + ROW_GAP,
+                offset:
+                  LIST_PAD_V + index * (ESTIMATED_ROW_HEIGHT + ROW_GAP),
+                index,
+              })}
+              onScrollToIndexFailed={({ index, averageItemLength }) => {
+                listRef.current?.scrollToOffset({
+                  offset: Math.max(
+                    0,
+                    averageItemLength * index -
+                      listMaxHeight / 2 +
+                      averageItemLength / 2,
+                  ),
+                  animated: false,
+                });
+                requestAnimationFrame(() => {
+                  listRef.current?.scrollToIndex({
+                    index,
+                    animated: false,
+                    viewPosition: 0.5,
+                  });
+                });
+              }}
+              renderItem={({ item }) => (
+                <FeedCategorySelectItem
+                  category={item}
+                  isSelected={item.key === activeCategory}
+                  onPress={() => handleSelect(item.key)}
+                />
+              )}
+            />
           </ScrollShadow>
-
-          <FeedCategoryPickerEdgeFades
-            backdrop={backdrop}
-            topHeight={topFadeHeight}
-            bottomHeight={bottomFadeHeight}
-          />
         </View>
 
         <View

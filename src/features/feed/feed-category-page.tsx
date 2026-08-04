@@ -4,6 +4,10 @@ import { useCallback, useEffect, useRef, useState, type JSX } from "react";
 import { View } from "react-native";
 import { Typography } from "heroui-native";
 
+import {
+  FeedBestPicksControls,
+  type BestPicksSortBy,
+} from "@/features/feed/feed-best-picks-controls";
 import { FeedForYouPage } from "@/features/feed/feed-for-you-page";
 import { FeedScrollable } from "@/features/feed/feed-scrollable";
 import {
@@ -21,6 +25,10 @@ interface FeedCategoryPageProps {
   onOpenCategory?: (key: string) => void;
 }
 
+function sortDirFor(sortBy: BestPicksSortBy): "asc" | "desc" {
+  return sortBy === "distance" ? "asc" : "desc";
+}
+
 /**
  * One feed page per category. Observes FeedStore lists (HTTP + SignalR).
  */
@@ -33,9 +41,13 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
 }: FeedCategoryPageProps): JSX.Element {
   const { feedStore, searchStore } = useStore();
   const isSold = category === "sold";
+  const isBestPicks = category === "best-picks";
   const filterTab = searchStore.filterTabs.find((tab) => tab.key === category);
   const [soldStatus, setSoldStatus] = useState<SoldStatusFilter>("all");
   const [maxDays, setMaxDays] = useState<number | null>(1);
+  const [bestPicksSortBy, setBestPicksSortBy] =
+    useState<BestPicksSortBy>("buysignal");
+  const [bestPicksMaxHours, setBestPicksMaxHours] = useState<number | null>(6);
   const [refreshing, setRefreshing] = useState(false);
   const skipQueryEffect = useRef(true);
 
@@ -44,6 +56,8 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
     feedStore.isBucketLoading(category) && items.length === 0;
   const loadingMore = feedStore.isBucketLoadingMore(category);
   const hasMore = feedStore.hasMore(category);
+
+  const bestPicksSortDir = sortDirFor(bestPicksSortBy);
 
   const load = useCallback(
     async (opts?: { refresh?: boolean }) => {
@@ -54,12 +68,30 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
           query,
           force: opts?.refresh,
           ...(isSold ? { soldStatus, maxDays } : {}),
+          ...(isBestPicks
+            ? {
+                bestPicksSortBy,
+                bestPicksSortDir,
+                bestPicksMaxHours,
+              }
+            : {}),
         });
       } finally {
         setRefreshing(false);
       }
     },
-    [category, feedStore, isSold, maxDays, query, soldStatus],
+    [
+      bestPicksMaxHours,
+      bestPicksSortBy,
+      bestPicksSortDir,
+      category,
+      feedStore,
+      isBestPicks,
+      isSold,
+      maxDays,
+      query,
+      soldStatus,
+    ],
   );
 
   const loadMore = useCallback(() => {
@@ -67,8 +99,26 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
     void feedStore.loadMore(category, {
       query,
       ...(isSold ? { soldStatus, maxDays } : {}),
+      ...(isBestPicks
+        ? {
+            bestPicksSortBy,
+            bestPicksSortDir,
+            bestPicksMaxHours,
+          }
+        : {}),
     });
-  }, [category, feedStore, isSold, maxDays, query, soldStatus]);
+  }, [
+    bestPicksMaxHours,
+    bestPicksSortBy,
+    bestPicksSortDir,
+    category,
+    feedStore,
+    isBestPicks,
+    isSold,
+    maxDays,
+    query,
+    soldStatus,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -84,7 +134,15 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
       return;
     }
     void load({ refresh: true });
-  }, [category, load, query, soldStatus, maxDays]);
+  }, [
+    category,
+    load,
+    query,
+    soldStatus,
+    maxDays,
+    bestPicksSortBy,
+    bestPicksMaxHours,
+  ]);
 
   const handleToggleFavorite = useCallback(
     async (id: string) => {
@@ -112,6 +170,14 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
           maxDays={maxDays}
           onStatusChange={setSoldStatus}
           onDaysChange={setMaxDays}
+        />
+      ) : null}
+      {isBestPicks ? (
+        <FeedBestPicksControls
+          sortBy={bestPicksSortBy}
+          maxHours={bestPicksMaxHours}
+          onSortChange={setBestPicksSortBy}
+          onHoursChange={setBestPicksMaxHours}
         />
       ) : null}
       <FeedScrollable

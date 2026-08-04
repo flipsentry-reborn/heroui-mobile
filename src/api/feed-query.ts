@@ -24,7 +24,15 @@ export function buildLiveFeedParams(
     qs.append("isFavorite", "true");
   } else if (category === "best-picks") {
     qs.append("isBestPicks", "true");
-    qs.append("bestPicksMaxHours", "72");
+    if (params.bestPicksSortBy && params.bestPicksSortBy !== "buysignal") {
+      qs.append("bestPicksSortBy", params.bestPicksSortBy);
+    }
+    if (params.bestPicksSortDir && params.bestPicksSortDir !== "desc") {
+      qs.append("bestPicksSortDir", params.bestPicksSortDir);
+    }
+    if (params.bestPicksMaxHours != null && params.bestPicksMaxHours > 0) {
+      qs.append("bestPicksMaxHours", String(params.bestPicksMaxHours));
+    }
   } else if (category === "sold") {
     appendSoldParams(qs, params);
   }
@@ -65,16 +73,19 @@ export function buildLiveFeedParams(
     qs.append("contentBucket", "Clean");
   }
 
-  // 100 = all scores (no server buy-signal filter).
-  if (
-    params.minBuySignal != null &&
-    params.minBuySignal > 0 &&
-    params.minBuySignal < 100
-  ) {
-    qs.append("minBuySignal", String(params.minBuySignal));
-  }
-  if (params.minProfit != null && params.minProfit > 0) {
-    qs.append("minProfit", String(params.minProfit));
+  // Best Picks uses its own score floor — ignore deal display prefs.
+  if (category !== "best-picks") {
+    // 100 = all scores (no server buy-signal filter).
+    if (
+      params.minBuySignal != null &&
+      params.minBuySignal > 0 &&
+      params.minBuySignal < 100
+    ) {
+      qs.append("minBuySignal", String(params.minBuySignal));
+    }
+    if (params.minProfit != null && params.minProfit > 0) {
+      qs.append("minProfit", String(params.minProfit));
+    }
   }
 
   return qs;

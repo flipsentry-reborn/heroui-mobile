@@ -6,7 +6,7 @@ import {
 } from "@/models/feed";
 
 export const FEED_SHELF_LIMIT = 10;
-export const BEST_PICKS_MIN_BUY_SIGNAL = 10;
+export const BEST_PICKS_MIN_BUY_SIGNAL = 26;
 
 function hasIdOverlap(
   feedIds: string[] | undefined,

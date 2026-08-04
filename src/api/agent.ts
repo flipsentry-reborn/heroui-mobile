@@ -182,11 +182,16 @@ const liveFeedApi = {
     const category = params?.category ?? "all";
     const result = await liveFeed.list(buildLiveFeedParams(params ?? {}));
     const prefs = params?.displayPrefs ?? DEFAULT_FEED_DISPLAY_PREFS;
-    const items = applyClientCategoryFilter(
+    const filtered = applyClientCategoryFilter(
       result.data ?? [],
       category,
       params?.groupIds,
-    ).filter((item) => matchesFeedDisplayPrefs(item, prefs));
+    );
+    // Best Picks uses its own score floor — not Great / min-profit prefs.
+    const items =
+      category === "best-picks"
+        ? filtered
+        : filtered.filter((item) => matchesFeedDisplayPrefs(item, prefs));
     return {
       data: items,
       pagination: result.pagination,

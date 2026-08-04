@@ -38,6 +38,12 @@ export type GetFeedParams = {
   soldStatus?: SoldStatusFilter;
   /** Sold page: only listings sold/pending within this many days. */
   maxDays?: number | null;
+  /** Best Picks: sort key (buysignal | distance | listed). */
+  bestPicksSortBy?: "buysignal" | "distance" | "listed";
+  /** Best Picks: sort direction. */
+  bestPicksSortDir?: "asc" | "desc";
+  /** Best Picks: max listing age in hours (1–12); null/omit = no hours chip. */
+  bestPicksMaxHours?: number | null;
   /** GetAll minBuySignal — floor for valued listings; unvalued always pass. */
   minBuySignal?: number;
   /** GetAll minProfit — floor for valued listings; unvalued always pass. */
@@ -122,7 +128,7 @@ function matchesCategory(
     return !!item.isSold || !!item.isPending || !!item.isRemoved;
   }
   if (category === "best-picks") {
-    return (resolveDisplayValuation(item)?.buySignal ?? 0) >= 60;
+    return (resolveDisplayValuation(item)?.buySignal ?? 0) >= 26;
   }
   if (category === "price-drop") {
     // Mock: listings with positive estimated profit count as price drops
@@ -189,6 +195,7 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
       if (!matchesMaxDays(item, maxDays)) return false;
     }
     if (
+      category !== "best-picks" &&
       !matchesFeedDisplayPrefs(
         item,
         params.displayPrefs ?? DEFAULT_FEED_DISPLAY_PREFS,
@@ -248,6 +255,7 @@ export async function getFeedPage(
       if (!matchesMaxDays(item, maxDays)) return false;
     }
     if (
+      category !== "best-picks" &&
       !matchesFeedDisplayPrefs(
         item,
         params.displayPrefs ?? DEFAULT_FEED_DISPLAY_PREFS,

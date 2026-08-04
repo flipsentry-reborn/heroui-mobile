@@ -67,6 +67,9 @@ type LoadBucketOpts = {
   pageSize?: number;
   soldStatus?: "all" | "sold" | "pending";
   maxDays?: number | null;
+  bestPicksSortBy?: "buysignal" | "distance" | "listed";
+  bestPicksSortDir?: "asc" | "desc";
+  bestPicksMaxHours?: number | null;
   /** When true, also refresh For You shelf slice for this key. */
   asShelf?: boolean;
 };
@@ -350,12 +353,16 @@ export default class FeedStore {
     return this.filterStore?.displayPrefs ?? DEFAULT_FEED_DISPLAY_PREFS;
   }
 
-  private listQueryExtras(): {
+  private listQueryExtras(bucket?: string): {
     minBuySignal?: number;
     minProfit?: number;
     displayPrefs: FeedDisplayPrefs;
   } {
     const prefs = this.displayPrefs();
+    // Best Picks uses its own score floor — not Great / min-profit prefs.
+    if (bucket === "best-picks") {
+      return { displayPrefs: prefs };
+    }
     return {
       minBuySignal: effectiveMinBuySignalForQuery(prefs),
       minProfit: deriveMinProfit(prefs),
@@ -365,20 +372,24 @@ export default class FeedStore {
 
   /** After selected filters change — dirty + reload For You buckets (not saved). */
   onSelectedFiltersChanged(): void {
-    this.scheduleNonSavedBucketsReload();
+    this.scheduleNonSavedBucketsReload({ includeBestPicks: true });
   }
 
   /**
    * After score/profit display prefs change:
    * 1) instantly shrink in-memory lists/shelves to the new floor
    * 2) debounced force-reload so raised/lowered thresholds refetch from API
+   * Best Picks is unaffected by deal display prefs.
    */
   onDisplayPrefsChanged(): void {
     this.applyDisplayPrefsLocally();
-    this.scheduleNonSavedBucketsReload();
+    this.scheduleNonSavedBucketsReload({ includeBestPicks: false });
   }
 
-  private scheduleNonSavedBucketsReload(): void {
+  private scheduleNonSavedBucketsReload(opts?: {
+    includeBestPicks?: boolean;
+  }): void {
+    const includeBestPicks = opts?.includeBestPicks !== false;
     const keys = new Set<string>([
       ...Object.keys(this.lists),
       ...Object.keys(this.shelves),
@@ -387,6 +398,7 @@ export default class FeedStore {
     ]);
     for (const bucket of keys) {
       if (bucket === "saved" || bucket === "for-you") continue;
+      if (!includeBestPicks && bucket === "best-picks") continue;
       this.touchSet("dirtyBuckets", (s) => {
         s.add(bucket);
       });
@@ -410,7 +422,7 @@ export default class FeedStore {
       });
 
     for (const bucket of Object.keys(this.lists)) {
-      if (bucket === "saved") continue;
+      if (bucket === "saved" || bucket === "best-picks") continue;
       const current = this.lists[bucket] ?? [];
       const next = filterIds(current);
       if (next.length !== current.length) {
@@ -418,7 +430,7 @@ export default class FeedStore {
       }
     }
     for (const bucket of Object.keys(this.shelves)) {
-      if (bucket === "saved") continue;
+      if (bucket === "saved" || bucket === "best-picks") continue;
       const current = this.shelves[bucket] ?? [];
       const next = filterIds(current);
       if (next.length !== current.length) {
@@ -632,7 +644,10 @@ export default class FeedStore {
         pageSize,
         soldStatus: opts.soldStatus,
         maxDays: opts.maxDays,
-        ...this.listQueryExtras(),
+        bestPicksSortBy: opts.bestPicksSortBy,
+        bestPicksSortDir: opts.bestPicksSortDir,
+        bestPicksMaxHours: opts.bestPicksMaxHours,
+        ...this.listQueryExtras(bucket),
       });
       const items = result.data ?? [];
 
@@ -658,7 +673,7 @@ export default class FeedStore {
 
         const existing = this.lists[bucket] ?? [];
         const merged =
-          opts.query || bucket === "sold"
+          opts.query || bucket === "sold" || bucket === "best-picks"
             ? httpIds
             : mergeHttpPageWithLiveHead(httpIds, existing, (id) =>
                 this.liveHeadIds.has(id),
@@ -722,7 +737,10 @@ export default class FeedStore {
         pageSize,
         soldStatus: opts.soldStatus,
         maxDays: opts.maxDays,
-        ...this.listQueryExtras(),
+        bestPicksSortBy: opts.bestPicksSortBy,
+        bestPicksSortDir: opts.bestPicksSortDir,
+        bestPicksMaxHours: opts.bestPicksMaxHours,
+        ...this.listQueryExtras(bucket),
       });
       const items = result.data ?? [];
 
@@ -816,7 +834,7 @@ export default class FeedStore {
         filterIds,
         pageSize,
         ...(bucket === "sold" ? { maxDays: 1 } : {}),
-        ...this.listQueryExtras(),
+        ...this.listQueryExtras(bucket),
       });
       const items = result.data ?? [];
 
@@ -934,19 +952,27 @@ export default class FeedStore {
       const resolved = this.items.get(feed.id) ?? feed;
       const filterTabs = this.searchStore?.filterTabs ?? [];
       const activeFilterIds = this.filterStore?.activeFilterIds ?? [];
-      if (!matchesFeedDisplayPrefs(resolved, this.displayPrefs())) {
+      const allBuckets = bucketsForLiveFeed(
+        resolved,
+        tabs,
+        filterTabs,
+        activeFilterIds,
+      );
+      // Best Picks ignores Great / min-profit prefs; other buckets still honor them.
+      const passesDisplayPrefs = matchesFeedDisplayPrefs(
+        resolved,
+        this.displayPrefs(),
+      );
+      const buckets = passesDisplayPrefs
+        ? allBuckets
+        : allBuckets.filter((bucket) => bucket === "best-picks");
+      if (buckets.length === 0) {
         debugLog.info(FEED_LIVE_LOG, "applyLiveFeed skipped (display prefs)", {
           id: resolved.id,
           t: Date.now(),
         });
         return;
       }
-      const buckets = bucketsForLiveFeed(
-        resolved,
-        tabs,
-        filterTabs,
-        activeFilterIds,
-      );
       this.liveHeadIds.add(resolved.id);
 
       for (const bucket of buckets) {

@@ -1,5 +1,13 @@
+/**
+ * Mock Filters API — create/update retag local MOCK_FEED_ITEMS only.
+ * Live path uses `@/api/http/filters` via agent when USE_MOCK is false.
+ */
 import { mockDelay } from "@/mocks/delay";
 import { readJson, writeJson } from "@/lib/storage";
+import {
+  clearMockFilterLinks,
+  retagMockFeedsForFilter,
+} from "@/mocks/services/feed-filter-match";
 import type { FeedUserFilterTab } from "@/models/feed";
 import type {
   CreateUserFilterInput,
@@ -81,16 +89,18 @@ async function ensureHydrated(): Promise<UserFilter[]> {
   const seeded = await readJson<boolean>(SEEDED_KEY);
   if (stored != null && stored.length > 0) {
     cache = stored.map(normalizeFilter);
-    return cache;
-  }
-  // First launch (or empty store before seed flag): ship demo filters.
-  if (!seeded) {
+  } else if (!seeded) {
+    // First launch (or empty store before seed flag): ship demo filters.
     cache = structuredClone(SEED_FILTERS);
     await writeJson(STORAGE_KEY, cache);
     await writeJson(SEEDED_KEY, true);
-    return cache;
+  } else {
+    cache = (stored ?? []).map(normalizeFilter);
   }
-  cache = (stored ?? []).map(normalizeFilter);
+  // One-shot mock retag so persisted filters match local fixtures (like DB links).
+  for (const filter of cache) {
+    if (filter.isActive) retagMockFeedsForFilter(filter);
+  }
   return cache;
 }
 
@@ -201,6 +211,10 @@ export async function createFilter(
     updatedAt: now,
   };
   await persist([filter, ...filters]);
+  // Mirror backend create → RetagRecentFeedsAsync on local fixtures.
+  if (filter.isActive) {
+    retagMockFeedsForFilter(filter);
+  }
   return filter;
 }
 
@@ -270,6 +284,18 @@ export async function updateFilter(
   const next = [...filters];
   next[index] = updated;
   await persist(next);
+
+  const criteriaChanged =
+    input.vehicleQuery !== undefined ||
+    input.customQuery !== undefined ||
+    input.searchGroupIds !== undefined ||
+    input.titleIncluders !== undefined ||
+    input.descriptionIncluders !== undefined ||
+    input.isActive !== undefined;
+  // Mirror backend update → clear links + retag when criteria/active change.
+  if (criteriaChanged) {
+    retagMockFeedsForFilter(updated);
+  }
   return updated;
 }
 
@@ -277,5 +303,6 @@ export async function deleteFilter(id: string): Promise<boolean> {
   await mockDelay();
   const filters = await ensureHydrated();
   await persist(filters.filter((f) => f.id !== id));
+  clearMockFilterLinks(id);
   return true;
 }

@@ -1497,29 +1497,32 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
  ).map(extraListing),
 ];
 
-/** Tag fixtures for seeded mock user filters (see mocks/services/filters). */
+/** Normalize searchGroupIds aliases + seed-tag known demo filters. */
 for (const item of MOCK_FEED_ITEMS) {
+  const groupIds = new Set<string>((item.searchGroupIds ?? []).map(String));
+  for (const sid of item.searchSettingIds ?? []) {
+    if (sid === "group-iphones" || sid === "g2") groupIds.add("g2");
+    if (sid === "group-cars" || sid === "g1") groupIds.add("g1");
+    if (sid === "g3") groupIds.add("g3");
+    if (sid === "group-custom" || sid === "g4") groupIds.add("g4");
+    if (sid === "group-couch") groupIds.add("group-couch");
+    if (sid === "group-xbox") groupIds.add("group-xbox");
+  }
+  if (item.iphoneStorageGb != null) groupIds.add("g2");
+  if (isCarListing(item)) groupIds.add("g1");
+  item.searchGroupIds = [...groupIds];
+
   const ids: string[] = [];
   const haystack = `${item.title} ${item.description}`.toLowerCase();
-  // Vehicle seed filter: car-origin only (no search-group scope).
   const isCarOrigin =
-    isCarListing(item) ||
-    item.searchGroupIds?.includes("g1") === true ||
-    item.searchGroupIds?.includes("g3") === true ||
-    item.searchSettingIds.some((id) => id === "g1" || id === "g3" || id.startsWith("g1-") || id.startsWith("g3-"));
+    isCarListing(item) || groupIds.has("g1") || groupIds.has("g3");
   if (
     isCarOrigin &&
     (haystack.includes("toyota") || item.compValuation?.make === "Toyota")
   ) {
     ids.push("filter-toyota");
   }
-  // Custom seed filter scoped to iPhone search group g2.
-  const inIphoneGroup =
-    item.searchGroupIds?.includes("g2") === true ||
-    item.searchSettingIds.includes("g2") ||
-    item.searchSettingIds.includes("group-iphones") ||
-    item.iphoneStorageGb != null;
-  if (inIphoneGroup && (haystack.includes("iphone") || item.iphoneStorageGb != null)) {
+  if (groupIds.has("g2") && (haystack.includes("iphone") || item.iphoneStorageGb != null)) {
     ids.push("filter-iphone-deals");
   }
   if (ids.length > 0) {

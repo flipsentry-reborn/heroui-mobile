@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { observer } from "mobx-react-lite";
 import type { JSX, MutableRefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -13,7 +12,6 @@ import {
   useThemeColor,
   useToast,
 } from "heroui-native";
-import { withUniwind } from "uniwind";
 
 import { FilterColorSheet } from "@/features/feed/filter-color-sheet";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
@@ -47,13 +45,11 @@ import {
 import {
   SHEET_BACKGROUND_CLASS_NAME,
   SHEET_CONTENT_CLASS_NAME,
-  SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
+  SHEET_CONTENT_CONTAINER_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
 import { isValidFilterHex, type UserFilter, type UserFilterType } from "@/models/user-filter";
 import { useStore } from "@/store/store";
-
-const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
 
 function parseOptionalNumber(value: string): number | undefined {
   const trimmed = value.trim();
@@ -451,7 +447,6 @@ function FilterSheetBody({
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
   const [muted] = useThemeColor(["muted"]);
-  const snapPoints = useMemo(() => ["78%", "94%"], []);
   const dismiss = useCallback(() => onOpenChange(false), [onOpenChange]);
   useEffect(() => {
     dismissRef.current = dismiss;
@@ -461,41 +456,28 @@ function FilterSheetBody({
   }, [dismiss, dismissRef]);
   const isVehicle = filterType === "Vehicle";
 
-  // Fixed snap points (not dynamic sizing) so keyboardBehavior="extend" can lift
-  // the sheet when Name focuses — same pattern as Price/Keywords.
   return (
     <BottomSheet.Content
-      snapPoints={snapPoints}
-      enableDynamicSizing={false}
-      enableOverDrag={false}
       enableContentPanningGesture={!childSheetOpen}
       keyboardBehavior={childSheetOpen ? undefined : "extend"}
       keyboardBlurBehavior={childSheetOpen ? undefined : "restore"}
       android_keyboardInputMode={childSheetOpen ? undefined : "adjustResize"}
       className={SHEET_CONTENT_CLASS_NAME}
-      contentContainerClassName={SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME}
+      contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
       backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
       handleComponent={null}
     >
-      <View className="flex-1">
-        <View className="shrink-0">
-          <SearchBottomSheetHeader
-            title={title}
-            onCancel={dismiss}
-            onSave={onSave}
-            cancelDisabled={submitting}
-            saveDisabled={!canSave || submitting}
-            saveLabel={submitting ? "Saving…" : "Save"}
-          />
-        </View>
+      <View>
+        <SearchBottomSheetHeader
+          title={title}
+          onCancel={dismiss}
+          onSave={onSave}
+          cancelDisabled={submitting}
+          saveDisabled={!canSave || submitting}
+          saveLabel={submitting ? "Saving…" : "Save"}
+        />
 
-        <StyledBottomSheetScrollView
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          className="min-h-0 flex-1"
-          contentContainerClassName="pb-6"
-        >
-          <SearchBottomSheetSection>
+        <SearchBottomSheetSection>
             <SearchBottomSheetRow
               icon="text"
               iconClassName="text-orange-500"
@@ -599,12 +581,11 @@ function FilterSheetBody({
             />
           </SearchSheetGroup>
 
-          {validationMessage != null || errorMessage != null ? (
-            <FieldError isInvalid className="mx-5 mb-2">
-              {validationMessage ?? errorMessage}
-            </FieldError>
-          ) : null}
-        </StyledBottomSheetScrollView>
+        {validationMessage != null || errorMessage != null ? (
+          <FieldError isInvalid className="mx-5 mb-2">
+            {validationMessage ?? errorMessage}
+          </FieldError>
+        ) : null}
       </View>
     </BottomSheet.Content>
   );

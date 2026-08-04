@@ -232,7 +232,7 @@ function SelectedFiltersSection({
   return (
     <View className="mx-3 mt-5 overflow-hidden rounded-3xl bg-surface px-3 py-3">
       <Typography type="body-xs" className="mb-2.5 text-muted">
-        Selected for feed
+        Active Filters
       </Typography>
       <View className="flex-row flex-wrap gap-2">
         {minProfitActive ? (
@@ -801,6 +801,7 @@ export const FiltersScreen = observer(function FiltersScreen({
 
       {sheetMounted ? (
         <FilterBottomSheet
+          key={editing != null ? `edit-${editing.id}` : "create"}
           isOpen={sheetOpen}
           onOpenChange={handleSheetOpenChange}
           editingFilter={editing}

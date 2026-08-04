@@ -5,6 +5,7 @@ import { View } from "react-native";
 import type PagerView from "react-native-pager-view";
 
 import { FilterApplyingDialog } from "@/features/feed/filter-applying-dialog";
+import { FeedCategoryPicker } from "@/features/feed/feed-category-picker";
 import { FeedHeader } from "@/features/feed/feed-header";
 import { FeedPager } from "@/features/feed/feed-pager";
 import { useBottomChrome } from "@/contexts/bottom-chrome-context";
@@ -118,6 +119,11 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
         onCategoryChange={handleCategoryChange}
         onOpenCategory={handleCategorySelect}
         onPressItem={handlePressItem}
+      />
+      <FeedCategoryPicker
+        categories={categories}
+        activeCategory={activeCategory}
+        onSelect={handleCategorySelect}
       />
       <FilterApplyingDialog />
     </View>

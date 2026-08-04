@@ -35,11 +35,12 @@ export type PlanPalette = {
 /** Shared card accents for subscription screen + settings plan card. */
 export const PLAN_ACCENTS: Record<PlanAccent, PlanPalette> = {
   teal: {
-    gradient: ["#0B1B26", "#09161F", "#071016", "#040506"],
-    iconFrom: "#22d3ee",
-    iconTo: "#0ea5a4",
-    glow: "rgba(34, 211, 238, 0.32)",
-    ambientGlow: "rgba(14, 165, 164, 0.14)",
+    /** Entry tier — muted slate, intentionally quieter than Hunter/Master. */
+    gradient: ["#14181C", "#0E1114", "#090B0D", "#040506"],
+    iconFrom: "#8B96A3",
+    iconTo: "#5C6670",
+    glow: "rgba(139, 150, 163, 0.16)",
+    ambientGlow: "rgba(92, 102, 112, 0.08)",
     text: "#FFFFFF",
     textMuted: "rgba(255,255,255,0.55)",
   },

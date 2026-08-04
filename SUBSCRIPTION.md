@@ -31,7 +31,7 @@ Edit `subscriptionPlans` in `src/mocks/data/subscription.ts`:
  priceNote: "Billed monthly",
  ctaLabel: "Get Hunter",
  badge?: "Popular",
- accent: "purple", // card glow + bolt colors
+ accent: "gold", // card glow + bolt colors
  featured?: true, // solid white CTA (Master)
  features: ["…"], // shown when card is expanded; include slot/speed lines
  renewalTitle: "…",
@@ -52,9 +52,9 @@ Current fixtures: Starter / Hunter / Master = **monthly**.
 
 | Accent | Used by | Look |
 |--------|---------|------|
-| `teal` | Starter | Cyan glow |
-| `purple` | Hunter | Purple → pink bolt |
-| `gold` | Master | Amber / featured |
+| `teal` | Starter | Muted slate (quiet entry tier) |
+| `gold` | Hunter | Amber / gold bolt |
+| `purple` | Master | Purple → pink bolt |
 | `rose` | (unused / reserved) | Rose / coral |
 
 To add a color:

@@ -65,7 +65,6 @@ export const subscriptionPlans: SubscriptionPlan[] = [
     billingPeriod: "month",
     priceNote: "Billed monthly",
     ctaLabel: "Get Hunter",
-    badge: "Popular",
     accent: "gold",
     features: slotFeatureLines("hunter"),
     renewalTitle: "Cancel anytime",

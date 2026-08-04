@@ -267,3 +267,29 @@ export function areFeedDisplayPrefsEqual(
     a.showBad === b.showBad
   );
 }
+
+/** True when score tiers are narrowed from the default (all selected). */
+export function hasActiveScoreTierFilter(prefs: FeedDisplayPrefs): boolean {
+  return !(
+    prefs.showGreat &&
+    prefs.showGood &&
+    prefs.showFair &&
+    prefs.showBad
+  );
+}
+
+/**
+ * Deal-display prefs that count as active feed filters:
+ * - min profit > 0 → +1
+ * - any of Bad/Fair/Good/Great deselected → +1
+ */
+export function countActiveDisplayPrefs(prefs: FeedDisplayPrefs): number {
+  let count = 0;
+  if (prefs.minProfit > 0) count += 1;
+  if (hasActiveScoreTierFilter(prefs)) count += 1;
+  return count;
+}
+
+export function hasActiveDisplayPrefs(prefs: FeedDisplayPrefs): boolean {
+  return countActiveDisplayPrefs(prefs) > 0;
+}

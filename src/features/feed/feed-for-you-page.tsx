@@ -67,11 +67,15 @@ const SELECTED_FILTER_DOT_VISIBLE = 5;
 
 function SelectedFiltersBanner({
   filters,
+  dealPrefsCount,
   onPress,
 }: {
   filters: UserFilter[];
+  /** Min profit / score-tier prefs counting as active filters. */
+  dealPrefsCount: number;
   onPress: () => void;
 }): JSX.Element {
+  const totalCount = filters.length + dealPrefsCount;
   const visible = filters.slice(0, SELECTED_FILTER_DOT_VISIBLE);
   const overflow = filters.length - visible.length;
 
@@ -81,7 +85,7 @@ function SelectedFiltersBanner({
       className="mx-3 mt-3 mb-1 overflow-hidden rounded-2xl border border-border bg-surface-secondary"
       animation={{ scale: { value: 0.99 } }}
       accessibilityRole="button"
-      accessibilityLabel={`${selectedFiltersLabel(filters.length)}. Tap to manage filters.`}
+      accessibilityLabel={`${selectedFiltersLabel(totalCount)}. Tap to manage filters.`}
     >
       <View className="flex-row items-center gap-2.5 px-3 py-2.5">
         <View className="flex-row items-center">
@@ -110,7 +114,7 @@ function SelectedFiltersBanner({
           weight="semibold"
           className="flex-1 text-[14px] text-foreground"
         >
-          {selectedFiltersLabel(filters.length)}
+          {selectedFiltersLabel(totalCount)}
         </Typography>
         <StyledIonicons
           name="chevron-forward"
@@ -316,6 +320,9 @@ export const FeedForYouPage = observer(function FeedForYouPage({
   const yourSearchChildren = searchStore.yourSearchChildren;
   const yourFilterChildren = searchStore.yourFilterChildren;
   const selectedFilters = filterStore.activeFilters;
+  const dealPrefsCount = filterStore.activeDisplayPrefsCount;
+  const showSelectedFiltersBanner =
+    selectedFilters.length > 0 || dealPrefsCount > 0;
   const yourSearchesExpanded = feedStore.yourSearchesExpanded;
   const feedCategoryKeys = useMemo(
     () => new Set(searchStore.feedCategories.map((c) => c.key)),
@@ -730,9 +737,10 @@ export const FeedForYouPage = observer(function FeedForYouPage({
           />
         }
       >
-        {selectedFilters.length > 0 ? (
+        {showSelectedFiltersBanner ? (
           <SelectedFiltersBanner
             filters={selectedFilters}
+            dealPrefsCount={dealPrefsCount}
             onPress={() => router.push("/filters")}
           />
         ) : null}

@@ -3,8 +3,10 @@ import { makeAutoObservable, runInAction } from "mobx";
 import agent from "@/api/agent";
 import {
   areFeedDisplayPrefsEqual,
+  countActiveDisplayPrefs,
   DEFAULT_FEED_DISPLAY_PREFS,
   deriveMinBuySignal,
+  hasActiveDisplayPrefs,
   normalizeScoreTierCascade,
   prefsFromDealSettings,
   type FeedDisplayPrefs,
@@ -70,6 +72,20 @@ export default class FilterStore {
 
   get activeFilterIds(): string[] {
     return this.activeFilters.map((f) => f.id);
+  }
+
+  /** Min profit / score-tier prefs currently narrowing the feed. */
+  get activeDisplayPrefsCount(): number {
+    return countActiveDisplayPrefs(this.displayPrefs);
+  }
+
+  get hasActiveDisplayPrefs(): boolean {
+    return hasActiveDisplayPrefs(this.displayPrefs);
+  }
+
+  /** Saved filters + deal-display prefs (header badge). */
+  get feedFilterBadgeCount(): number {
+    return this.activeFilters.length + this.activeDisplayPrefsCount;
   }
 
   /** Apply deal prefs from loaded user preferences (or fetch if missing). */

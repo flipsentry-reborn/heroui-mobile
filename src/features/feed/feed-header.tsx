@@ -16,6 +16,10 @@ const LOGO = require("../../../assets/images/flipsentry-logo-text-transparent.pn
 const LOGO_WIDTH = 132;
 const LOGO_HEIGHT = 30;
 
+function formatBadgeCount(count: number): string {
+  return count > 99 ? "99+" : String(count);
+}
+
 interface FeedHeaderProps {
   searchText: string;
   onSearchChange: (value: string) => void;
@@ -44,8 +48,9 @@ export const FeedHeader = observer(function FeedHeader({
   const openingRef = useRef(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const activeFilterCount = filterStore.activeFilters.length;
-  const filtersActive = activeFilterCount > 0;
+  const savedFilterCount = filterStore.activeFilters.length;
+  const dealPrefsCount = filterStore.activeDisplayPrefsCount;
+  const filtersActive = savedFilterCount > 0 || dealPrefsCount > 0;
 
   useEffect(() => {
     if (!searchOpen) return;
@@ -134,13 +139,13 @@ export const FeedHeader = observer(function FeedHeader({
                 />
               </View>
               <View className="flex-1" />
-              <Badge.Anchor>
+              <View className="relative">
                 <Pressable
                   onPress={onFiltersPress}
                   accessibilityRole="button"
                   accessibilityLabel={
                     filtersActive
-                      ? `Filters, ${activeFilterCount} active`
+                      ? `Filters, ${savedFilterCount} selected, ${dealPrefsCount} deal filters`
                       : "Filters"
                   }
                   className={
@@ -166,17 +171,21 @@ export const FeedHeader = observer(function FeedHeader({
                     Filters
                   </Typography>
                 </Pressable>
-                {filtersActive ? (
-                  <Badge
-                    color="danger"
-                    variant="primary"
-                    size="sm"
-                    placement="top-right"
-                  >
-                    {activeFilterCount > 99 ? "99+" : activeFilterCount}
-                  </Badge>
+                {savedFilterCount > 0 || dealPrefsCount > 0 ? (
+                  <View className="absolute -right-1.5 -top-1.5 flex-row items-center gap-0.5">
+                    {savedFilterCount > 0 ? (
+                      <Badge color="danger" variant="primary" size="sm">
+                        {formatBadgeCount(savedFilterCount)}
+                      </Badge>
+                    ) : null}
+                    {dealPrefsCount > 0 ? (
+                      <Badge color="danger" variant="primary" size="sm">
+                        {formatBadgeCount(dealPrefsCount)}
+                      </Badge>
+                    ) : null}
+                  </View>
                 ) : null}
-              </Badge.Anchor>
+              </View>
               <Pressable
                 onPress={openSearch}
                 accessibilityRole="button"

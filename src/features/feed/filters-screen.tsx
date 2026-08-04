@@ -29,6 +29,7 @@ import { BrandButton } from "@/components/ui/brand-button";
 import {
   applyScoreTierSelection,
   clampMinProfit,
+  hasActiveScoreTierFilter,
   normalizeScoreTierCascade,
   type FeedDisplayPrefs,
   type ScoreTierKey,
@@ -208,12 +209,24 @@ function FilterActionsMenu({
 
 function SelectedFiltersSection({
   filters,
+  displayPrefs,
   onDeselect,
+  onClearMinProfit,
+  onClearScoreTiers,
 }: {
   filters: UserFilter[];
+  displayPrefs: FeedDisplayPrefs;
   onDeselect: (filter: UserFilter) => void;
+  onClearMinProfit: () => void;
+  onClearScoreTiers: () => void;
 }): JSX.Element | null {
-  if (filters.length === 0) return null;
+  const minProfitActive = displayPrefs.minProfit > 0;
+  const scoreActive = hasActiveScoreTierFilter(displayPrefs);
+  if (filters.length === 0 && !minProfitActive && !scoreActive) return null;
+
+  const scoreLabel = SCORE_TIER_OPTIONS.filter((option) => displayPrefs[option.key])
+    .map((option) => option.label)
+    .join(", ");
 
   return (
     <View className="mx-3 mt-5 overflow-hidden rounded-3xl bg-surface px-3 py-3">
@@ -221,6 +234,44 @@ function SelectedFiltersSection({
         Selected for feed
       </Typography>
       <View className="flex-row flex-wrap gap-2">
+        {minProfitActive ? (
+          <View className="flex-row items-center gap-2 rounded-full border border-violet-500/40 bg-violet-600/15 px-2.5 py-1.5">
+            <StyledIonicons name="trending-up" size={12} className="text-violet-500" />
+            <Typography type="body-xs" className="text-foreground" numberOfLines={1}>
+              {formatMinProfitLabel(displayPrefs.minProfit)}
+            </Typography>
+            <Pressable
+              onPress={onClearMinProfit}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Clear minimum profit"
+              className="h-5 w-5 items-center justify-center"
+            >
+              <StyledIonicons name="close" size={14} className="text-muted" />
+            </Pressable>
+          </View>
+        ) : null}
+        {scoreActive ? (
+          <View className="flex-row items-center gap-2 rounded-full border border-violet-500/40 bg-violet-600/15 px-2.5 py-1.5">
+            <StyledIonicons name="trending-up" size={12} className="text-violet-500" />
+            <Typography
+              type="body-xs"
+              className="max-w-[160px] text-foreground"
+              numberOfLines={1}
+            >
+              {scoreLabel.length > 0 ? scoreLabel : "No scores"}
+            </Typography>
+            <Pressable
+              onPress={onClearScoreTiers}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Reset score filters"
+              className="h-5 w-5 items-center justify-center"
+            >
+              <StyledIonicons name="close" size={14} className="text-muted" />
+            </Pressable>
+          </View>
+        ) : null}
         {filters.map((filter) => (
           <View
             key={filter.id}
@@ -711,8 +762,20 @@ export const FiltersScreen = observer(function FiltersScreen({
 
           <SelectedFiltersSection
             filters={activeFilters}
+            displayPrefs={filterStore.displayPrefs}
             onDeselect={(filter) => {
               handleToggleActive(filter, false);
+            }}
+            onClearMinProfit={() => {
+              void filterStore.setDisplayPrefs({ minProfit: 0 });
+            }}
+            onClearScoreTiers={() => {
+              void filterStore.setDisplayPrefs({
+                showGreat: true,
+                showGood: true,
+                showFair: true,
+                showBad: true,
+              });
             }}
           />
         </ScrollView>

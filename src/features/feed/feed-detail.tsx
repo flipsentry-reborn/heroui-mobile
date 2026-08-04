@@ -341,7 +341,8 @@ export function FeedDetail({
                 currencySymbol={item.currencySymbol}
               />
             ) : null}
-            {item.compValuation?.calculated ? (
+            {item.compValuation?.calculated &&
+            !item.externalValuation?.calculated ? (
               <FeedDetailBasicCalculation
                 valuation={item.compValuation}
                 currencySymbol={item.currencySymbol}

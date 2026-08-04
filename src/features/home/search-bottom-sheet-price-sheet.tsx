@@ -20,7 +20,6 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import { SheetContent } from "@/features/home/sheet-content";
 
 export function sanitizePriceInput(text: string): string {
   return text.replace(/[^0-9]/g, "");
@@ -145,7 +144,7 @@ function PriceSheetContent({
   };
 
   return (
-    <SheetContent
+    <BottomSheet.Content
       snapPoints={snapPoints}
       enableDynamicSizing={false}
       enableOverDrag={false}
@@ -200,7 +199,7 @@ function PriceSheetContent({
           </FieldError>
         ) : null}
       </View>
-    </SheetContent>
+    </BottomSheet.Content>
   );
 }
 

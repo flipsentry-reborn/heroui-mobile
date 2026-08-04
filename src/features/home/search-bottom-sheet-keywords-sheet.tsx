@@ -24,7 +24,6 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import { SheetContent } from "@/features/home/sheet-content";
 
 const StyledIonicons = withUniwind(Ionicons);
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
@@ -353,7 +352,7 @@ function KeywordsSheetContent({
   };
 
   return (
-    <SheetContent
+    <BottomSheet.Content
       snapPoints={snapPoints}
       enableDynamicSizing={false}
       enableOverDrag={false}
@@ -445,7 +444,7 @@ function KeywordsSheetContent({
           />
         </StyledBottomSheetScrollView>
       </View>
-    </SheetContent>
+    </BottomSheet.Content>
   );
 }
 

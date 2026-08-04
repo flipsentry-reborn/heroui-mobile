@@ -11,7 +11,6 @@ import {
   SHEET_CONTENT_CONTAINER_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import { SheetContent } from "@/features/home/sheet-content";
 import type { UserPreferences } from "@/mocks/data/settings";
 
 type IonName = ComponentProps<typeof Ionicons>["name"];
@@ -89,7 +88,7 @@ function HideListingsContent({
   ];
 
   return (
-    <SheetContent
+    <BottomSheet.Content
       className={SHEET_CONTENT_CLASS_NAME}
       backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
       handleComponent={null}
@@ -122,7 +121,7 @@ function HideListingsContent({
           ))}
         </SearchSheetGroup>
       </View>
-    </SheetContent>
+    </BottomSheet.Content>
   );
 }
 

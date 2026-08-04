@@ -50,7 +50,6 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import { SheetContent } from "@/features/home/sheet-content";
 import { isValidFilterHex, type UserFilter, type UserFilterType } from "@/models/user-filter";
 import { useStore } from "@/store/store";
 
@@ -463,10 +462,11 @@ function FilterSheetBody({
   // Fixed snap points (not dynamic sizing) so keyboardBehavior="extend" can lift
   // the sheet when Name focuses — same pattern as Price/Keywords.
   return (
-    <SheetContent
+    <BottomSheet.Content
       snapPoints={snapPoints}
       enableDynamicSizing={false}
       enableOverDrag={false}
+      enableContentPanningGesture={!childSheetOpen}
       keyboardBehavior={childSheetOpen ? undefined : "extend"}
       keyboardBlurBehavior={childSheetOpen ? undefined : "restore"}
       android_keyboardInputMode={childSheetOpen ? undefined : "adjustResize"}
@@ -604,6 +604,6 @@ function FilterSheetBody({
           ) : null}
         </StyledBottomSheetScrollView>
       </View>
-    </SheetContent>
+    </BottomSheet.Content>
   );
 }

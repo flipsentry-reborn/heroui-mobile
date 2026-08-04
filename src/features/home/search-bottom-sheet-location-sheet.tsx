@@ -37,7 +37,6 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import { SheetContent } from "@/features/home/sheet-content";
 import agent from "@/api/agent";
 import {
   defaultEnabledPlatforms,
@@ -186,10 +185,11 @@ function LocationSheetContent({
   ]);
 
   return (
-    <SheetContent
+    <BottomSheet.Content
       snapPoints={snapPoints}
       enableOverDrag={false}
       enableDynamicSizing={false}
+      enableContentPanningGesture={!childSheetOpen}
       keyboardBehavior={childSheetOpen ? undefined : "extend"}
       keyboardBlurBehavior={childSheetOpen ? undefined : "restore"}
       android_keyboardInputMode={childSheetOpen ? undefined : "adjustResize"}
@@ -262,7 +262,7 @@ function LocationSheetContent({
           onInfoReasonChange={setInfoReason}
         />
       </View>
-    </SheetContent>
+    </BottomSheet.Content>
   );
 }
 

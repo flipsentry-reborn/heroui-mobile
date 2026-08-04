@@ -12,7 +12,6 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import { SheetContent } from "@/features/home/sheet-content";
 import { FILTER_COLOR_PRESETS, isValidFilterHex } from "@/models/user-filter";
 
 function ColorSheetContent({
@@ -39,7 +38,7 @@ function ColorSheetContent({
   };
 
   return (
-    <SheetContent
+    <BottomSheet.Content
       snapPoints={snapPoints}
       enableDynamicSizing={false}
       enableOverDrag={false}
@@ -90,7 +89,7 @@ function ColorSheetContent({
           </View>
         </SearchSheetGroup>
       </View>
-    </SheetContent>
+    </BottomSheet.Content>
   );
 }
 

@@ -8,7 +8,6 @@ import { BottomSheet, Chip, cn, PressableFeedback, Typography, useThemeColor } f
 import { withUniwind } from "uniwind";
 
 import { SheetShell } from "@/features/home/sheet-shell";
-import { SheetContent } from "@/features/home/sheet-content";
 import { resolveTrimEstimates } from "@/mocks/data/trim-estimates";
 import { resolveExternalFairPrice, type ListingValuation } from "@/models/feed";
 
@@ -99,7 +98,7 @@ export function FeedDetailTrimEstimates({
       </PressableFeedback>
 
       <SheetShell visible={visible} onClose={() => setVisible(false)}>
-        <SheetContent
+        <BottomSheet.Content
           snapPoints={snapPoints}
           enableOverDrag={false}
           enableDynamicSizing={false}
@@ -182,7 +181,7 @@ export function FeedDetailTrimEstimates({
               );
             })}
           </StyledBottomSheetScrollView>
-        </SheetContent>
+        </BottomSheet.Content>
       </SheetShell>
     </View>
   );

@@ -35,7 +35,6 @@ import {
   SHEET_CONTENT_CONTAINER_FULL_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import { SheetContent } from "@/features/home/sheet-content";
 import type { IphoneModel, IphoneModelGroup } from "@/models/iphone";
 
 const StyledBottomSheetScrollView = withUniwind(BottomSheetScrollView);
@@ -596,7 +595,7 @@ function IphoneModelsSheetContent({
   };
 
   return (
-    <SheetContent
+    <BottomSheet.Content
       snapPoints={snapPoints}
       enableOverDrag={false}
       enableDynamicSizing={false}
@@ -715,7 +714,7 @@ function IphoneModelsSheetContent({
           ) : null}
         </StyledBottomSheetScrollView>
       </View>
-    </SheetContent>
+    </BottomSheet.Content>
   );
 }
 

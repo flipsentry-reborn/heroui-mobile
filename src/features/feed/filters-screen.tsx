@@ -50,7 +50,6 @@ import {
   SHEET_CONTENT_CONTAINER_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
-import { SheetContent } from "@/features/home/sheet-content";
 import { formatPriceShort } from "@/mocks/services/home";
 import type { UserFilter } from "@/models/user-filter";
 import { useStore } from "@/store/store";
@@ -309,8 +308,9 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
       </View>
 
       <SheetShell visible={sheetOpen} onClose={handleSheetClose}>
-        <SheetContent
+        <BottomSheet.Content
           enableDynamicSizing
+          enableContentPanningGesture={false}
           className={SHEET_CONTENT_CLASS_NAME}
           backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
           contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
@@ -383,7 +383,7 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
               </ControlField>
             </View>
           </View>
-        </SheetContent>
+        </BottomSheet.Content>
       </SheetShell>
     </>
   );

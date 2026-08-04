@@ -264,8 +264,19 @@ export function FeedCategoryPicker({
             presentation="dialog"
             isSwipeable={false}
             classNames={{
-              wrapper: "p-0 justify-start",
-              content: "size-full border-0 bg-transparent p-0",
+              wrapper: "size-full p-0 justify-start",
+              content: "size-full p-0 border-0 gap-2",
+            }}
+            styles={{
+              wrapper: {
+                width: screenWidth,
+                height: screenHeight,
+              },
+              content: {
+                width: screenWidth,
+                height: screenHeight,
+                backgroundColor: backdrop,
+              },
             }}
           >
             <View
@@ -277,19 +288,20 @@ export function FeedCategoryPicker({
               }}
             >
               <ScrollShadow
-                style={{ height: screenHeight, width: screenWidth }}
+                style={{ width: screenWidth, height: screenHeight }}
                 LinearGradientComponent={LinearGradient}
                 color={backdrop}
                 size={SCROLL_FADE_SIZE}
               >
                 <ScrollView
                   ref={scrollRef}
-                  style={{ height: screenHeight, width: screenWidth }}
+                  style={{ width: screenWidth, height: screenHeight }}
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"
                   contentContainerStyle={{
                     flexGrow: 1,
                     justifyContent: "flex-end",
+                    minHeight: screenHeight,
                     paddingTop: listTopPad,
                     paddingBottom: listBottomPad,
                   }}

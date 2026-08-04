@@ -204,6 +204,15 @@ export default class FeedStore {
       .filter((item): item is FeedItem => item != null);
   }
 
+  /** Clear a category list so UI can show a loading skeleton (e.g. Sold/Best Picks chips). */
+  clearBucketList(bucket: string): void {
+    this.setListIds(bucket, []);
+    this.setPagination(bucket, null);
+    this.touchSet("loadedBuckets", (s) => {
+      s.delete(bucket);
+    });
+  }
+
   getShelf(key: string): FeedItem[] {
     const ids = this.shelves[key] ?? [];
     return ids

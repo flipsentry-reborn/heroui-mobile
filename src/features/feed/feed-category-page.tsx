@@ -60,13 +60,18 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
   const bestPicksSortDir = sortDirFor(bestPicksSortBy);
 
   const load = useCallback(
-    async (opts?: { refresh?: boolean }) => {
+    async (opts?: { refresh?: boolean; fromControls?: boolean }) => {
       if (category === "for-you") return;
-      if (opts?.refresh) setRefreshing(true);
+      // Sold / Best Picks chips share one bucket key — wipe so skeleton shows
+      // while the new filter params refetch (otherwise stale cards stay up).
+      if (opts?.fromControls && (isSold || isBestPicks)) {
+        feedStore.clearBucketList(category);
+      }
+      if (opts?.refresh && !opts.fromControls) setRefreshing(true);
       try {
         await feedStore.loadBucket(category, {
           query,
-          force: opts?.refresh,
+          force: opts?.refresh || opts?.fromControls,
           ...(isSold ? { soldStatus, maxDays } : {}),
           ...(isBestPicks
             ? {
@@ -133,7 +138,7 @@ export const FeedCategoryPage = observer(function FeedCategoryPage({
       skipQueryEffect.current = false;
       return;
     }
-    void load({ refresh: true });
+    void load({ refresh: true, fromControls: true });
   }, [
     category,
     load,

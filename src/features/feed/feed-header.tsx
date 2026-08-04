@@ -89,8 +89,8 @@ export const FeedHeader = observer(function FeedHeader({
       style={{ paddingTop: insets.top }}
       className="z-20 bg-background"
     >
-      <View className="px-3 pb-0 pt-0.5">
-        <View className="h-9 flex-row items-center gap-2.5">
+      <View className="overflow-visible px-3 pb-0 pt-0.5">
+        <View className="h-9 flex-row items-center gap-2.5 overflow-visible">
           {searchOpen ? (
             <>
               <View className="flex-1">
@@ -139,7 +139,7 @@ export const FeedHeader = observer(function FeedHeader({
                 />
               </View>
               <View className="flex-1" />
-              <View className="relative">
+              <View className="relative overflow-visible">
                 <Pressable
                   onPress={onFiltersPress}
                   accessibilityRole="button"
@@ -172,15 +172,25 @@ export const FeedHeader = observer(function FeedHeader({
                   </Typography>
                 </Pressable>
                 {savedFilterCount > 0 || dealPrefsCount > 0 ? (
-                  <View className="absolute -right-1.5 -top-1.5 flex-row items-center gap-0.5">
+                  <View
+                    pointerEvents="none"
+                    className="absolute -top-2 right-0 z-20 flex-row items-center justify-end gap-0.5"
+                  >
+                    {dealPrefsCount > 0 ? (
+                      <Badge
+                        color="accent"
+                        variant="primary"
+                        size="sm"
+                        className="!bg-violet-600"
+                      >
+                        <Badge.Label className="!text-violet-50">
+                          {formatBadgeCount(dealPrefsCount)}
+                        </Badge.Label>
+                      </Badge>
+                    ) : null}
                     {savedFilterCount > 0 ? (
                       <Badge color="danger" variant="primary" size="sm">
                         {formatBadgeCount(savedFilterCount)}
-                      </Badge>
-                    ) : null}
-                    {dealPrefsCount > 0 ? (
-                      <Badge color="danger" variant="primary" size="sm">
-                        {formatBadgeCount(dealPrefsCount)}
                       </Badge>
                     ) : null}
                   </View>

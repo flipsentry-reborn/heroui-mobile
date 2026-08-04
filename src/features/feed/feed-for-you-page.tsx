@@ -29,6 +29,13 @@ import { Badge } from "heroui-native-pro";
 import { useUniwind, withUniwind } from "uniwind";
 
 import { useBottomChrome } from "@/contexts/bottom-chrome-context";
+import {
+  hasActiveScoreTierFilter,
+  type FeedDisplayPrefs,
+  type ScoreTierKey,
+} from "@/domain/feed-display-prefs";
+import { FEED_SHELF_LIMIT } from "@/domain/feed-routing";
+import { ValuationTierBadge } from "@/features/feed/feed-badge";
 import { FeedCategoryBadge } from "@/features/feed/feed-category-badge";
 import {
   FEED_RAIL_DRAW_DISTANCE,
@@ -36,8 +43,8 @@ import {
 } from "@/features/feed/feed-flash-list";
 import { FeedItem } from "@/features/feed/feed-item";
 import { feedCategoryHref } from "@/features/feed/feed-nav";
-import { FEED_SHELF_LIMIT } from "@/domain/feed-routing";
-import type { FeedItem as FeedModel } from "@/models/feed";
+import { formatMinProfitLabel } from "@/features/feed/min-profit-slider";
+import type { FeedItem as FeedModel, ValuationTier } from "@/models/feed";
 import type { UserFilter } from "@/models/user-filter";
 import { useStore } from "@/store/store";
 
@@ -65,19 +72,55 @@ function selectedFiltersLabel(count: number): string {
 
 const SELECTED_FILTER_DOT_VISIBLE = 5;
 
+/** Worst → best — match filters sheet order for deal chips. */
+const BANNER_SCORE_TIERS: {
+  key: ScoreTierKey;
+  tier: ValuationTier;
+  label: string;
+}[] = [
+  { key: "showBad", tier: "overpriced", label: "Bad" },
+  { key: "showFair", tier: "fairPrice", label: "Fair" },
+  { key: "showGood", tier: "goodValue", label: "Good" },
+  { key: "showGreat", tier: "greatDeal", label: "Great" },
+];
+
 function SelectedFiltersBanner({
   filters,
-  dealPrefsCount,
+  displayPrefs,
   onPress,
 }: {
   filters: UserFilter[];
-  /** Min profit / score-tier prefs counting as active filters. */
-  dealPrefsCount: number;
+  displayPrefs: FeedDisplayPrefs;
   onPress: () => void;
 }): JSX.Element {
-  const totalCount = filters.length + dealPrefsCount;
+  const minProfitActive = displayPrefs.minProfit > 0;
+  const scoreActive = hasActiveScoreTierFilter(displayPrefs);
+  const activeTiers = scoreActive
+    ? BANNER_SCORE_TIERS.filter((option) => displayPrefs[option.key])
+    : [];
   const visible = filters.slice(0, SELECTED_FILTER_DOT_VISIBLE);
   const overflow = filters.length - visible.length;
+  const hasSavedFilters = filters.length > 0;
+  const dealSummaryParts: string[] = [];
+  if (minProfitActive) {
+    dealSummaryParts.push(formatMinProfitLabel(displayPrefs.minProfit));
+  }
+  if (scoreActive) {
+    dealSummaryParts.push(
+      activeTiers.length > 0
+        ? activeTiers.map((t) => t.label).join(", ")
+        : "No scores",
+    );
+  }
+  const accessibilityLabel = [
+    hasSavedFilters ? selectedFiltersLabel(filters.length) : null,
+    dealSummaryParts.length > 0
+      ? `Deal filters: ${dealSummaryParts.join(", ")}`
+      : null,
+    "Tap to manage filters.",
+  ]
+    .filter(Boolean)
+    .join(". ");
 
   return (
     <PressableFeedback
@@ -85,42 +128,73 @@ function SelectedFiltersBanner({
       className="mx-3 mt-3 mb-1 overflow-hidden rounded-2xl border border-border bg-surface-secondary"
       animation={{ scale: { value: 0.99 } }}
       accessibilityRole="button"
-      accessibilityLabel={`${selectedFiltersLabel(totalCount)}. Tap to manage filters.`}
+      accessibilityLabel={accessibilityLabel}
     >
-      <View className="flex-row items-center gap-2.5 px-3 py-2.5">
-        <View className="flex-row items-center">
-          {visible.map((filter, index) => (
-            <View
-              key={filter.id}
-              className={`h-5 w-5 rounded-full border-2 border-border ${
-                index === 0 ? "" : "-ml-2.5"
-              }`}
-              style={{
-                backgroundColor: filter.color,
-                zIndex: visible.length - index,
-              }}
-            />
-          ))}
-          {overflow > 0 ? (
-            <View className="z-0 -ml-2.5 h-5 min-w-5 items-center justify-center rounded-full border-2 border-border bg-default px-1">
-              <Typography className="text-[9px] leading-none text-muted">
-                +{overflow}
-              </Typography>
+      <View className="gap-2 px-3 py-2.5">
+        <View className="flex-row items-center gap-2.5">
+          {hasSavedFilters ? (
+            <View className="flex-row items-center">
+              {visible.map((filter, index) => (
+                <View
+                  key={filter.id}
+                  className={`h-5 w-5 rounded-full border-2 border-border ${
+                    index === 0 ? "" : "-ml-2.5"
+                  }`}
+                  style={{
+                    backgroundColor: filter.color,
+                    zIndex: visible.length - index,
+                  }}
+                />
+              ))}
+              {overflow > 0 ? (
+                <View className="z-0 -ml-2.5 h-5 min-w-5 items-center justify-center rounded-full border-2 border-border bg-default px-1">
+                  <Typography className="text-[9px] leading-none text-muted">
+                    +{overflow}
+                  </Typography>
+                </View>
+              ) : null}
             </View>
           ) : null}
+          <Typography
+            type="body"
+            weight="semibold"
+            className="min-w-0 flex-1 text-[14px] text-foreground"
+            numberOfLines={1}
+          >
+            {hasSavedFilters
+              ? selectedFiltersLabel(filters.length)
+              : "Deal filters active"}
+          </Typography>
+          <StyledIonicons
+            name="chevron-forward"
+            size={16}
+            className="text-muted"
+          />
         </View>
-        <Typography
-          type="body"
-          weight="semibold"
-          className="flex-1 text-[14px] text-foreground"
-        >
-          {selectedFiltersLabel(totalCount)}
-        </Typography>
-        <StyledIonicons
-          name="chevron-forward"
-          size={16}
-          className="text-muted"
-        />
+
+        {minProfitActive || scoreActive ? (
+          <View className="flex-row flex-wrap items-center gap-1.5">
+            {minProfitActive ? (
+              <View className="h-5 flex-row items-center gap-1 rounded-md bg-violet-600/85 px-1.5">
+                <StyledIonicons
+                  name="trending-up"
+                  size={11}
+                  className="text-violet-100"
+                />
+                <Typography className="text-xs font-extrabold leading-none text-violet-100">
+                  {formatMinProfitLabel(displayPrefs.minProfit)}
+                </Typography>
+              </View>
+            ) : null}
+            {activeTiers.map((option) => (
+              <ValuationTierBadge
+                key={option.key}
+                tier={option.tier}
+                scale="default"
+              />
+            ))}
+          </View>
+        ) : null}
       </View>
     </PressableFeedback>
   );
@@ -320,6 +394,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
   const yourSearchChildren = searchStore.yourSearchChildren;
   const yourFilterChildren = searchStore.yourFilterChildren;
   const selectedFilters = filterStore.activeFilters;
+  const displayPrefs = filterStore.displayPrefs;
   const dealPrefsCount = filterStore.activeDisplayPrefsCount;
   const showSelectedFiltersBanner =
     selectedFilters.length > 0 || dealPrefsCount > 0;
@@ -740,7 +815,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
         {showSelectedFiltersBanner ? (
           <SelectedFiltersBanner
             filters={selectedFilters}
-            dealPrefsCount={dealPrefsCount}
+            displayPrefs={displayPrefs}
             onPress={() => router.push("/filters")}
           />
         ) : null}

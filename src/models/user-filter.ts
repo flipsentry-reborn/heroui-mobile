@@ -15,6 +15,8 @@ export interface UserFilter {
   filterType: UserFilterType;
   vehicleQuery?: CarQuery | null;
   customQuery?: FilterCustomQuery | null;
+  /** Custom filters only — empty for Vehicle. */
+  searchGroupIds: string[];
   titleIncluders: string[];
   descriptionIncluders: string[];
   notificationEnabled: boolean;
@@ -29,6 +31,8 @@ export interface CreateUserFilterInput {
   filterType: UserFilterType;
   vehicleQuery?: CarQuery | null;
   customQuery?: FilterCustomQuery | null;
+  /** Required (≥1) for Custom; ignored for Vehicle. */
+  searchGroupIds?: string[];
   titleIncluders?: string[];
   descriptionIncluders?: string[];
   notificationEnabled?: boolean;
@@ -40,6 +44,8 @@ export interface UpdateUserFilterInput {
   color?: string;
   vehicleQuery?: CarQuery | null;
   customQuery?: FilterCustomQuery | null;
+  /** When set on Custom, replaces scoped search groups (must be ≥1). */
+  searchGroupIds?: string[];
   titleIncluders?: string[];
   descriptionIncluders?: string[];
   notificationEnabled?: boolean;

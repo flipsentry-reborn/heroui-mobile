@@ -1,4 +1,4 @@
-import type { FeedItem } from "@/models/feed";
+import { isCarListing, type FeedItem } from "@/models/feed";
 
 /** Unsplash CDN - product-ish stock for mock listings (cars, phones, gear). */
 const EXTRA_PHOTOS = [
@@ -1501,14 +1501,25 @@ export const MOCK_FEED_ITEMS: FeedItem[] = [
 for (const item of MOCK_FEED_ITEMS) {
   const ids: string[] = [];
   const haystack = `${item.title} ${item.description}`.toLowerCase();
-  if (haystack.includes("toyota") || item.compValuation?.make === "Toyota") {
+  // Vehicle seed filter: car-origin only (no search-group scope).
+  const isCarOrigin =
+    isCarListing(item) ||
+    item.searchGroupIds?.includes("g1") === true ||
+    item.searchGroupIds?.includes("g3") === true ||
+    item.searchSettingIds.some((id) => id === "g1" || id === "g3" || id.startsWith("g1-") || id.startsWith("g3-"));
+  if (
+    isCarOrigin &&
+    (haystack.includes("toyota") || item.compValuation?.make === "Toyota")
+  ) {
     ids.push("filter-toyota");
   }
-  if (
-    haystack.includes("iphone") ||
-    item.iphoneStorageGb != null ||
-    item.searchSettingIds.includes("group-iphones")
-  ) {
+  // Custom seed filter scoped to iPhone search group g2.
+  const inIphoneGroup =
+    item.searchGroupIds?.includes("g2") === true ||
+    item.searchSettingIds.includes("g2") ||
+    item.searchSettingIds.includes("group-iphones") ||
+    item.iphoneStorageGb != null;
+  if (inIphoneGroup && (haystack.includes("iphone") || item.iphoneStorageGb != null)) {
     ids.push("filter-iphone-deals");
   }
   if (ids.length > 0) {

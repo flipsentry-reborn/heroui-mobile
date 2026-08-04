@@ -15,6 +15,7 @@ interface ApiUserFilter {
   filterType: string;
   vehicleQuery?: CarQuery | null;
   customQuery?: FilterCustomQuery | null;
+  searchGroupIds?: string[] | null;
   titleIncluders?: string[];
   descriptionIncluders?: string[];
   notificationEnabled: boolean;
@@ -33,6 +34,14 @@ function mapCustomQuery(
   };
 }
 
+function mapSearchGroupIds(
+  filterType: UserFilterType,
+  ids?: string[] | null,
+): string[] {
+  if (filterType !== "Custom") return [];
+  return (ids ?? []).map(String).filter(Boolean);
+}
+
 function mapFilter(api: ApiUserFilter): UserFilter {
   const filterType =
     api.filterType?.toLowerCase() === "custom" ? "Custom" : "Vehicle";
@@ -43,6 +52,10 @@ function mapFilter(api: ApiUserFilter): UserFilter {
     filterType: filterType as UserFilterType,
     vehicleQuery: api.vehicleQuery ?? null,
     customQuery: mapCustomQuery(api.customQuery),
+    searchGroupIds: mapSearchGroupIds(
+      filterType as UserFilterType,
+      api.searchGroupIds,
+    ),
     titleIncluders: api.titleIncluders ?? [],
     descriptionIncluders: api.descriptionIncluders ?? [],
     notificationEnabled: api.notificationEnabled ?? true,
@@ -77,6 +90,8 @@ function buildCreatePayload(input: CreateUserFilterInput) {
             maxPrice: input.customQuery?.maxPrice ?? null,
           }
         : null,
+    searchGroupIds:
+      input.filterType === "Custom" ? (input.searchGroupIds ?? []) : [],
     titleIncluders: input.titleIncluders ?? [],
     descriptionIncluders: input.descriptionIncluders ?? [],
     notificationEnabled: input.notificationEnabled ?? true,
@@ -107,6 +122,7 @@ function buildUpdatePayload(input: UpdateUserFilterInput) {
             maxPrice: input.customQuery.maxPrice ?? null,
           }
         : input.customQuery,
+    searchGroupIds: input.searchGroupIds,
     titleIncluders: input.titleIncluders,
     descriptionIncluders: input.descriptionIncluders,
     notificationEnabled: input.notificationEnabled,

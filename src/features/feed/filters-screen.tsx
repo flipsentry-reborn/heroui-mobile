@@ -52,6 +52,7 @@ import {
   SHEET_CONTENT_CONTAINER_CLASS_NAME,
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
+import { customFilterSearchGroupTitle } from "@/features/feed/filter-search-groups-sheet";
 import { formatPriceShort } from "@/mocks/services/home";
 import type { UserFilter } from "@/models/user-filter";
 import { useStore } from "@/store/store";
@@ -98,7 +99,10 @@ function priceLabel(filter: UserFilter): string | null {
   );
 }
 
-function criteriaLabels(filter: UserFilter): string[] {
+function criteriaLabels(
+  filter: UserFilter,
+  searchGroupLabels?: Map<string, string>,
+): string[] {
   const labels: string[] = [];
   const price = priceLabel(filter);
   if (price != null) labels.push(`Price ${price}`);
@@ -124,6 +128,20 @@ function criteriaLabels(filter: UserFilter): string[] {
     }
   }
 
+  if (filter.filterType === "Custom") {
+    const ids = filter.searchGroupIds ?? [];
+    if (ids.length > 0) {
+      const names = ids
+        .map((id) => searchGroupLabels?.get(id))
+        .filter((name): name is string => !!name);
+      if (names.length > 0) {
+        labels.push(names.length <= 2 ? names.join(", ") : `${names.length} searches`);
+      } else {
+        labels.push(ids.length === 1 ? "1 search" : `${ids.length} searches`);
+      }
+    }
+  }
+
   const keywords = keywordCount(filter);
   if (keywords > 0) {
     labels.push(keywords === 1 ? "1 keyword" : `${keywords} keywords`);
@@ -131,8 +149,11 @@ function criteriaLabels(filter: UserFilter): string[] {
   return labels;
 }
 
-function collapsedSummary(filter: UserFilter): string {
-  const labels = criteriaLabels(filter);
+function collapsedSummary(
+  filter: UserFilter,
+  searchGroupLabels?: Map<string, string>,
+): string {
+  const labels = criteriaLabels(filter, searchGroupLabels);
   return [filterTypeLabel(filter), ...labels.slice(0, 2)].join(" · ");
 }
 
@@ -442,18 +463,20 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
 });
 function FilterAccordionItem({
   filter,
+  searchGroupLabels,
   onEdit,
   onDelete,
   onToggleActive,
   onToggleNotifications,
 }: {
   filter: UserFilter;
+  searchGroupLabels: Map<string, string>;
   onEdit: (filter: UserFilter) => void;
   onDelete: (filter: UserFilter) => void;
   onToggleActive: (filter: UserFilter, selected: boolean) => void;
   onToggleNotifications: (filter: UserFilter, selected: boolean) => void;
 }): JSX.Element {
-  const criteria = criteriaLabels(filter);
+  const criteria = criteriaLabels(filter, searchGroupLabels);
 
   return (
     <Accordion.Item value={filter.id}>
@@ -478,7 +501,7 @@ function FilterAccordionItem({
             ) : null}
           </View>
           <Typography type="body-xs" className="text-muted" numberOfLines={1}>
-            {collapsedSummary(filter)}
+            {collapsedSummary(filter, searchGroupLabels)}
           </Typography>
         </View>
         <Accordion.Indicator />
@@ -486,7 +509,7 @@ function FilterAccordionItem({
           onPress={() => onToggleActive(filter, !filter.isActive)}
           hitSlop={8}
           accessibilityRole="checkbox"
-          accessibilityLabel={`Select ${filter.name}`}
+          accessibilityLabel={`Enable ${filter.name}`}
           accessibilityState={{ checked: filter.isActive }}
           className="h-10 w-10 shrink-0 items-center justify-center"
         >
@@ -579,7 +602,7 @@ export const FiltersScreen = observer(function FiltersScreen({
 }: {
   onBack: () => void;
 }): JSX.Element {
-  const { filterStore, feedStore } = useStore();
+  const { filterStore, feedStore, searchStore } = useStore();
   const { toast } = useToast();
   const [accentForeground] = useThemeColor(["accent-foreground"]);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -591,7 +614,17 @@ export const FiltersScreen = observer(function FiltersScreen({
 
   useEffect(() => {
     void filterStore.loadFilters();
-  }, [filterStore]);
+    void searchStore.loadSearchGroups();
+  }, [filterStore, searchStore]);
+
+  const searchGroupLabels = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const group of searchStore.searchGroups) {
+      if (group.searchType === "car") continue;
+      map.set(group.id, customFilterSearchGroupTitle(group));
+    }
+    return map;
+  }, [searchStore.searchGroups]);
 
   useFocusEffect(
     useCallback(() => {
@@ -715,7 +748,7 @@ export const FiltersScreen = observer(function FiltersScreen({
                 Feed Filters
               </Typography>
               <Typography type="body-xs" className="mt-0.5 text-muted">
-                Tap the checkmark to select a filter.
+                Tap the checkmark to enable tagging and a filter tab.
               </Typography>
             </View>
             <BrandButton className="h-9 min-h-9 gap-1 !rounded-xl px-2.5" onPress={openCreate}>
@@ -746,6 +779,7 @@ export const FiltersScreen = observer(function FiltersScreen({
                 <FilterAccordionItem
                   key={filter.id}
                   filter={filter}
+                  searchGroupLabels={searchGroupLabels}
                   onEdit={openEdit}
                   onDelete={handleDelete}
                   onToggleActive={handleToggleActive}

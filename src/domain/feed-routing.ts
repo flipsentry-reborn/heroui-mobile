@@ -72,27 +72,19 @@ export function isPriceDropCandidate(feed: FeedItem): boolean {
 
 /**
  * Buckets a live ReceiveFeed item should enter (never sold).
- * When activeFilterIds is non-empty, For You buckets require an overlap
- * with feed.filterIds. Saved is never gated by selection.
+ * isActive filters do not gate All / typed tabs — they only add filter:{id}
+ * buckets via tabsForFeed when feed.filterIds overlap filterTabs.
  */
 export function bucketsForLiveFeed(
   feed: FeedItem,
   feedTabs: FeedFilterTab[],
   filterTabs: FeedUserFilterTab[] = [],
-  activeFilterIds: string[] = [],
+  _activeFilterIds: string[] = [],
 ): string[] {
   const buckets = new Set<string>();
 
   if (feed.isFavorite) {
     buckets.add("saved");
-  }
-
-  const selectionActive = activeFilterIds.length > 0;
-  if (
-    selectionActive &&
-    !hasIdOverlap(feed.filterIds, activeFilterIds)
-  ) {
-    return [...buckets];
   }
 
   buckets.add("all");

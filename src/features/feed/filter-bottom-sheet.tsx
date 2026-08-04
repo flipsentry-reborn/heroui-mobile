@@ -14,6 +14,11 @@ import {
 } from "heroui-native";
 
 import { FilterColorSheet } from "@/features/feed/filter-color-sheet";
+import {
+  FilterSearchGroupsSheet,
+  formatSearchGroupsLabel,
+  listCustomFilterGroups,
+} from "@/features/feed/filter-search-groups-sheet";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import {
   CustomSearchInput,
@@ -87,7 +92,7 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
   onOpenChange,
   editingFilter = null,
 }: FilterBottomSheetProps): JSX.Element {
-  const { filterStore } = useStore();
+  const { filterStore, searchStore } = useStore();
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [filterType, setFilterType] = useState<UserFilterType>("Vehicle");
@@ -100,53 +105,70 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
   const [minMileage, setMinMileage] = useState("");
   const [maxMileage, setMaxMileage] = useState("");
   const [keywords, setKeywords] = useState<KeywordsState>(EMPTY_KEYWORDS);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [priceOpen, setPriceOpen] = useState(false);
   const [yearOpen, setYearOpen] = useState(false);
   const [mileageOpen, setMileageOpen] = useState(false);
   const [keywordsOpen, setKeywordsOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
+  const [groupsOpen, setGroupsOpen] = useState(false);
   const dismissSheetRef = useRef<(() => void) | null>(null);
+
+  const listedGroups = useMemo(
+    () => listCustomFilterGroups(searchStore.searchGroups),
+    [searchStore.searchGroups],
+  );
+  const listedIdSet = useMemo(
+    () => new Set(listedGroups.map((group) => group.id)),
+    [listedGroups],
+  );
 
   useEffect(() => {
     if (!isOpen) return;
+    void searchStore.loadSearchGroups();
     if (editingFilter) {
       setName(editingFilter.name);
       setFilterType(editingFilter.filterType);
       setColor(editingFilter.color);
       setNotificationEnabled(editingFilter.notificationEnabled);
+      setSelectedGroupIds(
+        editingFilter.filterType === "Custom"
+          ? [...(editingFilter.searchGroupIds ?? [])]
+          : [],
+      );
       setMinPrice(
         editingFilter.vehicleQuery?.minPrice != null
           ? String(editingFilter.vehicleQuery.minPrice)
           : editingFilter.customQuery?.minPrice != null
             ? String(editingFilter.customQuery.minPrice)
-            : ""
+            : "",
       );
       setMaxPrice(
         editingFilter.vehicleQuery?.maxPrice != null
           ? String(editingFilter.vehicleQuery.maxPrice)
           : editingFilter.customQuery?.maxPrice != null
             ? String(editingFilter.customQuery.maxPrice)
-            : ""
+            : "",
       );
       setMinYear(
         editingFilter.vehicleQuery?.minYear != null
           ? String(editingFilter.vehicleQuery.minYear)
-          : ""
+          : "",
       );
       setMaxYear(
         editingFilter.vehicleQuery?.maxYear != null
           ? String(editingFilter.vehicleQuery.maxYear)
-          : ""
+          : "",
       );
       setMinMileage(
         editingFilter.vehicleQuery?.minMileage != null
           ? String(editingFilter.vehicleQuery.minMileage)
-          : ""
+          : "",
       );
       setMaxMileage(
         editingFilter.vehicleQuery?.maxMileage != null
           ? String(editingFilter.vehicleQuery.maxMileage)
-          : ""
+          : "",
       );
       setKeywords({
         ...EMPTY_KEYWORDS,
@@ -159,6 +181,7 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
     setFilterType("Vehicle");
     setColor("");
     setNotificationEnabled(true);
+    setSelectedGroupIds([]);
     setMinPrice("");
     setMaxPrice("");
     setMinYear("");
@@ -166,9 +189,20 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
     setMinMileage("");
     setMaxMileage("");
     setKeywords(EMPTY_KEYWORDS);
-  }, [editingFilter, isOpen]);
+  }, [editingFilter, isOpen, searchStore]);
 
-  const childSheetOpen = priceOpen || yearOpen || mileageOpen || keywordsOpen || colorOpen;
+  // Drop car / unknown ids once the non-car catalog is known (keep paused).
+  useEffect(() => {
+    if (!isOpen || filterType !== "Custom") return;
+    if (listedIdSet.size === 0) return;
+    setSelectedGroupIds((current) => {
+      const next = current.filter((id) => listedIdSet.has(id));
+      return next.length === current.length ? current : next;
+    });
+  }, [filterType, isOpen, listedIdSet]);
+
+  const childSheetOpen =
+    priceOpen || yearOpen || mileageOpen || keywordsOpen || colorOpen || groupsOpen;
 
   const usedColors = useMemo(() => {
     const taken = new Set<string>();
@@ -196,8 +230,9 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
     if (!isValidFilterHex(selected)) return false;
     if (usedColors.has(selected)) return false;
     if (keywordCount(keywords) > 10) return false;
+    if (filterType === "Custom" && selectedGroupIds.length === 0) return false;
     return true;
-  }, [color, keywords, name, usedColors, validationMessage]);
+  }, [color, filterType, keywords, name, selectedGroupIds.length, usedColors, validationMessage]);
 
   const handleClose = () => onOpenChange(false);
 
@@ -226,6 +261,7 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
       notificationEnabled,
       titleIncluders: keywords.titleIncluders,
       descriptionIncluders: keywords.descriptionIncluders,
+      searchGroupIds: filterType === "Custom" ? selectedGroupIds : [],
       vehicleQuery:
         filterType === "Vehicle"
           ? {
@@ -262,7 +298,6 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
             ? await filterStore.updateFilter(editId, payload)
             : await filterStore.createFilter(payload);
         if (saved != null) {
-          // Animate out like Cancel — don't flip `isOpen` off immediately.
           if (dismissSheetRef.current != null) {
             dismissSheetRef.current();
           } else {
@@ -278,22 +313,24 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
 
   const priceLabel = formatPriceRangeLabel(
     formatGroupedDigits(minPrice),
-    formatGroupedDigits(maxPrice)
+    formatGroupedDigits(maxPrice),
   );
   const yearLabel = formatPriceRangeLabel(minYear, maxYear);
   const mileageLabel = formatPriceRangeLabel(
     formatGroupedDigits(minMileage),
-    formatGroupedDigits(maxMileage)
+    formatGroupedDigits(maxMileage),
   );
   const keywordsLabel = formatKeywordsLabel({
     ...EMPTY_KEYWORDS,
     titleIncluders: keywords.titleIncluders,
     descriptionIncluders: keywords.descriptionIncluders,
   });
+  const groupsLabel = formatSearchGroupsLabel(selectedGroupIds, listedGroups);
   const hasPriceFilter = minPrice !== "" || maxPrice !== "";
   const hasYearFilter = minYear !== "" || maxYear !== "";
   const hasMileageFilter = minMileage !== "" || maxMileage !== "";
   const hasKeywords = keywordsLabel !== "None";
+  const hasGroups = selectedGroupIds.length > 0;
 
   return (
     <>
@@ -303,13 +340,19 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
           name={name}
           onNameChange={setName}
           filterType={filterType}
-          onFilterTypeChange={setFilterType}
+          onFilterTypeChange={(next) => {
+            setFilterType(next);
+            if (next === "Vehicle") setSelectedGroupIds([]);
+          }}
           typeLocked={editingFilter != null}
           color={color}
           hasColor={isValidFilterHex(color)}
           onOpenColor={() => setColorOpen(true)}
           notificationEnabled={notificationEnabled}
           onNotificationChange={setNotificationEnabled}
+          groupsLabel={groupsLabel}
+          hasGroups={hasGroups}
+          onOpenGroups={() => setGroupsOpen(true)}
           keywordsLabel={keywordsLabel}
           hasKeywords={hasKeywords}
           onOpenKeywords={() => setKeywordsOpen(true)}
@@ -340,6 +383,13 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
         color={color}
         usedColors={usedColors}
         onColorChange={setColor}
+      />
+      <FilterSearchGroupsSheet
+        isOpen={isOpen && groupsOpen}
+        onOpenChange={setGroupsOpen}
+        groups={listedGroups}
+        selectedIds={selectedGroupIds}
+        onSelectedIdsChange={setSelectedGroupIds}
       />
       <SearchBottomSheetPriceSheet
         isOpen={isOpen && priceOpen}
@@ -393,6 +443,9 @@ function FilterSheetBody({
   onOpenColor,
   notificationEnabled,
   onNotificationChange,
+  groupsLabel,
+  hasGroups,
+  onOpenGroups,
   keywordsLabel,
   hasKeywords,
   onOpenKeywords,
@@ -424,6 +477,9 @@ function FilterSheetBody({
   onOpenColor: () => void;
   notificationEnabled: boolean;
   onNotificationChange: (v: boolean) => void;
+  groupsLabel: string;
+  hasGroups: boolean;
+  onOpenGroups: () => void;
   keywordsLabel: string;
   hasKeywords: boolean;
   onOpenKeywords: () => void;
@@ -442,7 +498,6 @@ function FilterSheetBody({
   errorMessage: string | null;
   validationMessage: string | null;
   onSave: () => void;
-  /** Lets parent dismiss with the same animated close as Cancel. */
   dismissRef: MutableRefObject<(() => void) | null>;
 }): JSX.Element {
   const { onOpenChange } = useBottomSheet();
@@ -478,108 +533,124 @@ function FilterSheetBody({
         />
 
         <SearchBottomSheetSection>
-            <SearchBottomSheetRow
-              icon="text"
-              iconClassName="text-orange-500"
-              title="Name"
-              required
-              requiredTone="warning"
-              showChevron={false}
-              isLast={false}
-              right={
-                <View className="min-w-0 max-w-[200px] flex-1">
-                  <CustomSearchInput value={name} onChange={onNameChange} invalidTone="warning" />
-                </View>
-              }
-            />
-            <SearchBottomSheetRow
-              icon="color-palette"
-              iconClassName="text-pink-500"
-              title="Color"
-              required
-              requiredTone="warning"
-              showChevron={false}
-              isLast={false}
-              onPress={onOpenColor}
-              right={
-                hasColor ? (
-                  <View className="flex-row items-center gap-1.5">
-                    <View
-                      className="h-5 w-5 rounded-full border border-border"
-                      style={{ backgroundColor: color }}
-                    />
-                    <Ionicons name="chevron-forward" size={16} color={muted} />
-                  </View>
-                ) : (
-                  <SearchSheetValue label="Required" requiredEmpty />
-                )
-              }
-            />
-            <SearchBottomSheetRow
-              icon="swap-vertical"
-              iconClassName="text-emerald-500"
-              title="Search Type"
-              required
-              requiredTone="warning"
-              showChevron={false}
-              isLast={false}
-              right={
-                typeLocked ? (
-                  <Typography type="body-sm" className="text-foreground">
-                    {FILTER_TYPE_OPTIONS.find((o) => o.value === filterType)?.label ?? filterType}
-                  </Typography>
-                ) : (
-                  <SearchBottomSheetTypeSelect
-                    value={filterType}
-                    onChange={onFilterTypeChange}
-                    options={FILTER_TYPE_OPTIONS}
-                    accessibilityLabelPrefix="Filter type"
+          <SearchBottomSheetRow
+            icon="text"
+            iconClassName="text-orange-500"
+            title="Name"
+            required
+            requiredTone="warning"
+            showChevron={false}
+            isLast={false}
+            right={
+              <View className="min-w-0 max-w-[200px] flex-1">
+                <CustomSearchInput value={name} onChange={onNameChange} invalidTone="warning" />
+              </View>
+            }
+          />
+          <SearchBottomSheetRow
+            icon="color-palette"
+            iconClassName="text-pink-500"
+            title="Color"
+            required
+            requiredTone="warning"
+            showChevron={false}
+            isLast={false}
+            onPress={onOpenColor}
+            right={
+              hasColor ? (
+                <View className="flex-row items-center gap-1.5">
+                  <View
+                    className="h-5 w-5 rounded-full border border-border"
+                    style={{ backgroundColor: color }}
                   />
-                )
-              }
-            />
-            <SearchBottomSheetRow
-              icon="notifications"
-              iconClassName="text-violet-500"
-              title="Notifications"
-              showChevron={false}
-              isLast
-              right={
-                <Switch isSelected={notificationEnabled} onSelectedChange={onNotificationChange} />
-              }
-            />
-          </SearchBottomSheetSection>
+                  <Ionicons name="chevron-forward" size={16} color={muted} />
+                </View>
+              ) : (
+                <SearchSheetValue label="Required" requiredEmpty />
+              )
+            }
+          />
+          <SearchBottomSheetRow
+            icon="swap-vertical"
+            iconClassName="text-emerald-500"
+            title="Search Type"
+            required
+            requiredTone="warning"
+            showChevron={false}
+            isLast={false}
+            right={
+              typeLocked ? (
+                <Typography type="body-sm" className="text-foreground">
+                  {FILTER_TYPE_OPTIONS.find((o) => o.value === filterType)?.label ?? filterType}
+                </Typography>
+              ) : (
+                <SearchBottomSheetTypeSelect
+                  value={filterType}
+                  onChange={onFilterTypeChange}
+                  options={FILTER_TYPE_OPTIONS}
+                  accessibilityLabelPrefix="Filter type"
+                />
+              )
+            }
+          />
+          <SearchBottomSheetRow
+            icon="notifications"
+            iconClassName="text-violet-500"
+            title="Notifications"
+            showChevron={false}
+            isLast
+            right={
+              <Switch isSelected={notificationEnabled} onSelectedChange={onNotificationChange} />
+            }
+          />
+        </SearchBottomSheetSection>
 
-          <SearchSheetGroup title="Filters">
+        <SearchSheetGroup title="Filters">
+          {!isVehicle ? (
             <SearchSheetRow
-              title="Price"
+              title="Search groups"
+              required
+              requiredTone="warning"
               isLast={false}
-              onPress={onOpenPrice}
-              right={<SearchSheetValue label={priceLabel} emphasized={hasPriceFilter} />}
-            />
-            {isVehicle ? (
-              <>
-                <SearchSheetRow
-                  title="Year"
-                  isLast={false}
-                  onPress={onOpenYear}
-                  right={<SearchSheetValue label={yearLabel} emphasized={hasYearFilter} />}
+              onPress={onOpenGroups}
+              right={
+                <SearchSheetValue
+                  label={groupsLabel}
+                  emphasized={hasGroups}
+                  requiredEmpty={!hasGroups}
                 />
-                <SearchSheetRow
-                  title="Mileage"
-                  isLast={false}
-                  onPress={onOpenMileage}
-                  right={<SearchSheetValue label={mileageLabel} emphasized={hasMileageFilter} />}
-                />
-              </>
-            ) : null}
-            <SearchSheetRow
-              title="Keywords"
-              isLast
-              onPress={onOpenKeywords}
-              right={<SearchSheetValue label={keywordsLabel} emphasized={hasKeywords} />}
+              }
             />
-          </SearchSheetGroup>
+          ) : null}
+          <SearchSheetRow
+            title="Price"
+            isLast={false}
+            onPress={onOpenPrice}
+            right={<SearchSheetValue label={priceLabel} emphasized={hasPriceFilter} />}
+          />
+          {isVehicle ? (
+            <>
+              <SearchSheetRow
+                title="Year"
+                isLast={false}
+                onPress={onOpenYear}
+                right={<SearchSheetValue label={yearLabel} emphasized={hasYearFilter} />}
+              />
+              <SearchSheetRow
+                title="Mileage"
+                isLast={false}
+                onPress={onOpenMileage}
+                right={<SearchSheetValue label={mileageLabel} emphasized={hasMileageFilter} />}
+              />
+            </>
+          ) : null}
+          <SearchSheetRow
+            title="Keywords"
+            isLast
+            onPress={onOpenKeywords}
+            right={<SearchSheetValue label={keywordsLabel} emphasized={hasKeywords} />}
+          />
+        </SearchSheetGroup>
 
         {validationMessage != null || errorMessage != null ? (
           <FieldError isInvalid className="mx-5 mb-2">

@@ -27,6 +27,7 @@ const SEED_FILTERS: UserFilter[] = [
       maxMileage: undefined,
     },
     customQuery: null,
+    searchGroupIds: [],
     titleIncluders: ["toyota"],
     descriptionIncluders: [],
     notificationEnabled: true,
@@ -44,6 +45,7 @@ const SEED_FILTERS: UserFilter[] = [
       minPrice: undefined,
       maxPrice: 800,
     },
+    searchGroupIds: ["g2"],
     titleIncluders: ["iphone"],
     descriptionIncluders: [],
     notificationEnabled: true,
@@ -54,8 +56,13 @@ const SEED_FILTERS: UserFilter[] = [
 ];
 
 function normalizeFilter(filter: UserFilter): UserFilter {
+  const searchGroupIds =
+    filter.filterType === "Custom"
+      ? (filter.searchGroupIds ?? []).map(String).filter(Boolean)
+      : [];
   return {
     ...filter,
+    searchGroupIds,
     customQuery:
       filter.customQuery == null
         ? filter.customQuery
@@ -150,6 +157,12 @@ export async function createFilter(
   if (filters.some((f) => f.color.trim().toUpperCase() === color)) {
     throw new Error("This color is already used by another filter");
   }
+  if (input.filterType === "Custom") {
+    const groupIds = (input.searchGroupIds ?? []).map(String).filter(Boolean);
+    if (groupIds.length === 0) {
+      throw new Error("Custom filters require at least one search group");
+    }
+  }
   const now = new Date().toISOString();
   const filter: UserFilter = {
     id: `filter-${Date.now()}`,
@@ -176,6 +189,10 @@ export async function createFilter(
             maxPrice: numOrUndef(input.customQuery?.maxPrice),
           }
         : null,
+    searchGroupIds:
+      input.filterType === "Custom"
+        ? [...new Set((input.searchGroupIds ?? []).map(String).filter(Boolean))]
+        : [],
     titleIncluders: input.titleIncluders ?? [],
     descriptionIncluders: input.descriptionIncluders ?? [],
     notificationEnabled: input.notificationEnabled ?? true,
@@ -205,6 +222,18 @@ export async function updateFilter(
   ) {
     throw new Error("This color is already used by another filter");
   }
+  let searchGroupIds = existing.searchGroupIds ?? [];
+  if (existing.filterType === "Custom" && input.searchGroupIds !== undefined) {
+    searchGroupIds = [
+      ...new Set(input.searchGroupIds.map(String).filter(Boolean)),
+    ];
+    if (searchGroupIds.length === 0) {
+      throw new Error("Custom filters require at least one search group");
+    }
+  } else if (existing.filterType === "Vehicle") {
+    searchGroupIds = [];
+  }
+
   const updated: UserFilter = {
     ...existing,
     name: input.name?.trim() ?? existing.name,
@@ -229,6 +258,7 @@ export async function updateFilter(
             maxPrice: numOrUndef(input.customQuery?.maxPrice),
           }
         : existing.customQuery,
+    searchGroupIds,
     titleIncluders: input.titleIncluders ?? existing.titleIncluders,
     descriptionIncluders:
       input.descriptionIncluders ?? existing.descriptionIncluders,

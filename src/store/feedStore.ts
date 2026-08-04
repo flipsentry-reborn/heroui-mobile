@@ -345,7 +345,8 @@ export default class FeedStore {
   }
 
   private filterIdsFor(bucket: string): string[] | undefined {
-    // Saved is never scoped by selected filters.
+    // Saved / All / typed tabs are never narrowed by isActive filters.
+    // Only dedicated filter:{id} tabs (via tab availability) pass filterIds.
     if (bucket === "saved") return undefined;
 
     const tabIds = this.searchStore?.filterIdsForCategory(bucket);
@@ -359,8 +360,7 @@ export default class FeedStore {
       return id ? [id] : undefined;
     }
 
-    const active = this.filterStore?.activeFilterIds ?? [];
-    return active.length > 0 ? active : undefined;
+    return undefined;
   }
 
   private displayPrefs(): FeedDisplayPrefs {

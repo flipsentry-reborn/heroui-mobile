@@ -29,6 +29,10 @@ function applyFilterUpdate(previous: UserFilter, input: UpdateUserFilterInput): 
     color: input.color ?? previous.color,
     vehicleQuery: input.vehicleQuery !== undefined ? input.vehicleQuery : previous.vehicleQuery,
     customQuery: input.customQuery !== undefined ? input.customQuery : previous.customQuery,
+    searchGroupIds:
+      input.searchGroupIds !== undefined
+        ? input.searchGroupIds
+        : previous.searchGroupIds,
     titleIncluders: input.titleIncluders ?? previous.titleIncluders,
     descriptionIncluders: input.descriptionIncluders ?? previous.descriptionIncluders,
     notificationEnabled: input.notificationEnabled ?? previous.notificationEnabled,
@@ -242,6 +246,7 @@ export default class FilterStore {
     const criteriaChanged =
       input.vehicleQuery !== undefined ||
       input.customQuery !== undefined ||
+      input.searchGroupIds !== undefined ||
       input.titleIncluders !== undefined ||
       input.descriptionIncluders !== undefined;
 

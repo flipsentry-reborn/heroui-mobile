@@ -1,19 +1,22 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, type JSX } from "react";
 import { View } from "react-native";
 import { Typography } from "heroui-native";
 
+import { FilterApplyingDialog } from "@/features/feed/filter-applying-dialog";
 import { FeedCategoryPage } from "@/features/feed/feed-category-page";
 import {
   FeedCategoryHeader,
   resolveCategoryMeta,
 } from "@/features/feed/feed-category-title";
 import { debugLog } from "@/lib/debug-log";
+import { useStore } from "@/store/store";
 
 const FEED_OPEN_LOG = "FeedOpen";
 
 export default function FeedCategoryScreen(): JSX.Element {
   const router = useRouter();
+  const { feedStore } = useStore();
   const { category: raw } = useLocalSearchParams<{
     category: string | string[];
   }>();
@@ -21,6 +24,12 @@ export default function FeedCategoryScreen(): JSX.Element {
   const meta = useMemo(
     () => (category ? resolveCategoryMeta(category) : { title: "Feed" }),
     [category],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      void feedStore.beginFilterApplyIfNeeded();
+    }, [feedStore]),
   );
 
   const handlePressItem = useCallback(
@@ -65,6 +74,7 @@ export default function FeedCategoryScreen(): JSX.Element {
         isActive
         onPressItem={handlePressItem}
       />
+      <FilterApplyingDialog />
     </View>
   );
 }

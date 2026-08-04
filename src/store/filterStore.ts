@@ -46,6 +46,8 @@ export default class FilterStore {
   /** Deal display prefs — backed by user preferences API (MinBuySignal / MinProfit). */
   displayPrefs: FeedDisplayPrefs = { ...DEFAULT_FEED_DISPLAY_PREFS };
   displayPrefsHydrated = false;
+  /** True while Filters route is focused — defers feed wipe until back. */
+  filtersScreenOpen = false;
   private searchStore: SearchStore | null = null;
   private feedStore: FeedStore | null = null;
   private userStore: UserStore | null = null;
@@ -64,6 +66,10 @@ export default class FilterStore {
 
   setUserStore(store: UserStore): void {
     this.userStore = store;
+  }
+
+  setFiltersScreenOpen(open: boolean): void {
+    this.filtersScreenOpen = open;
   }
 
   get activeFilters(): UserFilter[] {
@@ -133,7 +139,7 @@ export default class FilterStore {
     runInAction(() => {
       this.displayPrefs = next;
     });
-    // Instant local filter + debounced network reload.
+    // Mark feed for wipe/refetch (applies on back from Filters, or immediately on feed).
     this.feedStore?.onDisplayPrefsChanged();
 
     const minBuySignal = deriveMinBuySignal(next);
@@ -157,8 +163,10 @@ export default class FilterStore {
         }
         this.displayPrefs = confirmed;
       });
-      // Reload after persist so buckets use server-confirmed floors (and win races).
-      this.feedStore?.onDisplayPrefsChanged();
+      // Only re-trigger apply if server confirmed a different floor than optimistic.
+      if (!areFeedDisplayPrefsEqual(next, confirmed)) {
+        this.feedStore?.onDisplayPrefsChanged();
+      }
     } catch (error) {
       runInAction(() => {
         this.displayPrefs = previous;

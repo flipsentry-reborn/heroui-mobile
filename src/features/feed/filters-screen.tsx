@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -578,7 +579,7 @@ export const FiltersScreen = observer(function FiltersScreen({
 }: {
   onBack: () => void;
 }): JSX.Element {
-  const { filterStore } = useStore();
+  const { filterStore, feedStore } = useStore();
   const { toast } = useToast();
   const [accentForeground] = useThemeColor(["accent-foreground"]);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -591,6 +592,21 @@ export const FiltersScreen = observer(function FiltersScreen({
   useEffect(() => {
     void filterStore.loadFilters();
   }, [filterStore]);
+
+  useFocusEffect(
+    useCallback(() => {
+      filterStore.setFiltersScreenOpen(true);
+      return () => {
+        filterStore.setFiltersScreenOpen(false);
+      };
+    }, [filterStore]),
+  );
+
+  const handleBack = useCallback(() => {
+    // Start wipe/refetch before pop so the applying dialog is visible on return.
+    void feedStore.beginFilterApplyIfNeeded();
+    onBack();
+  }, [feedStore, onBack]);
 
   const openCreate = useCallback(() => {
     setEditing(null);
@@ -680,7 +696,7 @@ export const FiltersScreen = observer(function FiltersScreen({
 
   return (
     <View className="flex-1 bg-background">
-      <FiltersHeader onBack={onBack} />
+      <FiltersHeader onBack={handleBack} />
 
       {initialLoading ? (
         <View className="flex-1">

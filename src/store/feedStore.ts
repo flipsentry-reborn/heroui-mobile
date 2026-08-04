@@ -48,8 +48,6 @@ const FEED_OPEN_LOG = "FeedOpen";
 
 /** Collapse reconnect + AppState resume into one catch-up run. */
 const CATCH_UP_DEBOUNCE_MS = 600;
-/** Coalesce rapid filter / deal-pref toggles into one dirty reload. */
-const FILTER_RELOAD_DEBOUNCE_MS = 350;
 /** Bound live queue while feed tabs are still loading. */
 const PENDING_FEEDS_MAX = 80;
 /** Bound pending image/valuation patches that race ahead of ReceiveFeed. */
@@ -100,6 +98,10 @@ export default class FeedStore {
   layoutModeHydrated = false;
   /** For You → Your Searches accordion open/closed. Persisted locally. */
   yourSearchesExpanded = DEFAULT_YOUR_SEARCHES_EXPANDED;
+  /** True while clearing + refetching after a filter / deal-pref change. */
+  isApplyingFilters = false;
+  /** Set when filters change; consumed on feed focus / in-place apply. */
+  pendingFilterApply = false;
 
   private searchStore: SearchStore | null = null;
   private filterStore: FilterStore | null = null;
@@ -114,10 +116,13 @@ export default class FeedStore {
   /** In-flight loadBucket promises so callers can await a join instead of no-op. */
   private bucketLoadPromises = new Map<string, Promise<void>>();
   private catchUpTimer: ReturnType<typeof setTimeout> | null = null;
-  private filterReloadTimer: ReturnType<typeof setTimeout> | null = null;
   private catchUpInFlight = false;
   private catchUpQueued = false;
   private scrollToTopHandler: (() => void) | null = null;
+  /** When true, next apply also clears/reloads Best Picks. */
+  private pendingIncludeBestPicks = false;
+  private filterApplyGeneration = 0;
+  private filterApplyInFlight: Promise<void> | null = null;
 
   constructor() {
     makeAutoObservable<this, "bucketLoadPromises" | "filterReloadTimer">(
@@ -370,86 +375,165 @@ export default class FeedStore {
     };
   }
 
-  /** After selected filters change — dirty + reload For You buckets (not saved). */
+  /**
+   * Selected filters changed — persist already done by FilterStore.
+   * Defer wipe/reload until feed focus (or apply immediately if not on Filters).
+   */
   onSelectedFiltersChanged(): void {
-    this.scheduleNonSavedBucketsReload({ includeBestPicks: true });
+    this.markFilterApplyPending({ includeBestPicks: true });
+    if (!this.filterStore?.filtersScreenOpen) {
+      void this.beginFilterApplyIfNeeded();
+    }
   }
 
   /**
-   * After score/profit display prefs change:
-   * 1) instantly shrink in-memory lists/shelves to the new floor
-   * 2) debounced force-reload so raised/lowered thresholds refetch from API
-   * Best Picks is unaffected by deal display prefs.
+   * Deal display prefs changed. Best Picks is unaffected.
+   * Defer wipe/reload until feed focus (or apply immediately if not on Filters).
    */
   onDisplayPrefsChanged(): void {
-    this.applyDisplayPrefsLocally();
-    this.scheduleNonSavedBucketsReload({ includeBestPicks: false });
+    this.markFilterApplyPending({ includeBestPicks: false });
+    if (!this.filterStore?.filtersScreenOpen) {
+      void this.beginFilterApplyIfNeeded();
+    }
   }
 
-  private scheduleNonSavedBucketsReload(opts?: {
-    includeBestPicks?: boolean;
-  }): void {
-    const includeBestPicks = opts?.includeBestPicks !== false;
-    const keys = new Set<string>([
-      ...Object.keys(this.lists),
-      ...Object.keys(this.shelves),
-      ...this.loadedBuckets,
-      ...this.hydratedShelves,
-    ]);
-    for (const bucket of keys) {
-      if (bucket === "saved" || bucket === "for-you") continue;
-      if (!includeBestPicks && bucket === "best-picks") continue;
-      this.touchSet("dirtyBuckets", (s) => {
-        s.add(bucket);
-      });
+  markFilterApplyPending(opts?: { includeBestPicks?: boolean }): void {
+    this.pendingFilterApply = true;
+    if (opts?.includeBestPicks) {
+      this.pendingIncludeBestPicks = true;
     }
-    if (this.filterReloadTimer != null) {
-      clearTimeout(this.filterReloadTimer);
-    }
-    this.filterReloadTimer = setTimeout(() => {
-      this.filterReloadTimer = null;
-      void this.reloadDirtyBuckets();
-    }, FILTER_RELOAD_DEBOUNCE_MS);
   }
 
-  /** Drop items that no longer pass deal prefs (cannot restore — reload does). */
-  private applyDisplayPrefsLocally(): void {
-    const prefs = this.displayPrefs();
-    const filterIds = (ids: string[]): string[] =>
-      ids.filter((id) => {
-        const item = this.items.get(id);
-        return item != null && matchesFeedDisplayPrefs(item, prefs);
-      });
-
-    for (const bucket of Object.keys(this.lists)) {
-      if (bucket === "saved" || bucket === "best-picks") continue;
-      const current = this.lists[bucket] ?? [];
-      const next = filterIds(current);
-      if (next.length !== current.length) {
-        this.setListIds(bucket, next);
+  /**
+   * Clear non-saved feed state and refetch For You shelves + active category.
+   * Shows `isApplyingFilters` for the FilterApplyingDialog host.
+   */
+  async beginFilterApplyIfNeeded(): Promise<void> {
+    if (!this.pendingFilterApply) return;
+    if (this.filterApplyInFlight) {
+      await this.filterApplyInFlight;
+      if (this.pendingFilterApply) {
+        await this.beginFilterApplyIfNeeded();
       }
+      return;
     }
-    for (const bucket of Object.keys(this.shelves)) {
-      if (bucket === "saved" || bucket === "best-picks") continue;
-      const current = this.shelves[bucket] ?? [];
-      const next = filterIds(current);
-      if (next.length !== current.length) {
-        this.setShelfIds(bucket, next);
+
+    const run = this.runFilterApply();
+    this.filterApplyInFlight = run;
+    try {
+      await run;
+    } finally {
+      if (this.filterApplyInFlight === run) {
+        this.filterApplyInFlight = null;
       }
     }
   }
 
-  private async reloadDirtyBuckets(): Promise<void> {
-    const dirty = [...this.dirtyBuckets].filter(
-      (bucket) => bucket !== "saved" && bucket !== "for-you",
+  private async runFilterApply(): Promise<void> {
+    const generation = ++this.filterApplyGeneration;
+    const includeBestPicks = this.pendingIncludeBestPicks;
+    runInAction(() => {
+      this.pendingFilterApply = false;
+      this.pendingIncludeBestPicks = false;
+      this.isApplyingFilters = true;
+    });
+
+    try {
+      runInAction(() => {
+        this.clearNonSavedFeedState(includeBestPicks);
+      });
+
+      const shelfKeys = this.forYouShelfKeysForApply(includeBestPicks);
+      const active = this.activeCategory;
+      const tasks: Promise<void>[] = [
+        this.loadForYouShelves(shelfKeys, { force: true }),
+      ];
+      if (active !== "for-you" && active !== "saved") {
+        if (includeBestPicks || active !== "best-picks") {
+          tasks.push(this.loadBucket(active, { force: true }));
+        }
+      }
+      await Promise.all(tasks);
+    } finally {
+      if (generation === this.filterApplyGeneration) {
+        runInAction(() => {
+          this.isApplyingFilters = false;
+        });
+        this.flushPendingFeeds();
+      }
+    }
+  }
+
+  /** Wipe lists/shelves/pagination for buckets affected by the filter change. */
+  private clearNonSavedFeedState(includeBestPicks: boolean): void {
+    const keep = (bucket: string) =>
+      bucket === "saved" ||
+      bucket === "for-you" ||
+      (!includeBestPicks && bucket === "best-picks");
+
+    const nextLists: Record<string, string[]> = {};
+    for (const [key, ids] of Object.entries(this.lists)) {
+      if (keep(key)) nextLists[key] = ids;
+    }
+    this.lists = nextLists;
+
+    const nextShelves: Record<string, string[]> = {};
+    for (const [key, ids] of Object.entries(this.shelves)) {
+      if (keep(key)) nextShelves[key] = ids;
+    }
+    this.shelves = nextShelves;
+
+    const nextPagination: Record<string, Pagination | null> = {};
+    for (const [key, page] of Object.entries(this.paginationByBucket)) {
+      if (keep(key)) nextPagination[key] = page;
+    }
+    this.paginationByBucket = nextPagination;
+
+    const nextDeferred: Record<string, string[]> = {};
+    for (const [key, ids] of Object.entries(this.deferredIdsByBucket)) {
+      if (keep(key)) nextDeferred[key] = ids;
+    }
+    this.deferredIdsByBucket = nextDeferred;
+
+    this.dirtyBuckets = new Set(
+      [...this.dirtyBuckets].filter((bucket) => keep(bucket)),
     );
-    await Promise.all(
-      dirty.map((bucket) => {
-        const asShelf =
-          this.hydratedShelves.has(bucket) && !(bucket in this.lists);
-        return this.loadBucket(bucket, { force: true, asShelf });
-      }),
+    this.loadedBuckets = new Set(
+      [...this.loadedBuckets].filter((bucket) => keep(bucket)),
     );
+    this.hydratedShelves = new Set(
+      [...this.hydratedShelves].filter((bucket) => keep(bucket)),
+    );
+    this.frozenBuckets = new Set(
+      [...this.frozenBuckets].filter((bucket) => keep(bucket)),
+    );
+    this.liveHeadIds = new Set();
+    this.pendingFeeds = [];
+  }
+
+  private forYouShelfKeysForApply(includeBestPicks: boolean): string[] {
+    const shelves = this.searchStore?.forYouShelves ?? [];
+    const searchChildren = this.searchStore?.yourSearchChildren ?? [];
+    const filterChildren = this.searchStore?.yourFilterChildren ?? [];
+    const keys: string[] = [];
+
+    for (const shelf of shelves) {
+      if (shelf.isAccordion) {
+        for (const child of searchChildren) keys.push(child.key);
+        continue;
+      }
+      if (shelf.isExpandedGroup) {
+        for (const child of filterChildren) keys.push(child.key);
+        continue;
+      }
+      if (shelf.key === "your-searches" || shelf.key === "your-filters") {
+        continue;
+      }
+      if (shelf.key === "saved") continue;
+      if (shelf.key === "best-picks" && !includeBestPicks) continue;
+      keys.push(shelf.key);
+    }
+    return keys;
   }
 
   private touchSet(
@@ -944,6 +1028,17 @@ export default class FeedStore {
       searchGroupIds: raw.searchGroupIds ?? [],
     };
 
+    // During filter apply, queue until lists are rebuilt from HTTP.
+    if (this.isApplyingFilters || this.pendingFilterApply) {
+      runInAction(() => {
+        this.pendingFeeds.push(feed);
+        if (this.pendingFeeds.length > PENDING_FEEDS_MAX) {
+          this.pendingFeeds = this.pendingFeeds.slice(-PENDING_FEEDS_MAX);
+        }
+      });
+      return;
+    }
+
     // upsertItem also merges any pending image/valuation patches that raced ahead.
     const tabs = this.searchStore?.feedTabs ?? [];
     // Resolve buckets after upsert so pending valuation is visible on the item.
@@ -1212,6 +1307,8 @@ export default class FeedStore {
     this.catchUpInFlight = false;
     this.catchUpQueued = false;
     this.scrollToTopHandler = null;
+    this.filterApplyInFlight = null;
+    this.filterApplyGeneration += 1;
     this.items.clear();
     this.lists = {};
     this.shelves = {};
@@ -1230,5 +1327,8 @@ export default class FeedStore {
     this.hubStatus = "disconnected";
     this.activeCategory = "for-you";
     this.lastError = null;
+    this.isApplyingFilters = false;
+    this.pendingFilterApply = false;
+    this.pendingIncludeBestPicks = false;
   }
 }

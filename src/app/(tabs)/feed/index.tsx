@@ -1,9 +1,10 @@
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState, type JSX } from "react";
 import { View } from "react-native";
 import type PagerView from "react-native-pager-view";
 
+import { FilterApplyingDialog } from "@/features/feed/filter-applying-dialog";
 import { FeedHeader } from "@/features/feed/feed-header";
 import { FeedPager } from "@/features/feed/feed-pager";
 import { useBottomChrome } from "@/contexts/bottom-chrome-context";
@@ -27,6 +28,12 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
       void searchStore.loadFeedTabAvailability();
     }
   }, [searchStore]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void feedStore.beginFilterApplyIfNeeded();
+    }, [feedStore]),
+  );
 
   useEffect(() => {
     feedStore.setActiveCategory(activeCategory);
@@ -112,6 +119,7 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
         onOpenCategory={handleCategorySelect}
         onPressItem={handlePressItem}
       />
+      <FilterApplyingDialog />
     </View>
   );
 });

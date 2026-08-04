@@ -77,14 +77,6 @@ export const FeedDetailMetaSection = observer(function FeedDetailMetaSection({
   const distanceUnit = userStore.preferences?.distanceUnit ?? "mi";
   const mileageDisplay = resolveFeedMileageDisplay(item);
 
-  if (item.foundInSeconds != null) {
-    rows.push({
-      label: "Found in",
-      value: formatFoundInSeconds(item.foundInSeconds),
-      valueClassName: "text-success",
-    });
-  }
-
   if (mileageDisplay != null) {
     rows.push({
       label: "Odometer",

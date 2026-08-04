@@ -1,6 +1,5 @@
 import type { JSX, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { InteractionManager } from "react-native";
 import { BottomSheet } from "heroui-native";
 
 /** Keep mounted long enough for gorhom to finish the close spring. */
@@ -16,8 +15,8 @@ const CLOSE_THEN_UNMOUNT_MS = 350;
  * Parent-driven `visible={false}` also animates out before unmount (does not call
  * `onClose` again — the parent already closed).
  *
- * Open is deferred past press/menu/scroll interactions + two frames so dynamic
- * sizing can measure content (immediate open from in-scroll buttons often snaps short).
+ * Open is deferred until idle + two frames so dynamic sizing can measure content
+ * (immediate open from in-scroll buttons often snaps short).
  */
 export function SheetShell({
   visible,
@@ -74,17 +73,20 @@ export function SheetShell({
       clearOpenRafs();
       mountedRef.current = true;
       setMounted(true);
-      const task = InteractionManager.runAfterInteractions(() => {
-        openRaf1Ref.current = requestAnimationFrame(() => {
-          openRaf1Ref.current = null;
-          openRaf2Ref.current = requestAnimationFrame(() => {
-            openRaf2Ref.current = null;
-            setIsOpen(true);
+      const idleHandle = requestIdleCallback(
+        () => {
+          openRaf1Ref.current = requestAnimationFrame(() => {
+            openRaf1Ref.current = null;
+            openRaf2Ref.current = requestAnimationFrame(() => {
+              openRaf2Ref.current = null;
+              setIsOpen(true);
+            });
           });
-        });
-      });
+        },
+        { timeout: 500 },
+      );
       return () => {
-        task.cancel();
+        cancelIdleCallback(idleHandle);
         clearOpenRafs();
       };
     }

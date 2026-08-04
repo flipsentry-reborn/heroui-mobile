@@ -139,7 +139,7 @@ export function FeedDetailStickyHeader({
             <View className="flex-row items-center gap-2">
               {foundInLabel ? (
                 <Typography type="body-xs" className="text-[11px] text-muted">
-                  Found in {foundInLabel}
+                  Finding Time {foundInLabel}
                 </Typography>
               ) : null}
               {locationLabel ? (

@@ -22,6 +22,7 @@ import { AiEstimationIcon } from "@/components/icons/ai-estimation-icon";
 import { FeedDetailActions } from "@/features/feed/feed-detail-actions";
 import { FeedDetailGallery } from "@/features/feed/feed-detail-gallery";
 import { StatusBadge, ValuationBadge } from "@/features/feed/feed-badge";
+import { FeedDetailFindingTime } from "@/features/feed/feed-detail-finding-time";
 import {
   FeedDetailMetaSection,
   formatFoundInSeconds,
@@ -350,7 +351,13 @@ export function FeedDetail({
             ) : null}
           </View>
 
-          <View>
+          <View className="gap-2.5">
+            {item.foundInSeconds != null ? (
+              <FeedDetailFindingTime
+                foundInSeconds={item.foundInSeconds}
+                platform={item.platform}
+              />
+            ) : null}
             <FeedDetailMetaSection item={item} />
             <View
               ref={stickyAnchorRef}

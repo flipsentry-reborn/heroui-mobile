@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { observer } from "mobx-react-lite";
 import type { JSX, MutableRefObject } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { InteractionManager, View } from "react-native";
+import { View } from "react-native";
 import {
   BottomSheet,
   Switch,
@@ -671,40 +671,43 @@ export const SearchBottomSheet = observer(function SearchBottomSheet({
     openedSectionKeyRef.current = sectionKey;
     setRevealParentAfterShortcut(false);
 
-    // Defer past menu dismiss + edit prefill so nested SheetShell can measure fully
+    // Defer until idle + 2 frames so nested SheetShell can measure fully
     // (same class of bug as Filters "New Filter" vs Actions → Edit).
-    const task = InteractionManager.runAfterInteractions(() => {
-      requestAnimationFrame(() => {
+    const idleHandle = requestIdleCallback(
+      () => {
         requestAnimationFrame(() => {
-          switch (initialSection) {
-            case "location":
-            case "platforms":
-              setLocationOpen(true);
-              break;
-            case "makes":
-              setCarMakesOpen(true);
-              break;
-            case "price":
-              setPriceOpen(true);
-              break;
-            case "year":
-              setYearOpen(true);
-              break;
-            case "mileage":
-              setMileageOpen(true);
-              break;
-            case "models":
-              setIphoneModelsOpen(true);
-              break;
-            case "keywords":
-              setKeywordsOpen(true);
-              break;
-          }
+          requestAnimationFrame(() => {
+            switch (initialSection) {
+              case "location":
+              case "platforms":
+                setLocationOpen(true);
+                break;
+              case "makes":
+                setCarMakesOpen(true);
+                break;
+              case "price":
+                setPriceOpen(true);
+                break;
+              case "year":
+                setYearOpen(true);
+                break;
+              case "mileage":
+                setMileageOpen(true);
+                break;
+              case "models":
+                setIphoneModelsOpen(true);
+                break;
+              case "keywords":
+                setKeywordsOpen(true);
+                break;
+            }
+          });
         });
-      });
-    });
+      },
+      { timeout: 500 },
+    );
     return () => {
-      task.cancel();
+      cancelIdleCallback(idleHandle);
     };
   }, [visible, initialSection, editingGroup]);
 

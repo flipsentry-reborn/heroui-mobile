@@ -116,6 +116,14 @@ const RootLayoutContent = observer(function RootLayoutContent(): JSX.Element {
             }}
           />
           <Stack.Screen
+            name="feed-categories"
+            options={{
+              animation: "fade",
+              gestureEnabled: true,
+              contentStyle: { backgroundColor: isDark ? "#000000" : "#ffffff" },
+            }}
+          />
+          <Stack.Screen
             name="settings"
             options={{
               headerShown: false,

@@ -5,7 +5,7 @@ import { View } from "react-native";
 import type PagerView from "react-native-pager-view";
 
 import { FilterApplyingDialog } from "@/features/feed/filter-applying-dialog";
-import { FeedCategoryPicker } from "@/features/feed/feed-category-picker";
+import { FeedCategoryPickerFab } from "@/features/feed/feed-category-picker";
 import { FeedHeader } from "@/features/feed/feed-header";
 import { FeedPager } from "@/features/feed/feed-pager";
 import { useBottomChrome } from "@/contexts/bottom-chrome-context";
@@ -33,7 +33,24 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
   useFocusEffect(
     useCallback(() => {
       void feedStore.beginFilterApplyIfNeeded();
-    }, [feedStore]),
+      // Category picker is a root stack screen — sync selection on return.
+      const fromPicker = feedStore.activeCategory;
+      setActiveCategory((current) => {
+        if (
+          !fromPicker ||
+          fromPicker === current ||
+          !categories.some((c) => c.key === fromPicker)
+        ) {
+          return current;
+        }
+        resetTabBar();
+        const index = categories.findIndex((c) => c.key === fromPicker);
+        if (index >= 0) {
+          pagerRef.current?.setPage(index);
+        }
+        return fromPicker;
+      });
+    }, [categories, feedStore, resetTabBar]),
   );
 
   useEffect(() => {
@@ -120,11 +137,7 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
         onOpenCategory={handleCategorySelect}
         onPressItem={handlePressItem}
       />
-      <FeedCategoryPicker
-        categories={categories}
-        activeCategory={activeCategory}
-        onSelect={handleCategorySelect}
-      />
+      <FeedCategoryPickerFab />
       <FilterApplyingDialog />
     </View>
   );

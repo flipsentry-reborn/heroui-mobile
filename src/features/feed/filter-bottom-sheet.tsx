@@ -352,6 +352,7 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
         max={maxPrice}
         onMinChange={setMinPrice}
         onMaxChange={setMaxPrice}
+        groupThousands
       />
       <SearchBottomSheetPriceSheet
         isOpen={isOpen && yearOpen}
@@ -372,6 +373,7 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
         max={maxMileage}
         onMinChange={setMinMileage}
         onMaxChange={setMaxMileage}
+        groupThousands
       />
       <SearchBottomSheetKeywordsSheet
         isOpen={isOpen && keywordsOpen}

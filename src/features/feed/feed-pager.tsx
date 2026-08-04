@@ -42,12 +42,6 @@ export function FeedPager({
     });
   }, [activeCategory]);
 
-  const swipeEnabled = activeCategory !== "for-you";
-
-  useEffect(() => {
-    pagerRef.current?.setScrollEnabled(swipeEnabled);
-  }, [pagerRef, swipeEnabled]);
-
   // Keep the active tab index in sync when availability inserts tabs —
   // without remounting PagerView (that remount blanked For You mid-load).
   useEffect(() => {
@@ -79,7 +73,7 @@ export function FeedPager({
       style={{ flex: 1 }}
       initialPage={initialPage}
       offscreenPageLimit={1}
-      scrollEnabled={swipeEnabled}
+      scrollEnabled={false}
       onPageSelected={handlePageSelected}
     >
       {categories.map((category) => (

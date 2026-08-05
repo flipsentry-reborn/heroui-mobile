@@ -69,7 +69,6 @@ async function startFeedHubConnection(): Promise<void> {
     getAccessToken: () => stores.commonStore.token ?? "",
     handlers: {
       onReceiveFeed: (feed) => feedStore.handleReceiveFeed(feed),
-      onImageUpdate: (update) => feedStore.handleFeedImageUpdate(update),
       onValuationUpdate: (update) =>
         feedStore.handleFeedValuationUpdate(update),
       onReconnected: () => feedStore.onHubReconnected(),

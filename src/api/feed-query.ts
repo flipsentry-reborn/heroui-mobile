@@ -35,11 +35,13 @@ export function buildLiveFeedParams(
     }
   } else if (category === "sold") {
     appendSoldParams(qs, params);
+  } else if (category === "price-drop") {
+    qs.append("isPriceDrop", "true");
   }
 
-  // Saved never scopes by filterIds. Other categories may combine category
-  // flags with filterIds and/or groupIds (selected filters + your searches).
-  if (category !== "saved") {
+  // Saved / Price Dropped never scope by filterIds.
+  // Other categories may combine category flags with filterIds and/or groupIds.
+  if (category !== "saved" && category !== "price-drop") {
     const filterIds =
       params.filterIds != null && params.filterIds.length > 0
         ? params.filterIds
@@ -68,13 +70,13 @@ export function buildLiveFeedParams(
     }
   }
 
-  // Default clean bucket for main feed
-  if (category !== "saved" && category !== "sold") {
+  // Default clean bucket for main feed (Price Dropped bypasses buckets server-side).
+  if (category !== "saved" && category !== "sold" && category !== "price-drop") {
     qs.append("contentBucket", "Clean");
   }
 
-  // Best Picks uses its own score floor — ignore deal display prefs.
-  if (category !== "best-picks") {
+  // Best Picks / Price Dropped use their own floors — ignore deal display prefs.
+  if (category !== "best-picks" && category !== "price-drop") {
     // 100 = all scores (no server buy-signal filter).
     if (
       params.minBuySignal != null &&
@@ -146,12 +148,10 @@ export function applyClientCategoryFilter<T extends {
     category === "all" ||
     category === "saved" ||
     category === "best-picks" ||
-    category === "sold"
+    category === "sold" ||
+    category === "price-drop"
   ) {
     return items;
-  }
-  if (category === "price-drop") {
-    return items.filter((i) => (displayValuation(i)?.profit ?? 0) > 0);
   }
   if (category === "car" || category === "type:car") {
     return items.filter(

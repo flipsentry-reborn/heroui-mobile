@@ -86,6 +86,8 @@ export const NotificationSettingsScreen = observer(
           scheduledSilenceStartHour: 22,
           scheduledSilenceEndHour: 7,
           scheduledSilenceTimeZoneId: getDeviceTimeZoneId(),
+          priceDropSavedEnabled: true,
+          priceDropViewedEnabled: true,
           isCurrentlySilenced: false,
           silenceReason: null,
         } satisfies UserNotificationSettings);
@@ -144,6 +146,8 @@ export const NotificationSettingsScreen = observer(
 
     const pushEnabled = settings?.pushNotificationsEnabled ?? true;
     const quietEnabled = settings?.scheduledSilenceEnabled ?? false;
+    const priceDropSaved = settings?.priceDropSavedEnabled ?? true;
+    const priceDropViewed = settings?.priceDropViewedEnabled ?? true;
     const startHour = settings?.scheduledSilenceStartHour ?? 22;
     const endHour = settings?.scheduledSilenceEndHour ?? 7;
     const busy = pendingKey != null;
@@ -248,6 +252,44 @@ export const NotificationSettingsScreen = observer(
                       />
                     </View>
                   ) : null}
+                </SettingsSection>
+
+                <SettingsSection title="Price Drop">
+                  <SettingsRow
+                    icon="pricetag-outline"
+                    title="Saved"
+                    description="Alert when a favorited listing drops in price"
+                    showChevron={false}
+                    right={
+                      <Switch
+                        isSelected={priceDropSaved}
+                        isDisabled={busy}
+                        onSelectedChange={(next) =>
+                          void updateSettings("price-drop-saved", {
+                            priceDropSavedEnabled: next,
+                          })
+                        }
+                      />
+                    }
+                  />
+                  <SettingsRow
+                    icon="eye-outline"
+                    title="Viewed"
+                    description="Alert when a listing you opened drops in price"
+                    showChevron={false}
+                    isLast
+                    right={
+                      <Switch
+                        isSelected={priceDropViewed}
+                        isDisabled={busy}
+                        onSelectedChange={(next) =>
+                          void updateSettings("price-drop-viewed", {
+                            priceDropViewedEnabled: next,
+                          })
+                        }
+                      />
+                    }
+                  />
                 </SettingsSection>
 
                 <SettingsSection title="System">

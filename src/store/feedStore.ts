@@ -33,11 +33,7 @@ import {
 } from "@/features/feed/your-searches-expanded";
 import { debugLog } from "@/lib/debug-log";
 import { toUserErrorMessage } from "@/lib/user-error-message";
-import type {
-  FeedImageUpdateData,
-  FeedItem,
-  FeedValuationUpdateData,
-} from "@/models/feed";
+import type { FeedItem, FeedValuationUpdateData } from "@/models/feed";
 import type { Pagination } from "@/models/pagination";
 import type FilterStore from "@/store/filterStore";
 import type SearchStore from "@/store/searchStore";
@@ -107,7 +103,6 @@ export default class FeedStore {
   private filterStore: FilterStore | null = null;
   private pendingFeeds: FeedItem[] = [];
   /** Patches that arrived before the feed was in `items` (SignalR race). */
-  private pendingImageUpdates = new Map<string, FeedImageUpdateData>();
   private pendingValuationUpdates = new Map<
     string,
     FeedValuationUpdateData
@@ -306,14 +301,11 @@ export default class FeedStore {
   }
 
   upsertItem(feed: FeedItem): void {
-    const pendingImage = this.pendingImageUpdates.get(feed.id);
     const pendingValuation = this.pendingValuationUpdates.get(feed.id);
-    if (pendingImage) this.pendingImageUpdates.delete(feed.id);
     if (pendingValuation) this.pendingValuationUpdates.delete(feed.id);
 
     const merged: FeedItem = {
       ...feed,
-      ...(pendingImage?.images ? { images: pendingImage.images } : null),
       ...(pendingValuation
         ? {
             compValuation:
@@ -1103,25 +1095,6 @@ export default class FeedStore {
     });
   }
 
-  handleFeedImageUpdate(update: FeedImageUpdateData): void {
-    if (!update.images) return;
-    const existing = this.items.get(update.feedId);
-    if (!existing) {
-      this.queuePendingPatch(
-        this.pendingImageUpdates,
-        update.feedId,
-        update,
-      );
-      return;
-    }
-    runInAction(() => {
-      this.items.set(update.feedId, {
-        ...existing,
-        images: update.images,
-      });
-    });
-  }
-
   handleFeedValuationUpdate(update: FeedValuationUpdateData): void {
     const existing = this.items.get(update.feedId);
     if (!existing) {
@@ -1330,7 +1303,6 @@ export default class FeedStore {
     this.hydratedShelves = new Set();
     this.frozenBuckets = new Set();
     this.pendingFeeds = [];
-    this.pendingImageUpdates.clear();
     this.pendingValuationUpdates.clear();
     this.liveHeadIds = new Set();
     this.hubStatus = "disconnected";

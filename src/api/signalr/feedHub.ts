@@ -11,11 +11,7 @@ import { AppState, type AppStateStatus } from "react-native";
 
 import { API_URL } from "@/api/config";
 import { debugLog } from "@/lib/debug-log";
-import type {
-  FeedImageUpdateData,
-  FeedItem,
-  FeedValuationUpdateData,
-} from "@/models/feed";
+import type { FeedItem, FeedValuationUpdateData } from "@/models/feed";
 
 const LOG = "FeedHub";
 
@@ -26,7 +22,6 @@ const JITTER_RATIO = 0.15;
 
 export type FeedHubHandlers = {
   onReceiveFeed: (feed: FeedItem) => void;
-  onImageUpdate?: (update: FeedImageUpdateData) => void;
   onValuationUpdate?: (update: FeedValuationUpdateData) => void;
   onReconnected?: () => void;
   onStatusChange?: (
@@ -109,9 +104,6 @@ function bindMessageHandlers(hub: HubConnection): void {
 
   hub.on("ReceiveFeed", (feed: FeedItem) => {
     handlers?.onReceiveFeed(feed);
-  });
-  hub.on("ReceiveFeedImageUpdate", (update: FeedImageUpdateData) => {
-    handlers?.onImageUpdate?.(update);
   });
   hub.on("ReceiveFeedValuationUpdate", (update: FeedValuationUpdateData) => {
     handlers?.onValuationUpdate?.(update);

@@ -71,6 +71,8 @@ const defaultNotificationSettings: UserNotificationSettings = {
   scheduledSilenceStartHour: 22,
   scheduledSilenceEndHour: 7,
   scheduledSilenceTimeZoneId: null,
+  priceDropSavedEnabled: true,
+  priceDropViewedEnabled: true,
   isCurrentlySilenced: false,
   silenceReason: null,
 };

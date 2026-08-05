@@ -21,6 +21,8 @@ export interface UserNotificationSettings {
   scheduledSilenceStartHour: number;
   scheduledSilenceEndHour: number;
   scheduledSilenceTimeZoneId: string | null;
+  priceDropSavedEnabled: boolean;
+  priceDropViewedEnabled: boolean;
   isCurrentlySilenced: boolean;
   silenceReason: "push_disabled" | "scheduled" | null;
 }

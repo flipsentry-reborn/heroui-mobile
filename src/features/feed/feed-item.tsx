@@ -286,6 +286,17 @@ function FeedItemInner({
           }`}
         >
           <View className="flex-row items-center gap-1">
+            {feed.isPriceDrop &&
+            feed.previousPrice != null &&
+            feed.previousPrice > feed.price ? (
+              <Typography
+                type="body-xs"
+                className={`${estClass} text-muted line-through`}
+                numberOfLines={1}
+              >
+                {formatPrice(feed.previousPrice, feed.currencySymbol)}
+              </Typography>
+            ) : null}
             <Typography
               type="body-sm"
               weight="bold"

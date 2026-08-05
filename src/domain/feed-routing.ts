@@ -67,7 +67,9 @@ export function buySignalOf(feed: FeedItem): number {
 }
 
 export function isPriceDropCandidate(feed: FeedItem): boolean {
-  return (resolveDisplayValuation(feed)?.profit ?? 0) > 0;
+  if (feed.isPriceDrop === true) return true;
+  const previous = feed.previousPrice;
+  return previous != null && previous > feed.price;
 }
 
 /**

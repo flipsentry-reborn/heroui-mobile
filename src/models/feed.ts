@@ -162,6 +162,10 @@ export interface FeedItem {
   title: string;
   description: string;
   price: number;
+  /** Seller price before last drop; present when isPriceDrop. */
+  previousPrice?: number | null;
+  priceDroppedAt?: string | null;
+  isPriceDrop?: boolean;
   location: {
     latitude: number;
     longitude: number;
@@ -442,6 +446,9 @@ type FeedStatusSource = Pick<
   | "vehicleSpecifications"
   | "compValuation"
   | "externalValuation"
+  | "isPriceDrop"
+  | "previousPrice"
+  | "price"
 >;
 
 function keywordSignalCount(matches?: KeywordMatch[], texts?: string[]): number {
@@ -465,6 +472,14 @@ export function getOrderedStatusBadges(feed?: FeedStatusSource | null): string[]
     );
   }
 
+  const badgesFromFlags: string[] = [];
+  if (
+    feed.isPriceDrop === true ||
+    (feed.previousPrice != null && feed.previousPrice > (feed.price ?? 0))
+  ) {
+    badgesFromFlags.push("Price Dropped");
+  }
+
   const spamCount = keywordSignalCount(feed.scamKeywords, feed.scamKeywordTexts);
   const hasMajorDamaged =
     (feed.isMajorDamaged ?? false) ||
@@ -485,7 +500,7 @@ export function getOrderedStatusBadges(feed?: FeedStatusSource | null): string[]
     (feed.isNegociable ?? false) ||
     keywordSignalCount(feed.negociableKeywords, feed.negociableKeywordTexts) > 0;
 
-  const badges: string[] = [];
+  const badges: string[] = [...badgesFromFlags];
   if (feed.isDealership) badges.push(isCarFeed ? "Dealer" : "Business");
   if (!feed.isDealership && spamCount > 0) badges.push("Spam");
   if (hasSalvageTitle && !hasRebuiltTitle) badges.push("Salvage");

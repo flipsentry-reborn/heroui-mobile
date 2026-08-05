@@ -131,8 +131,8 @@ function matchesCategory(
     return (resolveDisplayValuation(item)?.buySignal ?? 0) >= 26;
   }
   if (category === "price-drop") {
-    // Mock: listings with positive estimated profit count as price drops
-    return (resolveDisplayValuation(item)?.profit ?? 0) > 0;
+    if (item.isPriceDrop === true) return true;
+    return item.previousPrice != null && item.previousPrice > item.price;
   }
   if (category === "car" || category === "type:car") {
     return (

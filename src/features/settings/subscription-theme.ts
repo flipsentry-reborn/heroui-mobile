@@ -1,8 +1,8 @@
 import type { PlanAccent } from "@/mocks/data/subscription";
 
 /**
- * Pre–bright-dark canvas (`global.css` before elevated outdoor wash).
- * Used on subscription page in dark mode only — near-black Uber wash.
+ * Near-black Uber wash for subscription (and auth) — darker than app
+ * dark `--background` (#252729 Best Picks wash).
  * Hex (not oklch): ScrollShadow → colorKit only parses hex/rgb/hsl.
  * `oklch(12% 0 0)` ≈ `#060606`.
  */

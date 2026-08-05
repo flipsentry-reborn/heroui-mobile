@@ -1,8 +1,8 @@
 /*
  * HeroUI Native Theme - light canvases use HeroUI default neutrals;
  * accent is Uber-inspired (black / white).
- * Dark neutrals: elevated “bright dark” for outdoor readability
- * (#2F3136 wash / #3A3C42 cards) — lighter than Facebook / mobile-app.
+ * Dark neutrals: Best Picks wash (#252729) + lifted surfaces —
+ * aligned with mobile-app; auth/subscription keep #060606.
  * Restart Metro after theme changes.
  * @see https://heroui.com/docs/native/getting-started/theming
  */
@@ -109,32 +109,31 @@
   }
 
   /*
-   * Elevated bright dark (outdoor-friendly)
-   * Hex refs: wash #2F3136 · card #3A3C42 · secondary #484A51 · tertiary #565960
-   * border #5C5E66 · text #FFFFFF · muted #F0F0F0 (near-white secondary)
-   * Brighter than Facebook (#18191A) and mobile-app (#252729).
+   * Best Picks wash (former surface-inset) + lifted surfaces
+   * Hex refs: inset #1A1B1E · wash #252729 · card #2F3136 · secondary #3A3C42
+   * tertiary #484A51 · border #565960 · text #FFFFFF · muted mid-gray
    */
   @variant dark {
-    --background: oklch(31.31% 0.0093 268.37);
+    /* Former Best Picks inset — now the app page wash. */
+    --background: oklch(26.2% 0.0075 268);
     --foreground: oklch(100% 0 0);
 
-    --surface: oklch(35.65% 0.0107 271.11);
+    --surface: oklch(31.31% 0.0093 268.37);
     --surface-foreground: oklch(100% 0 0);
-    --surface-secondary: oklch(40.98% 0.0119 273.13);
+    --surface-secondary: oklch(35.65% 0.0107 271.11);
     --surface-secondary-foreground: oklch(100% 0 0);
-    --surface-tertiary: oklch(46.38% 0.0119 267.25);
+    --surface-tertiary: oklch(40.98% 0.0119 273.13);
     --surface-tertiary-foreground: oklch(100% 0 0);
-    /* Darker than wash (#2F3136) — toward mobile-app #252729. */
-    --surface-inset: oklch(26.2% 0.0075 268);
+    /* Recessed below wash — Best Picks / Your Filters shelves. */
+    --surface-inset: oklch(20.5% 0.006 268);
 
-    --overlay: oklch(35.65% 0.0107 271.11);
+    --overlay: oklch(31.31% 0.0093 268.37);
     --overlay-foreground: oklch(100% 0 0);
     --backdrop: oklch(0% 0 0 / 50%);
 
-    /* Near-white secondary — still readable outdoors */
-    --muted: oklch(96% 0 0);
+    --muted: oklch(78% 0 0);
 
-    --default: oklch(40.98% 0.0119 273.13);
+    --default: oklch(35.65% 0.0107 271.11);
     --default-foreground: oklch(100% 0 0);
 
     /* Uber dark: white primary */
@@ -142,10 +141,10 @@
     --accent-foreground: oklch(0% 0 0);
 
     /* Lift above surface so inputs read on ListGroup cards */
-    --field-background: oklch(40.98% 0.0119 273.13);
+    --field-background: oklch(35.65% 0.0107 271.11);
     --field-foreground: oklch(100% 0 0);
-    --field-placeholder: oklch(92% 0 0);
-    --field-border: oklch(48.29% 0.0130 274.69);
+    --field-placeholder: oklch(74% 0 0);
+    --field-border: oklch(46.38% 0.0119 267.25);
 
     --success: oklch(0.6514 0.1321 156.22);
     --success-foreground: oklch(12% 0 0);
@@ -156,11 +155,11 @@
     --danger: oklch(0.7044 0.1872 23.19);
     --danger-foreground: oklch(12% 0 0);
 
-    --segment: oklch(46.38% 0.0119 267.25);
+    --segment: oklch(40.98% 0.0119 273.13);
     --segment-foreground: oklch(100% 0 0);
 
-    --border: oklch(48.29% 0.0130 274.69);
-    --separator: oklch(48.29% 0.0130 274.69);
+    --border: oklch(46.38% 0.0119 267.25);
+    --separator: oklch(46.38% 0.0119 267.25);
     --focus: var(--accent);
     --link: oklch(100% 0 0);
 

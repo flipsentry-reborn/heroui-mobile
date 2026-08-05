@@ -13,7 +13,7 @@ import { SUBSCRIPTION_DARK_BACKGROUND } from "@/features/settings/subscription-t
  * Auth stack: near-black canvas + force Uniwind dark so Input/field tokens
  * match in-app dark fields (no white boxes on #060606).
  * Also pins status / system chrome + nav theme to the same #060606 so
- * slide/back gestures don't flash the elevated dark wash.
+ * slide/back gestures don't flash the app dark wash (#252729).
  */
 export default function AuthLayout(): JSX.Element {
   const { theme } = useUniwind();
@@ -55,7 +55,7 @@ export default function AuthLayout(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Root layout syncs SystemUI to elevated dark `--background`; re-pin auth canvas.
+  // Root layout syncs SystemUI to app dark `--background`; re-pin auth canvas.
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(SUBSCRIPTION_DARK_BACKGROUND);
   }, [background]);

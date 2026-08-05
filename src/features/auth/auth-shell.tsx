@@ -21,7 +21,7 @@ const LOGO_HEIGHT = 40;
 /** Space for KeyboardToolbar above the keyboard (HeroUI / Expo form pattern). */
 const KEYBOARD_TOOLBAR_OFFSET = 62;
 
-/** Match auth canvas `#060606` — default toolbar uses elevated gray. */
+/** Match auth canvas `#060606` — default toolbar uses theme background. */
 const AUTH_KEYBOARD_TOOLBAR_THEME = {
   light: {
     primary: "#FAFAFA",

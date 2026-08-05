@@ -61,8 +61,15 @@ const FOR_YOU_ACCORDION_LAYOUT = LinearTransition.springify()
   .mass(2);
 
 /** Best Picks + Your Filters — recessed darker panel (shared). */
-const FOR_YOU_INSET_SHELF_CLASS =
-  "w-full overflow-hidden rounded-none rounded-tl-2xl rounded-bl-2xl bg-surface-inset px-0 py-2";
+function forYouInsetShelfClass(roundTop: boolean, roundBottom: boolean): string {
+  return [
+    "w-full overflow-hidden rounded-none bg-surface-inset px-0 py-2",
+    roundTop ? "rounded-tl-2xl" : "",
+    roundBottom ? "rounded-bl-2xl" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
 
 function selectedFiltersLabel(count: number): string {
   return count === 1
@@ -125,7 +132,7 @@ function SelectedFiltersBanner({
   return (
     <PressableFeedback
       onPress={onPress}
-      className="mx-3 mt-3 mb-1 overflow-hidden rounded-2xl border border-border bg-surface-secondary"
+      className="mx-3 mt-3 mb-0 overflow-hidden rounded-2xl border border-border bg-surface-secondary"
       animation={{ scale: { value: 0.99 } }}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
@@ -234,6 +241,10 @@ type ForYouRow =
       items: FeedModel[];
       pending: boolean;
     };
+
+function isInsetForYouRow(row: ForYouRow): boolean {
+  return row.type === "featured" || row.type === "expanded-group";
+}
 
 /** Matches FeedItem rail footprint (187×168 image + text). */
 function ShelfCardSkeletonRail(): JSX.Element {
@@ -609,7 +620,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
   );
 
   const renderExpandedGroup = useCallback(
-    (shelf: ShelfDef) => {
+    (shelf: ShelfDef, roundTop: boolean, roundBottom: boolean) => {
       const children = [...groupChildrenFor(shelf.key)].sort((a, b) =>
         a.label.localeCompare(b.label),
       );
@@ -618,9 +629,11 @@ export const FeedForYouPage = observer(function FeedForYouPage({
         <StyledAnimatedView
           key={shelf.key}
           layout={AccordionLayoutTransition}
-          className="mb-2.5"
         >
-          <Surface variant="transparent" className={FOR_YOU_INSET_SHELF_CLASS}>
+          <Surface
+            variant="transparent"
+            className={forYouInsetShelfClass(roundTop, roundBottom)}
+          >
             <View className="mb-1 px-3 py-0.5">
               <Typography
                 type="body"
@@ -648,7 +661,6 @@ export const FeedForYouPage = observer(function FeedForYouPage({
         <StyledAnimatedView
           key={shelf.key}
           layout={AccordionLayoutTransition}
-          className="mb-2.5"
         >
           <Surface
             variant="default"
@@ -725,12 +737,18 @@ export const FeedForYouPage = observer(function FeedForYouPage({
   );
 
   const renderRow = useCallback(
-    (item: ForYouRow) => {
+    (item: ForYouRow, index: number) => {
+      const prevInset = index > 0 && isInsetForYouRow(rows[index - 1]!);
+      const nextInset =
+        index < rows.length - 1 && isInsetForYouRow(rows[index + 1]!);
+      const roundTop = !prevInset;
+      const roundBottom = !nextInset;
+
       if (item.type === "accordion") {
         return renderAccordion(item.shelf);
       }
       if (item.type === "expanded-group") {
-        return renderExpandedGroup(item.shelf);
+        return renderExpandedGroup(item.shelf, roundTop, roundBottom);
       }
 
       const featured = item.type === "featured";
@@ -755,9 +773,11 @@ export const FeedForYouPage = observer(function FeedForYouPage({
           <StyledAnimatedView
             key={item.key}
             layout={AccordionLayoutTransition}
-            className="mb-2.5"
           >
-            <Surface variant="transparent" className={FOR_YOU_INSET_SHELF_CLASS}>
+            <Surface
+              variant="transparent"
+              className={forYouInsetShelfClass(roundTop, roundBottom)}
+            >
               {header}
               {rail}
             </Surface>
@@ -769,7 +789,6 @@ export const FeedForYouPage = observer(function FeedForYouPage({
         <StyledAnimatedView
           key={item.key}
           layout={AccordionLayoutTransition}
-          className="mb-2.5"
         >
           {header}
           {rail}
@@ -782,6 +801,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
       openCategory,
       renderAccordion,
       renderExpandedGroup,
+      rows,
     ],
   );
 
@@ -819,7 +839,7 @@ export const FeedForYouPage = observer(function FeedForYouPage({
             onPress={() => router.push("/filters")}
           />
         ) : null}
-        {rows.map((row) => renderRow(row))}
+        {rows.map((row, index) => renderRow(row, index))}
       </Animated.ScrollView>
     </View>
   );

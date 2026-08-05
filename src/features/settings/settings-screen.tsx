@@ -17,7 +17,6 @@ import { FAB } from "heroui-native-pro";
 import { withUniwind } from "uniwind";
 
 import { DeleteAccountSheets } from "@/features/settings/delete-account-sheets";
-import { HideListingsSheet } from "@/features/settings/hide-listings-sheet";
 import { LayoutSelect } from "@/features/settings/layout-select";
 import { SettingsProfileHeader } from "@/features/settings/settings-profile-header";
 import { SettingsScreenSkeleton } from "@/features/settings/settings-skeletons";
@@ -89,7 +88,6 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
   const { userStore, subscriptionStore, feedStore, filterStore } = useStore();
   const [state, setState] = useState<SettingsState | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [hideOpen, setHideOpen] = useState(false);
 
   const load = useCallback(async () => {
     const appearance = (await loadCachedAppearance()) ?? "dark";
@@ -309,12 +307,6 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
               onPress={() => router.push("/settings/blocked-sellers")}
             />
             <SettingsRow
-              icon="eye-off-outline"
-              title="Hide listings"
-              description="Spam, dealers, damage, and titles"
-              onPress={() => setHideOpen(true)}
-            />
-            <SettingsRow
               icon="grid-outline"
               title="Feed layout"
               description={
@@ -422,15 +414,6 @@ export const SettingsScreen = observer(function SettingsScreen(): JSX.Element {
       </ScrollShadow>
 
       <DeleteAccountSheets isOpen={deleteOpen} onOpenChange={setDeleteOpen} />
-
-      {prefs ? (
-        <HideListingsSheet
-          isOpen={hideOpen}
-          onOpenChange={setHideOpen}
-          prefs={prefs}
-          onPatch={(patch) => void patchPrefs(patch)}
-        />
-      ) : null}
     </View>
   );
 });

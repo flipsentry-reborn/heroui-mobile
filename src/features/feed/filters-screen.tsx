@@ -41,6 +41,7 @@ import {
   formatMinProfitLabel,
   MinProfitSlider,
 } from "@/features/feed/min-profit-slider";
+import { HideListingsSheet } from "@/features/settings/hide-listings-sheet";
 import type { ValuationTier } from "@/models/feed";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import { formatOpenRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
@@ -52,6 +53,8 @@ import {
 } from "@/features/home/sheet-chrome";
 import { SheetShell } from "@/features/home/sheet-shell";
 import { customFilterSearchGroupTitle } from "@/features/feed/filter-search-groups-sheet";
+import { toUserErrorMessage } from "@/lib/user-error-message";
+import type { UserPreferences as SettingsHidePrefs } from "@/mocks/data/settings";
 import { formatPriceShort } from "@/mocks/services/home";
 import type { UserFilter } from "@/models/user-filter";
 import { useStore } from "@/store/store";
@@ -78,6 +81,29 @@ function displayPrefsSummary(prefs: FeedDisplayPrefs): string {
       ? "All scores"
       : tiers.join(", ");
   return `${formatMinProfitLabel(prefs.minProfit)} · ${scorePart}`;
+}
+
+function toHideListingsPrefs(
+  api: {
+    showScams: boolean;
+    showDealers: boolean;
+    showDealerships: boolean;
+    showMajorIssue: boolean;
+    showRebuiltTitle: boolean;
+    showSalvageTitle: boolean;
+    distanceUnit: "mi" | "km";
+  } | null,
+): SettingsHidePrefs {
+  return {
+    showScams: api?.showScams ?? true,
+    showDealers: api?.showDealers ?? true,
+    showDealerships: api?.showDealerships ?? true,
+    showMajorDamaged: api?.showMajorIssue ?? true,
+    showRebuiltTitle: api?.showRebuiltTitle ?? true,
+    showSalvageTitle: api?.showSalvageTitle ?? true,
+    distanceUnit: api?.distanceUnit ?? "mi",
+    appearance: "dark",
+  };
 }
 
 function filterTypeLabel(filter: UserFilter): string {
@@ -234,16 +260,30 @@ function FilterActionsMenu({
 
 const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element {
   const insets = useSafeAreaInsets();
-  const { filterStore } = useStore();
+  const { toast } = useToast();
+  const { filterStore, userStore } = useStore();
   const prefs = filterStore.displayPrefs;
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [dealsSheetOpen, setDealsSheetOpen] = useState(false);
+  const [hideSheetOpen, setHideSheetOpen] = useState(false);
   const [draft, setDraft] = useState<FeedDisplayPrefs>(prefs);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (userStore.preferences == null) {
+        void userStore.loadPreferences();
+      }
+    }, [userStore]),
+  );
+
   useEffect(() => {
-    if (sheetOpen) setDraft(prefs);
-  }, [sheetOpen, prefs]);
+    if (dealsSheetOpen) setDraft(prefs);
+  }, [dealsSheetOpen, prefs]);
 
   const summary = useMemo(() => displayPrefsSummary(prefs), [prefs]);
+  const hidePrefs = useMemo(
+    () => toHideListingsPrefs(userStore.preferences),
+    [userStore.preferences],
+  );
 
   const setTier = useCallback((key: ScoreTierKey, selected: boolean) => {
     setDraft((current) =>
@@ -255,7 +295,7 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
     );
   }, []);
 
-  const handleSheetClose = useCallback(() => {
+  const handleDealsSheetClose = useCallback(() => {
     const next = normalizeScoreTierCascade({
       ...draft,
       minProfit: clampMinProfit(draft.minProfit),
@@ -268,8 +308,48 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
       showFair: next.showFair,
       showBad: next.showBad,
     });
-    setSheetOpen(false);
+    setDealsSheetOpen(false);
   }, [draft, filterStore]);
+
+  const patchHidePrefs = useCallback(
+    async (patch: Partial<SettingsHidePrefs>) => {
+      try {
+        let api = userStore.preferences;
+        if (api == null) {
+          await userStore.loadPreferences();
+          api = userStore.preferences;
+        }
+        const base = api ?? {
+          showScams: true,
+          showDealers: true,
+          showAdvertised: true,
+          showDealerships: true,
+          showMajorIssue: true,
+          showRebuiltTitle: true,
+          showSalvageTitle: true,
+          distanceUnit: "mi" as const,
+          minBuySignal: 100,
+          minProfit: 0,
+        };
+        await userStore.updatePreferences({
+          ...base,
+          showScams: patch.showScams ?? base.showScams,
+          showDealers: patch.showDealers ?? base.showDealers,
+          showDealerships: patch.showDealerships ?? base.showDealerships,
+          showMajorIssue: patch.showMajorDamaged ?? base.showMajorIssue,
+          showRebuiltTitle: patch.showRebuiltTitle ?? base.showRebuiltTitle,
+          showSalvageTitle: patch.showSalvageTitle ?? base.showSalvageTitle,
+        });
+      } catch (error) {
+        toast.show({
+          variant: "danger",
+          label: toUserErrorMessage(error),
+          duration: 2200,
+        });
+      }
+    },
+    [toast, userStore],
+  );
 
   return (
     <>
@@ -279,94 +359,107 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
       >
         <ListGroup className="overflow-hidden rounded-3xl bg-surface">
           <SearchBottomSheetRow
-            icon="trending-up-outline"
+            icon="options-outline"
             iconClassName="text-muted"
-            title="Deal quality"
+            title="Show These Deals"
             description={summary}
-            onPress={() => setSheetOpen(true)}
+            onPress={() => setDealsSheetOpen(true)}
+          />
+          <SearchBottomSheetRow
+            icon="eye-off-outline"
+            iconClassName="text-muted"
+            title="Hide listings"
+            description="Spam, dealers, damage, and titles"
+            onPress={() => setHideSheetOpen(true)}
             isLast
           />
         </ListGroup>
       </View>
 
-      <SheetShell visible={sheetOpen} onClose={handleSheetClose}>
+      <SheetShell visible={dealsSheetOpen} onClose={handleDealsSheetClose}>
         <BottomSheet.Content
-          enableDynamicSizing
-          enableContentPanningGesture={false}
           className={SHEET_CONTENT_CLASS_NAME}
           backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
+          handleComponent={null}
           contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
         >
-          <View className="gap-4 px-4 pt-1" style={{ paddingBottom: insets.bottom + 20 }}>
-            <View className="flex-row items-center gap-2.5 px-1">
-              <StyledIonicons name="trending-up-outline" size={18} className="text-muted" />
-              <BottomSheet.Title className="min-w-0 flex-1 text-left text-xl font-bold text-foreground">
-                Deal quality
-              </BottomSheet.Title>
-              <BottomSheet.Close />
+          <View>
+            <View className="items-center px-8 pt-3 pb-2">
+              <Typography type="body" weight="normal">
+                Show These Deals
+              </Typography>
             </View>
 
-            <Alert status="warning">
-              <Alert.Indicator />
-              <Alert.Content className="min-w-0 flex-1">
-                <Alert.Title>
-                  This automatically applies to your notification settings. Use with
-                  caution.
-                </Alert.Title>
-              </Alert.Content>
-            </Alert>
+            <View className="mb-5 mt-5 gap-4 px-3">
+              <Alert status="warning">
+                <Alert.Indicator />
+                <Alert.Content className="min-w-0 flex-1">
+                  <Alert.Title>
+                    This automatically applies to your notification settings. Use with
+                    caution.
+                  </Alert.Title>
+                </Alert.Content>
+              </Alert>
 
-            <View className="overflow-hidden rounded-3xl bg-surface px-4 py-4">
-              <View className="mb-1 flex-row items-center justify-between">
-                <Typography type="body" className="text-foreground">
-                  Min profit
-                </Typography>
-                <Typography type="body-sm" className="text-muted">
-                  {formatMinProfitLabel(draft.minProfit)}
-                </Typography>
-              </View>
-              <MinProfitSlider
-                value={draft.minProfit}
-                onChange={(minProfit) => {
-                  setDraft((current) =>
-                    current.minProfit === minProfit ? current : { ...current, minProfit },
-                  );
-                }}
-              />
-            </View>
-
-            <View className="overflow-hidden rounded-3xl bg-surface px-3 py-1">
-              {SCORE_TIER_OPTIONS.map((option, index) => (
-                <View key={option.key}>
-                  {index > 0 ? <Separator className="my-0" /> : null}
-                  <ControlField
-                    isSelected={draft[option.key]}
-                    onSelectedChange={(selected) => setTier(option.key, selected)}
-                    className="py-3"
-                    accessibilityLabel={option.label}
-                  >
-                    <View className="min-w-0 flex-1 flex-row items-center">
-                      <ValuationTierBadge tier={option.tier} scale="detail" />
-                    </View>
-                    <ControlField.Indicator>
-                      <Checkbox />
-                    </ControlField.Indicator>
-                  </ControlField>
+              <View className="overflow-hidden rounded-3xl bg-surface px-4 py-4">
+                <View className="mb-1 flex-row items-center justify-between">
+                  <Typography type="body" className="text-foreground">
+                    Min profit
+                  </Typography>
+                  <Typography type="body-sm" className="text-muted">
+                    {formatMinProfitLabel(draft.minProfit)}
+                  </Typography>
                 </View>
-              ))}
-              <Separator className="my-0" />
-              <ControlField isSelected isDisabled className="py-3">
-                <Label className="min-w-0 flex-1 text-[15px] font-normal text-foreground">
-                  No Valuation
-                </Label>
-                <ControlField.Indicator>
-                  <Checkbox isSelected isDisabled />
-                </ControlField.Indicator>
-              </ControlField>
+                <MinProfitSlider
+                  value={draft.minProfit}
+                  onChange={(minProfit) => {
+                    setDraft((current) =>
+                      current.minProfit === minProfit ? current : { ...current, minProfit },
+                    );
+                  }}
+                />
+              </View>
+
+              <View className="overflow-hidden rounded-3xl bg-surface px-3 py-1">
+                {SCORE_TIER_OPTIONS.map((option, index) => (
+                  <View key={option.key}>
+                    {index > 0 ? <Separator className="my-0" /> : null}
+                    <ControlField
+                      isSelected={draft[option.key]}
+                      onSelectedChange={(selected) => setTier(option.key, selected)}
+                      className="py-3"
+                      accessibilityLabel={option.label}
+                    >
+                      <View className="min-w-0 flex-1 flex-row items-center">
+                        <ValuationTierBadge tier={option.tier} scale="detail" />
+                      </View>
+                      <ControlField.Indicator>
+                        <Checkbox />
+                      </ControlField.Indicator>
+                    </ControlField>
+                  </View>
+                ))}
+                <Separator className="my-0" />
+                <ControlField isSelected isDisabled className="py-3">
+                  <Label className="min-w-0 flex-1 text-[15px] font-normal text-foreground">
+                    No Valuation
+                  </Label>
+                  <ControlField.Indicator>
+                    <Checkbox isSelected isDisabled />
+                  </ControlField.Indicator>
+                </ControlField>
+              </View>
             </View>
           </View>
         </BottomSheet.Content>
       </SheetShell>
+
+      <HideListingsSheet
+        isOpen={hideSheetOpen}
+        onOpenChange={setHideSheetOpen}
+        prefs={hidePrefs}
+        onPatch={(patch) => void patchHidePrefs(patch)}
+      />
     </>
   );
 });

@@ -30,7 +30,6 @@ import { BrandButton } from "@/components/ui/brand-button";
 import {
   applyScoreTierSelection,
   clampMinProfit,
-  hasActiveScoreTierFilter,
   normalizeScoreTierCascade,
   type FeedDisplayPrefs,
   type ScoreTierKey,
@@ -80,6 +79,7 @@ function displayPrefsSummary(prefs: FeedDisplayPrefs): string {
       : tiers.join(", ");
   return `${formatMinProfitLabel(prefs.minProfit)} · ${scorePart}`;
 }
+
 function filterTypeLabel(filter: UserFilter): string {
   return filter.filterType === "Vehicle" ? "Vehicle" : "Custom";
 }
@@ -163,7 +163,7 @@ function FiltersHeader({ onBack }: { onBack: () => void }): JSX.Element {
 
   return (
     <View style={{ paddingTop: insets.top }} className="bg-background">
-      <View className="h-11 flex-row items-center px-1.5">
+      <View className="flex-row items-center px-1.5 pb-2.5 pt-1">
         <Pressable
           onPress={onBack}
           hitSlop={8}
@@ -181,6 +181,9 @@ function FiltersHeader({ onBack }: { onBack: () => void }): JSX.Element {
             className="text-foreground"
           >
             Feed Filters
+          </Typography>
+          <Typography type="body-xs" className="mt-0.5 text-muted" numberOfLines={1}>
+            Choose what appears in your feed.
           </Typography>
         </View>
       </View>
@@ -226,100 +229,6 @@ function FilterActionsMenu({
         </Menu.Content>
       </Menu.Portal>
     </Menu>
-  );
-}
-
-function SelectedFiltersSection({
-  filters,
-  displayPrefs,
-  onDeselect,
-  onClearMinProfit,
-  onClearScoreTiers,
-}: {
-  filters: UserFilter[];
-  displayPrefs: FeedDisplayPrefs;
-  onDeselect: (filter: UserFilter) => void;
-  onClearMinProfit: () => void;
-  onClearScoreTiers: () => void;
-}): JSX.Element | null {
-  const minProfitActive = displayPrefs.minProfit > 0;
-  const scoreActive = hasActiveScoreTierFilter(displayPrefs);
-  if (filters.length === 0 && !minProfitActive && !scoreActive) return null;
-
-  const scoreLabel = SCORE_TIER_OPTIONS.filter((option) => displayPrefs[option.key])
-    .map((option) => option.label)
-    .join(", ");
-
-  return (
-    <View className="mx-3 mt-5 overflow-hidden rounded-3xl bg-surface px-3 py-3">
-      <Typography type="body-xs" className="mb-2.5 text-muted">
-        Active Filters
-      </Typography>
-      <View className="flex-row flex-wrap gap-2">
-        {minProfitActive ? (
-          <View className="flex-row items-center gap-2 rounded-full border border-violet-500/40 bg-violet-600/15 px-2.5 py-1.5">
-            <StyledIonicons name="trending-up" size={12} className="text-violet-500" />
-            <Typography type="body-xs" className="text-foreground" numberOfLines={1}>
-              {formatMinProfitLabel(displayPrefs.minProfit)}
-            </Typography>
-            <Pressable
-              onPress={onClearMinProfit}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Clear minimum profit"
-              className="h-5 w-5 items-center justify-center"
-            >
-              <StyledIonicons name="close" size={14} className="text-muted" />
-            </Pressable>
-          </View>
-        ) : null}
-        {scoreActive ? (
-          <View className="flex-row items-center gap-2 rounded-full border border-violet-500/40 bg-violet-600/15 px-2.5 py-1.5">
-            <StyledIonicons name="trending-up" size={12} className="text-violet-500" />
-            <Typography
-              type="body-xs"
-              className="max-w-[160px] text-foreground"
-              numberOfLines={1}
-            >
-              {scoreLabel.length > 0 ? scoreLabel : "No scores"}
-            </Typography>
-            <Pressable
-              onPress={onClearScoreTiers}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Reset score filters"
-              className="h-5 w-5 items-center justify-center"
-            >
-              <StyledIonicons name="close" size={14} className="text-muted" />
-            </Pressable>
-          </View>
-        ) : null}
-        {filters.map((filter) => (
-          <View
-            key={filter.id}
-            className="flex-row items-center gap-2 rounded-full border border-border bg-surface-secondary px-2.5 py-1.5"
-          >
-            <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: filter.color }} />
-            <Typography
-              type="body-xs"
-              className="max-w-[140px] text-foreground"
-              numberOfLines={1}
-            >
-              {filter.name}
-            </Typography>
-            <Pressable
-              onPress={() => onDeselect(filter)}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={`Deselect ${filter.name}`}
-              className="h-5 w-5 items-center justify-center"
-            >
-              <StyledIonicons name="close" size={14} className="text-muted" />
-            </Pressable>
-          </View>
-        ))}
-      </View>
-    </View>
   );
 }
 
@@ -371,8 +280,8 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
         <ListGroup className="overflow-hidden rounded-3xl bg-surface">
           <SearchBottomSheetRow
             icon="trending-up-outline"
-            iconClassName="text-violet-500"
-            title="Show Only Those Deals"
+            iconClassName="text-muted"
+            title="Deal quality"
             description={summary}
             onPress={() => setSheetOpen(true)}
             isLast
@@ -390,9 +299,9 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
         >
           <View className="gap-4 px-4 pt-1" style={{ paddingBottom: insets.bottom + 20 }}>
             <View className="flex-row items-center gap-2.5 px-1">
-              <StyledIonicons name="trending-up-outline" size={18} className="text-violet-500" />
+              <StyledIonicons name="trending-up-outline" size={18} className="text-muted" />
               <BottomSheet.Title className="min-w-0 flex-1 text-left text-xl font-bold text-foreground">
-                Show Only Those Deals
+                Deal quality
               </BottomSheet.Title>
               <BottomSheet.Close />
             </View>
@@ -461,6 +370,7 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
     </>
   );
 });
+
 function FilterAccordionItem({
   filter,
   searchGroupLabels,
@@ -479,46 +389,46 @@ function FilterAccordionItem({
   const criteria = criteriaLabels(filter, searchGroupLabels);
 
   return (
-    <Accordion.Item value={filter.id}>
+    <Accordion.Item value={filter.id} className="overflow-hidden rounded-2xl bg-surface">
       <Accordion.Trigger className="gap-2 px-3 py-3">
         <View
           className="h-9 w-1.5 shrink-0 rounded-full"
           style={{ backgroundColor: filter.color }}
         />
-        <View className="min-w-0 flex-1 gap-2">
+        <View className="min-w-0 flex-1 gap-1.5">
           <View className="flex-row items-center gap-2">
             <Typography
               type="body"
+              weight="semibold"
               className="min-w-0 flex-1"
               numberOfLines={1}
             >
               {filter.name}
             </Typography>
-            {!filter.isActive ? (
-              <Badge color="warning" variant="soft" size="sm">
-                Paused
-              </Badge>
-            ) : null}
+            <Badge
+              color={filter.isActive ? "success" : "warning"}
+              variant="soft"
+              size="sm"
+            >
+              {filter.isActive ? "Active" : "Paused"}
+            </Badge>
           </View>
           <Typography type="body-xs" className="text-muted" numberOfLines={1}>
             {collapsedSummary(filter, searchGroupLabels)}
           </Typography>
         </View>
         <Accordion.Indicator />
-        <Pressable
-          onPress={() => onToggleActive(filter, !filter.isActive)}
-          hitSlop={8}
-          accessibilityRole="checkbox"
-          accessibilityLabel={`Enable ${filter.name}`}
-          accessibilityState={{ checked: filter.isActive }}
-          className="h-10 w-10 shrink-0 items-center justify-center"
+        {/* Absorb presses so the switch does not toggle the accordion. */}
+        <View
+          onStartShouldSetResponder={() => true}
+          className="shrink-0 pl-1"
         >
-          <StyledIonicons
-            name={filter.isActive ? "checkmark-circle" : "checkmark-circle-outline"}
-            size={24}
-            className={filter.isActive ? "text-success" : "text-muted opacity-55"}
+          <Switch
+            isSelected={filter.isActive}
+            onSelectedChange={(selected) => onToggleActive(filter, selected)}
+            accessibilityLabel={`Enable ${filter.name}`}
           />
-        </Pressable>
+        </View>
       </Accordion.Trigger>
 
       <Accordion.Content className="gap-2 px-3 pb-3 pt-0">
@@ -536,17 +446,30 @@ function FilterAccordionItem({
           </Typography>
         )}
 
-        <ListGroup>
+        <ListGroup
+          className={`overflow-hidden rounded-2xl bg-surface-secondary ${
+            filter.isActive ? "" : "opacity-55"
+          }`}
+        >
           <SearchBottomSheetRow
-            icon="notifications"
-            iconClassName={filter.notificationEnabled ? "text-violet-500" : "text-muted"}
+            icon="notifications-outline"
+            iconClassName={
+              filter.isActive && filter.notificationEnabled
+                ? "text-foreground"
+                : "text-muted"
+            }
             title="Notifications"
-            description="Allow alerts for listings matched by this filter."
+            description={
+              filter.isActive
+                ? "Notify me when new matches arrive"
+                : "Enable this filter to control notifications"
+            }
             showChevron={false}
             isLast
             right={
               <Switch
-                isSelected={filter.notificationEnabled}
+                isSelected={filter.isActive && filter.notificationEnabled}
+                isDisabled={!filter.isActive}
                 onSelectedChange={(selected) => onToggleNotifications(filter, selected)}
                 accessibilityLabel="Notifications"
               />
@@ -562,21 +485,25 @@ function FilterAccordionItem({
 
 function FiltersSkeleton(): JSX.Element {
   return (
-    <SkeletonGroup isLoading isSkeletonOnly className="gap-3 px-3 pt-4">
-      <View className="mb-1 flex-row items-center justify-between">
-        <SkeletonGroup.Item className="h-5 w-24 rounded-md" />
-        <SkeletonGroup.Item className="h-9 w-28 rounded-md" />
-      </View>
+    <SkeletonGroup isLoading isSkeletonOnly className="gap-2.5 px-3 pt-4">
       {[0, 1, 2].map((key) => (
-        <View key={key} className="flex-row items-center gap-3 rounded-xl bg-surface px-3 py-3">
+        <View
+          key={key}
+          className="flex-row items-center gap-3 rounded-2xl bg-surface px-3 py-3"
+        >
           <SkeletonGroup.Item className="h-9 w-1.5 rounded-full" />
           <View className="flex-1 gap-2">
-            <SkeletonGroup.Item className="h-4 w-36 rounded-md" />
+            <View className="flex-row items-center gap-2">
+              <SkeletonGroup.Item className="h-4 w-36 rounded-md" />
+              <SkeletonGroup.Item className="h-5 w-14 rounded-full" />
+            </View>
             <SkeletonGroup.Item className="h-3 w-52 rounded-md" />
           </View>
-          <SkeletonGroup.Item className="h-5 w-5 rounded-md" />
+          <SkeletonGroup.Item className="h-4 w-4 rounded-md" />
+          <SkeletonGroup.Item className="h-7 w-12 rounded-full" />
         </View>
       ))}
+      <SkeletonGroup.Item className="mt-2 h-12 w-full rounded-2xl" />
     </SkeletonGroup>
   );
 }
@@ -725,7 +652,6 @@ export const FiltersScreen = observer(function FiltersScreen({
 
   const initialLoading = !filterStore.hasLoaded && filterStore.loading;
   const hasFilters = filterStore.filters.length > 0;
-  const activeFilters = filterStore.activeFilters;
 
   return (
     <View className="flex-1 bg-background">
@@ -742,51 +668,45 @@ export const FiltersScreen = observer(function FiltersScreen({
           contentContainerClassName="pb-6 pt-3"
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
         >
-          <View className="mb-3 flex-row items-center justify-between px-3">
-            <View className="min-w-0 flex-1 pr-3">
-              <Typography type="body" weight="semibold" className="text-foreground">
-                Feed Filters
-              </Typography>
-              <Typography type="body-xs" className="mt-0.5 text-muted">
-                Tap the checkmark to enable tagging and a filter tab.
-              </Typography>
-            </View>
-            <BrandButton className="h-9 min-h-9 gap-1 !rounded-xl px-2.5" onPress={openCreate}>
-              <Ionicons name="add" size={16} color={accentForeground} />
-              <BrandButton.Label>New Filter</BrandButton.Label>
-            </BrandButton>
-          </View>
-
           {filterStore.lastError != null ? (
             <LoadError message={filterStore.lastError} onRetry={retry} />
           ) : null}
 
           {hasFilters ? (
-            <Accordion
-              value={expandedFilter}
-              onValueChange={(next: string | string[] | undefined) => {
-                const value = Array.isArray(next) ? next[0] : next;
-                setExpandedFilter(
-                  typeof value === "string" && value.length > 0 ? value : undefined
-                );
-              }}
-              selectionMode="single"
-              isCollapsible
-              variant="surface"
-              className="mx-3 w-auto gap-2"
-            >
-              {filterStore.filters.map((filter) => (
-                <FilterAccordionItem
-                  key={filter.id}
-                  filter={filter}
-                  searchGroupLabels={searchGroupLabels}
-                  onEdit={openEdit}
-                  onDelete={handleDelete}
-                  onToggleActive={handleToggleActive}
-                  onToggleNotifications={handleToggleNotifications}
-                />
-              ))}
-            </Accordion>
+            <>
+              <Accordion
+                value={expandedFilter}
+                onValueChange={(next: string | string[] | undefined) => {
+                  const value = Array.isArray(next) ? next[0] : next;
+                  setExpandedFilter(
+                    typeof value === "string" && value.length > 0 ? value : undefined
+                  );
+                }}
+                selectionMode="single"
+                isCollapsible
+                hideSeparator
+                className="mx-3 w-auto gap-2.5"
+              >
+                {filterStore.filters.map((filter) => (
+                  <FilterAccordionItem
+                    key={filter.id}
+                    filter={filter}
+                    searchGroupLabels={searchGroupLabels}
+                    onEdit={openEdit}
+                    onDelete={handleDelete}
+                    onToggleActive={handleToggleActive}
+                    onToggleNotifications={handleToggleNotifications}
+                  />
+                ))}
+              </Accordion>
+
+              <View className="mx-3 mt-4">
+                <BrandButton className="min-h-12 w-full" onPress={openCreate}>
+                  <Ionicons name="add" size={18} color={accentForeground} />
+                  <BrandButton.Label>Add Filter</BrandButton.Label>
+                </BrandButton>
+              </View>
+            </>
           ) : filterStore.lastError == null ? (
             <View className="mx-3 mt-6 rounded-3xl bg-surface px-4 py-10">
               <EmptyState>
@@ -809,25 +729,6 @@ export const FiltersScreen = observer(function FiltersScreen({
               </EmptyState>
             </View>
           ) : null}
-
-          <SelectedFiltersSection
-            filters={activeFilters}
-            displayPrefs={filterStore.displayPrefs}
-            onDeselect={(filter) => {
-              handleToggleActive(filter, false);
-            }}
-            onClearMinProfit={() => {
-              void filterStore.setDisplayPrefs({ minProfit: 0 });
-            }}
-            onClearScoreTiers={() => {
-              void filterStore.setDisplayPrefs({
-                showGreat: true,
-                showGood: true,
-                showFair: true,
-                showBad: true,
-              });
-            }}
-          />
         </ScrollView>
       )}
 

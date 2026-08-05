@@ -21,9 +21,10 @@ import {
 } from "@/features/feed/filter-search-groups-sheet";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import {
-  CustomSearchInput,
+  formatCustomQueryLabel,
   isCustomSearchQueryValid,
 } from "@/features/home/search-bottom-sheet-criteria";
+import { SearchBottomSheetCustomQuerySheet } from "@/features/home/search-bottom-sheet-custom-query-sheet";
 import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import {
   EMPTY_KEYWORDS,
@@ -106,6 +107,7 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
   const [maxMileage, setMaxMileage] = useState("");
   const [keywords, setKeywords] = useState<KeywordsState>(EMPTY_KEYWORDS);
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [nameOpen, setNameOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
   const [yearOpen, setYearOpen] = useState(false);
   const [mileageOpen, setMileageOpen] = useState(false);
@@ -202,7 +204,13 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
   }, [filterType, isOpen, listedIdSet]);
 
   const childSheetOpen =
-    priceOpen || yearOpen || mileageOpen || keywordsOpen || colorOpen || groupsOpen;
+    nameOpen ||
+    priceOpen ||
+    yearOpen ||
+    mileageOpen ||
+    keywordsOpen ||
+    colorOpen ||
+    groupsOpen;
 
   const usedColors = useMemo(() => {
     const taken = new Set<string>();
@@ -326,6 +334,8 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
     descriptionIncluders: keywords.descriptionIncluders,
   });
   const groupsLabel = formatSearchGroupsLabel(selectedGroupIds, listedGroups);
+  const nameLabel = formatCustomQueryLabel(name);
+  const hasName = isCustomSearchQueryValid(name);
   const hasPriceFilter = minPrice !== "" || maxPrice !== "";
   const hasYearFilter = minYear !== "" || maxYear !== "";
   const hasMileageFilter = minMileage !== "" || maxMileage !== "";
@@ -337,8 +347,9 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
       <SheetShell visible={isOpen} onClose={handleClose}>
         <FilterSheetBody
           title={editingFilter ? "Edit Filter" : "New Filter"}
-          name={name}
-          onNameChange={setName}
+          nameLabel={nameLabel}
+          hasName={hasName}
+          onOpenName={() => setNameOpen(true)}
           filterType={filterType}
           onFilterTypeChange={(next) => {
             setFilterType(next);
@@ -377,6 +388,14 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
         />
       </SheetShell>
 
+      <SearchBottomSheetCustomQuerySheet
+        isOpen={isOpen && nameOpen}
+        onOpenChange={setNameOpen}
+        value={name}
+        onChange={setName}
+        title="Name"
+        fieldTitle="Name"
+      />
       <FilterColorSheet
         isOpen={isOpen && colorOpen}
         onOpenChange={setColorOpen}
@@ -433,8 +452,9 @@ export const FilterBottomSheet = observer(function FilterBottomSheet({
 
 function FilterSheetBody({
   title,
-  name,
-  onNameChange,
+  nameLabel,
+  hasName,
+  onOpenName,
   filterType,
   onFilterTypeChange,
   typeLocked,
@@ -467,8 +487,9 @@ function FilterSheetBody({
   dismissRef,
 }: {
   title: string;
-  name: string;
-  onNameChange: (v: string) => void;
+  nameLabel: string;
+  hasName: boolean;
+  onOpenName: () => void;
   filterType: UserFilterType;
   onFilterTypeChange: (v: UserFilterType) => void;
   typeLocked: boolean;
@@ -541,10 +562,13 @@ function FilterSheetBody({
             requiredTone="warning"
             showChevron={false}
             isLast={false}
+            onPress={onOpenName}
             right={
-              <View className="min-w-0 max-w-[200px] flex-1">
-                <CustomSearchInput value={name} onChange={onNameChange} invalidTone="warning" />
-              </View>
+              <SearchSheetValue
+                label={nameLabel}
+                emphasized={hasName}
+                requiredEmpty={!hasName}
+              />
             }
           />
           <SearchBottomSheetRow

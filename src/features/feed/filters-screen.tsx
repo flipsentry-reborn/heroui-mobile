@@ -39,6 +39,7 @@ import { withUniwind } from "uniwind";
 import { BrandButton } from "@/components/ui/brand-button";
 import {
   applyScoreTierSelection,
+  areFeedDisplayPrefsEqual,
   clampMinProfit,
   normalizeScoreTierCascade,
   type FeedDisplayPrefs,
@@ -51,10 +52,14 @@ import {
   formatMinProfitLabel,
   MinProfitSlider,
 } from "@/features/feed/min-profit-slider";
-import { HideListingsSheet } from "@/features/settings/hide-listings-sheet";
+import {
+  HideListingsSheet,
+  type HideListingsPrefsPatch,
+} from "@/features/settings/hide-listings-sheet";
 import type { ValuationTier } from "@/models/feed";
 import { showSearchActionProgress } from "@/features/home/search-action-progress-toast";
 import { formatOpenRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
+import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
 import {
   SearchStatusSegment,
@@ -342,6 +347,7 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
   const [dealsSheetOpen, setDealsSheetOpen] = useState(false);
   const [hideSheetOpen, setHideSheetOpen] = useState(false);
   const [draft, setDraft] = useState<FeedDisplayPrefs>(prefs);
+  const [dealsSaving, setDealsSaving] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -360,6 +366,14 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
     () => toHideListingsPrefs(userStore.preferences),
     [userStore.preferences],
   );
+  const dealsDirty = useMemo(() => {
+    const next = normalizeScoreTierCascade({
+      ...draft,
+      minProfit: clampMinProfit(draft.minProfit),
+      showNoValuation: true,
+    });
+    return !areFeedDisplayPrefsEqual(prefs, next);
+  }, [draft, prefs]);
 
   const setTier = useCallback((key: ScoreTierKey, selected: boolean) => {
     setDraft((current) =>
@@ -371,24 +385,34 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
     );
   }, []);
 
-  const handleDealsSheetClose = useCallback(() => {
+  const closeDealsSheet = useCallback(() => {
+    setDealsSheetOpen(false);
+  }, []);
+
+  const handleDealsSave = useCallback(async () => {
+    if (!dealsDirty || dealsSaving) return;
     const next = normalizeScoreTierCascade({
       ...draft,
       minProfit: clampMinProfit(draft.minProfit),
       showNoValuation: true,
     });
-    void filterStore.setDisplayPrefs({
-      minProfit: next.minProfit,
-      showGreat: next.showGreat,
-      showGood: next.showGood,
-      showFair: next.showFair,
-      showBad: next.showBad,
-    });
-    setDealsSheetOpen(false);
-  }, [draft, filterStore]);
+    setDealsSaving(true);
+    try {
+      await filterStore.setDisplayPrefs({
+        minProfit: next.minProfit,
+        showGreat: next.showGreat,
+        showGood: next.showGood,
+        showFair: next.showFair,
+        showBad: next.showBad,
+      });
+      setDealsSheetOpen(false);
+    } finally {
+      setDealsSaving(false);
+    }
+  }, [dealsDirty, dealsSaving, draft, filterStore]);
 
-  const patchHidePrefs = useCallback(
-    async (patch: Partial<SettingsHidePrefs>) => {
+  const saveHidePrefs = useCallback(
+    async (patch: HideListingsPrefsPatch) => {
       const ok = await filterStore.updateHidePrefs({
         showScams: patch.showScams,
         showDealers: patch.showDealers,
@@ -404,6 +428,7 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
           duration: 2200,
         });
       }
+      return ok;
     },
     [filterStore, toast],
   );
@@ -433,7 +458,7 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
         </ListGroup>
       </View>
 
-      <SheetShell visible={dealsSheetOpen} onClose={handleDealsSheetClose}>
+      <SheetShell visible={dealsSheetOpen} onClose={closeDealsSheet}>
         <BottomSheet.Content
           className={SHEET_CONTENT_CLASS_NAME}
           backgroundClassName={SHEET_BACKGROUND_CLASS_NAME}
@@ -441,11 +466,16 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
           contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
         >
           <View>
-            <View className="items-center px-8 pt-3 pb-2">
-              <Typography type="body" weight="normal">
-                Show These Deals
-              </Typography>
-            </View>
+            <SearchBottomSheetHeader
+              title="Show These Deals"
+              onCancel={closeDealsSheet}
+              onSave={() => {
+                void handleDealsSave();
+              }}
+              cancelDisabled={dealsSaving}
+              saveDisabled={!dealsDirty || dealsSaving}
+              saveLabel={dealsSaving ? "Saving…" : "Save"}
+            />
 
             <View className="mb-5 mt-5 gap-4 px-3">
               <Alert status="warning">
@@ -483,6 +513,7 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
                     {index > 0 ? <Separator className="my-0" /> : null}
                     <ControlField
                       isSelected={draft[option.key]}
+                      isDisabled={dealsSaving}
                       onSelectedChange={(selected) => setTier(option.key, selected)}
                       className="py-3"
                       accessibilityLabel={option.label}
@@ -515,7 +546,7 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
         isOpen={hideSheetOpen}
         onOpenChange={setHideSheetOpen}
         prefs={hidePrefs}
-        onPatch={(patch) => void patchHidePrefs(patch)}
+        onSave={saveHidePrefs}
       />
     </>
   );

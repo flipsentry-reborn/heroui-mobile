@@ -1,5 +1,5 @@
 /**
- * Map heroui feed category tabs → live Feed V2 query params (lane + cursor page).
+ * Map heroui feed category tabs → live Feed V2 query params (lane + cursor).
  */
 
 import type { GetFeedParams } from "@/mocks/services/feed";
@@ -63,7 +63,14 @@ export function resolveFeedLane(params: GetFeedParams): string {
   return "all";
 }
 
-/** Legacy V1 params for free-text search only. */
+/** Decode agent-synthesized V1 search cursor (`v1:{pageNumber}`). */
+function v1SearchPageFromCursor(cursor?: string | null): number | null {
+  if (!cursor?.startsWith("v1:")) return null;
+  const n = Number.parseInt(cursor.slice(3), 10);
+  return Number.isFinite(n) && n >= 1 ? n : null;
+}
+
+/** Legacy V1 params for free-text search only (still pageNumber-based on the wire). */
 export function buildLiveFeedV1SearchParams(
   params: GetFeedParams,
   pageNumber = 1,
@@ -71,7 +78,8 @@ export function buildLiveFeedV1SearchParams(
 ): URLSearchParams {
   const qs = new URLSearchParams();
   const size = params.pageSize ?? pageSize;
-  const page = params.pageNumber ?? pageNumber;
+  const page =
+    v1SearchPageFromCursor(params.cursor) ?? params.pageNumber ?? pageNumber;
   qs.append("pageNumber", String(page));
   qs.append("pageSize", String(size));
   const query = (params.query ?? "").trim();
@@ -79,17 +87,16 @@ export function buildLiveFeedV1SearchParams(
   return qs;
 }
 
+/** Live Feed V2 — cursor + pageSize only (no pageNumber). */
 export function buildLiveFeedParams(
   params: GetFeedParams,
-  pageNumber = 1,
   pageSize = 40,
 ): URLSearchParams {
   const qs = new URLSearchParams();
   const size = params.pageSize ?? pageSize;
-  const page = params.pageNumber ?? pageNumber;
-  qs.append("pageNumber", String(page));
   qs.append("pageSize", String(size));
   qs.append("lane", resolveFeedLane(params));
+  if (params.cursor) qs.append("cursor", params.cursor);
 
   const category = params.category ?? "all";
 

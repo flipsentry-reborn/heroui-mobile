@@ -35,8 +35,10 @@ export type GetFeedParams = {
   filterIds?: string[];
   query?: string;
   limit?: number;
-  /** 1-based page for infinite scroll (default 1). */
+  /** V1 text-search only (GetAll still uses pageNumber). */
   pageNumber?: number;
+  /** Opaque V2 cursor from Pagination.nextCursor. */
+  cursor?: string | null;
   /** Live API page size (default 40). Catch-up uses 10. */
   pageSize?: number;
   /** Sold page: Sold / Pending chip filter. */
@@ -230,14 +232,23 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
         ? params.pageSize
         : null;
   if (take != null) {
-    const page = Math.max(1, params.pageNumber ?? 1);
-    const start = (page - 1) * take;
+    const start = decodeMockCursor(params.cursor);
     return items.slice(start, start + take);
   }
   return items;
 }
 
-/** Paginated mock feed — mirrors live `/api/feed` pagination header shape. */
+function encodeMockCursor(offset: number): string {
+  return `m:${offset}`;
+}
+
+function decodeMockCursor(cursor?: string | null): number {
+  if (!cursor?.startsWith("m:")) return 0;
+  const n = Number.parseInt(cursor.slice(2), 10);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+/** Paginated mock feed — mirrors live `/api/feed/v2` cursor pagination header. */
 export async function getFeedPage(
   params: GetFeedParams = {},
 ): Promise<{ data: FeedItem[]; pagination: Pagination }> {
@@ -251,7 +262,7 @@ export async function getFeedPage(
       : params.limit != null && params.limit > 0
         ? params.limit
         : 40;
-  const pageNumber = Math.max(1, params.pageNumber ?? 1);
+  const start = decodeMockCursor(params.cursor);
 
   await mockDelay();
   const activeFilterIds = await getActiveFilterIds();
@@ -289,19 +300,19 @@ export async function getFeedPage(
   });
 
   const totalItems = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const start = (pageNumber - 1) * pageSize;
   const data = filtered
     .slice(start, start + pageSize)
     .map((item) => stripInactiveFilters({ ...item }, activeFilterIds));
+  const nextOffset = start + data.length;
+  const nextCursor =
+    nextOffset < totalItems ? encodeMockCursor(nextOffset) : null;
 
   return {
     data,
     pagination: {
-      currentPage: pageNumber,
       itemsPerPage: pageSize,
       totalItems,
-      totalPages,
+      nextCursor,
     },
   };
 }

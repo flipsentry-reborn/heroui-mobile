@@ -1,8 +1,12 @@
 export interface Pagination {
-  currentPage: number;
+  /** Filler for shared header shape (V2 is cursor-only). */
+  currentPage?: number;
   itemsPerPage: number;
   totalItems: number;
-  totalPages: number;
+  /** Filler for shared header shape; prefer nextCursor for hasMore. */
+  totalPages?: number;
+  /** Opaque cursor for GetAllV2 next page. */
+  nextCursor?: string | null;
 }
 
 export class PaginatedResult<T> {

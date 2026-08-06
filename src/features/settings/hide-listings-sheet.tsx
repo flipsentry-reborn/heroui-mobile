@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps, JSX } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
-import { Alert, BottomSheet, Switch, Typography } from "heroui-native";
+import { Alert, BottomSheet, Switch } from "heroui-native";
 
+import { SearchBottomSheetHeader } from "@/features/home/search-bottom-sheet-header";
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
 import { SearchSheetGroup } from "@/features/home/search-sheet-group";
 import {
@@ -15,16 +17,14 @@ import type { UserPreferences } from "@/mocks/data/settings";
 
 type IonName = ComponentProps<typeof Ionicons>["name"];
 
-type HidePatch = Partial<
-  Pick<
-    UserPreferences,
-    | "showScams"
-    | "showDealers"
-    | "showDealerships"
-    | "showMajorDamaged"
-    | "showRebuiltTitle"
-    | "showSalvageTitle"
-  >
+export type HideListingsPrefsPatch = Pick<
+  UserPreferences,
+  | "showScams"
+  | "showDealers"
+  | "showDealerships"
+  | "showMajorDamaged"
+  | "showRebuiltTitle"
+  | "showSalvageTitle"
 >;
 
 interface HideRow {
@@ -36,56 +36,112 @@ interface HideRow {
   onChange: (hidden: boolean) => void;
 }
 
+function pickHidePrefs(prefs: UserPreferences): HideListingsPrefsPatch {
+  return {
+    showScams: prefs.showScams,
+    showDealers: prefs.showDealers,
+    showDealerships: prefs.showDealerships,
+    showMajorDamaged: prefs.showMajorDamaged ?? true,
+    showRebuiltTitle: prefs.showRebuiltTitle ?? true,
+    showSalvageTitle: prefs.showSalvageTitle ?? true,
+  };
+}
+
+function areHidePrefsEqual(
+  a: HideListingsPrefsPatch,
+  b: HideListingsPrefsPatch,
+): boolean {
+  return (
+    a.showScams === b.showScams &&
+    a.showDealers === b.showDealers &&
+    a.showDealerships === b.showDealerships &&
+    a.showMajorDamaged === b.showMajorDamaged &&
+    a.showRebuiltTitle === b.showRebuiltTitle &&
+    a.showSalvageTitle === b.showSalvageTitle
+  );
+}
+
 function HideListingsContent({
   prefs,
-  onPatch,
+  onSave,
+  onDismiss,
 }: {
   prefs: UserPreferences;
-  onPatch: (patch: HidePatch) => void;
+  onSave: (prefs: HideListingsPrefsPatch) => Promise<boolean>;
+  onDismiss: () => void;
 }): JSX.Element {
+  const initial = useMemo(() => pickHidePrefs(prefs), [prefs]);
+  const [draft, setDraft] = useState<HideListingsPrefsPatch>(initial);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setDraft(initial);
+  }, [initial]);
+
+  const dirty = !areHidePrefsEqual(draft, initial);
+
   const rows: HideRow[] = [
     {
       key: "spam",
       icon: "warning-outline",
       title: "Spam",
       description: "Hide spam and scam listings",
-      isHidden: !prefs.showScams,
-      onChange: (hidden) => onPatch({ showScams: !hidden }),
+      isHidden: !draft.showScams,
+      onChange: (hidden) =>
+        setDraft((current) => ({ ...current, showScams: !hidden })),
     },
     {
       key: "dealer",
       icon: "storefront-outline",
       title: "Dealer",
       description: "Hide dealer and dealership listings",
-      isHidden: !prefs.showDealerships,
+      isHidden: !draft.showDealerships,
       onChange: (hidden) =>
-        onPatch({ showDealers: !hidden, showDealerships: !hidden }),
+        setDraft((current) => ({
+          ...current,
+          showDealers: !hidden,
+          showDealerships: !hidden,
+        })),
     },
     {
       key: "major",
       icon: "car-outline",
       title: "Major damage",
       description: "Hide listings with major damage",
-      isHidden: !(prefs.showMajorDamaged ?? true),
-      onChange: (hidden) => onPatch({ showMajorDamaged: !hidden }),
+      isHidden: !draft.showMajorDamaged,
+      onChange: (hidden) =>
+        setDraft((current) => ({ ...current, showMajorDamaged: !hidden })),
     },
     {
       key: "rebuilt",
       icon: "construct-outline",
       title: "Rebuilt",
       description: "Hide rebuilt title listings",
-      isHidden: !(prefs.showRebuiltTitle ?? true),
-      onChange: (hidden) => onPatch({ showRebuiltTitle: !hidden }),
+      isHidden: !draft.showRebuiltTitle,
+      onChange: (hidden) =>
+        setDraft((current) => ({ ...current, showRebuiltTitle: !hidden })),
     },
     {
       key: "salvage",
       icon: "alert-circle-outline",
       title: "Salvage",
       description: "Hide salvage title listings",
-      isHidden: !(prefs.showSalvageTitle ?? true),
-      onChange: (hidden) => onPatch({ showSalvageTitle: !hidden }),
+      isHidden: !draft.showSalvageTitle,
+      onChange: (hidden) =>
+        setDraft((current) => ({ ...current, showSalvageTitle: !hidden })),
     },
   ];
+
+  const handleSave = async () => {
+    if (!dirty || saving) return;
+    setSaving(true);
+    try {
+      const ok = await onSave(draft);
+      if (ok) onDismiss();
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <BottomSheet.Content
@@ -95,11 +151,16 @@ function HideListingsContent({
       contentContainerClassName={SHEET_CONTENT_CONTAINER_CLASS_NAME}
     >
       <View>
-        <View className="items-center px-8 pt-3 pb-2">
-          <Typography type="body" weight="normal">
-            Hide listings
-          </Typography>
-        </View>
+        <SearchBottomSheetHeader
+          title="Hide listings"
+          onCancel={onDismiss}
+          onSave={() => {
+            void handleSave();
+          }}
+          cancelDisabled={saving}
+          saveDisabled={!dirty || saving}
+          saveLabel={saving ? "Saving…" : "Save"}
+        />
 
         <View className="mt-5 px-3">
           <Alert status="warning">
@@ -122,10 +183,13 @@ function HideListingsContent({
               description={row.description}
               showChevron={false}
               isLast={index === rows.length - 1}
-              onPress={() => row.onChange(!row.isHidden)}
+              onPress={() => {
+                if (!saving) row.onChange(!row.isHidden);
+              }}
               right={
                 <Switch
                   isSelected={row.isHidden}
+                  isDisabled={saving}
                   onSelectedChange={row.onChange}
                 />
               }
@@ -141,18 +205,29 @@ interface HideListingsSheetProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   prefs: UserPreferences;
-  onPatch: (patch: HidePatch) => void;
+  onSave: (prefs: HideListingsPrefsPatch) => Promise<boolean>;
 }
 
 export function HideListingsSheet({
   isOpen,
   onOpenChange,
   prefs,
-  onPatch,
+  onSave,
 }: HideListingsSheetProps): JSX.Element | null {
+  const [session, setSession] = useState(0);
+
+  useEffect(() => {
+    if (isOpen) setSession((value) => value + 1);
+  }, [isOpen]);
+
   return (
     <SheetShell visible={isOpen} onClose={() => onOpenChange(false)}>
-      <HideListingsContent prefs={prefs} onPatch={onPatch} />
+      <HideListingsContent
+        key={session}
+        prefs={prefs}
+        onSave={onSave}
+        onDismiss={() => onOpenChange(false)}
+      />
     </SheetShell>
   );
 }

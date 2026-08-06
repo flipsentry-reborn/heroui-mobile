@@ -196,20 +196,32 @@ const liveFeedApi = {
       category,
       params?.groupIds,
     );
-    // Hide prefs (rebuilt/salvage/scam/…) are enforced on GetAllV2 server-side.
-    // Keep client hide only for legacy V1 text-search fallback.
-    const afterHide = (params?.query ?? "").trim()
+    // Hide + deal prefs are enforced on GetAllV2 server-side.
+    // Keep client filters only for legacy V1 text-search fallback.
+    const isV1Search = !!(params?.query ?? "").trim();
+    const afterHide = isV1Search
       ? filtered.filter((item) => matchesFeedHidePrefs(item, hidePrefs))
       : filtered;
-    // Best Picks uses its own score floor — not Great / min-profit prefs.
-    // Deal floors are also applied server-side on V2; keep client display prefs as a safety net.
     const items =
-      category === "best-picks"
-        ? afterHide
-        : afterHide.filter((item) => matchesFeedDisplayPrefs(item, prefs));
+      isV1Search && category !== "best-picks"
+        ? afterHide.filter((item) => matchesFeedDisplayPrefs(item, prefs))
+        : afterHide;
+    // V1 search has no server cursor — synthesize one so stores stay cursor-only.
+    const pagination = result.pagination;
+    if (isV1Search && pagination) {
+      const current = pagination.currentPage ?? 1;
+      const total = pagination.totalPages ?? 1;
+      return {
+        data: items,
+        pagination: {
+          ...pagination,
+          nextCursor: current < total ? `v1:${current + 1}` : null,
+        },
+      };
+    }
     return {
       data: items,
-      pagination: result.pagination,
+      pagination,
     };
   },
   getTabAvailability: () => liveFeed.getTabAvailability(),

@@ -17,12 +17,10 @@ import {
   DEFAULT_FEED_DISPLAY_PREFS,
   deriveMinProfit,
   effectiveMinBuySignalForQuery,
-  matchesFeedDisplayPrefs,
   type FeedDisplayPrefs,
 } from "@/domain/feed-display-prefs";
 import {
   DEFAULT_FEED_HIDE_PREFS,
-  matchesFeedHidePrefs,
   type FeedHidePrefs,
 } from "@/domain/feed-hide-prefs";
 import {
@@ -1088,36 +1086,14 @@ export default class FeedStore {
       this.upsertItem(feed);
       const resolved = this.items.get(feed.id) ?? feed;
       const filterTabs = this.searchStore?.filterTabs ?? [];
-      const activeFilterIds = this.filterStore?.activeFilterIds ?? [];
-      const allBuckets = bucketsForLiveFeed(
+      // Backend already gated hide/deal prefs before SignalR/Expo; do not re-filter client-side.
+      // UserFilters are overlays — they add filter:{id} buckets, they do not gate All.
+      const buckets = bucketsForLiveFeed(
         resolved,
         tabs,
         filterTabs,
-        activeFilterIds,
       );
-      // Hide-listings gates apply to every bucket (including Best Picks).
-      if (!matchesFeedHidePrefs(resolved, this.hidePrefs())) {
-        debugLog.info(FEED_LIVE_LOG, "applyLiveFeed skipped (hide prefs)", {
-          id: resolved.id,
-          t: Date.now(),
-        });
-        return;
-      }
-      // Best Picks ignores Great / min-profit prefs; other buckets still honor them.
-      const passesDisplayPrefs = matchesFeedDisplayPrefs(
-        resolved,
-        this.displayPrefs(),
-      );
-      const buckets = passesDisplayPrefs
-        ? allBuckets
-        : allBuckets.filter((bucket) => bucket === "best-picks");
-      if (buckets.length === 0) {
-        debugLog.info(FEED_LIVE_LOG, "applyLiveFeed skipped (display prefs)", {
-          id: resolved.id,
-          t: Date.now(),
-        });
-        return;
-      }
+      if (buckets.length === 0) return;
       this.liveHeadIds.add(resolved.id);
 
       for (const bucket of buckets) {

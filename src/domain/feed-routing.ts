@@ -74,14 +74,13 @@ export function isPriceDropCandidate(feed: FeedItem): boolean {
 
 /**
  * Buckets a live ReceiveFeed item should enter (never sold).
- * isActive filters do not gate All / typed tabs — they only add filter:{id}
- * buckets via tabsForFeed when feed.filterIds overlap filterTabs.
+ * UserFilters are overlays: they add filter:{id} buckets when feed.filterIds
+ * overlap filter tabs — they do not gate All / typed tabs.
  */
 export function bucketsForLiveFeed(
   feed: FeedItem,
   feedTabs: FeedFilterTab[],
   filterTabs: FeedUserFilterTab[] = [],
-  _activeFilterIds: string[] = [],
 ): string[] {
   const buckets = new Set<string>();
 

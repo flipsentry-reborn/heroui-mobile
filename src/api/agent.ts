@@ -185,10 +185,20 @@ const mockFeedApi = {
 const liveFeedApi = {
   list: async (params?: GetFeedParams): Promise<PaginatedResult<FeedItem[]>> => {
     const category = params?.category ?? "all";
+    const isV1Search = !!(params?.query ?? "").trim();
     // Text search stays on V1 until timeline FTS exists.
-    const result = (params?.query ?? "").trim()
+    // V2: trust server (lane + hide/deal prefs). No client-side feed filtering.
+    const result = isV1Search
       ? await liveFeed.listV1(buildLiveFeedV1SearchParams(params ?? {}))
       : await liveFeed.list(buildLiveFeedParams(params ?? {}));
+
+    if (!isV1Search) {
+      return {
+        data: result.data ?? [],
+        pagination: result.pagination,
+      };
+    }
+
     const prefs = params?.displayPrefs ?? DEFAULT_FEED_DISPLAY_PREFS;
     const hidePrefs = params?.hidePrefs ?? DEFAULT_FEED_HIDE_PREFS;
     const filtered = applyClientCategoryFilter(
@@ -196,32 +206,25 @@ const liveFeedApi = {
       category,
       params?.groupIds,
     );
-    // Hide + deal prefs are enforced on GetAllV2 server-side.
-    // Keep client filters only for legacy V1 text-search fallback.
-    const isV1Search = !!(params?.query ?? "").trim();
-    const afterHide = isV1Search
-      ? filtered.filter((item) => matchesFeedHidePrefs(item, hidePrefs))
-      : filtered;
+    const afterHide = filtered.filter((item) =>
+      matchesFeedHidePrefs(item, hidePrefs),
+    );
     const items =
-      isV1Search && category !== "best-picks"
-        ? afterHide.filter((item) => matchesFeedDisplayPrefs(item, prefs))
-        : afterHide;
+      category === "best-picks"
+        ? afterHide
+        : afterHide.filter((item) => matchesFeedDisplayPrefs(item, prefs));
     // V1 search has no server cursor — synthesize one so stores stay cursor-only.
     const pagination = result.pagination;
-    if (isV1Search && pagination) {
-      const current = pagination.currentPage ?? 1;
-      const total = pagination.totalPages ?? 1;
-      return {
-        data: items,
-        pagination: {
-          ...pagination,
-          nextCursor: current < total ? `v1:${current + 1}` : null,
-        },
-      };
-    }
+    const current = pagination?.currentPage ?? 1;
+    const total = pagination?.totalPages ?? 1;
     return {
       data: items,
-      pagination,
+      pagination: pagination
+        ? {
+            ...pagination,
+            nextCursor: current < total ? `v1:${current + 1}` : null,
+          }
+        : pagination,
     };
   },
   getTabAvailability: () => liveFeed.getTabAvailability(),

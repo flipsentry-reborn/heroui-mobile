@@ -47,6 +47,8 @@ export default class SearchStore {
 
   private subscriptionStore: SubscriptionStore | null = null;
   private feedStore: FeedStore | null = null;
+  private feedTabAvailabilityInFlight: Promise<void> | null = null;
+  private pendingForceFeedTabAvailability = false;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -157,9 +159,35 @@ export default class SearchStore {
   }
 
   async loadFeedTabAvailability(force = false): Promise<void> {
-    if (this.loadingFeedTabAvailability) return;
+    if (this.feedTabAvailabilityInFlight) {
+      if (force) this.pendingForceFeedTabAvailability = true;
+      await this.feedTabAvailabilityInFlight;
+      if (this.pendingForceFeedTabAvailability) {
+        this.pendingForceFeedTabAvailability = false;
+        await this.loadFeedTabAvailability(true);
+      }
+      return;
+    }
+
     if (this.hasLoadedFeedTabAvailability && !force) return;
 
+    const run = this.fetchFeedTabAvailability();
+    this.feedTabAvailabilityInFlight = run;
+    try {
+      await run;
+    } finally {
+      if (this.feedTabAvailabilityInFlight === run) {
+        this.feedTabAvailabilityInFlight = null;
+      }
+    }
+
+    if (this.pendingForceFeedTabAvailability) {
+      this.pendingForceFeedTabAvailability = false;
+      await this.loadFeedTabAvailability(true);
+    }
+  }
+
+  private async fetchFeedTabAvailability(): Promise<void> {
     try {
       runInAction(() => {
         this.loadingFeedTabAvailability = true;

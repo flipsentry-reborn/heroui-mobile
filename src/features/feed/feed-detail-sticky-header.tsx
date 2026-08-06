@@ -1,12 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import type { JSX } from "react";
 import { View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
-import { PressableFeedback, Typography, useThemeColor } from "heroui-native";
+import { Typography, useThemeColor } from "heroui-native";
 
 import { AiEstimationIcon } from "@/components/icons/ai-estimation-icon";
-import { ValuationBadge } from "@/features/feed/feed-badge";
 import { FeedDetailScoreBar } from "@/features/feed/feed-detail-score-bar";
 import {
   SOLD_STATUS_COLOR,
@@ -14,7 +12,8 @@ import {
 } from "@/features/feed/sold-status";
 import { DEFAULT_IMAGE_PLACEHOLDER } from "@/lib/image";
 
-const THUMB_SIZE = 88;
+/** Larger now that the sticky back control is gone. */
+const THUMB_SIZE = 112;
 
 interface FeedDetailStickyHeaderProps {
   title: string;
@@ -27,7 +26,6 @@ interface FeedDetailStickyHeaderProps {
   foundInLabel?: string;
   locationLabel?: string;
   topInset: number;
-  onBack: () => void;
 }
 
 export function FeedDetailStickyHeader({
@@ -40,12 +38,8 @@ export function FeedDetailStickyHeader({
   foundInLabel,
   locationLabel,
   topInset,
-  onBack,
 }: FeedDetailStickyHeaderProps): JSX.Element {
-  const [surfaceSecondary, foreground] = useThemeColor([
-    "surface-secondary",
-    "foreground",
-  ]);
+  const [surfaceSecondary] = useThemeColor(["surface-secondary"]);
 
   return (
     <Animated.View
@@ -61,16 +55,7 @@ export function FeedDetailStickyHeader({
       }}
       className="border-b border-border bg-surface-secondary"
     >
-      <View className="flex-row items-stretch gap-2 px-2 pb-3 pt-1.5">
-        <PressableFeedback
-          onPress={onBack}
-          accessibilityLabel="Go back"
-          className="mt-1 h-10 w-10 shrink-0 items-center justify-center rounded-full"
-          animation={{ scale: { value: 0.92 } }}
-        >
-          <Ionicons name="chevron-back" size={22} color={foreground} />
-        </PressableFeedback>
-
+      <View className="flex-row items-stretch gap-3 px-3 pb-3 pt-1.5">
         <Image
           source={imageUrl ? { uri: imageUrl } : null}
           placeholder={DEFAULT_IMAGE_PLACEHOLDER}
@@ -126,9 +111,6 @@ export function FeedDetailStickyHeader({
             ) : (
               <View className="flex-1" />
             )}
-            {buySignal != null ? (
-              <ValuationBadge buySignal={buySignal} scale="default" />
-            ) : null}
           </View>
 
           {buySignal != null ? (

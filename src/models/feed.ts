@@ -456,6 +456,7 @@ function keywordSignalCount(matches?: KeywordMatch[], texts?: string[]): number 
 }
 
 function normalizeBusinessDealerBadge(label: string, isCarFeed: boolean): string {
+  if (label === "Price Dropped") return "Price Drop";
   if (label === "Business" && isCarFeed) return "Dealer";
   if (label === "Dealer" && !isCarFeed) return "Business";
   return label;
@@ -477,7 +478,7 @@ export function getOrderedStatusBadges(feed?: FeedStatusSource | null): string[]
     feed.isPriceDrop === true ||
     (feed.previousPrice != null && feed.previousPrice > (feed.price ?? 0))
   ) {
-    badgesFromFlags.push("Price Dropped");
+    badgesFromFlags.push("Price Drop");
   }
 
   const spamCount = keywordSignalCount(feed.scamKeywords, feed.scamKeywordTexts);

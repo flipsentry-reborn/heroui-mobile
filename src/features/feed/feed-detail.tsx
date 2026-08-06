@@ -21,7 +21,7 @@ import {
 import { AiEstimationIcon } from "@/components/icons/ai-estimation-icon";
 import { FeedDetailActions } from "@/features/feed/feed-detail-actions";
 import { FeedDetailGallery } from "@/features/feed/feed-detail-gallery";
-import { StatusBadge, ValuationBadge } from "@/features/feed/feed-badge";
+import { StatusBadge } from "@/features/feed/feed-badge";
 import { FeedDetailFindingTime } from "@/features/feed/feed-detail-finding-time";
 import {
   FeedDetailMetaSection,
@@ -235,7 +235,6 @@ export function FeedDetail({
           }
           locationLabel={item.locationText || undefined}
           topInset={insets.top}
-          onBack={handleBack}
         />
       ) : null}
 
@@ -277,25 +276,6 @@ export function FeedDetail({
 
         <View className="gap-6 px-4 pt-4">
           <View className="gap-2">
-            <Typography
-              type="body-sm"
-              weight="semibold"
-              className="text-[17px] leading-6 text-foreground"
-              numberOfLines={2}
-            >
-              {soldPendingPrefix ? (
-                <Typography
-                  type="body-sm"
-                  weight="semibold"
-                  className={`text-[17px] leading-6 ${SOLD_STATUS_TEXT_CLASS}`}
-                  style={{ color: SOLD_STATUS_COLOR }}
-                >
-                  {soldPendingPrefix}{" "}
-                </Typography>
-              ) : null}
-              {item.title}
-            </Typography>
-
             <View className="flex-row items-center gap-2">
               <Typography
                 type="body-sm"
@@ -318,10 +298,26 @@ export function FeedDetail({
               ) : (
                 <View className="flex-1" />
               )}
-              {valuation?.calculated ? (
-                <ValuationBadge buySignal={valuation.buySignal} scale="detail" />
-              ) : null}
             </View>
+
+            <Typography
+              type="body-sm"
+              weight="semibold"
+              className="text-[17px] leading-6 text-foreground"
+              numberOfLines={2}
+            >
+              {soldPendingPrefix ? (
+                <Typography
+                  type="body-sm"
+                  weight="semibold"
+                  className={`text-[17px] leading-6 ${SOLD_STATUS_TEXT_CLASS}`}
+                  style={{ color: SOLD_STATUS_COLOR }}
+                >
+                  {soldPendingPrefix}{" "}
+                </Typography>
+              ) : null}
+              {item.title}
+            </Typography>
 
             {valuation?.calculated ? (
               <FeedDetailScoreBar

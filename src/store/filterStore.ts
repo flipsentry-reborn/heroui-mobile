@@ -212,7 +212,7 @@ export default class FilterStore {
       runInAction(() => {
         this.filters = [filter, ...this.filters];
       });
-      void this.searchStore?.loadFeedTabAvailability(true);
+      await this.searchStore?.loadFeedTabAvailability(true);
       if (filter.isActive) {
         this.feedStore?.onSelectedFiltersChanged();
       }
@@ -242,7 +242,8 @@ export default class FilterStore {
       this.filters = this.filters.map((f) => (f.id === id ? optimistic : f));
     });
 
-    const activeChanged = input.isActive !== undefined && previous.isActive !== optimistic.isActive;
+    const activeChanged =
+      input.isActive !== undefined && previous.isActive !== optimistic.isActive;
     const criteriaChanged =
       input.vehicleQuery !== undefined ||
       input.customQuery !== undefined ||
@@ -250,18 +251,17 @@ export default class FilterStore {
       input.titleIncluders !== undefined ||
       input.descriptionIncluders !== undefined;
 
-    if (activeChanged) {
-      this.feedStore?.onSelectedFiltersChanged();
-    }
-    if (activeChanged || criteriaChanged) {
-      void this.searchStore?.loadFeedTabAvailability(true);
-    }
-
     try {
       const filter = await agent.Filters.update(id, input);
       runInAction(() => {
         this.filters = this.filters.map((f) => (f.id === id ? filter : f));
       });
+      if (activeChanged) {
+        await this.searchStore?.loadFeedTabAvailability(true);
+        this.feedStore?.onSelectedFiltersChanged();
+      } else if (criteriaChanged && filter.isActive) {
+        void this.feedStore?.refreshFilterBucket(filter.id);
+      }
       return filter;
     } catch (error) {
       runInAction(() => {
@@ -269,10 +269,8 @@ export default class FilterStore {
         this.lastError = toUserErrorMessage(error);
       });
       if (activeChanged) {
+        await this.searchStore?.loadFeedTabAvailability(true);
         this.feedStore?.onSelectedFiltersChanged();
-      }
-      if (activeChanged || criteriaChanged) {
-        void this.searchStore?.loadFeedTabAvailability(true);
       }
       return null;
     }
@@ -288,7 +286,7 @@ export default class FilterStore {
       runInAction(() => {
         this.filters = this.filters.filter((f) => f.id !== id);
       });
-      void this.searchStore?.loadFeedTabAvailability(true);
+      await this.searchStore?.loadFeedTabAvailability(true);
       if (previous?.isActive) {
         this.feedStore?.onSelectedFiltersChanged();
       }

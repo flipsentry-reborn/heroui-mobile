@@ -3,6 +3,7 @@ import { Dimensions, View, type LayoutChangeEvent } from "react-native";
 import Svg, { ClipPath, Defs, G, Polygon, Rect } from "react-native-svg";
 import { Typography, useThemeColor } from "heroui-native";
 
+import { ValuationTierBadge } from "@/features/feed/feed-badge";
 import { getValuationTier, type ValuationTier } from "@/models/feed";
 
 const TIER_ORDER: ValuationTier[] = ["overpriced", "fairPrice", "goodValue", "greatDeal"];
@@ -92,7 +93,23 @@ export function FeedDetailScoreBar({
   const tipBand = compact ? 3.5 : 5;
 
   return (
-    <View className={compact ? "gap-0" : "gap-2"}>
+    <View className={compact ? "gap-1.5" : "gap-2"}>
+      <View className="flex-row flex-wrap items-center gap-1.5">
+        <Typography
+          type={compact ? "body-xs" : "body-sm"}
+          className="text-foreground"
+        >
+          This listing is
+        </Typography>
+        <ValuationTierBadge tier={tier} scale={compact ? "default" : "detail"} />
+        <Typography
+          type={compact ? "body-xs" : "body-sm"}
+          className="text-foreground"
+        >
+          deal
+        </Typography>
+      </View>
+
       {!compact && valuationType === "iphone" && iphoneModel ? (
         <View className="flex-row flex-wrap items-center gap-1.5">
           <Typography type="body-xs" weight="semibold" className="text-foreground">

@@ -430,6 +430,33 @@ export default class FeedStore {
     }
   }
 
+  /**
+   * Soft-refresh a single filter shelf/list after criteria edits.
+   * Does not trigger the global Applying dialog / wipe.
+   */
+  async refreshFilterBucket(filterId: string): Promise<void> {
+    const id = filterId.trim();
+    if (!id) return;
+    const key = `filter:${id}`;
+    this.touchSet("dirtyBuckets", (s) => {
+      s.add(key);
+    });
+
+    const tasks: Promise<void>[] = [];
+    if (this.hydratedShelves.has(key) || key in this.shelves) {
+      tasks.push(this.loadBucket(key, { force: true, asShelf: true }));
+    }
+    if (
+      this.loadedBuckets.has(key) ||
+      this.activeCategory === key ||
+      key in this.lists
+    ) {
+      tasks.push(this.loadBucket(key, { force: true }));
+    }
+    if (tasks.length === 0) return;
+    await Promise.all(tasks);
+  }
+
   private async runFilterApply(): Promise<void> {
     const generation = ++this.filterApplyGeneration;
     const includeBestPicks = this.pendingIncludeBestPicks;
@@ -440,6 +467,9 @@ export default class FeedStore {
     });
 
     try {
+      // Tabs must be fresh before shelf keys are chosen (new/enabled filters).
+      await this.searchStore?.loadFeedTabAvailability(true);
+
       runInAction(() => {
         this.clearNonSavedFeedState(includeBestPicks);
       });

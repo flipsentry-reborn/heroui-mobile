@@ -389,42 +389,23 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
 
   const patchHidePrefs = useCallback(
     async (patch: Partial<SettingsHidePrefs>) => {
-      try {
-        let api = userStore.preferences;
-        if (api == null) {
-          await userStore.loadPreferences();
-          api = userStore.preferences;
-        }
-        const base = api ?? {
-          showScams: true,
-          showDealers: true,
-          showAdvertised: true,
-          showDealerships: true,
-          showMajorIssue: true,
-          showRebuiltTitle: true,
-          showSalvageTitle: true,
-          distanceUnit: "mi" as const,
-          minBuySignal: 100,
-          minProfit: 0,
-        };
-        await userStore.updatePreferences({
-          ...base,
-          showScams: patch.showScams ?? base.showScams,
-          showDealers: patch.showDealers ?? base.showDealers,
-          showDealerships: patch.showDealerships ?? base.showDealerships,
-          showMajorIssue: patch.showMajorDamaged ?? base.showMajorIssue,
-          showRebuiltTitle: patch.showRebuiltTitle ?? base.showRebuiltTitle,
-          showSalvageTitle: patch.showSalvageTitle ?? base.showSalvageTitle,
-        });
-      } catch (error) {
+      const ok = await filterStore.updateHidePrefs({
+        showScams: patch.showScams,
+        showDealers: patch.showDealers,
+        showDealerships: patch.showDealerships,
+        showMajorIssue: patch.showMajorDamaged,
+        showRebuiltTitle: patch.showRebuiltTitle,
+        showSalvageTitle: patch.showSalvageTitle,
+      });
+      if (!ok) {
         toast.show({
           variant: "danger",
-          label: toUserErrorMessage(error),
+          label: filterStore.lastError ?? toUserErrorMessage(new Error("Update failed")),
           duration: 2200,
         });
       }
     },
-    [toast, userStore],
+    [filterStore, toast],
   );
 
   return (

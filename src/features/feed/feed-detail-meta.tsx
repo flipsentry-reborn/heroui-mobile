@@ -48,13 +48,16 @@ interface MetaRow {
 function MetaRowItem({ row }: { row: MetaRow }): JSX.Element {
   return (
     <View className="flex-row items-start gap-5">
-      <Typography type="body-xs" className="w-[108px] text-xs text-muted">
+      <Typography
+        type="body-xs"
+        className="w-[108px] text-[13.2px] font-normal leading-[17.6px] text-muted"
+      >
         {row.label}
       </Typography>
       {typeof row.value === "string" || typeof row.value === "number" ? (
         <Typography
           type="body-xs"
-          className={`min-w-0 flex-1 text-xs text-foreground${row.valueClassName ? ` ${row.valueClassName}` : ""}`}
+          className={`min-w-0 flex-1 text-[13.2px] font-normal leading-[17.6px] text-foreground${row.valueClassName ? ` ${row.valueClassName}` : ""}`}
         >
           {row.value}
         </Typography>
@@ -121,9 +124,9 @@ export const FeedDetailMetaSection = observer(function FeedDetailMetaSection({
   return (
     <View className="gap-2.5">
       <Typography
-        type="body"
+        type="body-sm"
         weight="semibold"
-        className="text-[15px] tracking-tight text-foreground"
+        className="text-[15px] text-foreground"
       >
         Details
       </Typography>

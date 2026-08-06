@@ -416,15 +416,15 @@ export function FeedDetail({
             <Separator className="opacity-50" />
             <View className="gap-1.5 pt-3">
               <Typography
-                type="body"
+                type="body-sm"
                 weight="semibold"
-                className="text-[15px] tracking-tight text-foreground"
+                className="text-[15px] text-foreground"
               >
                 Description
               </Typography>
               <Typography
                 type="body-xs"
-                className="text-xs font-normal leading-4 text-muted"
+                className="text-[13.2px] font-normal leading-[17.6px] text-muted"
               >
                 {displayDescription}
               </Typography>

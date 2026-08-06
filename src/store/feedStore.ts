@@ -21,6 +21,11 @@ import {
   type FeedDisplayPrefs,
 } from "@/domain/feed-display-prefs";
 import {
+  DEFAULT_FEED_HIDE_PREFS,
+  matchesFeedHidePrefs,
+  type FeedHidePrefs,
+} from "@/domain/feed-hide-prefs";
+import {
   DEFAULT_FEED_LAYOUT_MODE,
   FEED_LAYOUT_STORAGE_KEY,
   isFeedLayoutMode,
@@ -359,20 +364,27 @@ export default class FeedStore {
     return this.filterStore?.displayPrefs ?? DEFAULT_FEED_DISPLAY_PREFS;
   }
 
+  private hidePrefs(): FeedHidePrefs {
+    return this.filterStore?.hidePrefs ?? DEFAULT_FEED_HIDE_PREFS;
+  }
+
   private listQueryExtras(bucket?: string): {
     minBuySignal?: number;
     minProfit?: number;
     displayPrefs: FeedDisplayPrefs;
+    hidePrefs: FeedHidePrefs;
   } {
     const prefs = this.displayPrefs();
+    const hidePrefs = this.hidePrefs();
     // Best Picks uses its own score floor — not Great / min-profit prefs.
     if (bucket === "best-picks") {
-      return { displayPrefs: prefs };
+      return { displayPrefs: prefs, hidePrefs };
     }
     return {
       minBuySignal: effectiveMinBuySignalForQuery(prefs),
       minProfit: deriveMinProfit(prefs),
       displayPrefs: prefs,
+      hidePrefs,
     };
   }
 
@@ -1084,6 +1096,14 @@ export default class FeedStore {
         filterTabs,
         activeFilterIds,
       );
+      // Hide-listings gates apply to every bucket (including Best Picks).
+      if (!matchesFeedHidePrefs(resolved, this.hidePrefs())) {
+        debugLog.info(FEED_LIVE_LOG, "applyLiveFeed skipped (hide prefs)", {
+          id: resolved.id,
+          t: Date.now(),
+        });
+        return;
+      }
       // Best Picks ignores Great / min-profit prefs; other buckets still honor them.
       const passesDisplayPrefs = matchesFeedDisplayPrefs(
         resolved,

@@ -6,6 +6,11 @@ import {
   matchesFeedDisplayPrefs,
   type FeedDisplayPrefs,
 } from "@/domain/feed-display-prefs";
+import {
+  DEFAULT_FEED_HIDE_PREFS,
+  matchesFeedHidePrefs,
+  type FeedHidePrefs,
+} from "@/domain/feed-hide-prefs";
 import { MOCK_FEED_ITEMS } from "@/mocks/data/feed";
 import { getLocalCompsForFeed } from "@/mocks/data/local-comps";
 import { mockDelay } from "@/mocks/delay";
@@ -50,6 +55,8 @@ export type GetFeedParams = {
   minProfit?: number;
   /** Local display prefs — exact tier/profit client gate (No Valuation always). */
   displayPrefs?: FeedDisplayPrefs;
+  /** Local hide-listings prefs — listing-type client gate. */
+  hidePrefs?: FeedHidePrefs;
 };
 
 function matchesSoldStatus(
@@ -195,6 +202,11 @@ export async function getFeed(params: GetFeedParams = {}): Promise<FeedItem[]> {
       if (!matchesMaxDays(item, maxDays)) return false;
     }
     if (
+      !matchesFeedHidePrefs(item, params.hidePrefs ?? DEFAULT_FEED_HIDE_PREFS)
+    ) {
+      return false;
+    }
+    if (
       category !== "best-picks" &&
       !matchesFeedDisplayPrefs(
         item,
@@ -253,6 +265,11 @@ export async function getFeedPage(
     if (category === "sold") {
       if (!matchesSoldStatus(item, soldStatus)) return false;
       if (!matchesMaxDays(item, maxDays)) return false;
+    }
+    if (
+      !matchesFeedHidePrefs(item, params.hidePrefs ?? DEFAULT_FEED_HIDE_PREFS)
+    ) {
+      return false;
     }
     if (
       category !== "best-picks" &&

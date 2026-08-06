@@ -13,6 +13,10 @@ import {
   matchesFeedDisplayPrefs,
 } from "@/domain/feed-display-prefs";
 import {
+  DEFAULT_FEED_HIDE_PREFS,
+  matchesFeedHidePrefs,
+} from "@/domain/feed-hide-prefs";
+import {
   startFeedHub,
   stopFeedHub,
   type FeedHubHandlers,
@@ -182,11 +186,12 @@ const liveFeedApi = {
     const category = params?.category ?? "all";
     const result = await liveFeed.list(buildLiveFeedParams(params ?? {}));
     const prefs = params?.displayPrefs ?? DEFAULT_FEED_DISPLAY_PREFS;
+    const hidePrefs = params?.hidePrefs ?? DEFAULT_FEED_HIDE_PREFS;
     const filtered = applyClientCategoryFilter(
       result.data ?? [],
       category,
       params?.groupIds,
-    );
+    ).filter((item) => matchesFeedHidePrefs(item, hidePrefs));
     // Best Picks uses its own score floor — not Great / min-profit prefs.
     const items =
       category === "best-picks"

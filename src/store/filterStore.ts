@@ -11,6 +11,12 @@ import {
   prefsFromDealSettings,
   type FeedDisplayPrefs,
 } from "@/domain/feed-display-prefs";
+import {
+  areFeedHidePrefsEqual,
+  DEFAULT_FEED_HIDE_PREFS,
+  hidePrefsFromUserPreferences,
+  type FeedHidePrefs,
+} from "@/domain/feed-hide-prefs";
 import { toUserErrorMessage } from "@/lib/user-error-message";
 import type {
   CreateUserFilterInput,
@@ -21,6 +27,18 @@ import type { UserPreferences } from "@/models/user";
 import type FeedStore from "@/store/feedStore";
 import type SearchStore from "@/store/searchStore";
 import type UserStore from "@/store/userStore";
+
+type HidePrefsPatch = Partial<
+  Pick<
+    UserPreferences,
+    | "showScams"
+    | "showDealers"
+    | "showDealerships"
+    | "showMajorIssue"
+    | "showRebuiltTitle"
+    | "showSalvageTitle"
+  >
+>;
 
 function applyFilterUpdate(previous: UserFilter, input: UpdateUserFilterInput): UserFilter {
   return {
@@ -93,6 +111,11 @@ export default class FilterStore {
     return hasActiveDisplayPrefs(this.displayPrefs);
   }
 
+  /** Hide-listings prefs from the latest user preferences payload. */
+  get hidePrefs(): FeedHidePrefs {
+    return hidePrefsFromUserPreferences(this.userStore?.preferences);
+  }
+
   /** Saved filters + deal-display prefs (header badge). */
   get feedFilterBadgeCount(): number {
     return this.activeFilters.length + this.activeDisplayPrefsCount;
@@ -127,6 +150,69 @@ export default class FilterStore {
       this.displayPrefs = next;
       this.displayPrefsHydrated = true;
     });
+  }
+
+  /**
+   * Persist hide-listings prefs and mark feed for the same wipe/refetch path
+   * as deal display prefs (applies on back from Filters).
+   */
+  async updateHidePrefs(patch: HidePrefsPatch): Promise<boolean> {
+    const previous = this.hidePrefs;
+    const next: FeedHidePrefs = { ...previous };
+    if (patch.showScams !== undefined) next.showScams = patch.showScams;
+    if (patch.showDealers !== undefined) next.showDealers = patch.showDealers;
+    if (patch.showDealerships !== undefined) {
+      next.showDealerships = patch.showDealerships;
+    }
+    if (patch.showMajorIssue !== undefined) {
+      next.showMajorIssue = patch.showMajorIssue;
+    }
+    if (patch.showRebuiltTitle !== undefined) {
+      next.showRebuiltTitle = patch.showRebuiltTitle;
+    }
+    if (patch.showSalvageTitle !== undefined) {
+      next.showSalvageTitle = patch.showSalvageTitle;
+    }
+    if (areFeedHidePrefsEqual(previous, next)) return true;
+
+    try {
+      let base = this.userStore?.preferences ?? null;
+      if (base == null) {
+        base = await agent.Account.getPreferences();
+        if (this.userStore != null) {
+          runInAction(() => {
+            this.userStore!.preferences = base;
+          });
+        }
+      }
+      const payload: UserPreferences = {
+        ...(base ?? {
+          ...DEFAULT_FEED_HIDE_PREFS,
+          showAdvertised: true,
+          distanceUnit: "mi" as const,
+          minBuySignal: 100,
+          minProfit: 0,
+        }),
+        showScams: next.showScams,
+        showDealers: next.showDealers,
+        showDealerships: next.showDealerships,
+        showMajorIssue: next.showMajorIssue,
+        showRebuiltTitle: next.showRebuiltTitle,
+        showSalvageTitle: next.showSalvageTitle,
+      };
+      if (this.userStore != null) {
+        await this.userStore.updatePreferences(payload);
+      } else {
+        await agent.Account.updatePreferences(payload);
+      }
+      this.feedStore?.onDisplayPrefsChanged();
+      return true;
+    } catch (error) {
+      runInAction(() => {
+        this.lastError = toUserErrorMessage(error);
+      });
+      return false;
+    }
   }
 
   async setDisplayPrefs(

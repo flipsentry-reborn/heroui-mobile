@@ -10,12 +10,14 @@ import {
   resolveCategoryMeta,
 } from "@/features/feed/feed-category-title";
 import { debugLog } from "@/lib/debug-log";
+import { useLockedRouterPush } from "@/lib/use-locked-router-push";
 import { useStore } from "@/store/store";
 
 const FEED_OPEN_LOG = "FeedOpen";
 
 export default function FeedCategoryScreen(): JSX.Element {
   const router = useRouter();
+  const pushOnce = useLockedRouterPush();
   const { feedStore } = useStore();
   const { category: raw } = useLocalSearchParams<{
     category: string | string[];
@@ -41,14 +43,14 @@ export default function FeedCategoryScreen(): JSX.Element {
         category,
         t: t0,
       });
-      router.push({ pathname: "/listing/[id]", params: { id } });
+      pushOnce({ pathname: "/listing/[id]", params: { id } });
       debugLog.info(FEED_OPEN_LOG, "handlePressItem push queued", {
         id,
         ms: Date.now() - t0,
         t: Date.now(),
       });
     },
-    [category, router],
+    [category, pushOnce],
   );
 
   if (!category) {

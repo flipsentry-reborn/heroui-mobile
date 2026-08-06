@@ -4,6 +4,13 @@ import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, View } from "react-native";
+import Animated, {
+  FadeIn,
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Accordion,
@@ -12,6 +19,7 @@ import {
   Button,
   Checkbox,
   Chip,
+  cn,
   ControlField,
   Label,
   ListGroup,
@@ -20,6 +28,8 @@ import {
   SkeletonGroup,
   Switch,
   Typography,
+  useAccordion,
+  useAccordionItem,
   useThemeColor,
   useToast,
 } from "heroui-native";
@@ -47,6 +57,10 @@ import { showSearchActionProgress } from "@/features/home/search-action-progress
 import { formatOpenRangeLabel } from "@/features/home/search-bottom-sheet-price-sheet";
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
 import {
+  SearchStatusSegment,
+  type SearchStatusFilter,
+} from "@/features/home/search-status-segment";
+import {
   SHEET_BACKGROUND_CLASS_NAME,
   SHEET_CONTENT_CLASS_NAME,
   SHEET_CONTENT_CONTAINER_CLASS_NAME,
@@ -60,6 +74,13 @@ import type { UserFilter } from "@/models/user-filter";
 import { useStore } from "@/store/store";
 
 const StyledIonicons = withUniwind(Ionicons);
+const StyledAnimatedView = withUniwind(Animated.View);
+
+/** Matches home SearchCards `AccordionWithDepthEffect` layout spring. */
+const DEPTH_LAYOUT_TRANSITION = LinearTransition.springify()
+  .damping(70)
+  .stiffness(1000)
+  .mass(2);
 
 const SCORE_TIER_OPTIONS: {
   key: ScoreTierKey;
@@ -125,31 +146,32 @@ function priceLabel(filter: UserFilter): string | null {
   );
 }
 
-function criteriaLabels(
+/** Chip labels styled like home search cards (price/year/mileage ranges, no prefixes). */
+function metaChips(
   filter: UserFilter,
   searchGroupLabels?: Map<string, string>,
 ): string[] {
-  const labels: string[] = [];
+  const chips: string[] = [filterTypeLabel(filter)];
   const price = priceLabel(filter);
-  if (price != null) labels.push(`Price ${price}`);
+  if (price != null) chips.push(price);
 
   if (filter.filterType === "Vehicle" && filter.vehicleQuery != null) {
     const query = filter.vehicleQuery;
     if (query.minYear != null || query.maxYear != null) {
-      labels.push(
-        `Year ${formatOpenRangeLabel(
+      chips.push(
+        formatOpenRangeLabel(
           query.minYear != null ? String(query.minYear) : "",
-          query.maxYear != null ? String(query.maxYear) : ""
-        )}`
+          query.maxYear != null ? String(query.maxYear) : "",
+        ),
       );
     }
     if (query.minMileage != null || query.maxMileage != null) {
-      labels.push(
-        `Mileage ${formatOpenRangeLabel(
+      chips.push(
+        formatOpenRangeLabel(
           query.minMileage != null ? formatPriceShort(query.minMileage) : "",
           query.maxMileage != null ? formatPriceShort(query.maxMileage) : "",
-          { unit: " mi" }
-        )}`
+          { unit: " mi" },
+        ),
       );
     }
   }
@@ -161,26 +183,26 @@ function criteriaLabels(
         .map((id) => searchGroupLabels?.get(id))
         .filter((name): name is string => !!name);
       if (names.length > 0) {
-        labels.push(names.length <= 2 ? names.join(", ") : `${names.length} searches`);
+        chips.push(names.length <= 2 ? names.join(", ") : `${names.length} searches`);
       } else {
-        labels.push(ids.length === 1 ? "1 search" : `${ids.length} searches`);
+        chips.push(ids.length === 1 ? "1 search" : `${ids.length} searches`);
       }
     }
   }
 
   const keywords = keywordCount(filter);
   if (keywords > 0) {
-    labels.push(keywords === 1 ? "1 keyword" : `${keywords} keywords`);
+    chips.push(keywords === 1 ? "1 keyword" : `${keywords} keywords`);
   }
-  return labels;
+  return chips;
 }
 
-function collapsedSummary(
+function matchesStatusFilter(
   filter: UserFilter,
-  searchGroupLabels?: Map<string, string>,
-): string {
-  const labels = criteriaLabels(filter, searchGroupLabels);
-  return [filterTypeLabel(filter), ...labels.slice(0, 2)].join(" · ");
+  statusFilter: SearchStatusFilter,
+): boolean {
+  if (statusFilter === "all") return true;
+  return statusFilter === "paused" ? !filter.isActive : filter.isActive;
 }
 
 function FiltersHeader({ onBack }: { onBack: () => void }): JSX.Element {
@@ -220,21 +242,22 @@ function FiltersHeader({ onBack }: { onBack: () => void }): JSX.Element {
 
 function FilterActionsMenu({
   filter,
-  disabled,
   onEdit,
   onDelete,
+  onToggle,
 }: {
   filter: UserFilter;
-  disabled: boolean;
   onEdit: (filter: UserFilter) => void;
   onDelete: (filter: UserFilter) => void;
+  onToggle: (filter: UserFilter, active: boolean) => void;
 }): JSX.Element {
   const [accentForeground] = useThemeColor(["accent-foreground"]);
+  const isPaused = !filter.isActive;
 
   return (
     <Menu>
       <Menu.Trigger asChild>
-        <BrandButton className="mt-1 min-h-12 w-full" isDisabled={disabled}>
+        <BrandButton className="min-h-12 w-full">
           <Ionicons name="create" size={18} color={accentForeground} />
           <BrandButton.Label>Actions</BrandButton.Label>
         </BrandButton>
@@ -244,17 +267,70 @@ function FilterActionsMenu({
         <Menu.Content presentation="popover" width={240} placement="top">
           <Menu.Group>
             <Menu.Item id="edit" onPress={() => onEdit(filter)}>
-              <StyledIonicons name="create-outline" size={18} className="text-foreground" />
+              <StyledIonicons
+                name="create-outline"
+                size={18}
+                className="text-foreground"
+              />
               <Menu.ItemTitle>Edit</Menu.ItemTitle>
             </Menu.Item>
-            <Menu.Item id="delete" variant="danger" onPress={() => onDelete(filter)}>
-              <StyledIonicons name="trash-outline" size={18} className="text-danger" />
+            <Menu.Item
+              id="toggle"
+              onPress={() => onToggle(filter, isPaused)}
+            >
+              <StyledIonicons
+                name={isPaused ? "play-outline" : "pause-outline"}
+                size={18}
+                className={isPaused ? "text-success" : "text-warning"}
+              />
+              <Menu.ItemTitle
+                className={isPaused ? "text-success" : "text-warning"}
+              >
+                {isPaused ? "Start" : "Pause"}
+              </Menu.ItemTitle>
+            </Menu.Item>
+            <Menu.Item
+              id="delete"
+              variant="danger"
+              onPress={() => onDelete(filter)}
+            >
+              <StyledIonicons
+                name="trash-outline"
+                size={18}
+                className="text-danger"
+              />
               <Menu.ItemTitle>Delete</Menu.ItemTitle>
             </Menu.Item>
           </Menu.Group>
         </Menu.Content>
       </Menu.Portal>
     </Menu>
+  );
+}
+
+function MetaChipRow({
+  filter,
+  searchGroupLabels,
+}: {
+  filter: UserFilter;
+  searchGroupLabels: Map<string, string>;
+}): JSX.Element {
+  const chips = metaChips(filter, searchGroupLabels);
+  if (chips.length === 0) {
+    return (
+      <Typography type="body-xs" className="text-muted">
+        No optional criteria set.
+      </Typography>
+    );
+  }
+  return (
+    <View className="flex-row flex-wrap gap-1.5">
+      {chips.map((label, index) => (
+        <Chip key={`${label}-${index}`} size="sm" variant="secondary">
+          <Chip.Label className="text-[10px] text-muted">{label}</Chip.Label>
+        </Chip>
+      ))}
+    </View>
   );
 }
 
@@ -464,138 +540,189 @@ const FeedDisplayPrefsBar = observer(function FeedDisplayPrefsBar(): JSX.Element
   );
 });
 
-function FilterAccordionItem({
+function FilterDepthItem({
   filter,
+  index,
+  filterCount,
+  filterIds,
   searchGroupLabels,
   onEdit,
   onDelete,
-  onToggleActive,
+  onToggle,
   onToggleNotifications,
 }: {
   filter: UserFilter;
+  index: number;
+  filterCount: number;
+  filterIds: string[];
   searchGroupLabels: Map<string, string>;
   onEdit: (filter: UserFilter) => void;
   onDelete: (filter: UserFilter) => void;
-  onToggleActive: (filter: UserFilter, selected: boolean) => void;
+  onToggle: (filter: UserFilter, active: boolean) => void;
   onToggleNotifications: (filter: UserFilter, selected: boolean) => void;
 }): JSX.Element {
-  const criteria = criteriaLabels(filter, searchGroupLabels);
+  const { value } = useAccordion();
+  const { isExpanded } = useAccordionItem();
+  const scale = useSharedValue(isExpanded ? 1 : 0.97);
+  const chips = metaChips(filter, searchGroupLabels);
+
+  useEffect(() => {
+    scale.value = withTiming(isExpanded ? 1 : 0.97, {
+      duration: 200,
+    });
+  }, [isExpanded, scale]);
+
+  const depthStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const expandedIds = useMemo(() => {
+    if (Array.isArray(value)) return new Set(value);
+    if (typeof value === "string" && value.length > 0) return new Set([value]);
+    return new Set<string>();
+  }, [value]);
+
+  const prevId = index > 0 ? filterIds[index - 1] : undefined;
+  const nextId = index < filterCount - 1 ? filterIds[index + 1] : undefined;
+  const isBeforeSelected = nextId != null && expandedIds.has(nextId);
+  const isAfterSelected = prevId != null && expandedIds.has(prevId);
+
+  const showDivider =
+    index < filterCount - 1 && !isExpanded && !isBeforeSelected;
 
   return (
-    <Accordion.Item value={filter.id} className="overflow-hidden rounded-2xl bg-surface">
-      <Accordion.Trigger className="gap-2 px-3 py-3">
-        <View
-          className="h-9 w-1.5 shrink-0 rounded-full"
-          style={{ backgroundColor: filter.color }}
-        />
-        <View className="min-w-0 flex-1 gap-1.5">
-          <View className="flex-row items-center gap-2">
-            <Typography
-              type="body"
-              weight="semibold"
-              className="min-w-0 flex-1"
-              numberOfLines={1}
-            >
-              {filter.name}
-            </Typography>
-            <Badge
-              color={filter.isActive ? "success" : "warning"}
-              variant="soft"
-              size="sm"
-            >
-              {filter.isActive ? "Active" : "Paused"}
-            </Badge>
-          </View>
-          <Typography type="body-xs" className="text-muted" numberOfLines={1}>
-            {collapsedSummary(filter, searchGroupLabels)}
-          </Typography>
-        </View>
-        <Accordion.Indicator />
-        {/* Absorb presses so the switch does not toggle the accordion. */}
-        <View
-          onStartShouldSetResponder={() => true}
-          className="shrink-0 pl-1"
-        >
-          <Switch
-            isSelected={filter.isActive}
-            onSelectedChange={(selected) => onToggleActive(filter, selected)}
-            accessibilityLabel={`Enable ${filter.name}`}
-          />
-        </View>
-      </Accordion.Trigger>
-
-      <Accordion.Content className="gap-2 px-3 pb-3 pt-0">
-        {criteria.length > 0 ? (
-          <View className="flex-row flex-wrap gap-1.5">
-            {criteria.map((label, index) => (
-              <Chip key={`${label}-${index}`} size="sm" variant="secondary">
-                <Chip.Label className="text-[10px] text-muted">{label}</Chip.Label>
-              </Chip>
-            ))}
-          </View>
-        ) : (
-          <Typography type="body-xs" className="text-muted">
-            No optional criteria set.
-          </Typography>
+    <StyledAnimatedView layout={DEPTH_LAYOUT_TRANSITION} style={depthStyle}>
+      <StyledAnimatedView
+        layout={DEPTH_LAYOUT_TRANSITION}
+        className={cn(
+          "overflow-hidden bg-surface",
+          index === 0 && !isExpanded && "rounded-t-2xl",
+          index === filterCount - 1 &&
+            !isExpanded &&
+            !isBeforeSelected &&
+            "rounded-b-3xl",
+          isBeforeSelected && "rounded-b-2xl",
+          isExpanded && "rounded-2xl",
+          isAfterSelected && "rounded-t-2xl",
+          isExpanded && index === 0 && "mb-2",
+          isExpanded && index > 0 && index < filterCount - 1 && "my-2",
+          isExpanded && index === filterCount - 1 && "mt-2",
         )}
-
-        <ListGroup
-          className={`overflow-hidden rounded-2xl bg-surface-secondary ${
-            filter.isActive ? "" : "opacity-55"
-          }`}
-        >
-          <SearchBottomSheetRow
-            icon="notifications-outline"
-            iconClassName={
-              filter.isActive && filter.notificationEnabled
-                ? "text-foreground"
-                : "text-muted"
-            }
-            title="Notifications"
-            description={
-              filter.isActive
-                ? "Notify me when new matches arrive"
-                : "Enable this filter to control notifications"
-            }
-            showChevron={false}
-            isLast
-            right={
-              <Switch
-                isSelected={filter.isActive && filter.notificationEnabled}
-                isDisabled={!filter.isActive}
-                onSelectedChange={(selected) => onToggleNotifications(filter, selected)}
-                accessibilityLabel="Notifications"
-              />
-            }
+      >
+        <Accordion.Trigger className="gap-2 px-3 py-3">
+          <View
+            className="h-9 w-1.5 shrink-0 rounded-full"
+            style={{ backgroundColor: filter.color }}
           />
-        </ListGroup>
+          <View className="min-w-0 flex-1 gap-2">
+            <View className="flex-row items-center gap-2">
+              <Typography
+                type="body"
+                className="min-w-0 flex-1"
+                numberOfLines={1}
+              >
+                {filter.name}
+              </Typography>
+              {filter.isActive ? (
+                <Badge color="success" variant="soft" size="sm">
+                  Active
+                </Badge>
+              ) : (
+                <Badge color="danger" variant="soft" size="sm">
+                  Paused
+                </Badge>
+              )}
+            </View>
+            <Typography type="body-xs" className="text-muted" numberOfLines={1}>
+              {chips.slice(0, 2).join(" · ")}
+            </Typography>
+          </View>
+          <Accordion.Indicator />
+        </Accordion.Trigger>
+        <Accordion.Content className="gap-2 px-3 pb-3 pt-0">
+          <MetaChipRow
+            filter={filter}
+            searchGroupLabels={searchGroupLabels}
+          />
 
-        <FilterActionsMenu filter={filter} disabled={false} onEdit={onEdit} onDelete={onDelete} />
-      </Accordion.Content>
-    </Accordion.Item>
+          <ListGroup
+            className={`overflow-hidden rounded-2xl bg-surface-secondary ${
+              filter.isActive ? "" : "opacity-55"
+            }`}
+          >
+            <SearchBottomSheetRow
+              icon="notifications-outline"
+              iconClassName={
+                filter.isActive && filter.notificationEnabled
+                  ? "text-foreground"
+                  : "text-muted"
+              }
+              title="Notifications"
+              description={
+                filter.isActive
+                  ? "Notify me when new matches arrive"
+                  : "Enable this filter to control notifications"
+              }
+              showChevron={false}
+              isLast
+              right={
+                <Switch
+                  isSelected={filter.isActive && filter.notificationEnabled}
+                  isDisabled={!filter.isActive}
+                  onSelectedChange={(selected) =>
+                    onToggleNotifications(filter, selected)
+                  }
+                  accessibilityLabel="Notifications"
+                />
+              }
+            />
+          </ListGroup>
+
+          {isExpanded ? (
+            <FilterActionsMenu
+              filter={filter}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onToggle={onToggle}
+            />
+          ) : null}
+        </Accordion.Content>
+      </StyledAnimatedView>
+      {showDivider ? (
+        <StyledAnimatedView
+          layout={DEPTH_LAYOUT_TRANSITION}
+          entering={FadeIn.duration(200)}
+          className="bg-surface px-3 pb-3 -mb-3"
+        >
+          <Separator />
+        </StyledAnimatedView>
+      ) : null}
+    </StyledAnimatedView>
   );
 }
 
 function FiltersSkeleton(): JSX.Element {
   return (
     <SkeletonGroup isLoading isSkeletonOnly className="gap-2.5 px-3 pt-4">
-      {[0, 1, 2].map((key) => (
-        <View
-          key={key}
-          className="flex-row items-center gap-3 rounded-2xl bg-surface px-3 py-3"
-        >
-          <SkeletonGroup.Item className="h-9 w-1.5 rounded-full" />
-          <View className="flex-1 gap-2">
-            <View className="flex-row items-center gap-2">
-              <SkeletonGroup.Item className="h-4 w-36 rounded-md" />
-              <SkeletonGroup.Item className="h-5 w-14 rounded-full" />
+      <SkeletonGroup.Item className="mb-1 h-11 w-full rounded-2xl" />
+      <View className="overflow-hidden rounded-3xl bg-surface">
+        {[0, 1, 2].map((key) => (
+          <View key={key}>
+            {key > 0 ? <Separator className="mx-3" /> : null}
+            <View className="flex-row items-center gap-3 px-3 py-3">
+              <SkeletonGroup.Item className="h-9 w-1.5 rounded-full" />
+              <View className="flex-1 gap-2">
+                <View className="flex-row items-center gap-2">
+                  <SkeletonGroup.Item className="h-4 w-36 rounded-md" />
+                  <SkeletonGroup.Item className="h-5 w-14 rounded-full" />
+                </View>
+                <SkeletonGroup.Item className="h-3 w-52 rounded-md" />
+              </View>
+              <SkeletonGroup.Item className="h-4 w-4 rounded-md" />
             </View>
-            <SkeletonGroup.Item className="h-3 w-52 rounded-md" />
           </View>
-          <SkeletonGroup.Item className="h-4 w-4 rounded-md" />
-          <SkeletonGroup.Item className="h-7 w-12 rounded-full" />
-        </View>
-      ))}
+        ))}
+      </View>
       <SkeletonGroup.Item className="mt-2 h-12 w-full rounded-2xl" />
     </SkeletonGroup>
   );
@@ -631,6 +758,8 @@ export const FiltersScreen = observer(function FiltersScreen({
   const [editing, setEditing] = useState<UserFilter | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedFilter, setExpandedFilter] = useState<string | undefined>();
+  const [statusFilter, setStatusFilter] =
+    useState<SearchStatusFilter>("all");
 
   useEffect(() => {
     void filterStore.loadFilters();
@@ -645,6 +774,36 @@ export const FiltersScreen = observer(function FiltersScreen({
     }
     return map;
   }, [searchStore.searchGroups]);
+
+  const { allFilters, activeFilters, pausedFilters, visibleFilters } =
+    useMemo(() => {
+      const all = filterStore.filters;
+      const active: UserFilter[] = [];
+      const paused: UserFilter[] = [];
+      for (const filter of all) {
+        if (filter.isActive) active.push(filter);
+        else paused.push(filter);
+      }
+      return {
+        allFilters: all,
+        activeFilters: active,
+        pausedFilters: paused,
+        visibleFilters: all.filter((filter) =>
+          matchesStatusFilter(filter, statusFilter),
+        ),
+      };
+    }, [filterStore.filters, statusFilter]);
+
+  const visibleIds = useMemo(
+    () => visibleFilters.map((filter) => filter.id),
+    [visibleFilters],
+  );
+
+  useEffect(() => {
+    if (expandedFilter != null && !visibleIds.includes(expandedFilter)) {
+      setExpandedFilter(undefined);
+    }
+  }, [expandedFilter, visibleIds]);
 
   useFocusEffect(
     useCallback(() => {
@@ -694,20 +853,20 @@ export const FiltersScreen = observer(function FiltersScreen({
 
   const handleToggleActive = useCallback(
     (filter: UserFilter, active: boolean) => {
-      showFilterToast(toast, {
-        kind: active ? "enabled" : "disabled",
+      showSearchActionProgress(toast, {
+        kind: active ? "start" : "pause",
+        subject: "filter",
         title: filter.name,
-      });
-      void filterStore.updateFilter(filter.id, { isActive: active }).then((updated) => {
-        if (updated != null) return;
-        showFilterToast(toast, {
-          kind: "error",
-          title: filter.name,
-          errorLabel: filterStore.lastError ?? "Could not update filter",
-        });
+        onCommit: async () => {
+          const updated = await filterStore.updateFilter(filter.id, {
+            isActive: active,
+          });
+          return updated != null;
+        },
+        getErrorMessage: () => filterStore.lastError,
       });
     },
-    [filterStore, toast]
+    [filterStore, toast],
   );
 
   const handleToggleNotifications = useCallback(
@@ -727,7 +886,7 @@ export const FiltersScreen = observer(function FiltersScreen({
           });
         });
     },
-    [filterStore, toast]
+    [filterStore, toast],
   );
 
   const handleDelete = useCallback(
@@ -740,11 +899,17 @@ export const FiltersScreen = observer(function FiltersScreen({
         getErrorMessage: () => filterStore.lastError,
       });
     },
-    [filterStore, toast]
+    [filterStore, toast],
   );
 
   const initialLoading = !filterStore.hasLoaded && filterStore.loading;
-  const hasFilters = filterStore.filters.length > 0;
+  const hasFilters = allFilters.length > 0;
+  const emptyMessage =
+    statusFilter === "paused"
+      ? "No paused filters"
+      : statusFilter === "active"
+        ? "No active filters — start one to organize your feed."
+        : "No filters yet";
 
   return (
     <View className="flex-1 bg-background">
@@ -759,7 +924,12 @@ export const FiltersScreen = observer(function FiltersScreen({
           className="flex-1"
           showsVerticalScrollIndicator={false}
           contentContainerClassName="pb-6 pt-3"
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+          stickyHeaderIndices={
+            hasFilters && filterStore.lastError == null ? [1] : undefined
+          }
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={refresh} />
+          }
         >
           {filterStore.lastError != null ? (
             <LoadError message={filterStore.lastError} onRetry={retry} />
@@ -767,50 +937,94 @@ export const FiltersScreen = observer(function FiltersScreen({
 
           {hasFilters ? (
             <>
-              <Accordion
-                value={expandedFilter}
-                onValueChange={(next: string | string[] | undefined) => {
-                  const value = Array.isArray(next) ? next[0] : next;
-                  setExpandedFilter(
-                    typeof value === "string" && value.length > 0 ? value : undefined
-                  );
-                }}
-                selectionMode="single"
-                isCollapsible
-                hideSeparator
-                className="mx-3 w-auto gap-2.5"
-              >
-                {filterStore.filters.map((filter) => (
-                  <FilterAccordionItem
-                    key={filter.id}
-                    filter={filter}
-                    searchGroupLabels={searchGroupLabels}
-                    onEdit={openEdit}
-                    onDelete={handleDelete}
-                    onToggleActive={handleToggleActive}
-                    onToggleNotifications={handleToggleNotifications}
-                  />
-                ))}
-              </Accordion>
-
-              <View className="mx-3 mt-4">
+              <View className="mx-3 mb-3">
                 <BrandButton className="min-h-12 w-full" onPress={openCreate}>
                   <Ionicons name="add" size={18} color={accentForeground} />
                   <BrandButton.Label>Add Filter</BrandButton.Label>
                 </BrandButton>
               </View>
+
+              <SearchStatusSegment
+                value={statusFilter}
+                onValueChange={setStatusFilter}
+                allCount={allFilters.length}
+                activeCount={activeFilters.length}
+                pausedCount={pausedFilters.length}
+              />
+
+              {visibleFilters.length > 0 ? (
+                <Accordion
+                  value={expandedFilter}
+                  onValueChange={(next: string | string[] | undefined) => {
+                    const value = Array.isArray(next) ? next[0] : next;
+                    setExpandedFilter(
+                      typeof value === "string" && value.length > 0
+                        ? value
+                        : undefined,
+                    );
+                  }}
+                  selectionMode="single"
+                  isCollapsible
+                  hideSeparator
+                  className="mx-3 w-auto overflow-visible"
+                  animation={{
+                    layout: {
+                      value: DEPTH_LAYOUT_TRANSITION,
+                    },
+                  }}
+                >
+                  {visibleFilters.map((filter, index) => (
+                    <Accordion.Item
+                      key={filter.id}
+                      value={filter.id}
+                      className="overflow-visible"
+                    >
+                      <FilterDepthItem
+                        filter={filter}
+                        index={index}
+                        filterCount={visibleFilters.length}
+                        filterIds={visibleIds}
+                        searchGroupLabels={searchGroupLabels}
+                        onEdit={openEdit}
+                        onDelete={handleDelete}
+                        onToggle={handleToggleActive}
+                        onToggleNotifications={handleToggleNotifications}
+                      />
+                    </Accordion.Item>
+                  ))}
+                </Accordion>
+              ) : (
+                <View className="mx-3 items-center rounded-3xl bg-surface px-4 py-8">
+                  <Typography type="body-sm" className="text-muted">
+                    {emptyMessage}
+                  </Typography>
+                  {statusFilter === "active" ? (
+                    <Button
+                      variant="tertiary"
+                      className="mt-3 min-h-10 rounded-2xl"
+                      onPress={openCreate}
+                    >
+                      <Button.Label>Create filter</Button.Label>
+                    </Button>
+                  ) : null}
+                </View>
+              )}
             </>
           ) : filterStore.lastError == null ? (
             <View className="mx-3 mt-6 rounded-3xl bg-surface px-4 py-10">
               <EmptyState>
                 <EmptyState.Header>
                   <EmptyState.Media variant="icon">
-                    <StyledIonicons name="options-outline" size={21} className="text-muted" />
+                    <StyledIonicons
+                      name="options-outline"
+                      size={21}
+                      className="text-muted"
+                    />
                   </EmptyState.Media>
                   <EmptyState.Title>No filters yet</EmptyState.Title>
                   <EmptyState.Description>
-                    Create a Vehicle or Custom filter to organize matching listings. Filters do not
-                    need a location.
+                    Create a Vehicle or Custom filter to organize matching
+                    listings. Filters do not need a location.
                   </EmptyState.Description>
                 </EmptyState.Header>
                 <EmptyState.Content>

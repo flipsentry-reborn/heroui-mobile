@@ -94,17 +94,21 @@ export function FeedDetailScoreBar({
 
   return (
     <View className={compact ? "gap-1.5" : "gap-2"}>
-      <View className="flex-row flex-wrap items-center gap-1.5">
+      <View className="w-full flex-row flex-nowrap items-center gap-1 overflow-hidden">
         <Typography
-          type={compact ? "body-xs" : "body-sm"}
-          className="text-foreground"
+          type="body-xs"
+          className={`shrink-0 text-foreground ${compact ? "text-[11px] leading-[14px]" : "text-[13px] leading-4"}`}
+          numberOfLines={1}
         >
           This listing is
         </Typography>
-        <ValuationTierBadge tier={tier} scale={compact ? "default" : "detail"} />
+        <View className="shrink-0">
+          <ValuationTierBadge tier={tier} scale="default" />
+        </View>
         <Typography
-          type={compact ? "body-xs" : "body-sm"}
-          className="text-foreground"
+          type="body-xs"
+          className={`shrink-0 text-foreground ${compact ? "text-[11px] leading-[14px]" : "text-[13px] leading-4"}`}
+          numberOfLines={1}
         >
           deal
         </Typography>

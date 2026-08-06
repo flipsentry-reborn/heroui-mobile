@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps, JSX } from "react";
 import { View } from "react-native";
-import { BottomSheet, Switch, Typography } from "heroui-native";
+import { Alert, BottomSheet, Switch, Typography } from "heroui-native";
 
 import { SearchBottomSheetRow } from "@/features/home/search-bottom-sheet-row";
 import { SearchSheetGroup } from "@/features/home/search-sheet-group";
@@ -99,6 +99,18 @@ function HideListingsContent({
           <Typography type="body" weight="normal">
             Hide listings
           </Typography>
+        </View>
+
+        <View className="mt-5 px-3">
+          <Alert status="warning">
+            <Alert.Indicator />
+            <Alert.Content className="min-w-0 flex-1">
+              <Alert.Title>
+                This automatically applies to your notification settings. Use with
+                caution.
+              </Alert.Title>
+            </Alert.Content>
+          </Alert>
         </View>
 
         <SearchSheetGroup>

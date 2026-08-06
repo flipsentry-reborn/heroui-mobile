@@ -10,12 +10,14 @@ import { FeedHeader } from "@/features/feed/feed-header";
 import { FeedPager } from "@/features/feed/feed-pager";
 import { useBottomChrome } from "@/contexts/bottom-chrome-context";
 import { debugLog } from "@/lib/debug-log";
+import { useLockedRouterPush } from "@/lib/use-locked-router-push";
 import { useStore } from "@/store/store";
 
 const FEED_OPEN_LOG = "FeedOpen";
 
 const FeedScreen = observer(function FeedScreen(): JSX.Element {
   const router = useRouter();
+  const pushOnce = useLockedRouterPush();
   const { searchStore, feedStore } = useStore();
   const { resetTabBar } = useBottomChrome();
   const pagerRef = useRef<PagerView>(null);
@@ -97,7 +99,8 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
         t: t0,
       });
       // Navigate first; defer store mutation so list observers don't block the transition.
-      router.push({ pathname: "/listing/[id]", params: { id } });
+      // pushOnce ignores rapid re-taps until this screen regains focus.
+      pushOnce({ pathname: "/listing/[id]", params: { id } });
       debugLog.info(FEED_OPEN_LOG, "handlePressItem push queued", {
         id,
         ms: Date.now() - t0,
@@ -115,7 +118,7 @@ const FeedScreen = observer(function FeedScreen(): JSX.Element {
         { timeout: 1000 },
       );
     },
-    [feedStore, router],
+    [feedStore, pushOnce],
   );
 
   return (

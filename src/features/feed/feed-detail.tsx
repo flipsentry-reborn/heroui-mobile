@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import type { JSX, ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { View } from "react-native";
@@ -44,6 +43,7 @@ import {
 import agent from "@/api/agent";
 import { debugLog } from "@/lib/debug-log";
 import { openListing } from "@/lib/marketplace-links";
+import { useLockedRouterPush } from "@/lib/use-locked-router-push";
 import {
   collectFeedValuationWarningItems,
   getOrderedStatusBadges,
@@ -92,7 +92,7 @@ export function FeedDetail({
   onToggleFavorite,
   afterGallery,
 }: FeedDetailProps): JSX.Element {
-  const router = useRouter();
+  const pushOnce = useLockedRouterPush();
   const insets = useSafeAreaInsets();
   const { toast } = useToast();
   const { feedStore } = useStore();
@@ -195,7 +195,7 @@ export function FeedDetail({
   };
 
   const handleCompPress = (id: string) => {
-    router.push({ pathname: "/listing/[id]", params: { id } });
+    pushOnce({ pathname: "/listing/[id]", params: { id } });
   };
 
   const openMarketplaceListing = useCallback(() => {

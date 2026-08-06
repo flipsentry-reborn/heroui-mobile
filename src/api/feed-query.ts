@@ -1,8 +1,83 @@
 /**
- * Map heroui feed category tabs → live Feed.list query params.
+ * Map heroui feed category tabs → live Feed V2 query params (lane + cursor page).
  */
 
 import type { GetFeedParams } from "@/mocks/services/feed";
+
+/** Backend V2 group/filter lanes require GUIDs (see FeedTimelineLanes.TryParse). */
+const GUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function firstGuidId(ids: string[] | undefined): string | undefined {
+  return ids?.find((id) => GUID_RE.test(id));
+}
+
+/** Derive V2 timeline lane from heroui category / group / filter ids. */
+export function resolveFeedLane(params: GetFeedParams): string {
+  const category = params.category ?? "all";
+
+  if (category === "saved") return "saved";
+  if (category === "best-picks") return "best";
+  if (category === "price-drop") return "pricedrop";
+
+  if (category === "sold") {
+    const status = params.soldStatus ?? "all";
+    if (status === "sold") return "sold";
+    if (status === "pending") return "pending";
+    return "soldpending";
+  }
+
+  const filterIds =
+    params.filterIds != null && params.filterIds.length > 0
+      ? params.filterIds
+      : category.startsWith("filter:")
+        ? [category.slice("filter:".length)]
+        : [];
+  const filterId = firstGuidId(filterIds);
+  if (filterId) {
+    return `filter:${filterId}`;
+  }
+
+  const groupIds =
+    params.groupIds != null && params.groupIds.length > 0
+      ? params.groupIds
+      : category.startsWith("group:")
+        ? [category.slice("group:".length)]
+        : category.startsWith("group-")
+          ? [category.slice("group-".length)]
+          : GUID_RE.test(category)
+            ? [category]
+            : [];
+
+  // Typed/custom tabs pass groupIds from the store; prefer first group lane.
+  const groupId = firstGuidId(groupIds);
+  if (groupId) {
+    return `group:${groupId}`;
+  }
+
+  if (category.startsWith("type:") || category.startsWith("custom:")) {
+    // Store should supply groupIds; fall back to all if missing.
+    return "all";
+  }
+
+  return "all";
+}
+
+/** Legacy V1 params for free-text search only. */
+export function buildLiveFeedV1SearchParams(
+  params: GetFeedParams,
+  pageNumber = 1,
+  pageSize = 40,
+): URLSearchParams {
+  const qs = new URLSearchParams();
+  const size = params.pageSize ?? pageSize;
+  const page = params.pageNumber ?? pageNumber;
+  qs.append("pageNumber", String(page));
+  qs.append("pageSize", String(size));
+  const query = (params.query ?? "").trim();
+  if (query) qs.append("search", query);
+  return qs;
+}
 
 export function buildLiveFeedParams(
   params: GetFeedParams,
@@ -10,20 +85,15 @@ export function buildLiveFeedParams(
   pageSize = 40,
 ): URLSearchParams {
   const qs = new URLSearchParams();
-  // Prefer explicit pageSize; limit is only a shelf/preview hint from callers.
   const size = params.pageSize ?? pageSize;
   const page = params.pageNumber ?? pageNumber;
   qs.append("pageNumber", String(page));
   qs.append("pageSize", String(size));
+  qs.append("lane", resolveFeedLane(params));
 
   const category = params.category ?? "all";
-  const query = (params.query ?? "").trim();
-  if (query) qs.append("search", query);
 
-  if (category === "saved") {
-    qs.append("isFavorite", "true");
-  } else if (category === "best-picks") {
-    qs.append("isBestPicks", "true");
+  if (category === "best-picks") {
     if (params.bestPicksSortBy && params.bestPicksSortBy !== "buysignal") {
       qs.append("bestPicksSortBy", params.bestPicksSortBy);
     }
@@ -33,51 +103,12 @@ export function buildLiveFeedParams(
     if (params.bestPicksMaxHours != null && params.bestPicksMaxHours > 0) {
       qs.append("bestPicksMaxHours", String(params.bestPicksMaxHours));
     }
-  } else if (category === "sold") {
-    appendSoldParams(qs, params);
-  } else if (category === "price-drop") {
-    qs.append("isPriceDrop", "true");
-  }
-
-  // Saved / Price Dropped never scope by filterIds.
-  // Other categories may combine category flags with filterIds and/or groupIds.
-  if (category !== "saved" && category !== "price-drop") {
-    const filterIds =
-      params.filterIds != null && params.filterIds.length > 0
-        ? params.filterIds
-        : category.startsWith("filter:")
-          ? [category.slice("filter:".length)]
-          : [];
-    for (const id of filterIds) {
-      if (id) qs.append("filterIds", id);
-    }
-
-    const groupIds =
-      params.groupIds != null && params.groupIds.length > 0
-        ? params.groupIds
-        : category !== "all" &&
-            category !== "for-you" &&
-            category !== "price-drop" &&
-            category !== "best-picks" &&
-            category !== "sold" &&
-            !category.startsWith("filter:") &&
-            !category.startsWith("type:") &&
-            !category.startsWith("custom:")
-          ? [category.replace(/^group-/, "")]
-          : [];
-    for (const id of groupIds) {
-      if (id) qs.append("groupIds", id);
-    }
-  }
-
-  // Default clean bucket for main feed (Price Dropped bypasses buckets server-side).
-  if (category !== "saved" && category !== "sold" && category !== "price-drop") {
-    qs.append("contentBucket", "Clean");
+  } else if (category === "sold" && params.maxDays != null) {
+    qs.append("maxDays", String(params.maxDays));
   }
 
   // Best Picks / Price Dropped use their own floors — ignore deal display prefs.
   if (category !== "best-picks" && category !== "price-drop") {
-    // 100 = all scores (no server buy-signal filter).
     if (
       params.minBuySignal != null &&
       params.minBuySignal > 0 &&
@@ -91,21 +122,6 @@ export function buildLiveFeedParams(
   }
 
   return qs;
-}
-
-function appendSoldParams(qs: URLSearchParams, params: GetFeedParams) {
-  const status = params.soldStatus ?? "all";
-  if (status === "sold") {
-    qs.append("isSold", "true");
-  } else if (status === "pending") {
-    qs.append("isPending", "true");
-  } else {
-    qs.append("isSold", "true");
-    qs.append("isPending", "true");
-  }
-  if (params.maxDays != null) {
-    qs.append("maxDays", String(params.maxDays));
-  }
 }
 
 type FeedValuationSlice = {
@@ -138,7 +154,7 @@ export function applyClientCategoryFilter<T extends {
   isSold?: boolean;
   isPending?: boolean;
 }>(items: T[], category: string, groupIds?: string[]): T[] {
-  // Server already scoped by groupIds for typed/custom tabs.
+  // Server already scoped by group lane for typed/custom tabs.
   if (groupIds != null && groupIds.length > 0) {
     return items;
   }

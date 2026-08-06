@@ -5,7 +5,11 @@ import type { FeedItem, FeedTabAvailability } from "@/models/feed";
 export type { FeedTabAvailability };
 
 export const liveFeed = {
+  /** Timeline V2 (default). */
   list: (params?: URLSearchParams) =>
+    requests.get<PaginatedResult<FeedItem[]>>("/api/feed/v2", params),
+  /** Legacy GetAll — used for text search until V2 FTS lands. */
+  listV1: (params?: URLSearchParams) =>
     requests.get<PaginatedResult<FeedItem[]>>("/api/feed", params),
   getTabAvailability: () =>
     requests.get<FeedTabAvailability>("/api/feed/tab-availability"),

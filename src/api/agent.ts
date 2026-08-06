@@ -7,6 +7,7 @@ import { USE_MOCK } from "@/api/config";
 import {
   applyClientCategoryFilter,
   buildLiveFeedParams,
+  buildLiveFeedV1SearchParams,
 } from "@/api/feed-query";
 import {
   DEFAULT_FEED_DISPLAY_PREFS,
@@ -184,19 +185,28 @@ const mockFeedApi = {
 const liveFeedApi = {
   list: async (params?: GetFeedParams): Promise<PaginatedResult<FeedItem[]>> => {
     const category = params?.category ?? "all";
-    const result = await liveFeed.list(buildLiveFeedParams(params ?? {}));
+    // Text search stays on V1 until timeline FTS exists.
+    const result = (params?.query ?? "").trim()
+      ? await liveFeed.listV1(buildLiveFeedV1SearchParams(params ?? {}))
+      : await liveFeed.list(buildLiveFeedParams(params ?? {}));
     const prefs = params?.displayPrefs ?? DEFAULT_FEED_DISPLAY_PREFS;
     const hidePrefs = params?.hidePrefs ?? DEFAULT_FEED_HIDE_PREFS;
     const filtered = applyClientCategoryFilter(
       result.data ?? [],
       category,
       params?.groupIds,
-    ).filter((item) => matchesFeedHidePrefs(item, hidePrefs));
+    );
+    // Hide prefs (rebuilt/salvage/scam/…) are enforced on GetAllV2 server-side.
+    // Keep client hide only for legacy V1 text-search fallback.
+    const afterHide = (params?.query ?? "").trim()
+      ? filtered.filter((item) => matchesFeedHidePrefs(item, hidePrefs))
+      : filtered;
     // Best Picks uses its own score floor — not Great / min-profit prefs.
+    // Deal floors are also applied server-side on V2; keep client display prefs as a safety net.
     const items =
       category === "best-picks"
-        ? filtered
-        : filtered.filter((item) => matchesFeedDisplayPrefs(item, prefs));
+        ? afterHide
+        : afterHide.filter((item) => matchesFeedDisplayPrefs(item, prefs));
     return {
       data: items,
       pagination: result.pagination,

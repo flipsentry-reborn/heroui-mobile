@@ -15,8 +15,6 @@ import {
 } from "@/domain/feed-routing";
 import {
   DEFAULT_FEED_DISPLAY_PREFS,
-  deriveMinProfit,
-  effectiveMinBuySignalForQuery,
   type FeedDisplayPrefs,
 } from "@/domain/feed-display-prefs";
 import {
@@ -366,23 +364,13 @@ export default class FeedStore {
     return this.filterStore?.hidePrefs ?? DEFAULT_FEED_HIDE_PREFS;
   }
 
-  private listQueryExtras(bucket?: string): {
-    minBuySignal?: number;
-    minProfit?: number;
+  private listQueryExtras(_bucket?: string): {
     displayPrefs: FeedDisplayPrefs;
     hidePrefs: FeedHidePrefs;
   } {
-    const prefs = this.displayPrefs();
-    const hidePrefs = this.hidePrefs();
-    // Best Picks uses its own score floor — not Great / min-profit prefs.
-    if (bucket === "best-picks") {
-      return { displayPrefs: prefs, hidePrefs };
-    }
     return {
-      minBuySignal: effectiveMinBuySignalForQuery(prefs),
-      minProfit: deriveMinProfit(prefs),
-      displayPrefs: prefs,
-      hidePrefs,
+      displayPrefs: this.displayPrefs(),
+      hidePrefs: this.hidePrefs(),
     };
   }
 

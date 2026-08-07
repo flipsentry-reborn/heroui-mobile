@@ -70,20 +70,7 @@ export function buildLiveFeedParams(
     }
   }
 
-  // Best Picks / Price Dropped use their own floors — ignore deal display prefs.
-  if (category !== "best-picks" && category !== "price-drop") {
-    // 100 = all scores (no server buy-signal filter).
-    if (
-      params.minBuySignal != null &&
-      params.minBuySignal > 0 &&
-      params.minBuySignal < 100
-    ) {
-      qs.append("minBuySignal", String(params.minBuySignal));
-    }
-    if (params.minProfit != null && params.minProfit > 0) {
-      qs.append("minProfit", String(params.minProfit));
-    }
-  }
+  // Deal prefs (minBuySignal / minProfit) come from persisted user settings on the server.
 
   return qs;
 }

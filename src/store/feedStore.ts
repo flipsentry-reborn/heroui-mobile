@@ -61,7 +61,7 @@ type LoadBucketOpts = {
   force?: boolean;
   limit?: number;
   pageSize?: number;
-  cursor?: string | null;
+  pageNumber?: number;
   soldStatus?: "all" | "sold" | "pending";
   maxDays?: number | null;
   bestPicksSortBy?: "buysignal" | "distance" | "listed";
@@ -232,7 +232,8 @@ export default class FeedStore {
 
   hasMore(bucket: string): boolean {
     const pagination = this.paginationByBucket[bucket];
-    return !!pagination?.nextCursor;
+    if (!pagination) return false;
+    return pagination.currentPage < pagination.totalPages;
   }
 
   /** Full-width tab bar strip — deferred live items for the active category. */
@@ -764,6 +765,7 @@ export default class FeedStore {
         groupIds: this.groupIdsFor(bucket),
         filterIds: this.filterIdsFor(bucket),
         query: opts.query,
+        pageNumber: opts.pageNumber ?? 1,
         pageSize,
         soldStatus: opts.soldStatus,
         maxDays: opts.maxDays,
@@ -841,8 +843,7 @@ export default class FeedStore {
     if (!this.hasMore(bucket)) return;
 
     const pagination = this.paginationByBucket[bucket];
-    const cursor = pagination?.nextCursor ?? null;
-    if (!cursor) return;
+    const nextPage = (pagination?.currentPage ?? 1) + 1;
     // Always use full list page size — never shelf size leftover in pagination.
     const pageSize = opts.pageSize ?? FEED_PAGE_SIZE;
 
@@ -857,7 +858,7 @@ export default class FeedStore {
         groupIds: this.groupIdsFor(bucket),
         filterIds: this.filterIdsFor(bucket),
         query: opts.query,
-        cursor,
+        pageNumber: nextPage,
         pageSize,
         soldStatus: opts.soldStatus,
         maxDays: opts.maxDays,
@@ -956,6 +957,7 @@ export default class FeedStore {
         category: bucket,
         groupIds,
         filterIds,
+        pageNumber: 1,
         pageSize,
         ...(bucket === "sold" ? { maxDays: 1 } : {}),
         ...this.listQueryExtras(bucket),

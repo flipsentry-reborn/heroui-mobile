@@ -70,11 +70,6 @@ export function buildLiveFeedParams(
     }
   }
 
-  // Default clean bucket for main feed (Price Dropped bypasses buckets server-side).
-  if (category !== "saved" && category !== "sold" && category !== "price-drop") {
-    qs.append("contentBucket", "Clean");
-  }
-
   // Best Picks / Price Dropped use their own floors — ignore deal display prefs.
   if (category !== "best-picks" && category !== "price-drop") {
     // 100 = all scores (no server buy-signal filter).

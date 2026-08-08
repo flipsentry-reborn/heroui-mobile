@@ -178,6 +178,30 @@ export const locationsFixture: LocationResult[] = [
     latitude: 34.1478,
     longitude: -118.1445,
   },
+  {
+    id: "new-york-ny",
+    name: "New York",
+    displayName: "New York, NY, USA",
+    secondaryText: "New York, USA",
+    latitude: 40.7128,
+    longitude: -74.006,
+  },
+  {
+    id: "brooklyn-ny",
+    name: "Brooklyn",
+    displayName: "Brooklyn, NY, USA",
+    secondaryText: "New York, USA",
+    latitude: 40.6782,
+    longitude: -73.9442,
+  },
+  {
+    id: "jersey-city-nj",
+    name: "Jersey City",
+    displayName: "Jersey City, NJ, USA",
+    secondaryText: "New Jersey, USA",
+    latitude: 40.7178,
+    longitude: -74.0431,
+  },
 ];
 
 export const DEFAULT_RADIUS_MILES = 40;

@@ -1201,7 +1201,7 @@ export default class FeedStore {
   }
 
   private async executeCatchUp(): Promise<void> {
-    const targets = new Set<string>(["best-picks"]);
+    const targets = new Set<string>();
     if (this.activeCategory === "for-you") {
       for (const key of this.hydratedShelves) {
         targets.add(key);
@@ -1210,7 +1210,22 @@ export default class FeedStore {
       targets.add(this.activeCategory);
     }
 
+    // Keep Best Picks warm only if that shelf/list was already hydrated —
+    // do not cold-fetch it when the user is on an unrelated filter tab.
+    if (
+      this.activeCategory !== "best-picks" &&
+      (this.hydratedShelves.has("best-picks") ||
+        (this.lists["best-picks"]?.length ?? 0) > 0)
+    ) {
+      targets.add("best-picks");
+    }
+
     const targetList = [...targets];
+    if (targetList.length === 0) {
+      debugLog.info(CATCH_UP_LOG, "reconnect catch-up skipped (nothing loaded)");
+      return;
+    }
+
     debugLog.info(CATCH_UP_LOG, "reconnect catch-up", {
       activeCategory: this.activeCategory,
       targets: targetList,
